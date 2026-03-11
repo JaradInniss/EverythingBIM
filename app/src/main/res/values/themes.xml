@@ -16,4 +16,23 @@
         <item name="android:textSize">16dp</item>
         <item name="android:backgroundTint">@null</item>
     </style>
+
+    <!-- EditText Field Style -->
+    <style name="et_style">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:textSize">15dp</item>
+        <item name="android:background">@drawable/bg_grey</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <!-- Email Verification EditText Field Style -->
+    <style name="email_vf_et_style">
+        <item name="android:fontFamily">@font/roboto_extrabold</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:textSize">15dp</item>
+        <item name="android:background">@drawable/bg_grey</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:maxLines">1</item>
+    </style>
 </resources>

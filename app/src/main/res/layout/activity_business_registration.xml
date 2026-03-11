@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+    android:gravity="center"
+    tools:context=".Login">
+
+    <!-- User Type Selection -->
+    <LinearLayout
+        android:id="@+id/user_type_selection"
+        android:layout_width="220dp"
+        android:layout_height="75dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginLeft="70dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/pill_bg_pale_grey"
+        android:layout_above="@id/reg_form_viewflipper"
+        android:elevation="20dp">
+
+        <ImageView
+            android:id="@+id/user_type_business"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:paddingBottom="10dp"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/pill_bg_yllw"
+            android:src="@drawable/icon_storefront_bold"/>
+
+        <ImageView
+            android:id="@+id/user_type_general"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:paddingBottom="10dp"
+            android:layout_marginLeft="20dp"
+            android:src="@drawable/icon_user_bold"/>
+
+    </LinearLayout>
+
+    <!-- Business Registration Form Flipper -->
+    <ViewFlipper
+        android:id="@+id/reg_form_viewflipper"
+        android:layout_width="360dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@null">
+
+        <include layout="@layout/business_regis_form_1"/>
+        <include layout="@layout/business_regis_form_2"/>
+        <include layout="@layout/business_regis_form_3"/>
+        <include layout="@layout/business_regis_form_4"/>
+    </ViewFlipper>
+
+</RelativeLayout>

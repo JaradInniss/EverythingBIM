@@ -18,10 +18,11 @@
         android:gravity="center"
         android:layout_marginLeft="70dp"
         android:layout_marginBottom="20dp"
-        android:background="@drawable/pill_bg_grey"
+        android:background="@drawable/pill_bg_pale_grey"
         android:layout_above="@id/login_form"
         android:elevation="20dp">
 
+        <!-- Business Type -->
         <ImageView
             android:id="@+id/user_type_business"
             android:layout_width="wrap_content"
@@ -31,8 +32,9 @@
             android:paddingLeft="20dp"
             android:paddingBottom="10dp"
             android:layout_marginRight="20dp"
-            android:src="@drawable/storefront"/>
+            android:src="@drawable/icon_storefront_bold"/>
 
+        <!-- User Type -->
         <ImageView
             android:id="@+id/user_type_general"
             android:layout_width="wrap_content"
@@ -43,7 +45,7 @@
             android:paddingBottom="10dp"
             android:layout_marginLeft="20dp"
             android:background="@drawable/pill_bg_yllw"
-            android:src="@drawable/user"/>
+            android:src="@drawable/icon_user_bold"/>
 
     </LinearLayout>
 
@@ -54,14 +56,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="20dp"
-        android:background="@drawable/bttn_bg_grey"
+        android:background="@drawable/bttn_bg_pale_grey"
         android:elevation="10dp">
 
+        <!-- Registration Form Text -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp">
 
+            <!-- Create Account Text -->
             <TextView
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
@@ -72,11 +76,12 @@
                 android:fontFamily="@font/roboto_bold"
                 android:textColor="@color/black"/>
 
+            <!-- General User Text -->
             <TextView
                 android:id="@+id/user_type_txt"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
-                android:text="User"
+                android:text="General User"
                 android:textSize="15dp"
                 android:textAlignment="viewEnd"
                 android:layout_alignParentEnd="true"
@@ -85,38 +90,40 @@
 
         </RelativeLayout>
 
+        <!-- Separator Line -->
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:background="@color/black"/>
-        
+
+        <!-- Username Field -->
         <EditText
             android:id="@+id/register_username_et"
             android:layout_width="match_parent"
             android:layout_height="45dp"
             android:layout_marginTop="20dp"
             android:hint="Username"
-            android:fontFamily="@font/roboto_regular"
-            android:textSize="15dp"/>
+            style="@style/et_style"/>
 
+        <!-- Password Field -->
         <EditText
             android:id="@+id/register_password_et"
             android:layout_width="match_parent"
             android:layout_height="45dp"
             android:layout_marginTop="20dp"
             android:hint="Password"
-            android:fontFamily="@font/roboto_regular"
-            android:textSize="15dp"/>
+            style="@style/et_style"/>
 
+        <!-- Re-enter Password Field -->
         <EditText
             android:id="@+id/register_repassword_et"
             android:layout_width="match_parent"
             android:layout_height="45dp"
             android:layout_marginTop="20dp"
             android:hint="Re-enter Password"
-            android:fontFamily="@font/roboto_regular"
-            android:textSize="15dp"/>
+            style="@style/et_style"/>
 
+        <!-- Email Field -->
         <EditText
             android:id="@+id/register_email"
             android:layout_width="match_parent"
@@ -124,9 +131,9 @@
             android:layout_marginTop="20dp"
             android:layout_marginBottom="20dp"
             android:hint="Email"
-            android:fontFamily="@font/roboto_regular"
-            android:textSize="15dp"/>
+            style="@style/et_style"/>
 
+        <!-- Submit Button -->
         <Button
             android:id="@+id/submit_bttn"
             android:layout_width="100dp"
@@ -135,6 +142,7 @@
             android:text="SUBMIT"
             style="@style/bttn_style_yllw"/>
 
+        <!-- Already Have An Account? -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -143,6 +151,7 @@
             android:text="Already Have An Account?"
             android:fontFamily="@font/roboto_light"/>
 
+        <!-- Login Option -->
         <TextView
             android:id="@+id/login_opt"
             android:layout_width="100dp"

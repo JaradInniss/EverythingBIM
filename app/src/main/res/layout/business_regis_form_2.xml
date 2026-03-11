@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/login_form"
+    android:layout_width="360dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/bttn_bg_pale_grey"
+    android:elevation="10dp">
+
+    <!-- Form -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <!-- Create Account Text -->
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Create Account"
+            android:textSize="15dp"
+            android:textAlignment="viewStart"
+            android:layout_alignParentStart="true"
+            android:fontFamily="@font/roboto_bold"
+            android:textColor="@color/black"/>
+
+        <!-- Page Count Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2 of 4"
+            android:textSize="10dp"
+            android:textAlignment="center"
+            android:layout_centerInParent="true"/>
+
+        <!-- User Type Text -->
+        <TextView
+            android:id="@+id/user_type_txt"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Business User"
+            android:textSize="15dp"
+            android:textAlignment="viewEnd"
+            android:layout_alignParentEnd="true"
+            android:fontFamily="@font/roboto_bold"
+            android:textColor="@color/black"/>
+
+    </RelativeLayout>
+
+    <!-- Separation Line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/black"/>
+
+    <!-- Section Text -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Email Verification"
+        android:textSize="15dp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/roboto_regular"/>
+
+    <!-- Info Text -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_info"
+            app:tint="@color/dark_grey"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="Enter the 5 digit code sent to the provided email."
+            android:textSize="10dp"
+            android:textColor="@color/dark_grey"
+            android:fontFamily="@font/roboto_light"/>
+    </LinearLayout>
+
+    <!-- Digit Fields -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:gravity="center">
+
+        <!-- Digit 1 -->
+        <EditText
+            android:id="@+id/digit1"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 2 -->
+        <EditText
+            android:id="@+id/digit2"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 3 -->
+        <EditText
+            android:id="@+id/digit3"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 4 -->
+        <EditText
+            android:id="@+id/digit4"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 5 -->
+        <EditText
+            android:id="@+id/digit5"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Check Icon -->
+        <ImageView
+            android:id="@+id/check_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:src="@drawable/icon_check_circle"
+            android:visibility="gone"/>
+        <!-- Warning Icon -->
+        <ImageView
+            android:id="@+id/warning_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:src="@drawable/icon_warning_circle"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <!-- Form Page Control Buttons -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="70dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
+
+        <!-- Previous Button -->
+        <LinearLayout
+            android:id="@+id/prev_bttn1"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:layout_alignParentStart="true"
+            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/pill_bg_yllw">
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/icon_caret_left"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PREV"
+                android:fontFamily="@font/roboto_extrabold"
+                android:textColor="@color/black"
+                android:textSize="16dp"/>
+        </LinearLayout>
+
+        <!-- Next Button -->
+        <LinearLayout
+            android:id="@+id/next_bttn2"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:layout_alignParentEnd="true"
+            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/pill_bg_yllw">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NEXT"
+                android:fontFamily="@font/roboto_extrabold"
+                android:textColor="@color/black"
+                android:textSize="16dp"/>
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/icon_caret_right"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+</LinearLayout>

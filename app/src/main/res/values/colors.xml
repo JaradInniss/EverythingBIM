@@ -6,8 +6,10 @@
     <!-- Custom Colors -->
     <color name="gold">#FFDE00</color>
     <color name="blue">#1F37B2</color>
-    <color name="grey">#D9D9D9</color>
     <color name="green">#009407</color>
-    <color name="dark">#272727</color>
+    <color name="grey">#D9D9D9</color>
+    <color name="pale_grey">#EBEBEB</color>
     <color name="light_grey">#BFBFBF</color>
+    <color name="dark_grey">#6B6B6B</color>
+    <color name="dark">#272727</color>
 </resources>
