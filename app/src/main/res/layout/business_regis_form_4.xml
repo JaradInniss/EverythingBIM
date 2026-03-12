@@ -89,15 +89,32 @@
             android:fontFamily="@font/roboto_light"/>
     </LinearLayout>
 
-    <!-- Field Heading Text -->
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginTop="15dp"
-        android:text="Images of Business"
-        android:textSize="15dp"
-        android:textColor="@color/black"
-        android:fontFamily="@font/roboto_regular"/>
+        android:gravity="center_vertical">
+
+        <!-- Field Heading Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Images of Business"
+            android:textSize="15dp"
+            android:textColor="@color/black"
+            android:fontFamily="@font/roboto_regular"/>
+
+        <TextView
+            android:id="@+id/img_upload_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:textSize="12dp"
+            android:textColor="@color/black"
+            android:fontFamily="@font/roboto_light"/>
+
+    </LinearLayout>
 
     <!-- Image Upload Field -->
     <LinearLayout
@@ -105,18 +122,19 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
         android:padding="5dp"
         android:background="@drawable/bg_grey">
 
         <HorizontalScrollView
             android:layout_width="0dp"
-            android:layout_height="45dp"
+            android:layout_height="80dp"
             android:layout_weight="1"
             android:scrollbars="none">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/img_icon_container"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="4dp"/>
@@ -154,15 +172,32 @@
             android:fontFamily="@font/roboto_light"/>
     </LinearLayout>
 
-    <!-- Field Heading Text -->
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginTop="15dp"
-        android:text="Copy of Business License/Certificate/Permits"
-        android:textSize="15dp"
-        android:textColor="@color/black"
-        android:fontFamily="@font/roboto_regular"/>
+        android:gravity="center_vertical">
+
+        <!-- Field Heading Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Business License/Certificate/Permits"
+            android:textSize="15dp"
+            android:textColor="@color/black"
+            android:fontFamily="@font/roboto_regular"/>
+
+        <TextView
+            android:id="@+id/file_upload_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:textSize="12dp"
+            android:textColor="@color/black"
+            android:fontFamily="@font/roboto_light"/>
+
+    </LinearLayout>
 
     <!-- File Upload Field -->
     <LinearLayout
@@ -170,12 +205,13 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
         android:padding="5dp"
         android:background="@drawable/bg_grey">
 
         <HorizontalScrollView
             android:layout_width="0dp"
-            android:layout_height="45dp"
+            android:layout_height="80dp"
             android:layout_weight="1"
             android:scrollbars="none">
 
@@ -262,7 +298,5 @@
             android:text="SUBMIT"
             style="@style/bttn_style_yllw"/>
     </RelativeLayout>
-
-
 
 </LinearLayout>
