@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dp"
+    android:gravity="center">
+
+    <!-- File Icon -->
+    <ImageView
+        android:id="@+id/file_icon"
+        android:layout_width="30dp"
+        android:layout_height="35dp"
+        android:src="@drawable/icon_file_generic"/>
+
+    <LinearLayout
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical">
+
+        <!-- File Name -->
+        <TextView
+            android:id="@+id/file_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="10sp"
+            android:textColor="@color/black"
+            android:text="File Name"/>
+
+        <!-- Trash Icon -->
+        <ImageView
+            android:id="@+id/delete_file_bttn"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="2dp"
+            android:src="@drawable/icon_trash"/>
+
+    </LinearLayout>
+
+
+
+</LinearLayout>
