@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navbar_post"
+        android:icon="@drawable/icon_plus_square"
+        android:title="POST" />
+
+    <item
+        android:id="@+id/navbar_home"
+        android:icon="@drawable/icon_home"
+        android:title="HOME" />
+
+    <item
+        android:id="@+id/navbar_map"
+        android:icon="@drawable/icon_pin_area"
+        android:title="MAP" />
+
+    <item
+        android:id="@+id/navbar_user"
+        android:icon="@drawable/icon_user_reg"
+        android:title="USER" />
+</menu>

@@ -35,7 +35,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
     private TextView loginOption, imgUploadCount, fileUploadCount;
-    private ViewFlipper regFormViewFlipper;
+    private ViewFlipper busRegFormViewFlipper;
     private LinearLayout nextBttn1, nextBttn2, nextBttn3, prevBttn1, prevBttn2, prevBttn3;
     private RecyclerView imgIconContainer, fileIconContainer;
     private Button submitBttn;
@@ -62,12 +62,15 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         // ImageViews
         userTypeGeneral = findViewById(R.id.user_type_general);
         userTypeBusiness = findViewById(R.id.user_type_business);
+        userTypeBusiness.setOnClickListener(this);
+        userTypeGeneral.setOnClickListener(this);
         // TextViews
         loginOption = findViewById(R.id.login_opt);
+        loginOption.setOnClickListener(this);
         imgUploadCount = findViewById(R.id.img_upload_count);
         fileUploadCount = findViewById(R.id.file_upload_count);
         // ViewFlipper
-        regFormViewFlipper = findViewById(R.id.reg_form_viewflipper);
+        busRegFormViewFlipper = findViewById(R.id.reg_form_viewflipper);
 
         // Linear Layouts
         nextBttn1 = findViewById(R.id.next_bttn1);
@@ -86,6 +89,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         // Buttons
         submitBttn = findViewById(R.id.submit_bttn);
+        submitBttn.setOnClickListener(this);
         uploadImgBttn = findViewById(R.id.upload_img_bttn);
         uploadImgBttn.setOnClickListener(this);
         uploadFileBttn = findViewById(R.id.upload_file_bttn);
@@ -97,16 +101,17 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         fileIconContainer = findViewById(R.id.file_icon_container);
         fileIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
+        // Lists
         fileList = new ArrayList<>();
         imageList = new ArrayList<>();
 
+        // Adapters
         imageAdapter = new FileAdapter(this, imageList, position -> {
             imageList.remove(position);
             imageAdapter.notifyItemRemoved(position);
             imageAdapter.notifyItemRangeChanged(position, imageList.size());
             imgUploadCount.setText(String.format("(%d)", imageList.size()));
         });
-
         fileAdapter = new FileAdapter(this, fileList, position -> {
             fileList.remove(position);
             fileAdapter.notifyItemRemoved(position);
@@ -121,30 +126,6 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
-        });
-
-        // Set ImageViews On Click Behavior
-        userTypeBusiness.setOnClickListener(v -> {
-            if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, "Business User", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        userTypeGeneral.setOnClickListener(v -> {
-            Intent intent = new Intent(BusinessRegistration.this, GeneralRegistration.class);
-            startActivity(intent);
-        });
-
-        // Return to Login
-        loginOption.setOnClickListener(v -> {
-            Intent intent = new Intent(BusinessRegistration.this, Login.class);
-            startActivity(intent);
-        });
-
-        submitBttn.setOnClickListener(v -> {
-            Toast.makeText(this, "Submitted", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(BusinessRegistration.this, Login.class);
-            startActivity(intent);
         });
     }
 
@@ -191,6 +172,20 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     public void onClick(View view) {
         int bttn_id = view.getId();
 
+        if (bttn_id == R.id.user_type_general) {
+            Intent intent = new Intent(BusinessRegistration.this, GeneralRegistration.class);
+            startActivity(intent);
+        }
+        else if (bttn_id == R.id.user_type_business) {
+            if (!isFinishing() && !isDestroyed()) {
+                Toast.makeText(this, "Business User", Toast.LENGTH_SHORT).show();
+            }
+        }
+        else if (bttn_id == R.id.login_opt) {
+            // Return to Login
+            Intent intent = new Intent(BusinessRegistration.this, Login.class);
+            startActivity(intent);
+        }
         if (bttn_id == R.id.upload_img_bttn) {
             handleImageUpload();
         }
@@ -203,17 +198,22 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         else if (bttn_id == R.id.prev_bttn1 || bttn_id == R.id.prev_bttn2 || bttn_id == R.id.prev_bttn3) {
             prevPage();
         }
+        else if (bttn_id == R.id.submit_bttn) {
+            Toast.makeText(this, "Submitted", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(BusinessRegistration.this, Login.class);
+            startActivity(intent);
+        }
     }
 
     // Form Next Page Function
     private void nextPage() {
-        regFormViewFlipper.showNext();
+        busRegFormViewFlipper.showNext();
         currPage++;
     }
 
     // Form Previous Page Function
     private void prevPage() {
-        regFormViewFlipper.showPrevious();
+        busRegFormViewFlipper.showPrevious();
         currPage--;
     }
 

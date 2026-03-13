@@ -2,6 +2,8 @@ package com.example.everythingbim;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -11,9 +13,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class Login extends AppCompatActivity {
+public class Login extends AppCompatActivity implements View.OnClickListener {
+
+    // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
     private TextView userTypeText, createAccountOption;
+    private Button loginBttn;
+
+    // Variables
     private String currUserType;
     private String[] userTypes = {"General", "Business"};
 
@@ -28,18 +35,27 @@ public class Login extends AppCompatActivity {
         // ImageViews
         userTypeGeneral = findViewById(R.id.user_type_general);
         userTypeBusiness = findViewById(R.id.user_type_business);
+        userTypeGeneral.setOnClickListener(this);
+        userTypeBusiness.setOnClickListener(this);
+
         // TextViews
         userTypeText = findViewById(R.id.user_type_txt);
         createAccountOption = findViewById(R.id.create_account_opt);
+        createAccountOption.setOnClickListener(this);
+
+        // Button
+        loginBttn = findViewById(R.id.login_bttn);
+        loginBttn.setOnClickListener(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
 
-        // Set click listeners for the user type icons
-        userTypeGeneral.setOnClickListener(v -> {
+    private void switchUserType(String userType) {
+        if (userType.equals("General")) {
             // Set background yellow
             userTypeGeneral.setBackgroundResource(R.drawable.pill_bg_yllw);
             // Remove background of Business User Icon
@@ -47,9 +63,8 @@ public class Login extends AppCompatActivity {
             // Change text to "General User"
             userTypeText.setText("General User");
             currUserType = userTypes[0];
-        });
-
-        userTypeBusiness.setOnClickListener(v -> {
+        }
+        else if (userType.equals("Business")) {
             // Set background yellow
             userTypeBusiness.setBackgroundResource(R.drawable.pill_bg_yllw);
             // Remove background of Business User Icon
@@ -57,10 +72,25 @@ public class Login extends AppCompatActivity {
             // Change text to "General User"
             userTypeText.setText("Business User");
             currUserType = userTypes[1];
-        });
+        }
+    }
 
-        // Create Account option
-        createAccountOption.setOnClickListener(v -> {
+    @Override
+    public void onClick(View view) {
+        int bttn_id = view.getId();
+
+        if (bttn_id == R.id.login_bttn) {
+            // Login Button
+            Intent intent = new Intent(Login.this, MainActivity.class);
+            startActivity(intent);
+        }
+        else if (bttn_id == R.id.user_type_general) {
+            switchUserType(userTypes[0]);
+        }
+        else if (bttn_id == R.id.user_type_business) {
+            switchUserType(userTypes[1]);
+        }
+        else if (bttn_id == R.id.create_account_opt) {
             // Create Account option
             if (currUserType.equals("General")) {
                 Intent intent = new Intent(Login.this, GeneralRegistration.class);
@@ -70,7 +100,6 @@ public class Login extends AppCompatActivity {
                 Intent intent = new Intent(Login.this, BusinessRegistration.class);
                 startActivity(intent);
             }
-        });
+        }
     }
-
 }
