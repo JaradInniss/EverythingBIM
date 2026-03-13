@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/business_regis_form_3"
+    android:id="@+id/general_regis_form_2"
     android:layout_width="360dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -30,7 +30,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3 of 4"
+            android:text="2 of 2"
             android:textSize="10dp"
             android:textAlignment="center"
             android:layout_centerInParent="true"/>
@@ -40,7 +40,7 @@
             android:id="@+id/user_type_txt"
             android:layout_width="120dp"
             android:layout_height="wrap_content"
-            android:text="Business User"
+            android:text="General User"
             android:textSize="15dp"
             android:textAlignment="viewEnd"
             android:layout_alignParentEnd="true"
@@ -60,7 +60,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Business Details"
+        android:text="Email Verification"
         android:textSize="15dp"
         android:textColor="@color/black"
         android:fontFamily="@font/roboto_regular"/>
@@ -83,90 +83,100 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
-            android:text="Information provided will be verified."
+            android:text="Enter the 5 digit code sent to the provided email."
             android:textSize="10dp"
             android:textColor="@color/dark_grey"
             android:fontFamily="@font/roboto_light"/>
     </LinearLayout>
 
-    <!-- Username Field -->
-    <EditText
-        android:id="@+id/register_username_et"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="15dp"
-        android:hint="Business Name"
-        style="@style/et_style"/>
-
-    <!-- Password Field -->
-    <EditText
-        android:id="@+id/register_password_et"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="20dp"
-        android:hint="Contact Number"
-        style="@style/et_style"/>
-
-    <!-- Re-enter Password Field -->
-    <EditText
-        android:id="@+id/register_repassword_et"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="20dp"
-        android:hint="Business Address/Location"
-        style="@style/et_style"/>
-
-    <EditText
-        android:id="@+id/register_email"
-        android:layout_width="match_parent"
-        android:layout_height="95dp"
-        android:layout_marginTop="20dp"
-        android:hint="Business Description"
-        android:gravity="top"
-        android:paddingTop="5dp"
-        android:maxLines="10"
-        android:maxWidth="320dp"
-        android:scrollbars="vertical"
-        android:scrollbarThumbVertical="@color/dark"
-        android:scrollbarTrackVertical="@color/light_grey"
-        style="@style/et_style"/>
-
-    <!-- Info Text -->
+    <!-- Digit Fields -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="5dp"
-        android:gravity="center_vertical">
+        android:layout_marginTop="10dp"
+        android:gravity="center">
 
+        <!-- Digit 1 -->
+        <EditText
+            android:id="@+id/digit1"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 2 -->
+        <EditText
+            android:id="@+id/digit2"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 3 -->
+        <EditText
+            android:id="@+id/digit3"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 4 -->
+        <EditText
+            android:id="@+id/digit4"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Digit 5 -->
+        <EditText
+            android:id="@+id/digit5"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_margin="5dp"
+            android:inputType="number"
+            android:maxLength="1"
+            style="@style/email_vf_et_style"/>
+
+        <!-- Check Icon -->
         <ImageView
+            android:id="@+id/check_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/icon_info"
-            app:tint="@color/dark_grey"/>
-
-        <TextView
+            android:layout_margin="5dp"
+            android:src="@drawable/icon_check_circle"
+            android:visibility="gone"/>
+        <!-- Warning Icon -->
+        <ImageView
+            android:id="@+id/warning_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:text="Type of business, services offered, etc."
-            android:textSize="10dp"
-            android:textColor="@color/dark_grey"
-            android:fontFamily="@font/roboto_light"/>
+            android:layout_margin="5dp"
+            android:src="@drawable/icon_warning_circle"
+            android:visibility="gone"/>
     </LinearLayout>
 
     <!-- Form Page Control Buttons -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="70dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp">
 
         <!-- Previous Button -->
         <LinearLayout
-            android:id="@+id/prev_bttn2"
+            android:id="@+id/prev_bttn"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:orientation="horizontal"
@@ -189,30 +199,15 @@
                 android:textSize="16dp"/>
         </LinearLayout>
 
-        <!-- Next Button -->
-        <LinearLayout
-            android:id="@+id/next_bttn3"
+        <!-- Submit Button -->
+        <Button
+            android:id="@+id/submit_bttn"
             android:layout_width="100dp"
             android:layout_height="50dp"
-            android:orientation="horizontal"
             android:layout_alignParentEnd="true"
-            android:gravity="center"
             android:layout_gravity="center_horizontal"
-            android:background="@drawable/pill_bg_yllw">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="NEXT"
-                android:fontFamily="@font/roboto_extrabold"
-                android:textColor="@color/black"
-                android:textSize="16dp"/>
-
-            <ImageView
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:src="@drawable/icon_caret_right"/>
-        </LinearLayout>
+            android:text="SUBMIT"
+            style="@style/bttn_style_yllw"/>
     </RelativeLayout>
 
 </LinearLayout>
