@@ -13,6 +13,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.ktx.Firebase;
+
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
     // UI Elements
@@ -101,5 +103,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 startActivity(intent);
             }
         }
+//        Firebase.analytics.logEvent("login_btn_click, null")
     }
 }
