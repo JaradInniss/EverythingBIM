@@ -18,16 +18,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" >
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.main.MainActivity"
             android:exported="false" />
         <activity
-            android:name=".BusinessRegistration"
+            android:name=".ui.registration.BusinessRegistration"
             android:exported="false" />
         <activity
-            android:name=".GeneralRegistration"
+            android:name=".ui.registration.GeneralRegistration"
             android:exported="false" />
         <activity
-            android:name=".Login"
+            android:name=".ui.login.Login"
             android:exported="false" />
         <activity
             android:name=".SplashActivity"

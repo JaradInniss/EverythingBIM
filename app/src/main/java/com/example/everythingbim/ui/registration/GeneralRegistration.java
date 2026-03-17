@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.registration;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,8 +15,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.everythingbim.R;
+import com.example.everythingbim.ui.login.Login;
 
 public class GeneralRegistration extends AppCompatActivity implements View.OnClickListener {
+
+    private GeneralRegViewModel viewModel;
 
     // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
@@ -35,6 +41,20 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_general_registration);
 
+        viewModel = new ViewModelProvider(this).get(GeneralRegViewModel.class);
+
+        initViews();
+        setupObservers();
+
+        // Set Window Insets
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void initViews() {
         // ImageViews
         userTypeGeneral = findViewById(R.id.user_type_general);
         userTypeBusiness = findViewById(R.id.user_type_business);
@@ -53,25 +73,20 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         // Buttons
         submitBttn = findViewById(R.id.submit_bttn);
         submitBttn.setOnClickListener(this);
+    }
 
-        // Set Window Insets
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+    private void setupObservers() {
+        viewModel.getCurrentPage().observe(this, page -> {
+            genRegFormViewFlipper.setDisplayedChild(page);
         });
-    }
 
-    // Form Next Page Function
-    private void nextPage() {
-        genRegFormViewFlipper.showNext();
-        currPage++;
-    }
-
-    // Form Previous Page Function
-    private void prevPage() {
-        genRegFormViewFlipper.showPrevious();
-        currPage--;
+        // Observe Navigation
+        viewModel.getNavigationEvent().observe(this, destination -> {
+            if (destination != null) {
+                Intent intent = new Intent(GeneralRegistration.this, destination);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -80,28 +95,25 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
         if (bttn_id == R.id.user_type_general) {
             if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, "General User", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Currently General User", Toast.LENGTH_SHORT).show();
             }
         }
         else if (bttn_id == R.id.user_type_business) {
-            Intent intent = new Intent(GeneralRegistration.this, BusinessRegistration.class);
-            startActivity(intent);
+            viewModel.navigateTo(BusinessRegistration.class);
         }
         else if (bttn_id == R.id.login_opt) {
-            // Return to Login
-            Intent intent = new Intent(GeneralRegistration.this, Login.class);
-            startActivity(intent);
+            // Return to Log in
+            viewModel.navigateTo(Login.class);
         }
         else if (bttn_id == R.id.next_bttn) {
-            nextPage();
+            viewModel.nextPage();
         }
         else if (bttn_id == R.id.prev_bttn) {
-            prevPage();
+            viewModel.prevPage();
         }
         else if (bttn_id == R.id.submit_bttn) {
             Toast.makeText(this, "Submitted", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(GeneralRegistration.this, Login.class);
-            startActivity(intent);
+            viewModel.navigateTo(Login.class);
         }
 
     }

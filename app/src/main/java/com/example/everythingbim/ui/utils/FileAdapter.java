@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.utils;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,6 +9,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.everythingbim.R;
+import com.example.everythingbim.data.models.File;
 
 import java.util.List;
 
@@ -46,7 +49,7 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     @Override
     public int getItemCount() {
-        return fileList.size();
+        return fileList != null ? fileList.size() : 0;
     }
 
     // Get Appropriate File Icon
