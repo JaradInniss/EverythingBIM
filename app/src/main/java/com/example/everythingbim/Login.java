@@ -105,4 +105,37 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         }
 //        Firebase.analytics.logEvent("login_btn_click, null")
     }
+
+//    private void loginUser() {
+//        String email = emailEditText.getText().toString().trim();
+//        String password = passwordEditText.getText().toString().trim();
+//
+//        mAuth.signInWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(this, task -> {
+//                    if (task.isSuccessful()) {
+//                        FirebaseUser user = mAuth.getCurrentUser();
+//
+//                        // Check if email is verified
+//                        if (user != null && user.isEmailVerified()) {
+//                            // Email verified - proceed to main app
+//                            Intent intent = new Intent(Login.this, MainActivity.class);
+//                            startActivity(intent);
+//                            finish();
+//                        } else {
+//                            // Email not verified
+//                            Toast.makeText(Login.this,
+//                                    "Please verify your email before logging in",
+//                                    Toast.LENGTH_LONG).show();
+//
+//                            // Option to resend verification
+//                            user.sendEmailVerification();
+//
+//                            // Sign out
+//                            mAuth.signOut();
+//                        }
+//                    } else {
+//                        Toast.makeText(Login.this, "Login failed", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//    }
 }
