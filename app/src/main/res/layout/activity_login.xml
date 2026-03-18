@@ -73,12 +73,21 @@
             android:layout_height="2dp"
             android:background="@color/black"/>
 
+<!--        <EditText-->
+<!--            android:id="@+id/login_username_et"-->
+<!--            android:layout_width="220dp"-->
+<!--            android:layout_height="45dp"-->
+<!--            android:layout_marginTop="20dp"-->
+<!--            android:hint="Username"-->
+<!--            style="@style/et_style"/>-->
+
         <EditText
             android:id="@+id/login_username_et"
             android:layout_width="220dp"
             android:layout_height="45dp"
             android:layout_marginTop="20dp"
-            android:hint="Username"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
             style="@style/et_style"/>
 
         <EditText

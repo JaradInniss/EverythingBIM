@@ -51,7 +51,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     // Firebase variables
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private FirebaseFunctions mFunctions;
+//    private FirebaseFunctions mFunctions;
 
     // Variables
     private int currPage = 1;
@@ -68,7 +68,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         // Initializing Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        mFunctions = FirebaseFunctions.getInstance();
+//        mFunctions = FirebaseFunctions.getInstance();
 
         // ImageViews
         userTypeGeneral = findViewById(R.id.user_type_general);
@@ -237,87 +237,109 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
     // Form Next Page Function
     private void nextPage() {
-        // Validating form 1 before moving to form 2
+        // Validating form 1 before moving form 2
         if (currPage == 1){
             if (!validatePage1()) {
                 return; // Don't proceed if validation fails
             }
 
-            // Instead of showing a demo code, register the user immediately
-            // and let Firebase handle email verification
-            registerUser();
+            // Generate and send verification code
+            sendVerificationCode();
+
+            // Clear any previous digits
+            clearDigitFields();
+        }
+
+        if (currPage < totalPages) {
+            genRegFormViewFlipper.showNext();
+            currPage++;
+            updateNavigationButtons();
         }
     }
 
-    // Register user with Firebase
-    private void registerUser() {
-        String username = usernameEditText.getText().toString().trim();
-        String email = emailEditText.getText().toString().trim();
-        String password = passwordEditText.getText().toString().trim();
+//    // Form Next Page Function
+//    private void nextPage() {
+//        // Validating form 1 before moving to form 2
+//        if (currPage == 1){
+//            if (!validatePage1()) {
+//                return; // Don't proceed if validation fails
+//            }
+//
+//            // Instead of showing a demo code, register the user immediately
+//            // and let Firebase handle email verification
+//            registerUser();
+//        }
+//    }
 
-        // Show loading indicator
-        submitBttn.setEnabled(false);
-        submitBttn.setText("Registering...");
+//    // Register user with Firebase
+//    private void registerUser() {
+//        String username = usernameEditText.getText().toString().trim();
+//        String email = emailEditText.getText().toString().trim();
+//        String password = passwordEditText.getText().toString().trim();
+//
+//        // Show loading indicator
+//        submitBttn.setEnabled(false);
+//        submitBttn.setText("Registering...");
+//
+//        // Create user with email and password
+//        mAuth.createUserWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(this, task -> {
+//                    if (task.isSuccessful()) {
+//                        // Registration success
+//                        FirebaseUser user = mAuth.getCurrentUser();
+//
+//                        // Send email verification
+//                        sendEmailVerification(user);
+//
+//                        // Save user data to Firestore
+//                        saveUserToFirestore(user.getUid(), username, email);
+//                    } else {
+//                        // Registration failed
+//                        registrationFailed(task.getException() != null ?
+//                                task.getException().getMessage() : "Registration failed");
+//                    }
+//                });
+//    }
 
-        // Create user with email and password
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Registration success
-                        FirebaseUser user = mAuth.getCurrentUser();
+//    // Send Firebase email verification
+//    private void sendEmailVerification(FirebaseUser user) {
+//        user.sendEmailVerification()
+//                .addOnCompleteListener(task -> {
+//                    if (task.isSuccessful()) {
+//                        Toast.makeText(GeneralRegistration.this,
+//                                "Verification email sent to " + user.getEmail(),
+//                                Toast.LENGTH_LONG).show();
+//                    } else {
+//                        Toast.makeText(GeneralRegistration.this,
+//                                "Failed to send verification email.",
+//                                Toast.LENGTH_LONG).show();
+//                    }
+//                });
+//    }
 
-                        // Send email verification
-                        sendEmailVerification(user);
-
-                        // Save user data to Firestore
-                        saveUserToFirestore(user.getUid(), username, email);
-                    } else {
-                        // Registration failed
-                        registrationFailed(task.getException() != null ?
-                                task.getException().getMessage() : "Registration failed");
-                    }
-                });
-    }
-
-    // Send Firebase email verification
-    private void sendEmailVerification(FirebaseUser user) {
-        user.sendEmailVerification()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(GeneralRegistration.this,
-                                "Verification email sent to " + user.getEmail(),
-                                Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(GeneralRegistration.this,
-                                "Failed to send verification email.",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-    }
-
-    // Save user data to Firestore
-    protected void saveUserToFirestore(String userId, String username, String email) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("username", username);
-        userData.put("email", email);
-        userData.put("userType", "general");
-        userData.put("emailVerified", true); // Set to true since we verified with code
-        userData.put("createdAt", com.google.firebase.Timestamp.now());
-
-        db.collection("users").document(userId)
-                .set(userData)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(GeneralRegistration.this,
-                            "Registration successful!", Toast.LENGTH_LONG).show();
-                    navigateToLogin();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(GeneralRegistration.this,
-                            "Account created but failed to save profile: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                    navigateToLogin();
-                });
-    }
+//    // Save user data to Firestore
+//    protected void saveUserToFirestore(String userId, String username, String email) {
+//        Map<String, Object> userData = new HashMap<>();
+//        userData.put("username", username);
+//        userData.put("email", email);
+//        userData.put("userType", "general");
+//        userData.put("emailVerified", true); // Set to true since we verified with code
+//        userData.put("createdAt", com.google.firebase.Timestamp.now());
+//
+//        db.collection("users").document(userId)
+//                .set(userData)
+//                .addOnSuccessListener(aVoid -> {
+//                    Toast.makeText(GeneralRegistration.this,
+//                            "Registration successful!", Toast.LENGTH_LONG).show();
+//                    navigateToLogin();
+//                })
+//                .addOnFailureListener(e -> {
+//                    Toast.makeText(GeneralRegistration.this,
+//                            "Account created but failed to save profile: " + e.getMessage(),
+//                            Toast.LENGTH_LONG).show();
+//                    navigateToLogin();
+//                });
+//    }
 
     // Update navigation buttons based on current page
     private void updateNavigationButtons() {
@@ -383,34 +405,43 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         expectedVerificationCode = String.valueOf((int) (Math.random() * 90000) + 10000);
 
         Toast.makeText(this, "Demo mode - Verification code: " + expectedVerificationCode, Toast.LENGTH_LONG).show();
-
-        // Show loading
-        nextBttn.setEnabled(false);
-        nextBttn.setAlpha(0.5f);
-
-        // Call Cloud Function to send email
-        Map<String, Object> data = new HashMap<>();
-        data.put("email", email);
-        data.put("code", expectedVerificationCode);
-
-        mFunctions.getHttpsCallable("sendVerificationCode")
-                .call(data)
-                .addOnCompleteListener(task -> {
-                    nextBttn.setEnabled(true);
-                    nextBttn.setAlpha(1.0f);
-
-                    if (task.isSuccessful()) {
-                        Toast.makeText(GeneralRegistration.this,
-                                "Verification code sent to " + email,
-                                Toast.LENGTH_LONG).show();
-                    } else {
-                        Exception e = task.getException();
-                        Toast.makeText(GeneralRegistration.this,
-                                "Failed to send code: " + (e != null ? e.getMessage() : "Unknown error"),
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
     }
+
+//    // Send verification code to email
+//    private void sendVerificationCode() {
+//        String email = emailEditText.getText().toString().trim();
+//
+//        expectedVerificationCode = String.valueOf((int) (Math.random() * 90000) + 10000);
+//
+//        Toast.makeText(this, "Demo mode - Verification code: " + expectedVerificationCode, Toast.LENGTH_LONG).show();
+//
+//        // Show loading
+//        nextBttn.setEnabled(false);
+//        nextBttn.setAlpha(0.5f);
+//
+//        // Call Cloud Function to send email
+//        Map<String, Object> data = new HashMap<>();
+//        data.put("email", email);
+//        data.put("code", expectedVerificationCode);
+//
+//        mFunctions.getHttpsCallable("sendVerificationCode")
+//                .call(data)
+//                .addOnCompleteListener(task -> {
+//                    nextBttn.setEnabled(true);
+//                    nextBttn.setAlpha(1.0f);
+//
+//                    if (task.isSuccessful()) {
+//                        Toast.makeText(GeneralRegistration.this,
+//                                "Verification code sent to " + email,
+//                                Toast.LENGTH_LONG).show();
+//                    } else {
+//                        Exception e = task.getException();
+//                        Toast.makeText(GeneralRegistration.this,
+//                                "Failed to send code: " + (e != null ? e.getMessage() : "Unknown error"),
+//                                Toast.LENGTH_LONG).show();
+//                    }
+//                });
+//    }
 
     // Clear all digit fields
     private void clearDigitFields() {
@@ -434,81 +465,172 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     // Verify the entered code
     private boolean verifyCode() {
         String enteredCode = getEnteredCode();
-        String email = emailEditText.getText().toString().trim();
 
         if (enteredCode.length() < 5) {
             Toast.makeText(this, "Please enter the complete 5-digit code", Toast.LENGTH_SHORT).show();
             return false;
         }
 
-        // Show loading
-        submitBttn.setEnabled(false);
-        submitBttn.setText("Verifying...");
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("email", email);
-        data.put("code", enteredCode);
-
-        // Call Cloud Function to verify code
-        mFunctions.getHttpsCallable("verifyCode")
-                .call(data)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show();
-
-                        // Now register the user with Firebase Auth
-                        registerUserAfterVerification();
-                    } else {
-                        submitBttn.setEnabled(true);
-                        submitBttn.setText("Submit");
-                        clearDigitFields();
-
-                        Exception e = task.getException();
-                        String errorMsg = e != null ? e.getMessage() : "Invalid code";
-
-                        if (errorMsg.contains("expired")) {
-                            Toast.makeText(this, "Code expired. Please request a new one.", Toast.LENGTH_LONG).show();
-                            // Option to resend
-                        } else {
-                            Toast.makeText(this, "Invalid verification code", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-
-        return false; // Return false immediately, actual result comes from callback
+        if (enteredCode.equals(expectedVerificationCode)) {
+            Toast.makeText(this, "Email verification successful", Toast.LENGTH_SHORT).show();
+            return true;
+        } else {
+            Toast.makeText(this, "Invalid verification code", Toast.LENGTH_SHORT).show();
+            clearDigitFields();
+            return false;
+        }
     }
 
-    private void resendCode() {
-        // Clear digit fields
-        clearDigitFields();
 
-        // Generate new code and send again
-        sendVerificationCode();
-    }
+//    // Verify the entered code
+//    private boolean verifyCode() {
+//        String enteredCode = getEnteredCode();
+//        String email = emailEditText.getText().toString().trim();
+//
+//        if (enteredCode.length() < 5) {
+//            Toast.makeText(this, "Please enter the complete 5-digit code", Toast.LENGTH_SHORT).show();
+//            return false;
+//        }
+//
+//        // Show loading
+//        submitBttn.setEnabled(false);
+//        submitBttn.setText("Verifying...");
+//
+//        Map<String, Object> data = new HashMap<>();
+//        data.put("email", email);
+//        data.put("code", enteredCode);
+//
+//        // Call Cloud Function to verify code
+//        mFunctions.getHttpsCallable("verifyCode")
+//                .call(data)
+//                .addOnCompleteListener(task -> {
+//                    if (task.isSuccessful()) {
+//                        Toast.makeText(this, "Email verified successfully!", Toast.LENGTH_SHORT).show();
+//
+//                        // Now register the user with Firebase Auth
+//                        registerUserAfterVerification();
+//                    } else {
+//                        submitBttn.setEnabled(true);
+//                        submitBttn.setText("Submit");
+//                        clearDigitFields();
+//
+//                        Exception e = task.getException();
+//                        String errorMsg = e != null ? e.getMessage() : "Invalid code";
+//
+//                        if (errorMsg.contains("expired")) {
+//                            Toast.makeText(this, "Code expired. Please request a new one.", Toast.LENGTH_LONG).show();
+//                            // Option to resend
+//                        } else {
+//                            Toast.makeText(this, "Invalid verification code", Toast.LENGTH_LONG).show();
+//                        }
+//                    }
+//                });
+//
+//        return false; // Return false immediately, actual result comes from callback
+//    }
 
-    private void registerUserAfterVerification() {
+    // Register user with Firebase
+    private void registerUser() {
+        // First verifying code
+        if (!verifyCode()) {
+            return;
+        }
+
         String username = usernameEditText.getText().toString().trim();
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();
 
-        submitBttn.setText("Registering...");
+//        // Show loading indicator
+//        submitBttn.setEnabled(false);
+//        submitBttn.setText("Registering...");
 
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
+        // Create user with email and password
+        mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(this, task -> {
+            if (task.isSuccessful()) {
+                // Registration success
+                FirebaseUser user = mAuth.getCurrentUser();
 
-                        // Mark email as verified in Firebase Auth
-                        // Note: Firebase Auth doesn't let us manually set emailVerified
-                        // So we'll track it in Firestore
+                // Save additional user data to Firestore
+                saveUserToFirestore(user.getUid(), username, email);
 
-                        saveUserToFirestore(user.getUid(), username, email);
-                    } else {
-                        registrationFailed(task.getException() != null ?
-                                task.getException().getMessage() : "Registration failed");
-                    }
+                // Send email verification
+                sendFirebaseEmailVerification(user);
+            } else {
+                // Registration failed
+                registrationFailed(task.getException() != null ? task.getException().getMessage() : "Registration failed");
+            }
+        });
+    }
+
+    // Save user data to Firestore
+    protected void saveUserToFirestore(String userId, String username, String email) {
+        // Create a user data map
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("username", username);
+        userData.put("email", email);
+        userData.put("userType", "general");
+        userData.put("emailVerified", true);
+        userData.put("createdAt", com.google.firebase.Timestamp.now());
+
+        // Save to Firestore
+        db.collection("users").document(userId).set(userData).addOnSuccessListener(aVoid  -> {
+                    // Data saved successfully
+                    Toast.makeText(GeneralRegistration.this, "Registration successful", Toast.LENGTH_LONG).show();
+
+                    //Navigate to Login
+                    navigateToLogin();
+                })
+                .addOnFailureListener(e -> {
+                    // Failed to save data but account was created
+                    Toast.makeText(GeneralRegistration.this, "Account created but failed to save profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+
+                    // Navigate to Login
+                    navigateToLogin();
                 });
     }
+
+    // Send Firebase email verification
+    private void sendFirebaseEmailVerification(FirebaseUser user) {
+        user.sendEmailVerification().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(GeneralRegistration.this, "Email verification sent", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(GeneralRegistration.this, "Failed to send email verification", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+//    private void resendCode() {
+//        // Clear digit fields
+//        clearDigitFields();
+//
+//        // Generate new code and send again
+//        sendVerificationCode();
+//    }
+
+//    private void registerUserAfterVerification() {
+//        String username = usernameEditText.getText().toString().trim();
+//        String email = emailEditText.getText().toString().trim();
+//        String password = passwordEditText.getText().toString().trim();
+//
+//        submitBttn.setText("Registering...");
+//
+//        mAuth.createUserWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(this, task -> {
+//                    if (task.isSuccessful()) {
+//                        FirebaseUser user = mAuth.getCurrentUser();
+//
+//                        // Mark email as verified in Firebase Auth
+//                        // Note: Firebase Auth doesn't let us manually set emailVerified
+//                        // So we'll track it in Firestore
+//
+//                        saveUserToFirestore(user.getUid(), username, email);
+//                    } else {
+//                        registrationFailed(task.getException() != null ?
+//                                task.getException().getMessage() : "Registration failed");
+//                    }
+//                });
+//    }
 
     // Handle resistration failure
     private void registrationFailed(String errorMessage) {
