@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.registration;
 
 import android.Manifest;
 import android.content.Intent;
@@ -24,13 +24,22 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.everythingbim.data.models.File;
+import com.example.everythingbim.ui.utils.FileAdapter;
+import com.example.everythingbim.ui.utils.FilePicker;
+import com.example.everythingbim.R;
+import com.example.everythingbim.ui.login.Login;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
+
+    private BusinessRegViewModel viewModel;
 
     // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
@@ -41,12 +50,11 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     private Button submitBttn;
     private ImageButton uploadImgBttn, uploadFileBttn;
 
-    // Class Imports
+    // Util Classes
     FilePicker filePicker = new FilePicker();
     private FileAdapter imageAdapter, fileAdapter;
 
     // Variables
-    private int currPage = 1;
     private final int MEDIA_PERMISSION_REQUEST_CODE = 100;
     private static final int FILE_PICKER_IMAGE_REQUEST_CODE = 105;
     private static final int FILE_PICKER_FILE_REQUEST_CODE = 110;
@@ -59,6 +67,24 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_business_registration);
 
+        viewModel = new ViewModelProvider(this).get(BusinessRegViewModel.class);
+
+        // Lists
+        fileList = new ArrayList<>();
+        imageList = new ArrayList<>();
+
+        initViews();
+        setupObservers();
+
+        // Set Window Insets
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void initViews() {
         // ImageViews
         userTypeGeneral = findViewById(R.id.user_type_general);
         userTypeBusiness = findViewById(R.id.user_type_business);
@@ -101,10 +127,6 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         fileIconContainer = findViewById(R.id.file_icon_container);
         fileIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
-        // Lists
-        fileList = new ArrayList<>();
-        imageList = new ArrayList<>();
-
         // Adapters
         imageAdapter = new FileAdapter(this, imageList, position -> {
             imageList.remove(position);
@@ -120,12 +142,34 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         });
         imgIconContainer.setAdapter(imageAdapter);
         fileIconContainer.setAdapter(fileAdapter);
+    }
 
-        // Set Window Insets
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+    private void setupObservers() {
+        // Observe Page Changes
+        viewModel.getCurrentPage().observe(this, page -> {
+            busRegFormViewFlipper.setDisplayedChild(page);
+        });
+
+        // Observe Image List Changes
+        viewModel.getImageList().observe(this, imageList -> {
+            // Update Adapter
+            imageAdapter.notifyDataSetChanged();
+            imgUploadCount.setText(String.format("(%d)", imageList.size()));
+        });
+
+        // Observe File List Changes
+        viewModel.getFileList().observe(this, fileList -> {
+            // Update Adapter
+            fileAdapter.notifyDataSetChanged();
+            fileUploadCount.setText(String.format("(%d)", fileList.size()));
+        });
+
+        // Observe Navigation
+        viewModel.getNavigationEvent().observe(this, destination -> {
+            if (destination != null) {
+                Intent intent = new Intent(BusinessRegistration.this, destination);
+                startActivity(intent);
+            }
         });
     }
 
@@ -173,18 +217,16 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         int bttn_id = view.getId();
 
         if (bttn_id == R.id.user_type_general) {
-            Intent intent = new Intent(BusinessRegistration.this, GeneralRegistration.class);
-            startActivity(intent);
+            viewModel.navigateTo(GeneralRegistration.class);
         }
         else if (bttn_id == R.id.user_type_business) {
             if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, "Business User", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Currently Business User", Toast.LENGTH_SHORT).show();
             }
         }
         else if (bttn_id == R.id.login_opt) {
-            // Return to Login
-            Intent intent = new Intent(BusinessRegistration.this, Login.class);
-            startActivity(intent);
+            // Return to Log in
+            viewModel.navigateTo(Login.class);
         }
         if (bttn_id == R.id.upload_img_bttn) {
             handleImageUpload();
@@ -193,28 +235,15 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             handleFileUpload();
         }
         else if (bttn_id == R.id.next_bttn1 || bttn_id == R.id.next_bttn2 || bttn_id == R.id.next_bttn3) {
-            nextPage();
+            viewModel.nextPage();
         }
         else if (bttn_id == R.id.prev_bttn1 || bttn_id == R.id.prev_bttn2 || bttn_id == R.id.prev_bttn3) {
-            prevPage();
+            viewModel.prevPage();
         }
         else if (bttn_id == R.id.submit_bttn) {
             Toast.makeText(this, "Submitted", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(BusinessRegistration.this, Login.class);
-            startActivity(intent);
+            viewModel.navigateTo(Login.class);
         }
-    }
-
-    // Form Next Page Function
-    private void nextPage() {
-        busRegFormViewFlipper.showNext();
-        currPage++;
-    }
-
-    // Form Previous Page Function
-    private void prevPage() {
-        busRegFormViewFlipper.showPrevious();
-        currPage--;
     }
 
     // Image Upload Function
@@ -249,8 +278,8 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             String name = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
             long size = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE));
             cursor.close();
-
             String mimeType = getContentResolver().getType(uri);
+
             File file = new File(name, mimeType, uri, size);
             targetList.add(file);
             targetAdapter.notifyDataSetChanged();

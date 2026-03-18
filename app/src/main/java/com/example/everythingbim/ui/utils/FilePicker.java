@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.utils;
 
 import android.app.Activity;
 import android.content.Intent;

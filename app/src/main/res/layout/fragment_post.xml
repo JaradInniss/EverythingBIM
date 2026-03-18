@@ -3,12 +3,307 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".PostFragment">
+    android:background="@color/dark"
+    tools:context=".ui.posts.PostFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Post" />
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Create Post Heading -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_medium"
+            android:text="Create Post"
+            android:textColor="@color/white"
+            android:textSize="16dp" />
+
+        <!-- Searchbar and dropdown-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:orientation="vertical">
+
+            <!-- Searchbar -->
+            <LinearLayout
+                android:id="@+id/search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/pill_bg_yllw_gradnt"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp">
+
+                <!-- Location Field -->
+                <EditText
+                    android:id="@+id/search_et"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:fontFamily="@font/roboto_medium"
+                    android:hint="Location"
+                    android:inputType="text"
+                    android:singleLine="true"
+                    android:textSize="12dp" />
+
+                <!-- Search Button -->
+                <ImageView
+                    android:id="@+id/search_bttn"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginRight="10dp"
+                    android:src="@drawable/icon_magnifying_glass"
+                    android:tint="@color/black" />
+
+            </LinearLayout>
+
+            <!-- Dropdown -->
+            <ScrollView
+                android:id="@+id/search_dropdown"
+                android:layout_width="380dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/bg_dropdown"
+                android:visibility="invisible">
+
+                <!-- Search Result Container -->
+                <LinearLayout
+                    android:id="@+id/search_result_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                </LinearLayout>
+            </ScrollView>
+
+        </LinearLayout>
+
+        <!-- Image Field -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_grey"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <!-- Image Field Heading -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_regular"
+                android:text="Image:"
+                android:textColor="@color/black"
+                android:textSize="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <!-- Camera Option -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="30dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageButton
+                        android:id="@+id/camera_opt_bttn"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/pill_bg_yllw_gradnt"
+                        android:elevation="8dp"
+                        android:src="@drawable/icon_camera" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_light"
+                        android:text="Take Photo"
+                        android:textColor="@color/dark_grey"
+                        android:textSize="10dp" />
+                </LinearLayout>
+
+                <!-- Gallery Option -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="30dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageButton
+                        android:id="@+id/gallery_opt_bttn"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/pill_bg_yllw_gradnt"
+                        android:elevation="8dp"
+                        android:src="@drawable/icon_images" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_light"
+                        android:text="Gallery"
+                        android:textColor="@color/dark_grey"
+                        android:textSize="10dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Caption Field -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_grey"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <!-- Caption Field Heading -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_regular"
+                android:text="Caption:"
+                android:textColor="@color/black"
+                android:textSize="12dp"/>
+
+            <EditText
+                android:id="@+id/caption_et"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5dp"
+                android:gravity="top|start"
+                android:inputType="textMultiLine"
+                android:background="@null"
+                android:textColor="@color/black"
+                android:textSize="12dp"/>
+        </LinearLayout>
+
+        <!-- Tag User Field -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_grey"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <!-- Tag User Field Heading -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_regular"
+                android:text="Tag User:"
+                android:textColor="@color/black"
+                android:textSize="12dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="5dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bttn_bg_blue">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="8dp"
+                    android:paddingTop="3dp"
+                    android:text="\@"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/roboto_extrabold"/>
+
+                <EditText
+                    android:id="@+id/user_tag_et"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:textColor="@color/white"
+                    android:textSize="12dp"
+                    android:fontFamily="@font/roboto_regular"
+                    android:singleLine="true"/>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="5dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@drawable/icon_plus"
+                    android:tint="@color/black"/>
+
+                <HorizontalScrollView
+                    android:layout_width="0dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:scrollbars="none">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/tags_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+                </HorizontalScrollView>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Submit Button -->
+        <LinearLayout
+            android:id="@+id/prev_bttn2"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="50dp"
+            android:background="@drawable/bttn_bg_grey"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginRight="8dp"
+                android:src="@drawable/icon_plus" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_bold"
+                android:text="Share"
+                android:textColor="@color/white"
+                android:textSize="14dp" />
+        </LinearLayout>
+
+    </LinearLayout>
 
 </FrameLayout>
