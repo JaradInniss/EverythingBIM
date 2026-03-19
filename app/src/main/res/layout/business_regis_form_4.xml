@@ -84,9 +84,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:text="Information provided will be verified."
-            android:textSize="10dp"
-            android:textColor="@color/dark_grey"
-            android:fontFamily="@font/roboto_light"/>
+            style="@style/info_txt_style"/>
     </LinearLayout>
 
     <LinearLayout
@@ -167,9 +165,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:text="Allowed File Type: .JPEG, .PNG"
-            android:textSize="10dp"
-            android:textColor="@color/dark_grey"
-            android:fontFamily="@font/roboto_light"/>
+            style="@style/info_txt_style"/>
     </LinearLayout>
 
     <LinearLayout
@@ -250,9 +246,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:text="Allowed File Type: .PDF, .JPEG, .PNG"
-            android:textSize="10dp"
-            android:textColor="@color/dark_grey"
-            android:fontFamily="@font/roboto_light"/>
+            style="@style/info_txt_style"/>
     </LinearLayout>
 
     <!-- Form Page Control Buttons -->

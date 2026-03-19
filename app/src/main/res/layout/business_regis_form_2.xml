@@ -84,9 +84,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
             android:text="Enter the 5 digit code sent to the provided email."
-            android:textSize="10dp"
-            android:textColor="@color/dark_grey"
-            android:fontFamily="@font/roboto_light"/>
+            style="@style/info_txt_style"/>
     </LinearLayout>
 
     <!-- Digit Fields -->

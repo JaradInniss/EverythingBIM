@@ -10,17 +10,8 @@
     tools:context=".SplashActivity">
 
     <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:src="@drawable/everything_bim_icon"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="5dp"
-        android:text="Everything BIM"
-        android:textColor="@color/black"
-        android:textSize="20dp"
-        android:fontFamily="@font/roboto_extrabold"/>
 
 </LinearLayout>

@@ -17,10 +17,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/roboto_medium"
             android:text="Create Post"
-            android:textColor="@color/white"
-            android:textSize="16dp" />
+            style="@style/heading_txt_style"/>
 
         <!-- Searchbar and dropdown-->
         <LinearLayout
@@ -52,7 +50,8 @@
                     android:hint="Location"
                     android:inputType="text"
                     android:singleLine="true"
-                    android:textSize="12dp" />
+                    android:textSize="15dp"
+                    android:textColor="@color/black"/>
 
                 <!-- Search Button -->
                 <ImageView
@@ -89,9 +88,7 @@
                 android:fontFamily="@font/roboto_regular"
                 android:text="Image:"
                 android:textColor="@color/black"
-                android:textSize="12dp" />
-
-            <!-- Uploaded Image Display -->
+                android:textSize="15dp" />
 
             <!-- Upload Options -->
             <LinearLayout
@@ -124,7 +121,7 @@
                         android:fontFamily="@font/roboto_light"
                         android:text="Take Photo"
                         android:textColor="@color/black"
-                        android:textSize="10dp" />
+                        android:textSize="12dp" />
                 </LinearLayout>
 
                 <!-- Gallery Option -->
@@ -151,7 +148,7 @@
                         android:fontFamily="@font/roboto_light"
                         android:text="Gallery"
                         android:textColor="@color/black"
-                        android:textSize="10dp" />
+                        android:textSize="12dp" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -173,7 +170,7 @@
                 android:fontFamily="@font/roboto_regular"
                 android:text="Caption:"
                 android:textColor="@color/black"
-                android:textSize="12dp" />
+                android:textSize="15dp" />
 
             <EditText
                 android:id="@+id/caption_et"
@@ -203,7 +200,7 @@
                 android:fontFamily="@font/roboto_regular"
                 android:text="Tag User:"
                 android:textColor="@color/black"
-                android:textSize="12dp"/>
+                android:textSize="15dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -269,7 +266,7 @@
         <LinearLayout
             android:id="@+id/prev_bttn2"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
+            android:layout_height="40dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="50dp"
             android:background="@drawable/bttn_bg_grey"
@@ -282,7 +279,8 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_marginRight="8dp"
-                android:src="@drawable/icon_plus" />
+                android:src="@drawable/icon_plus"
+                android:tint="@color/white"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -290,7 +288,7 @@
                 android:fontFamily="@font/roboto_bold"
                 android:text="Share"
                 android:textColor="@color/white"
-                android:textSize="14dp" />
+                android:textSize="15dp" />
         </LinearLayout>
 
     </LinearLayout>

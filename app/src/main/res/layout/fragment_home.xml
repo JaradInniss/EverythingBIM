@@ -3,12 +3,133 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.home.HomeFragment">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.home.HomeFragment"
+    android:background="@color/dark">
+    
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/barbados_outline"
+        android:layout_gravity="center"/>
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="end"
+        android:layout_marginTop="15dp"
+        android:layout_marginRight="15dp"
+        android:padding="5dp">
+
+        <ImageButton
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_clock_reverse"
+            android:background="@drawable/bg_grey"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="View History"
+            android:textColor="@color/light_grey"
+            style="@style/info_txt_style"/>
+
+    </LinearLayout>
+
+
+    
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Home" />
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/image_upload_opts_container"
+            android:layout_marginBottom="80dp"
+            android:layout_centerHorizontal="true"
+            android:text="Welcome User"
+            style="@style/heading_txt_style" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/image_upload_opts_container"
+            android:layout_marginBottom="40dp"
+            android:layout_centerHorizontal="true"
+            android:text="Use Our AI To Identify Anywhere On BIM"
+            style="@style/subheading_txt_style" />
+
+        <!-- Upload Options -->
+        <LinearLayout
+            android:id="@+id/image_upload_opts_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Camera Option -->
+            <LinearLayout
+                android:layout_width="100dp"
+                android:layout_height="124dp"
+                android:layout_marginRight="30dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:background="@drawable/bg_grey">
+
+                <ImageButton
+                    android:id="@+id/camera_opt_bttn"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_dark"
+                    android:elevation="8dp"
+                    android:src="@drawable/icon_camera"
+                    app:tint="@color/white"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_light"
+                    android:text="Take Photo"
+                    android:textColor="@color/black"
+                    android:textSize="12dp" />
+            </LinearLayout>
+
+            <!-- Gallery Option -->
+            <LinearLayout
+                android:layout_width="100dp"
+                android:layout_height="124dp"
+                android:layout_marginLeft="30dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:background="@drawable/bg_grey">
+
+                <ImageButton
+                    android:id="@+id/gallery_opt_bttn"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_dark"
+                    android:elevation="8dp"
+                    android:src="@drawable/icon_images"
+                    app:tint="@color/white"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_light"
+                    android:text="Gallery"
+                    android:textColor="@color/black"
+                    android:textSize="12dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </RelativeLayout>
+
 
 </FrameLayout>

@@ -24,6 +24,7 @@
             android:src="@drawable/icon_caret_left"
             android:background="@android:color/transparent"
             android:contentDescription="Go back"
+            android:tint="@color/white"
             android:layout_marginEnd="8dp" />
 
         <LinearLayout
@@ -61,14 +62,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:background="@color/light_grey"
+            android:padding="10dp">
 
+            <!-- Add Location Form -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/add_locreq_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardElevation="4dp"
-                app:cardCornerRadius="12dp"
+                app:cardElevation="10dp"
+                app:cardCornerRadius="5dp"
                 app:cardBackgroundColor="@color/white">
 
                 <LinearLayout
@@ -81,46 +84,70 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginBottom="10dp"
                         android:text="Complete The Form With The Required Information"
                         android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:gravity="center"
-                        android:layout_marginBottom="12dp" />
+                        android:textSize="14sp"/>
 
-                    <!-- Location search bar -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/location_search_layout"
-                        android:layout_width="320dp"
-                        android:layout_height="35dp"
-                        android:hint="Location"
-                        app:boxBackgroundMode="outline"
-                        app:boxStrokeColor="@color/light_grey"
-                        app:boxStrokeWidth="1dp"
-                        app:boxStrokeWidthFocused="2dp"
-                        app:hintTextColor="@color/light_grey"
-                        app:endIconMode="custom"
-                        app:endIconDrawable="@drawable/icon_search"
-                        android:background="@drawable/bg_rounded"
-                        android:layout_marginStart="20dp"
-                        android:layout_marginBottom="12dp">
+                    <!-- Searchbar and dropdown-->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="10dp"
+                        android:orientation="vertical">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/location_search_et"
+                        <!-- Searchbar -->
+                        <LinearLayout
+                            android:id="@+id/search_bar"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center_horizontal"
+                            android:background="@drawable/pill_bg_grey"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="8dp">
+
+                            <!-- Location Field -->
+                            <EditText
+                                android:id="@+id/search_et"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="10dp"
+                                android:layout_weight="1"
+                                android:background="@null"
+                                android:fontFamily="@font/roboto_medium"
+                                android:hint="Location"
+                                android:inputType="text"
+                                android:singleLine="true"
+                                android:textSize="12dp"
+                                android:textColor="@color/black"/>
+
+                            <!-- Search Button -->
+                            <ImageView
+                                android:id="@+id/search_bttn"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginRight="10dp"
+                                android:src="@drawable/icon_magnifying_glass"
+                                app:tint="@color/black" />
+                        </LinearLayout>
+
+                        <ListView
+                            android:id="@+id/search_results_list"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="text"
-                            android:textSize="14sp"
-                            android:padding="12dp"
-                            android:background="@android:color/transparent"/>
-
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:visibility="gone"/>
+                    </LinearLayout>
 
                     <!-- Map - Needs to Added  -->
                     <View
                         android:id="@+id/add_locreq_map"
                         android:layout_width="match_parent"
                         android:layout_height="90dp"
-                        android:background="@color/light_grey"
+                        android:background="@drawable/bg_grey"
                         android:layout_marginBottom="16dp" />
 
                     <!-- Location Name -->
@@ -130,7 +157,7 @@
                         android:text="Location Name"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:layout_marginBottom="6dp" />
+                        android:layout_marginBottom="5dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/location_name_layout"
@@ -140,16 +167,16 @@
                         app:boxStrokeColor="@color/light_grey"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="2dp"
-                        android:background="@drawable/bg_rounded"
-                        android:layout_marginBottom="16dp">
+                        android:background="@drawable/bg_grey"
+                        android:layout_marginBottom="10dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/location_name_et"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="text"
-                            android:textSize="14sp"
-                            android:padding="12dp"
+                            android:textSize="12sp"
+                            android:padding="10dp"
                             android:background="@android:color/transparent"/>
 
                     </com.google.android.material.textfield.TextInputLayout>
@@ -161,7 +188,7 @@
                         android:text="Location Description"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:layout_marginBottom="6dp" />
+                        android:layout_marginBottom="5dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/location_desc_layout"
@@ -171,8 +198,8 @@
                         app:boxStrokeColor="@color/light_grey"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="2dp"
-                        android:background="@drawable/bg_rounded"
-                        android:layout_marginBottom="16dp">
+                        android:background="@drawable/bg_grey"
+                        android:layout_marginBottom="10dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/location_desc_et"
@@ -180,8 +207,8 @@
                             android:layout_height="100dp"
                             android:inputType="textMultiLine"
                             android:gravity="top"
-                            android:textSize="14sp"
-                            android:padding="12dp"
+                            android:textSize="12sp"
+                            android:padding="10dp"
                             android:background="@android:color/transparent"/>
 
                     </com.google.android.material.textfield.TextInputLayout>
@@ -193,16 +220,16 @@
                         android:text="Reason For Request"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:layout_marginBottom="6dp" />
+                        android:layout_marginBottom="5dp" />
 
                     <Spinner
                         android:id="@+id/reason_spinner"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_rounded"
-                        android:padding="12dp"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="16dp" />
+                        android:background="@drawable/bg_grey"
+                        android:padding="10dp"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="10dp" />
 
                     <!-- Images of Location -->
                     <TextView
@@ -211,67 +238,73 @@
                         android:text="Images of Location"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:layout_marginBottom="6dp" />
+                        android:layout_marginBottom="5dp" />
 
+                    <!-- Image Upload Field -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
+                        android:layout_marginTop="5dp"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="4dp">
+                        android:padding="5dp"
+                        android:background="@drawable/bg_grey">
 
-                        <!-- Image previews -->
                         <HorizontalScrollView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="80dp"
                             android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:background="@drawable/bg_rounded">
+                            android:scrollbars="none">
 
-                            <LinearLayout
-                                android:id="@+id/image_preview_container"
-                                android:layout_width="wrap_content"
-                                android:layout_height="60dp"
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/img_icon_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
                                 android:orientation="horizontal"
-                                android:padding="4dp"
-                                android:gravity="center_vertical" />
+                                android:padding="4dp"/>
 
                         </HorizontalScrollView>
 
-                        <!-- Attach button -->
                         <ImageButton
-                            android:id="@+id/attach_image_btn"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:id="@+id/upload_img_bttn"
+                            android:layout_width="45dp"
+                            android:layout_height="45dp"
                             android:src="@drawable/icon_paperclip"
-                            android:background="@drawable/bg_rounded_button"
-                            android:contentDescription="Attach images"
-                            android:clickable="true"
-                            android:focusable="true" />
-
+                            android:background="@drawable/bg_grey"/>
                     </LinearLayout>
 
-                    <!-- Allowed formats hint -->
-                    <TextView
+                    <!-- Info Text -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⊙ Allowed: jpeg, png"
-                        android:textColor="@color/light_grey"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="20dp" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center_vertical">
 
-                    <!-- Submit button -->
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/icon_info"
+                            app:tint="@color/dark_grey"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dp"
+                            android:text="Allowed File Type: .PDF, .JPEG, .PNG"
+                            style="@style/info_txt_style"/>
+                    </LinearLayout>
+
+                    <!-- Submit Button -->
                     <Button
-                        android:id="@+id/submit_btn"
+                        android:id="@+id/submit_bttn"
                         android:layout_width="100dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="50dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
                         android:text="SUBMIT"
-                        android:textColor="@color/black"
-                        android:textStyle="bold"
-                        android:textSize="16sp"
-                        android:backgroundTint="#FFD700"
-                        android:layout_marginBottom="8dp"
-                        android:layout_gravity="center"/>
+                        style="@style/bttn_style_yllw"/>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

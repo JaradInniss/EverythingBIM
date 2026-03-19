@@ -7,148 +7,188 @@
     android:layout_height="match_parent"
     android:padding="10dp"
     android:gravity="center"
+    android:background="@color/white"
     tools:context=".ui.login.Login">
 
-    <!-- User Type Selection -->
-    <LinearLayout
-        android:id="@+id/user_type_selection"
-        android:layout_width="75dp"
-        android:layout_height="220dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:layout_marginTop="80dp"
-        android:layout_marginRight="20dp"
-        android:background="@drawable/pill_bg_pale_grey"
-        android:layout_toLeftOf="@id/login_form"
-        android:elevation="20dp">
-
-        <ImageView
-            android:id="@+id/user_type_general"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="20dp"
-            android:paddingRight="10dp"
-            android:paddingLeft="10dp"
-            android:paddingBottom="20dp"
-            android:layout_marginBottom="20dp"
-            android:background="@drawable/pill_bg_yllw"
-            android:src="@drawable/icon_user_bold"/>
-
-        <ImageView
-            android:id="@+id/user_type_business"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="20dp"
-            android:paddingRight="10dp"
-            android:paddingLeft="10dp"
-            android:paddingBottom="20dp"
-            android:layout_marginTop="20dp"
-            android:src="@drawable/icon_storefront_bold"/>
-
-    </LinearLayout>
-
-    <!-- Login Form -->
-    <LinearLayout
-        android:id="@+id/login_form"
+    <!-- Logo -->
+    <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:background="@drawable/bttn_bg_pale_grey"
-        android:elevation="10dp">
+        android:layout_above="@id/login_form_container"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true">
+
+        <ImageView
+            android:id="@+id/trident"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/trident"/>
 
         <TextView
-            android:id="@+id/user_type_txt"
+            android:id="@+id/title_txt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="8dp"
-            android:text="General User"
-            android:textSize="15dp"
-            android:fontFamily="@font/roboto_bold"
-            android:textColor="@color/black"/>
+            android:layout_toRightOf="@id/trident"
+            android:layout_marginStart="-17dp"
+            android:layout_marginTop="40dp"
+            android:text="verything BIM"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:fontFamily="@font/roboto_extrabold"/>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="@color/black"/>
+    </RelativeLayout>
 
-<!--        <EditText-->
-<!--            android:id="@+id/login_username_et"-->
-<!--            android:layout_width="220dp"-->
-<!--            android:layout_height="45dp"-->
-<!--            android:layout_marginTop="20dp"-->
-<!--            android:hint="Username"-->
-<!--            style="@style/et_style"/>-->
 
-        <EditText
-            android:id="@+id/login_username_et"
-            android:layout_width="220dp"
-            android:layout_height="45dp"
-            android:layout_marginTop="20dp"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
-            style="@style/et_style"/>
+    <LinearLayout
+        android:id="@+id/login_form_container"
+        android:layout_width="match_parent"
+        android:layout_height="450dp"
+        android:orientation="horizontal"
+        android:gravity="center">
 
-        <EditText
-            android:id="@+id/login_password_et"
-            android:layout_width="220dp"
-            android:layout_height="45dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
-            android:hint="Password"
-            style="@style/et_style"/>
-        
+        <!-- User Type Selection -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            
-            <Button
-                android:id="@+id/login_bttn"
-                android:layout_width="100dp"
-                android:layout_height="50dp"
-                android:text="LOGIN"
-                style="@style/bttn_style_yllw"/>
-            
-            <CheckBox
-                android:id="@+id/remember_me_check"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_marginLeft="20dp"
-                />
-            
-            <TextView
-                android:layout_width="60dp"
-                android:layout_height="30dp"
-                android:layout_marginLeft="5dp"
-                android:text="Remember Me?"
-                android:textSize="12dp"
-                android:textAlignment="center"/>
+            android:id="@+id/user_type_selection"
+            android:layout_width="75dp"
+            android:layout_height="220dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/pill_bg_pale_grey"
+            android:layout_toLeftOf="@id/login_form"
+            android:elevation="20dp">
+
+            <ImageView
+                android:id="@+id/user_type_general"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="20dp"
+                android:paddingRight="10dp"
+                android:paddingLeft="10dp"
+                android:paddingBottom="20dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/pill_bg_yllw"
+                android:src="@drawable/icon_user_bold"/>
+
+            <ImageView
+                android:id="@+id/user_type_business"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="20dp"
+                android:paddingRight="10dp"
+                android:paddingLeft="10dp"
+                android:paddingBottom="20dp"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/icon_storefront_bold"/>
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/forgot_password_bttn"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:layout_gravity="center"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:layout_marginTop="20dp"
-            android:text="Forgot Password?"
-            android:background="@drawable/pill_bg_yllw"/>
-
-        <TextView
-            android:id="@+id/create_account_opt"
+        <!-- Login Form -->
+        <LinearLayout
+            android:id="@+id/login_form"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:text="Create Account"
-            android:fontFamily="@font/roboto_bold"
-            android:textColor="@color/blue"/>
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="@drawable/bttn_bg_pale_grey"
+            android:elevation="10dp">
+
+            <TextView
+                android:id="@+id/user_type_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="8dp"
+                android:text="General User"
+                android:textSize="15dp"
+                android:fontFamily="@font/roboto_bold"
+                android:textColor="@color/black"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/black"/>
+
+            <!--        <EditText-->
+            <!--            android:id="@+id/login_username_et"-->
+            <!--            android:layout_width="220dp"-->
+            <!--            android:layout_height="45dp"-->
+            <!--            android:layout_marginTop="20dp"-->
+            <!--            android:hint="Username"-->
+            <!--            style="@style/et_style"/>-->
+
+            <EditText
+                android:id="@+id/login_username_et"
+                android:layout_width="220dp"
+                android:layout_height="45dp"
+                android:layout_marginTop="20dp"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                style="@style/et_style"/>
+
+            <EditText
+                android:id="@+id/login_password_et"
+                android:layout_width="220dp"
+                android:layout_height="45dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp"
+                android:hint="Password"
+                android:inputType="textPassword"
+                style="@style/et_style"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <Button
+                    android:id="@+id/login_bttn"
+                    android:layout_width="100dp"
+                    android:layout_height="50dp"
+                    android:text="LOGIN"
+                    style="@style/bttn_style_yllw"/>
+
+                <CheckBox
+                    android:id="@+id/remember_me_check"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="20dp"
+                    />
+
+                <TextView
+                    android:layout_width="60dp"
+                    android:layout_height="30dp"
+                    android:layout_marginLeft="5dp"
+                    android:text="Remember Me?"
+                    android:textSize="12dp"
+                    android:textAlignment="center"/>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/forgot_password_bttn"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:layout_marginTop="20dp"
+                android:text="Forgot Password?"
+                android:textColor="@color/black"
+                android:background="@drawable/pill_bg_yllw"/>
+
+            <TextView
+                android:id="@+id/create_account_opt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="20dp"
+                android:text="Create Account"
+                android:fontFamily="@font/roboto_bold"
+                android:textColor="@color/blue"/>
+        </LinearLayout>
+
     </LinearLayout>
 
 </RelativeLayout>

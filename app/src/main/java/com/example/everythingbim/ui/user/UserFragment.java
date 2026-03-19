@@ -35,18 +35,18 @@ public class UserFragment extends Fragment {
         switchUserLayout(userType);
 
         // General User Email edit toggle
-        view.findViewById(R.id.edit_email_btn).setOnClickListener(v -> {
+        view.findViewById(R.id.general_user_edit_email_btn).setOnClickListener(v -> {
             toggleFieldEdit(
-                    view.findViewById(R.id.edit_email_et),
-                    (ImageButton) view.findViewById(R.id.edit_email_btn)
+                    view.findViewById(R.id.general_user_edit_email_et),
+                    (ImageButton) view.findViewById(R.id.general_user_edit_email_btn)
             );
         });
 
         // General User Password edit toggle
-        view.findViewById(R.id.edit_password_btn).setOnClickListener(v -> {
+        view.findViewById(R.id.general_user_edit_password_btn).setOnClickListener(v -> {
             toggleFieldEdit(
-                    view.findViewById(R.id.edit_password_et),
-                    (ImageButton) view.findViewById(R.id.edit_password_btn)
+                    view.findViewById(R.id.general_user_edit_password_et),
+                    (ImageButton) view.findViewById(R.id.general_user_edit_password_btn)
             );
         });
 
