@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -34,7 +35,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_gravity="center_horizontal"
-                android:background="@drawable/pill_bg_yllw_gradnt"
+                android:background="@drawable/pill_bg_pale_grey"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="8dp">
@@ -60,30 +61,14 @@
                     android:layout_height="16dp"
                     android:layout_marginRight="10dp"
                     android:src="@drawable/icon_magnifying_glass"
-                    android:tint="@color/black" />
-
+                    app:tint="@color/black" />
             </LinearLayout>
 
-            <!-- Dropdown -->
-            <ScrollView
-                android:id="@+id/search_dropdown"
-                android:layout_width="380dp"
-                android:layout_height="80dp"
-                android:layout_gravity="center_horizontal"
-                android:background="@drawable/bg_dropdown"
-                android:visibility="invisible">
-
-                <!-- Search Result Container -->
-                <LinearLayout
-                    android:id="@+id/search_result_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:orientation="vertical"
-                    android:padding="8dp">
-
-                </LinearLayout>
-            </ScrollView>
+            <ListView
+                android:id="@+id/search_results_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
@@ -93,7 +78,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_grey"
+            android:background="@drawable/bttn_bg_pale_grey"
             android:orientation="vertical"
             android:padding="10dp">
 
@@ -106,6 +91,9 @@
                 android:textColor="@color/black"
                 android:textSize="12dp" />
 
+            <!-- Uploaded Image Display -->
+
+            <!-- Upload Options -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -125,16 +113,17 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:layout_margin="8dp"
-                        android:background="@drawable/pill_bg_yllw_gradnt"
+                        android:background="@drawable/bg_dark"
                         android:elevation="8dp"
-                        android:src="@drawable/icon_camera" />
+                        android:src="@drawable/icon_camera"
+                        app:tint="@color/white"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/roboto_light"
                         android:text="Take Photo"
-                        android:textColor="@color/dark_grey"
+                        android:textColor="@color/black"
                         android:textSize="10dp" />
                 </LinearLayout>
 
@@ -151,16 +140,17 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:layout_margin="8dp"
-                        android:background="@drawable/pill_bg_yllw_gradnt"
+                        android:background="@drawable/bg_dark"
                         android:elevation="8dp"
-                        android:src="@drawable/icon_images" />
+                        android:src="@drawable/icon_images"
+                        app:tint="@color/white"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/roboto_light"
                         android:text="Gallery"
-                        android:textColor="@color/dark_grey"
+                        android:textColor="@color/black"
                         android:textSize="10dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -172,7 +162,7 @@
             android:layout_height="150dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_grey"
+            android:background="@drawable/bttn_bg_pale_grey"
             android:orientation="vertical"
             android:padding="10dp">
 
@@ -183,27 +173,26 @@
                 android:fontFamily="@font/roboto_regular"
                 android:text="Caption:"
                 android:textColor="@color/black"
-                android:textSize="12dp"/>
+                android:textSize="12dp" />
 
             <EditText
                 android:id="@+id/caption_et"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="5dp"
+                android:background="@null"
                 android:gravity="top|start"
                 android:inputType="textMultiLine"
-                android:background="@null"
                 android:textColor="@color/black"
-                android:textSize="12dp"/>
+                android:textSize="12dp" />
         </LinearLayout>
 
-        <!-- Tag User Field -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_grey"
+            android:background="@drawable/bttn_bg_pale_grey"
             android:orientation="vertical"
             android:padding="10dp">
 
