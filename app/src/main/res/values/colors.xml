@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Custom Colors -->
+    <color name="red">#FF0000</color>
     <color name="gold">#FFDE00</color>
     <color name="blue">#1F37B2</color>
     <color name="green">#009407</color>

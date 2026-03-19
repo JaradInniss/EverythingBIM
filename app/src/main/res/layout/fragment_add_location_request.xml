@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.user.AddLocationRequestFragment">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:id="@+id/add_locreq_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#272727"
+        android:gravity="center_vertical"
+        android:padding="12dp">
+
+        <ImageButton
+            android:id="@+id/back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/icon_caret_left"
+            android:background="@android:color/transparent"
+            android:contentDescription="Go back"
+            android:layout_marginEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create New Add Location Request"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/add_locreq_user_id_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#102MA21"
+                android:textColor="@color/light_grey"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Scrollable form content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/add_locreq_toolbar"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/add_locreq_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardElevation="4dp"
+                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <!-- Form header -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Complete The Form With The Required Information"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Location search bar -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/location_search_layout"
+                        android:layout_width="320dp"
+                        android:layout_height="35dp"
+                        android:hint="Location"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeColor="@color/light_grey"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        app:hintTextColor="@color/light_grey"
+                        app:endIconMode="custom"
+                        app:endIconDrawable="@drawable/icon_search"
+                        android:background="@drawable/bg_rounded"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginBottom="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/location_search_et"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:textSize="14sp"
+                            android:padding="12dp"
+                            android:background="@android:color/transparent"/>
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Map - Needs to Added  -->
+                    <View
+                        android:id="@+id/add_locreq_map"
+                        android:layout_width="match_parent"
+                        android:layout_height="90dp"
+                        android:background="@color/light_grey"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Location Name -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Name"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/location_name_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeColor="@color/light_grey"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        android:background="@drawable/bg_rounded"
+                        android:layout_marginBottom="16dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/location_name_et"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:textSize="14sp"
+                            android:padding="12dp"
+                            android:background="@android:color/transparent"/>
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Location Description -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Description"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/location_desc_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeColor="@color/light_grey"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        android:background="@drawable/bg_rounded"
+                        android:layout_marginBottom="16dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/location_desc_et"
+                            android:layout_width="match_parent"
+                            android:layout_height="100dp"
+                            android:inputType="textMultiLine"
+                            android:gravity="top"
+                            android:textSize="14sp"
+                            android:padding="12dp"
+                            android:background="@android:color/transparent"/>
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Reason For Request -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reason For Request"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <Spinner
+                        android:id="@+id/reason_spinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_rounded"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Images of Location -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Images of Location"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <!-- Image previews -->
+                        <HorizontalScrollView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_rounded">
+
+                            <LinearLayout
+                                android:id="@+id/image_preview_container"
+                                android:layout_width="wrap_content"
+                                android:layout_height="60dp"
+                                android:orientation="horizontal"
+                                android:padding="4dp"
+                                android:gravity="center_vertical" />
+
+                        </HorizontalScrollView>
+
+                        <!-- Attach button -->
+                        <ImageButton
+                            android:id="@+id/attach_image_btn"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:src="@drawable/icon_paperclip"
+                            android:background="@drawable/bg_rounded_button"
+                            android:contentDescription="Attach images"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                    </LinearLayout>
+
+                    <!-- Allowed formats hint -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⊙ Allowed: jpeg, png"
+                        android:textColor="@color/light_grey"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="20dp" />
+
+                    <!-- Submit button -->
+                    <Button
+                        android:id="@+id/submit_btn"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:text="SUBMIT"
+                        android:textColor="@color/black"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:backgroundTint="#FFD700"
+                        android:layout_marginBottom="8dp"
+                        android:layout_gravity="center"/>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>
