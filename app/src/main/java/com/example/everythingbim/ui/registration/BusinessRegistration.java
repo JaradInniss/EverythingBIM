@@ -1,6 +1,5 @@
 package com.example.everythingbim.ui.registration;
 
-import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -10,17 +9,21 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -28,14 +31,18 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.everythingbim.data.models.File;
-import com.example.everythingbim.ui.utils.FileAdapter;
-import com.example.everythingbim.ui.utils.FilePicker;
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.models.File;
 import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.utils.FileAdapter;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Locale;
+
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
 
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
 
@@ -49,17 +56,23 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     private RecyclerView imgIconContainer, fileIconContainer;
     private Button submitBttn;
     private ImageButton uploadImgBttn, uploadFileBttn;
+    private ProgressBar progressBar;
+    private TextView errorTextView;
 
-    // Util Classes
-    FilePicker filePicker = new FilePicker();
+    // Form fields (match IDs from layouts)
+    private EditText businessNameEt, businessEmailEt, contactNumberEt, businessAddressEt, businessDescriptionEt;
+    private EditText passwordEt, confirmPasswordEt;
+
+    // Adapters
     private FileAdapter imageAdapter, fileAdapter;
 
-    // Variables
-    private final int MEDIA_PERMISSION_REQUEST_CODE = 100;
+    // Constants
+    private static final int MEDIA_PERMISSION_REQUEST_CODE = 100;
     private static final int FILE_PICKER_IMAGE_REQUEST_CODE = 105;
     private static final int FILE_PICKER_FILE_REQUEST_CODE = 110;
-    private List<File> fileList;
-    private List<File> imageList;
+
+    private EditText digit1, digit2, digit3, digit4, digit5;
+    private ImageView checkIcon, warningIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,14 +82,9 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         viewModel = new ViewModelProvider(this).get(BusinessRegViewModel.class);
 
-        // Lists
-        fileList = new ArrayList<>();
-        imageList = new ArrayList<>();
-
         initViews();
         setupObservers();
 
-        // Set Window Insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -121,6 +129,19 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         uploadFileBttn = findViewById(R.id.upload_file_bttn);
         uploadFileBttn.setOnClickListener(this);
 
+        // Progress bar and error text
+        progressBar = findViewById(R.id.progress_bar);
+        errorTextView = findViewById(R.id.error_text);
+
+        // Form fields – IDs from the included layouts
+        businessNameEt = findViewById(R.id.business_name_et);
+        businessEmailEt = findViewById(R.id.business_email_et);
+        contactNumberEt = findViewById(R.id.contact_number_et);
+        businessAddressEt = findViewById(R.id.business_address_et);
+        businessDescriptionEt = findViewById(R.id.business_description_et);
+        passwordEt = findViewById(R.id.password_et);
+        confirmPasswordEt = findViewById(R.id.confirm_password_et);
+
         // RecyclerViews
         imgIconContainer = findViewById(R.id.img_icon_container);
         imgIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -128,151 +149,239 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         fileIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
         // Adapters
-        imageAdapter = new FileAdapter(this, imageList, position -> {
-            imageList.remove(position);
-            imageAdapter.notifyItemRemoved(position);
-            imageAdapter.notifyItemRangeChanged(position, imageList.size());
-            imgUploadCount.setText(String.format("(%d)", imageList.size()));
-        });
-        fileAdapter = new FileAdapter(this, fileList, position -> {
-            fileList.remove(position);
-            fileAdapter.notifyItemRemoved(position);
-            fileAdapter.notifyItemRangeChanged(position, fileList.size());
-            fileUploadCount.setText(String.format("(%d)", fileList.size()));
-        });
+        imageAdapter = new FileAdapter(this, new ArrayList<>(), position -> viewModel.removeImage(position));
+        fileAdapter = new FileAdapter(this, new ArrayList<>(), position -> viewModel.removeFile(position));
         imgIconContainer.setAdapter(imageAdapter);
         fileIconContainer.setAdapter(fileAdapter);
+
+        // Digit fields
+        digit1 = findViewById(R.id.digit1);
+        digit2 = findViewById(R.id.digit2);
+        digit3 = findViewById(R.id.digit3);
+        digit4 = findViewById(R.id.digit4);
+        digit5 = findViewById(R.id.digit5);
+        checkIcon = findViewById(R.id.check_icon);
+        warningIcon = findViewById(R.id.warning_icon);
+
+        // Auto‑advance and backspace handling
+        setDigitAutoAdvance();
+    }
+
+    private void setDigitAutoAdvance() {
+        // Auto‑advance to next field when a digit is entered
+        digit1.addTextChangedListener(new SimpleTextWatcher(() -> digit2.requestFocus()));
+        digit2.addTextChangedListener(new SimpleTextWatcher(() -> digit3.requestFocus()));
+        digit3.addTextChangedListener(new SimpleTextWatcher(() -> digit4.requestFocus()));
+        digit4.addTextChangedListener(new SimpleTextWatcher(() -> digit5.requestFocus()));
+
+        // Backspace: clear current field and move to previous if empty
+        setBackspaceListener(digit2, digit1);
+        setBackspaceListener(digit3, digit2);
+        setBackspaceListener(digit4, digit3);
+        setBackspaceListener(digit5, digit4);
+
+        // On last digit, when Done is pressed, trigger verification
+        digit5.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                verifyCodeAndProceed();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setBackspaceListener(EditText current, EditText previous) {
+        current.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DEL && event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (current.getText().toString().isEmpty()) {
+                    previous.requestFocus();
+                    previous.setText("");
+                }
+            }
+            return false;
+        });
+    }
+
+    private static class SimpleTextWatcher implements TextWatcher {
+        private final Runnable onLengthOne;
+        SimpleTextWatcher(Runnable onLengthOne) { this.onLengthOne = onLengthOne; }
+        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        @Override public void afterTextChanged(Editable s) { if (s.length() == 1) onLengthOne.run(); }
+    }
+
+    private String getEnteredCode() {
+        return digit1.getText().toString() +
+                digit2.getText().toString() +
+                digit3.getText().toString() +
+                digit4.getText().toString() +
+                digit5.getText().toString();
+    }
+
+    private void clearDigitFields() {
+        digit1.setText("");
+        digit2.setText("");
+        digit3.setText("");
+        digit4.setText("");
+        digit5.setText("");
+        digit1.requestFocus();
+    }
+
+    private void verifyCodeAndProceed() {
+        String enteredCode = getEnteredCode();
+        boolean success = viewModel.verifyAndProceed(enteredCode);
+        if (!success) {
+            clearDigitFields();
+        }
     }
 
     private void setupObservers() {
-        // Observe Page Changes
+        // Observe page changes
         viewModel.getCurrentPage().observe(this, page -> {
-            busRegFormViewFlipper.setDisplayedChild(page);
+            if (page != null) busRegFormViewFlipper.setDisplayedChild(page);
         });
 
-        // Observe Image List Changes
-        viewModel.getImageList().observe(this, imageList -> {
-            // Update Adapter
-            imageAdapter.notifyDataSetChanged();
-            imgUploadCount.setText(String.format("(%d)", imageList.size()));
+        // Observe file lists
+        viewModel.getImageList().observe(this, images -> {
+            imageAdapter.updateList(images);
+            imgUploadCount.setText(String.format(Locale.US, "(%d)", images.size()));
+        });
+        viewModel.getFileList().observe(this, files -> {
+            fileAdapter.updateList(files);
+            fileUploadCount.setText(String.format(Locale.US, "(%d)", files.size()));
         });
 
-        // Observe File List Changes
-        viewModel.getFileList().observe(this, fileList -> {
-            // Update Adapter
-            fileAdapter.notifyDataSetChanged();
-            fileUploadCount.setText(String.format("(%d)", fileList.size()));
+        // Loading and error states
+        viewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading) {
+                progressBar.setVisibility(View.VISIBLE);
+                submitBttn.setEnabled(false);
+            } else {
+                progressBar.setVisibility(View.GONE);
+                submitBttn.setEnabled(true);
+            }
         });
 
-        // Observe Navigation
+        viewModel.getErrorMessage().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                errorTextView.setText(error);
+                errorTextView.setVisibility(View.VISIBLE);
+            } else {
+                errorTextView.setVisibility(View.GONE);
+            }
+        });
+
+        // Navigation
         viewModel.getNavigationEvent().observe(this, destination -> {
             if (destination != null) {
-                Intent intent = new Intent(BusinessRegistration.this, destination);
-                startActivity(intent);
+                startActivity(new Intent(BusinessRegistration.this, destination));
+                finish();
+            }
+        });
+
+        // Observe code validation result to show/hide icons
+        viewModel.getIsCodeValid().observe(this, isValid -> {
+            if (isValid) {
+                checkIcon.setVisibility(View.VISIBLE);
+                warningIcon.setVisibility(View.GONE);
+            } else {
+                checkIcon.setVisibility(View.GONE);
+                warningIcon.setVisibility(View.VISIBLE);
+            }
+        });
+
+        // Observe info messages (like the demo code)
+        viewModel.getInfoMessage().observe(this, message -> {
+            if (message != null && !message.isEmpty()) {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             }
         });
     }
 
+    // --- Permission handling ---
     private void requestFilePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+
-            ActivityCompat.requestPermissions(this, new String[]{
-                    Manifest.permission.READ_MEDIA_IMAGES,
-                    Manifest.permission.READ_MEDIA_VIDEO
-            }, MEDIA_PERMISSION_REQUEST_CODE);
-        }
-        else {
-            // Android 12
-            ActivityCompat.requestPermissions(this, new String[]{
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-            }, MEDIA_PERMISSION_REQUEST_CODE);
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.READ_MEDIA_IMAGES,
+                            android.Manifest.permission.READ_MEDIA_VIDEO},
+                    MEDIA_PERMISSION_REQUEST_CODE);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+                    MEDIA_PERMISSION_REQUEST_CODE);
         }
     }
 
     private boolean hasFilePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
-        }
-        else {
-            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            return ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == MEDIA_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
-            }
-            else {
+            } else {
                 Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    // OnClick Listener for Buttons
-    @Override
-    public void onClick(View view) {
-        int bttn_id = view.getId();
-
-        if (bttn_id == R.id.user_type_general) {
-            viewModel.navigateTo(GeneralRegistration.class);
-        }
-        else if (bttn_id == R.id.user_type_business) {
-            if (!isFinishing() && !isDestroyed()) {
-                Toast.makeText(this, "Currently Business User", Toast.LENGTH_SHORT).show();
-            }
-        }
-        else if (bttn_id == R.id.login_opt) {
-            // Return to Log in
-            viewModel.navigateTo(Login.class);
-        }
-        if (bttn_id == R.id.upload_img_bttn) {
-            handleImageUpload();
-        }
-        else if (bttn_id == R.id.upload_file_bttn) {
-            handleFileUpload();
-        }
-        else if (bttn_id == R.id.next_bttn1 || bttn_id == R.id.next_bttn2 || bttn_id == R.id.next_bttn3) {
-            viewModel.nextPage();
-        }
-        else if (bttn_id == R.id.prev_bttn1 || bttn_id == R.id.prev_bttn2 || bttn_id == R.id.prev_bttn3) {
-            viewModel.prevPage();
-        }
-        else if (bttn_id == R.id.submit_bttn) {
-            Toast.makeText(this, "Submitted", Toast.LENGTH_SHORT).show();
-            viewModel.navigateTo(Login.class);
-        }
-    }
-
-    // Image Upload Function
+    // --- File/Image selection ---
     private void handleImageUpload() {
-        // Check if Permission Granted
         if (hasFilePermissions()) {
-            // Open File Picker
-            filePicker.openFilePicker(this, FILE_PICKER_IMAGE_REQUEST_CODE);
-        }
-        else {
-            // Request File Permissions
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            startActivityForResult(Intent.createChooser(intent, "Select Images"), FILE_PICKER_IMAGE_REQUEST_CODE);
+        } else {
             requestFilePermissions();
         }
     }
 
-    // File Upload Function
     private void handleFileUpload() {
-        // Check if Permission Granted
         if (hasFilePermissions()) {
-            // Open File Picker
-            filePicker.openFilePicker(this, FILE_PICKER_FILE_REQUEST_CODE);
-        }
-        else {
-            // Request File Permissions
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            startActivityForResult(Intent.createChooser(intent, "Select Files"), FILE_PICKER_FILE_REQUEST_CODE);
+        } else {
             requestFilePermissions();
         }
     }
 
-    private void addFileToList(Uri uri, List<File> targetList, FileAdapter targetAdapter) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null) return;
+
+        if (requestCode == FILE_PICKER_IMAGE_REQUEST_CODE) {
+            processSelectedFiles(data, true);
+        } else if (requestCode == FILE_PICKER_FILE_REQUEST_CODE) {
+            processSelectedFiles(data, false);
+        }
+    }
+
+    private void processSelectedFiles(Intent data, boolean isImage) {
+        if (data.getClipData() != null) {
+            int count = data.getClipData().getItemCount();
+            for (int i = 0; i < count; i++) {
+                Uri uri = data.getClipData().getItemAt(i).getUri();
+                addFileToViewModel(uri, isImage);
+            }
+        } else if (data.getData() != null) {
+            addFileToViewModel(data.getData(), isImage);
+        }
+    }
+
+    private void addFileToViewModel(Uri uri, boolean isImage) {
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
         if (cursor != null && cursor.moveToFirst()) {
             String name = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
@@ -281,47 +390,57 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             String mimeType = getContentResolver().getType(uri);
 
             File file = new File(name, mimeType, uri, size);
-            targetList.add(file);
-            targetAdapter.notifyDataSetChanged();
+            if (isImage) {
+                viewModel.addImage(file);
+            } else {
+                viewModel.addFile(file);
+            }
         }
     }
 
+    // --- Click handling ---
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    public void onClick(View view) {
+        int id = view.getId();
 
-        if (resultCode != RESULT_OK || data == null) { return; }
-
-        // Determine which list and adapter to update
-        TextView targetCounter;
-        List<File> targetList;
-        FileAdapter targetAdapter;
-        if (requestCode == FILE_PICKER_IMAGE_REQUEST_CODE) {
-            targetCounter = imgUploadCount;
-            targetList = imageList;
-            targetAdapter = imageAdapter;
-        }
-        else if (requestCode == FILE_PICKER_FILE_REQUEST_CODE) {
-            targetCounter = fileUploadCount;
-            targetList = fileList;
-            targetAdapter = fileAdapter;
-        }
-        else { return; }
-
-        if (data.getClipData() != null) {
-            // Multiple Files Selected
-            int count = data.getClipData().getItemCount();
-            for (int i = 0; i < count; i++) {
-                Uri uri = data.getClipData().getItemAt(i).getUri();
-                addFileToList(uri, targetList, targetAdapter);
+        if (id == R.id.user_type_general) {
+            viewModel.navigateTo(GeneralRegistration.class);
+        } else if (id == R.id.user_type_business) {
+            Toast.makeText(this, "Currently Business User", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.login_opt) {
+            viewModel.navigateTo(Login.class);
+        } else if (id == R.id.upload_img_bttn) {
+            handleImageUpload();
+        } else if (id == R.id.upload_file_bttn) {
+            handleFileUpload();
+        } else if (id == R.id.next_bttn1 || id == R.id.next_bttn2 || id == R.id.next_bttn3) {
+            int currentPage = viewModel.getCurrentPage().getValue() != null ? viewModel.getCurrentPage().getValue() : 0;
+            if (currentPage == 1) {
+                // Page 1 is the verification page – verify code first
+                verifyCodeAndProceed();
+            } else {
+                viewModel.nextPage();
             }
-            targetCounter.setText(String.format("(%d)", targetList.size()));
-        }
-        else if (data.getData() != null) {
-            // Single File Selected
-            Uri uri = data.getData();
-            addFileToList(uri, targetList, targetAdapter);
-            targetCounter.setText(String.format("(%d)", targetList.size()));
+        } else if (id == R.id.prev_bttn1 || id == R.id.prev_bttn2 || id == R.id.prev_bttn3) {
+            viewModel.prevPage();
+        } else if (id == R.id.submit_bttn) {
+            String email = businessEmailEt.getText().toString().trim();
+            String password = passwordEt.getText().toString().trim();
+            String confirm = confirmPasswordEt.getText().toString().trim();
+
+            if (!password.equals(confirm)) {
+                Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Pass values to ViewModel
+            viewModel.getCompanyName().setValue(businessNameEt.getText().toString().trim());
+            viewModel.getBusinessEmail().setValue(email);
+            viewModel.getPhone().setValue(contactNumberEt.getText().toString().trim());
+            viewModel.getAddress().setValue(businessAddressEt.getText().toString().trim());
+            viewModel.getDescription().setValue(businessDescriptionEt.getText().toString().trim());
+
+            viewModel.registerBusiness(email, password);
         }
     }
 }

@@ -1,33 +1,36 @@
 package com.example.everythingbim.ui.login;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
+import androidx.lifecycle.ViewModelProvider;
 import com.example.everythingbim.R;
-import com.example.everythingbim.ui.main.MainActivity;
-import com.example.everythingbim.ui.registration.BusinessRegistration;
-import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.data.models.UserType;
+import com.example.everythingbim.ui.utils.NavigationCommand;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
-    // UI Elements
+    private LoginViewModel viewModel;
+    private SharedPreferences sharedPreferences;
+
+    // UI elements
     private ImageView userTypeGeneral, userTypeBusiness;
     private TextView userTypeText, createAccountOption;
     private Button loginBttn;
-
-    // Variables
-    private String currUserType;
-    private String[] userTypes = {"General", "Business"};
+    private EditText emailEditText, passwordEditText;
+    private ProgressBar progressBar;
+    private TextView errorTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,22 +38,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
 
-        currUserType = userTypes[0];
+        sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
 
-        // ImageViews
-        userTypeGeneral = findViewById(R.id.user_type_general);
-        userTypeBusiness = findViewById(R.id.user_type_business);
-        userTypeGeneral.setOnClickListener(this);
-        userTypeBusiness.setOnClickListener(this);
+        viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
+        viewModel.setSharedPreferences(sharedPreferences);
 
-        // TextViews
-        userTypeText = findViewById(R.id.user_type_txt);
-        createAccountOption = findViewById(R.id.create_account_opt);
-        createAccountOption.setOnClickListener(this);
-
-        // Button
-        loginBttn = findViewById(R.id.login_bttn);
-        loginBttn.setOnClickListener(this);
+        initViews();
+        setupObservers();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -59,53 +53,83 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         });
     }
 
-    private void switchUserType(String userType) {
-        if (userType.equals("General")) {
-            // Set background yellow
-            userTypeGeneral.setBackgroundResource(R.drawable.pill_bg_yllw);
-            // Remove background of Business User Icon
-            userTypeBusiness.setBackgroundResource(0);
-            // Change text to "General User"
-            userTypeText.setText("General User");
-            currUserType = userTypes[0];
-        }
-        else if (userType.equals("Business")) {
-            // Set background yellow
-            userTypeBusiness.setBackgroundResource(R.drawable.pill_bg_yllw);
-            // Remove background of Business User Icon
-            userTypeGeneral.setBackgroundResource(0);
-            // Change text to "General User"
-            userTypeText.setText("Business User");
-            currUserType = userTypes[1];
-        }
+    private void initViews() {
+        userTypeGeneral = findViewById(R.id.user_type_general);
+        userTypeBusiness = findViewById(R.id.user_type_business);
+        userTypeText = findViewById(R.id.user_type_txt);
+        createAccountOption = findViewById(R.id.create_account_opt);
+        loginBttn = findViewById(R.id.login_bttn);
+        emailEditText = findViewById(R.id.login_username_et);
+        passwordEditText = findViewById(R.id.login_password_et);
+        progressBar = findViewById(R.id.login_progress_bar);
+        errorTextView = findViewById(R.id.login_error);
+
+        userTypeGeneral.setOnClickListener(this);
+        userTypeBusiness.setOnClickListener(this);
+        createAccountOption.setOnClickListener(this);
+        loginBttn.setOnClickListener(this);
     }
 
+    private void setupObservers() {
+        // Observe user type selection (icons and text)
+        viewModel.getSelectedUserType().observe(this, userType -> {
+            if (userType == UserType.GENERAL) {
+                userTypeGeneral.setBackgroundResource(R.drawable.pill_bg_yllw);
+                userTypeBusiness.setBackgroundResource(0);
+                userTypeText.setText(R.string.general_user);
+            } else {
+                userTypeBusiness.setBackgroundResource(R.drawable.pill_bg_yllw);
+                userTypeGeneral.setBackgroundResource(0);
+                userTypeText.setText(R.string.business_user);
+            }
+        });
+
+        // Loading state
+        viewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading) {
+                progressBar.setVisibility(View.VISIBLE);
+                loginBttn.setEnabled(false);
+            } else {
+                progressBar.setVisibility(View.GONE);
+                loginBttn.setEnabled(true);
+            }
+        });
+
+        // Error messages
+        viewModel.getErrorMessage().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                errorTextView.setText(error);
+                errorTextView.setVisibility(View.VISIBLE);
+            } else {
+                errorTextView.setVisibility(View.GONE);
+            }
+        });
+
+        // Navigation commands
+        viewModel.getNavigationEvent().observe(this, command -> {
+            if (command != null) {
+                Intent intent = new Intent(Login.this, command.getDestination());
+                if (command.getExtras() != null) {
+                    intent.putExtras(command.getExtras());
+                }
+                startActivity(intent);
+                finish(); // optional: remove login from back stack
+            }
+        });
+    }
     @Override
     public void onClick(View view) {
-        int bttn_id = view.getId();
-
-        if (bttn_id == R.id.login_bttn) {
-            // Login Button
-            Intent intent = new Intent(Login.this, MainActivity.class);
-            startActivity(intent);
+        int id = view.getId();
+        if (id == R.id.login_bttn) {
+            String email = emailEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
+            viewModel.onLoginClicked(email, password);
+        } else if (id == R.id.user_type_general) {
+            viewModel.setSelectedUserType(UserType.GENERAL);
+        } else if (id == R.id.user_type_business) {
+            viewModel.setSelectedUserType(UserType.BUSINESS);
+        } else if (id == R.id.create_account_opt) {
+            viewModel.onCreateAccountClicked();
         }
-        else if (bttn_id == R.id.user_type_general) {
-            switchUserType(userTypes[0]);
-        }
-        else if (bttn_id == R.id.user_type_business) {
-            switchUserType(userTypes[1]);
-        }
-        else if (bttn_id == R.id.create_account_opt) {
-            // Create Account option
-            if (currUserType.equals("General")) {
-                Intent intent = new Intent(Login.this, GeneralRegistration.class);
-                startActivity(intent);
-            }
-            else {
-                Intent intent = new Intent(Login.this, BusinessRegistration.class);
-                startActivity(intent);
-            }
-        }
-//        Firebase.analytics.logEvent("login_btn_click, null")
     }
 }

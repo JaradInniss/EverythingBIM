@@ -1,10 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace 'com.example.everythingbim'
-    compileSdk 36
+    compileSdk = 36
 
     
     defaultConfig {
@@ -44,4 +45,10 @@ dependencies {
     androidTestImplementation libs.espresso.core
     implementation libs.lifecycle.viewmodel
     implementation libs.lifecycle.livedata
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.auth
+    implementation libs.firebase.firestore
+    implementation libs.firebase.storage
 }
+
+apply plugin: 'com.google.gms.google-services'

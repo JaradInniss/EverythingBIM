@@ -87,35 +87,37 @@
             style="@style/info_txt_style"/>
     </LinearLayout>
 
-    <!-- Username Field -->
+    <!-- Business Name -->
     <EditText
-        android:id="@+id/register_username_et"
+        android:id="@+id/business_name_et"
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:layout_marginTop="15dp"
         android:hint="Business Name"
         style="@style/et_style"/>
 
-    <!-- Password Field -->
+    <!-- Contact Number -->
     <EditText
-        android:id="@+id/register_password_et"
+        android:id="@+id/contact_number_et"
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:layout_marginTop="20dp"
         android:hint="Contact Number"
+        android:inputType="phone"
         style="@style/et_style"/>
 
-    <!-- Re-enter Password Field -->
+    <!-- Business Address -->
     <EditText
-        android:id="@+id/register_repassword_et"
+        android:id="@+id/business_address_et"
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:layout_marginTop="20dp"
         android:hint="Business Address/Location"
         style="@style/et_style"/>
 
+    <!-- Business Description -->
     <EditText
-        android:id="@+id/register_email"
+        android:id="@+id/business_description_et"
         android:layout_width="match_parent"
         android:layout_height="95dp"
         android:layout_marginTop="20dp"
@@ -123,7 +125,6 @@
         android:gravity="top"
         android:paddingTop="5dp"
         android:maxLines="10"
-        android:maxWidth="320dp"
         android:scrollbars="vertical"
         android:scrollbarThumbVertical="@color/dark"
         android:scrollbarTrackVertical="@color/light_grey"

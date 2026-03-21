@@ -1,79 +1,270 @@
 package com.example.everythingbim.ui.registration;
 
+import android.net.Uri;
+
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.everythingbim.data.models.BusinessProfile;
 import com.example.everythingbim.data.models.File;
+import com.example.everythingbim.ui.login.Login;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BusinessRegViewModel extends ViewModel {
+
+    private final FirebaseAuth auth = FirebaseAuth.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseStorage storage = FirebaseStorage.getInstance();
+
+    // Form fields
+    private final MutableLiveData<String> companyName = new MutableLiveData<>();
+    private final MutableLiveData<String> businessEmail = new MutableLiveData<>();
+    private final MutableLiveData<String> phone = new MutableLiveData<>();
+    private final MutableLiveData<String> address = new MutableLiveData<>();
+    private final MutableLiveData<String> description = new MutableLiveData<>();
 
     // UI State
     private final MutableLiveData<Integer> currentPage = new MutableLiveData<>(0);
     private final MutableLiveData<List<File>> imageList = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<List<File>> fileList = new MutableLiveData<>(new ArrayList<>());
-    private final MutableLiveData<Class<?>> navigationEvent  = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final SingleLiveEvent<Class<?>> navigationEvent = new SingleLiveEvent<>();
+    private final SingleLiveEvent<String> infoMessage = new SingleLiveEvent<>();
+
+    // Verification code
+    private String demoVerificationCode;
+    private final MutableLiveData<Boolean> isCodeValid = new MutableLiveData<>(false);
 
     // Getters
-    // NavigationEvent getter
-    public LiveData<Class<?>> getNavigationEvent() { return navigationEvent; }
     public LiveData<Integer> getCurrentPage() { return currentPage; }
     public LiveData<List<File>> getImageList() { return imageList; }
     public LiveData<List<File>> getFileList() { return fileList; }
+    public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<String> getErrorMessage() { return errorMessage; }
+    public SingleLiveEvent<Class<?>> getNavigationEvent() { return navigationEvent; }
+    public SingleLiveEvent<String> getInfoMessage() { return infoMessage; }
+    public LiveData<Boolean> getIsCodeValid() { return isCodeValid; }
 
+    // Form field getters/setters
+    public MutableLiveData<String> getCompanyName() { return companyName; }
+    public MutableLiveData<String> getBusinessEmail() { return businessEmail; }
+    public MutableLiveData<String> getPhone() { return phone; }
+    public MutableLiveData<String> getAddress() { return address; }
+    public MutableLiveData<String> getDescription() { return description; }
 
-    // Logic Functions
-    // Form Page Navigation
+    // Navigation
     public void nextPage() {
         Integer curr = currentPage.getValue();
-        if (curr != null) { currentPage.setValue(curr + 1); }
+        if (curr == null) return;
+
+        // If moving from page 0 (account credentials) to page 1 (verification), generate code
+        if (curr == 0) {
+            generateDemoCode();
+        }
+
+        // If moving from page 1 (verification) to page 2, verify code first
+        if (curr == 1) {
+            // Verification must be done by the activity before calling nextPage()
+            // We'll use a separate method to verify and then call nextPage() if valid
+            // This method will not increment on its own.
+            // Instead, we'll let the activity call verifyAndProceed()
+            return;
+        }
+
+        currentPage.setValue(curr + 1);
     }
+
     public void prevPage() {
         Integer curr = currentPage.getValue();
-        if (curr != null) { currentPage.setValue(curr - 1); }
-    }
-
-    // ImageList Management
-    public void addImage(File file) {
-        // Get current list
-        List<File> currFileList = imageList.getValue();
-        // Add new image to list
-        currFileList.add(file);
-        // Update list
-        imageList.setValue(currFileList);
-    }
-    public void removeImage(int position) {
-        // Get current list
-        List<File> currFileList = imageList.getValue();
-        // Remove image at position from list
-        currFileList.remove(position);
-        // Update list
-        imageList.setValue(currFileList);
-    }
-
-    // FileList Management
-    public void addFile(File file) {
-        // Get current list
-        List<File> currFileList = fileList.getValue();
-        // Add new file to list
-        currFileList.add(file);
-        // Update list
-        fileList.setValue(currFileList);
-    }
-
-    public void removeFile(int position) {
-        // Get current list
-        List<File> currFileList = fileList.getValue();
-        // Remove file at position from list
-        currFileList.remove(position);
-        // Update list
-        fileList.setValue(currFileList);
+        if (curr != null && curr > 0) {
+            currentPage.setValue(curr - 1);
+        }
     }
 
     public void navigateTo(Class<?> destination) {
         navigationEvent.setValue(destination);
+    }
+
+    // File list management
+    public void addImage(File file) { List<File> curr = imageList.getValue(); if (curr != null) { curr.add(file); imageList.setValue(curr); } }
+    public void removeImage(int position) { List<File> curr = imageList.getValue(); if (curr != null && position < curr.size()) { curr.remove(position); imageList.setValue(curr); } }
+    public void addFile(File file) { List<File> curr = fileList.getValue(); if (curr != null) { curr.add(file); fileList.setValue(curr); } }
+    public void removeFile(int position) { List<File> curr = fileList.getValue(); if (curr != null && position < curr.size()) { curr.remove(position); fileList.setValue(curr); } }
+
+    // --- Demo verification ---
+    private void generateDemoCode() {
+        demoVerificationCode = String.valueOf((int) (Math.random() * 90000) + 10000);
+        infoMessage.setValue("Demo verification code: " + demoVerificationCode);
+        isCodeValid.setValue(false);
+    }
+
+    public boolean verifyAndProceed(String enteredCode) {
+        if (enteredCode.length() < 5) {
+            errorMessage.setValue("Please enter the complete 5-digit code");
+            isCodeValid.setValue(false);
+            return false;
+        }
+        if (enteredCode.equals(demoVerificationCode)) {
+            isCodeValid.setValue(true);
+            // Move to next page
+            currentPage.setValue(2);
+            return true;
+        } else {
+            errorMessage.setValue("Invalid verification code");
+            isCodeValid.setValue(false);
+            return false;
+        }
+    }
+
+    // --- Business registration ---
+    public void registerBusiness(String email, String password) {
+        if (email.isEmpty() || password.isEmpty() || companyName.getValue() == null || companyName.getValue().isEmpty()) {
+            errorMessage.setValue("Please fill all required fields");
+            return;
+        }
+
+        isLoading.setValue(true);
+        errorMessage.setValue(null);
+
+        auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            uploadAllFilesAndSaveProfile(user.getUid(), email);
+                        } else {
+                            registrationFailed("Authentication error");
+                        }
+                    } else {
+                        String error = task.getException() != null ? task.getException().getMessage() : "Registration failed";
+                        registrationFailed(error);
+                    }
+                });
+    }
+
+    private void uploadAllFilesAndSaveProfile(String userId, String email) {
+        List<String> imageUrls = new ArrayList<>();
+        List<String> fileUrls = new ArrayList<>();
+
+        List<com.google.android.gms.tasks.Task<Uri>> uploadTasks = new ArrayList<>();
+
+        for (File file : imageList.getValue()) {
+            StorageReference ref = storage.getReference()
+                    .child("businesses")
+                    .child(userId)
+                    .child("images")
+                    .child(UUID.randomUUID().toString());
+            UploadTask uploadTask = ref.putFile(file.getUri());
+            com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
+                if (!task.isSuccessful()) throw task.getException();
+                return ref.getDownloadUrl();
+            });
+            uploadTasks.add(urlTask);
+            urlTask.addOnSuccessListener(uri -> imageUrls.add(uri.toString()));
+        }
+
+        for (File file : fileList.getValue()) {
+            StorageReference ref = storage.getReference()
+                    .child("businesses")
+                    .child(userId)
+                    .child("files")
+                    .child(UUID.randomUUID().toString());
+            UploadTask uploadTask = ref.putFile(file.getUri());
+            com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
+                if (!task.isSuccessful()) throw task.getException();
+                return ref.getDownloadUrl();
+            });
+            uploadTasks.add(urlTask);
+            urlTask.addOnSuccessListener(uri -> fileUrls.add(uri.toString()));
+        }
+
+        Tasks.whenAllSuccess(uploadTasks)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        BusinessProfile profile = new BusinessProfile(
+                                userId,
+                                companyName.getValue(),
+                                email,
+                                phone.getValue(),
+                                address.getValue(),
+                                description.getValue(),
+                                imageUrls,
+                                fileUrls,
+                                com.google.firebase.Timestamp.now()
+                        );
+
+                        db.collection("businesses").document(userId).set(profile)
+                                .addOnSuccessListener(aVoid -> {
+                                    isLoading.setValue(false);
+                                    sendEmailVerification();
+                                    navigationEvent.setValue(Login.class);
+                                })
+                                .addOnFailureListener(e -> {
+                                    registrationFailed("Failed to save profile: " + e.getMessage());
+                                });
+                    } else {
+                        registrationFailed("File upload failed: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+    private void sendEmailVerification() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null) {
+            user.sendEmailVerification()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            infoMessage.setValue("Verification email sent. Please check your inbox.");
+                        } else {
+                            String error = task.getException() != null ?
+                                    task.getException().getMessage() : "Failed to send verification email";
+                            errorMessage.setValue(error);
+                        }
+                    });
+        } else {
+            errorMessage.setValue("User not found, cannot send verification email");
+        }
+    }
+
+    private void registrationFailed(String message) {
+        isLoading.setValue(false);
+        errorMessage.setValue(message);
+    }
+
+    /**
+     * SingleLiveEvent – ensures the event is delivered only once.
+     */
+    public static class SingleLiveEvent<T> extends MutableLiveData<T> {
+        private final AtomicBoolean pending = new AtomicBoolean(false);
+
+        @Override
+        public void setValue(T value) {
+            pending.set(true);
+            super.setValue(value);
+        }
+
+        @Override
+        public void observe(@NonNull androidx.lifecycle.LifecycleOwner owner,
+                            @NonNull androidx.lifecycle.Observer<? super T> observer) {
+            super.observe(owner, t -> {
+                if (pending.compareAndSet(true, false)) {
+                    observer.onChanged(t);
+                }
+            });
+        }
     }
 }

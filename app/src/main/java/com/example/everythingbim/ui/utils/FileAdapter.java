@@ -81,4 +81,10 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             deleteFileBttn = itemView.findViewById(R.id.delete_file_bttn);
         }
     }
+
+    public void updateList(List<File> newList) {
+        this.fileList.clear();
+        this.fileList.addAll(newList);
+        notifyDataSetChanged();
+    }
 }
