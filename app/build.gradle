@@ -49,6 +49,11 @@ dependencies {
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
     implementation libs.firebase.storage
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    implementation 'com.google.android.gms:play-services-location:21.0.1' // optional for user location
+    implementation "androidx.room:room-runtime:2.6.0"
+    annotationProcessor "androidx.room:room-compiler:2.6.0"
+//    implementation "androidx.room:room-ktx:2.6.0" // if using Kotlin
 }
 
 apply plugin: 'com.google.gms.google-services'
