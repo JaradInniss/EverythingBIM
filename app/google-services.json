@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "767965773842-mjm7kag926pgjtj1cp1lvcflq68nie2p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.everythingbim",
+            "certificate_hash": "6e703337ca65156867cc52b86fa0128a02d97a0c"
+          }
+        },
+        {
           "client_id": "767965773842-jt3h05f4kl6vbd3kit7il7045i6o315f.apps.googleusercontent.com",
           "client_type": 3
         }
