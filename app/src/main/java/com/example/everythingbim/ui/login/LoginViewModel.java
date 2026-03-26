@@ -5,12 +5,14 @@ import static androidx.core.content.ContextCompat.startActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
@@ -21,6 +23,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
@@ -29,51 +33,95 @@ public class LoginViewModel extends ViewModel {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private SharedPreferences sharedPreferences; // may be null
-
     private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.GENERAL);
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
 
+    // Getters
+    public LiveData<UserType> getSelectedUserType() { return selectedUserType; }
+    public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<HashMap<Integer, String>> getErrorFields() { return errorFields; }
+    public SingleLiveEvent<NavigationCommand> getNavigationEvent() { return navigationEvent; }
+
+    // Setters
+    public void setSelectedUserType(UserType userType) { selectedUserType.setValue(userType); }
     public void setSharedPreferences(SharedPreferences prefs) {
         this.sharedPreferences = prefs;
     }
 
-    public LiveData<UserType> getSelectedUserType() { return selectedUserType; }
-    public LiveData<Boolean> getIsLoading() { return isLoading; }
-    public LiveData<String> getErrorMessage() { return errorMessage; }
-    public SingleLiveEvent<NavigationCommand> getNavigationEvent() { return navigationEvent; }
+    // Logic Functions
 
-    public void setSelectedUserType(UserType userType) { selectedUserType.setValue(userType); }
+    public void setErrorField(int fieldId, String errorMessage) {
+        HashMap<Integer, String> currError = errorFields.getValue();
+        if (currError == null) { currError = new HashMap<>(); }
+
+        if (errorMessage == null) {
+            currError.remove(fieldId);
+        }
+        else {
+            currError.put(fieldId, errorMessage);
+        }
+
+        if (currError.isEmpty()) {
+            errorFields.setValue(null);
+        }
+        else {
+            errorFields.setValue(currError);
+        }
+    }
+
+    // Validate fields and set error message if invalid
+    public void validateEmail(String email) {
+        if (email.isEmpty()) {
+            setErrorField(R.id.login_email_et, "Email Field Cannot Be Empty");
+            return;
+        }
+        setErrorField(R.id.login_email_et, null);
+    }
+
+    public void validatePassword(String password) {
+        if (password.isEmpty()) {
+            setErrorField(R.id.login_password_et, "Password Field Cannot Be Empty");
+            return;
+        }
+        setErrorField(R.id.login_password_et, null);
+    }
+
+    // Checks if form fields are valid
+    public boolean isFormValid(String email, String password) {
+        validateEmail(email);
+        validatePassword(password);
+
+        return errorFields.getValue() == null;
+    }
 
     public void onLoginClicked(String email, String password) {
-        if (email.isEmpty() || password.isEmpty()) {
-//            errorMessage.setValue("Please enter both email and password");
+        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
+        if (!isFormValid(email, password)) {
             return;
         }
         navigationEvent.setValue(new NavigationCommand(MainActivity.class));
 
+        isLoading.setValue(true);
+        errorFields.setValue(null);
 
-//        isLoading.setValue(true);
-//        errorMessage.setValue(null);
-
-
-//        auth.signInWithEmailAndPassword(email, password)
-//                .addOnCompleteListener(task -> {
-//                    isLoading.setValue(false);
-//                    if (task.isSuccessful()) {
-//                        FirebaseUser user = auth.getCurrentUser();
-//                        if (user != null) {
-//                            fetchUserTypeAndNavigate(user.getUid());
-//                        } else {
-//                            errorMessage.setValue("Authentication error");
-//                        }
-//                    } else {
-//                        String error = task.getException() != null ?
-//                                task.getException().getMessage() : "Authentication failed";
-//                        errorMessage.setValue(error);
-//                    }
-//                });
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    isLoading.setValue(false);
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            fetchUserTypeAndNavigate(user.getUid());
+                        } else {
+                            setErrorField(R.id.login_error, "Authentication Error");
+                        }
+                    } else {
+                        String error = task.getException() != null ?
+                                task.getException().getMessage() : "Authentication failed";
+                        setErrorField(R.id.login_error, error);
+                    }
+                });
     }
 
     private void fetchUserTypeAndNavigate(String userId) {
@@ -89,7 +137,7 @@ public class LoginViewModel extends ViewModel {
                             if (userType != null) {
                                 saveAndNavigate(userType, userId);
                             } else {
-                                errorMessage.setValue("User type not found");
+                                setErrorField(R.id.login_error, "User type not found");
                             }
                             return; // success, no need to check businesses
                         }
@@ -105,15 +153,15 @@ public class LoginViewModel extends ViewModel {
                                         if (userType != null) {
                                             saveAndNavigate(userType, userId);
                                         } else {
-                                            errorMessage.setValue("User type not found");
+                                            setErrorField(R.id.login_error, "User type not found");
                                         }
                                     } else {
-                                        errorMessage.setValue("User document not found");
+                                        setErrorField(R.id.login_error, "User document not found");
                                     }
                                 } else {
                                     String error = task2.getException() != null ?
                                             task2.getException().getMessage() : "Failed to fetch user data";
-                                    errorMessage.setValue(error);
+                                    setErrorField(R.id.login_error, error);
                                 }
                             });
                 });
