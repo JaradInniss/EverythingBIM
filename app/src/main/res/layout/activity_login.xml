@@ -107,26 +107,56 @@
                 android:layout_height="2dp"
                 android:background="@color/black"/>
 
-            <!-- Email Field (ID: login_username_et) -->
-            <EditText
-                android:id="@+id/login_username_et"
+            <!-- Email Field (ID: login_email_et) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_login_email"
                 android:layout_width="220dp"
-                android:layout_height="45dp"
+                android:layout_height="50dp"
                 android:layout_marginTop="20dp"
                 android:hint="Email"
-                android:inputType="textEmailAddress"
-                style="@style/et_style"/>
+                style="@style/txtInputLayout_style">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/login_email_et"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:inputType="textEmailAddress"
+                    style="@style/txtInputEditText_style"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Password Field (ID: login_password_et) -->
-            <EditText
-                android:id="@+id/login_password_et"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_login_password"
                 android:layout_width="220dp"
-                android:layout_height="45dp"
+                android:layout_height="50dp"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="20dp"
                 android:hint="Password"
-                android:inputType="textPassword"
-                style="@style/et_style"/>
+                app:passwordToggleEnabled="true"
+                style="@style/txtInputLayout_style">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/login_password_et"
+                    android:layout_height="match_parent"
+                    android:layout_width="match_parent"
+                    android:inputType="textPassword"
+                    style="@style/txtInputEditText_style"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+
+            <!-- Error TextView -->
+            <TextView
+                android:id="@+id/login_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="15dp"
+                android:textColor="@color/red"
+                android:textSize="14dp"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:text="ⓘ Invalid email or password" />
 
             <!-- Login Button and Remember Me -->
             <LinearLayout
@@ -146,13 +176,15 @@
                     android:id="@+id/remember_me_check"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:layout_marginLeft="20dp"/>
+                    android:layout_marginLeft="20dp"
+                    android:backgroundTint="@color/black"/>
 
                 <TextView
                     android:layout_width="60dp"
                     android:layout_height="30dp"
                     android:layout_marginLeft="5dp"
                     android:text="Remember Me?"
+                    android:textColor="@color/black"
                     android:textSize="12dp"
                     android:textAlignment="center"/>
             </LinearLayout>
@@ -167,18 +199,6 @@
                 android:visibility="gone"
                 style="?android:attr/progressBarStyleSmall" />
 
-            <!-- Error TextView -->
-            <TextView
-                android:id="@+id/login_error"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/red"
-                android:textSize="12dp"
-                android:gravity="center"
-                android:visibility="gone"
-                tools:text="Invalid email or password" />
-
             <!-- Forgot Password Button -->
             <Button
                 android:id="@+id/forgot_password_bttn"
@@ -187,8 +207,8 @@
                 android:layout_gravity="center"
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp"
-                android:layout_marginTop="10dp"
-                android:text="Forgot Password?"
+                android:layout_marginTop="15dp"
+                android:text="Forgot Password"
                 android:textColor="@color/black"
                 android:background="@drawable/pill_bg_yllw"/>
 
