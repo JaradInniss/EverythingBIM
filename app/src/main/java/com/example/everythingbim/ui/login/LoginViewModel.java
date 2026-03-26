@@ -1,5 +1,8 @@
 package com.example.everythingbim.ui.login;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -45,29 +48,32 @@ public class LoginViewModel extends ViewModel {
 
     public void onLoginClicked(String email, String password) {
         if (email.isEmpty() || password.isEmpty()) {
-            errorMessage.setValue("Please enter both email and password");
+//            errorMessage.setValue("Please enter both email and password");
             return;
         }
+        navigationEvent.setValue(new NavigationCommand(MainActivity.class));
 
-        isLoading.setValue(true);
-        errorMessage.setValue(null);
 
-        auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    isLoading.setValue(false);
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = auth.getCurrentUser();
-                        if (user != null) {
-                            fetchUserTypeAndNavigate(user.getUid());
-                        } else {
-                            errorMessage.setValue("Authentication error");
-                        }
-                    } else {
-                        String error = task.getException() != null ?
-                                task.getException().getMessage() : "Authentication failed";
-                        errorMessage.setValue(error);
-                    }
-                });
+//        isLoading.setValue(true);
+//        errorMessage.setValue(null);
+
+
+//        auth.signInWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(task -> {
+//                    isLoading.setValue(false);
+//                    if (task.isSuccessful()) {
+//                        FirebaseUser user = auth.getCurrentUser();
+//                        if (user != null) {
+//                            fetchUserTypeAndNavigate(user.getUid());
+//                        } else {
+//                            errorMessage.setValue("Authentication error");
+//                        }
+//                    } else {
+//                        String error = task.getException() != null ?
+//                                task.getException().getMessage() : "Authentication failed";
+//                        errorMessage.setValue(error);
+//                    }
+//                });
     }
 
     private void fetchUserTypeAndNavigate(String userId) {

@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/admin_home"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    tools:context=".AdminHomeFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Welcome Text -->
+            <TextView
+                android:id="@+id/welcome_admin_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Welcome Admin"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Unread Section Title -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Unread"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Grid of 4 buttons (2x2) with icons on left, count below -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp">
+
+                <!-- Card for Reports -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_reports"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/card_location"
+                    app:layout_constraintHorizontal_chainStyle="spread"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/red"
+                        android:padding="8dp">
+                        <ImageView
+                            android:id="@+id/icon_reports"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/icon_flag"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/tv_reports_count"
+                            android:layout_marginStart="32dp"
+                            android:padding="8dp"
+                            app:tint="@color/light_grey" />
+
+                        <TextView
+                            android:id="@+id/title_reports"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="Reports"
+                            android:textColor="@color/light_grey"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toEndOf="@+id/icon_reports"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@+id/icon_reports"
+                            app:layout_constraintBottom_toBottomOf="@+id/icon_reports" />
+
+                        <TextView
+                            android:id="@+id/tv_reports_count"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="5"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/icon_reports"
+                             />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Card for Location Requests -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_location"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:layout_constraintStart_toEndOf="@+id/card_reports"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/blue"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/icon_location"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/icon_location"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/tv_location_count"
+                            android:layout_marginEnd="12dp"
+                            android:padding="8dp"
+                            app:tint="@color/light_grey" />
+
+                        <TextView
+                            android:id="@+id/title_location"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="Location Requests"
+                            android:textColor="@color/light_grey"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toEndOf="@+id/icon_location"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@+id/icon_location"
+                            app:layout_constraintBottom_toBottomOf="@+id/icon_location" />
+
+                        <TextView
+                            android:id="@+id/tv_location_count"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="20"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/icon_location"
+                            />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Card for Business Requests -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_business"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/card_reports"
+                    app:layout_constraintEnd_toStartOf="@+id/card_info"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/blue"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/icon_business"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/icon_business"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/tv_business_count"
+                            android:layout_marginEnd="12dp"
+                            android:padding="8dp"
+                            app:tint="@color/light_grey" />
+
+                        <TextView
+                            android:id="@+id/title_business"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="Business Requests"
+                            android:textColor="@color/light_grey"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toEndOf="@+id/icon_business"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@+id/icon_business"
+                            app:layout_constraintBottom_toBottomOf="@+id/icon_business" />
+
+                        <TextView
+                            android:id="@+id/tv_business_count"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="2"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/icon_business"
+                           />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Card for Info Requests -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_info"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:layout_constraintStart_toEndOf="@+id/card_business"
+                    app:layout_constraintTop_toBottomOf="@+id/card_location"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/blue"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/icon_info"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/icon_info"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/tv_info_count"
+                            android:layout_marginStart="15dp"
+                            android:padding="8dp"
+                            app:tint="@color/light_grey" />
+
+                        <TextView
+                            android:id="@+id/title_info"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="Info Requests"
+                            android:textColor="@color/light_grey"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toEndOf="@+id/icon_info"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@+id/icon_info"
+                            app:layout_constraintBottom_toBottomOf="@+id/icon_info" />
+
+                        <TextView
+                            android:id="@+id/tv_info_count"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="6"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/icon_info"
+                         />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- View Database Info Button -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Database Info"
+                android:textColor="@color/white"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>
