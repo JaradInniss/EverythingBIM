@@ -4,20 +4,20 @@
     <item
         android:id="@+id/navbar_post"
         android:icon="@drawable/icon_plus_square"
-        android:title="POST" />
+        android:title="Post"/>
 
     <item
         android:id="@+id/navbar_home"
         android:icon="@drawable/icon_home"
-        android:title="HOME" />
+        android:title="Home" />
 
     <item
         android:id="@+id/navbar_map"
         android:icon="@drawable/icon_pin_area"
-        android:title="MAP" />
+        android:title="Map" />
 
     <item
         android:id="@+id/navbar_user"
         android:icon="@drawable/icon_user_reg"
-        android:title="USER" />
+        android:title="User" />
 </menu>

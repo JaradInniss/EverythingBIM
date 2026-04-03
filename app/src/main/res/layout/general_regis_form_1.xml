@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/general_regis_form_1"
     android:layout_width="360dp"
     android:layout_height="wrap_content"
@@ -54,42 +55,105 @@
         android:layout_height="2dp"
         android:background="@color/black" />
 
-    <!-- Username Field -->
-    <EditText
-        android:id="@+id/register_username_et"
-        style="@style/et_style"
+    <LinearLayout
+        android:id="@+id/reg_error_layout"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="20dp"
-        android:hint="Username" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:visibility="gone">
 
-    <!-- Password Field -->
-    <EditText
-        android:id="@+id/register_password_et"
-        style="@style/et_style"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="20dp"
-        android:hint="Password" />
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/icon_info"
+            app:tint="@color/red"/>
 
-    <!-- Re-enter Password Field -->
-    <EditText
-        android:id="@+id/register_repassword_et"
-        style="@style/et_style"
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:layout_marginTop="20dp"
-        android:hint="Re-enter Password" />
+        <TextView
+            android:id="@+id/reg_error_tv"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/red"
+            android:textSize="13sp"/>
+    </LinearLayout>
 
-    <!-- Email Field -->
-    <EditText
-        android:id="@+id/register_email"
-        style="@style/et_style"
+    <!-- Username Field (ID: register_username_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_username"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp"
-        android:hint="Email" />
+        android:hint="Username"
+        style="@style/txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_username_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="text"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Email Field (ID: register_email_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Email"
+        style="@style/txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_email_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textEmailAddress"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Password Field (ID: register_password_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Password"
+        app:passwordToggleEnabled="true"
+        style="@style/txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_password_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textPassword"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Re-enter Password Field (ID: register_repassword_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_repassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"
+        android:hint="Re-enter Password"
+        app:passwordToggleEnabled="true"
+        style="@style/txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_repassword_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textPassword"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Next Button -->
     <LinearLayout

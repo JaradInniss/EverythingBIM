@@ -1,13 +1,21 @@
 package com.example.everythingbim.ui.registration;
+import com.example.everythingbim.databinding.ActivityGeneralRegistrationBinding;
+import com.example.everythingbim.databinding.ActivityLoginBinding;
+import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
+import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.Patterns;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,32 +28,38 @@ import com.example.everythingbim.R;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 //import com.example.everythingbim.ui.registration.GeneralRegViewModel;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class GeneralRegistration extends AppCompatActivity implements View.OnClickListener {
 
     private GeneralRegViewModel viewModel;
+    private ActivityGeneralRegistrationBinding binding;
+    private GeneralRegisForm1Binding form1Binding;
+    private GeneralRegisForm2Binding form2Binding;
 
     // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
-    private TextView loginOption;
+    private TextView loginOption, errorTextView;
     private ViewFlipper genRegFormViewFlipper;
-    private LinearLayout nextBttn, prevBttn;
+    private LinearLayout nextBttn, prevBttn, errorLayout;
     private Button submitBttn;
 
     // EditText fields from Form 1
-    private EditText usernameEditText, passwordEditText, reenterPasswordEditText, emailEditText;
+    private EditText usernameEditText, passwordEditText, emailEditText, rePasswordEditText;
 
     // EditText fields from Form 2 (Email Verification)
     private EditText digit1, digit2, digit3, digit4, digit5;
@@ -57,14 +71,20 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     // Verification code (temporary, ideally should be in ViewModel)
     private String expectedVerificationCode = "";
 
-    // Maximum pages
+    // Variables
     private static final int TOTAL_PAGES = 2;
+    private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Initialize binding
+        binding = ActivityGeneralRegistrationBinding.inflate(getLayoutInflater());
+        form1Binding = binding.generalRegisForm1;
+        form2Binding = binding.generalRegisForm2;
+
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_general_registration);
+        setContentView(binding.getRoot());
 
         // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(GeneralRegViewModel.class);
@@ -86,40 +106,43 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
     private void initViews() {
         // ImageViews
-        userTypeGeneral = findViewById(R.id.user_type_general);
-        userTypeBusiness = findViewById(R.id.user_type_business);
+        userTypeGeneral = binding.userTypeGeneral;
+        userTypeBusiness = binding.userTypeBusiness;
         userTypeGeneral.setOnClickListener(this);
         userTypeBusiness.setOnClickListener(this);
 
         // TextViews
-        loginOption = findViewById(R.id.login_opt);
+        loginOption = form1Binding.loginOpt;
         loginOption.setOnClickListener(this);
+        errorTextView = form1Binding.regErrorTv;
 
         // ViewFlipper
-        genRegFormViewFlipper = findViewById(R.id.reg_form_viewflipper);
+        genRegFormViewFlipper = binding.regFormViewflipper;
 
         // Linear Layouts
-        nextBttn = findViewById(R.id.next_bttn);
-        prevBttn = findViewById(R.id.prev_bttn);
+        nextBttn = form1Binding.nextBttn;
+        prevBttn = form2Binding.prevBttn;
         nextBttn.setOnClickListener(this);
         prevBttn.setOnClickListener(this);
+        errorLayout = form1Binding.regErrorLayout;
+        errorLayout.setVisibility(View.GONE);
 
         // Buttons
-        submitBttn = findViewById(R.id.submit_bttn);
+        submitBttn = form2Binding.submitBttn;
         submitBttn.setOnClickListener(this);
 
         // Form fields
-        usernameEditText = findViewById(R.id.register_username_et);
-        passwordEditText = findViewById(R.id.register_password_et);
-        reenterPasswordEditText = findViewById(R.id.register_repassword_et);
-        emailEditText = findViewById(R.id.register_email);
+        usernameEditText = form1Binding.registerUsernameEt;
+        passwordEditText = form1Binding.registerPasswordEt;
+        emailEditText = form1Binding.registerEmailEt;
+        rePasswordEditText = form1Binding.registerRepasswordEt;
 
         // Digit fields for verification
-        digit1 = findViewById(R.id.digit1);
-        digit2 = findViewById(R.id.digit2);
-        digit3 = findViewById(R.id.digit3);
-        digit4 = findViewById(R.id.digit4);
-        digit5 = findViewById(R.id.digit5);
+        digit1 = form2Binding.digit1;
+        digit2 = form2Binding.digit2;
+        digit3 = form2Binding.digit3;
+        digit4 = form2Binding.digit4;
+        digit5 = form2Binding.digit5;
 
         // Auto‑advance and backspace logic
         setDigitAutoAdvance();
@@ -148,6 +171,80 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
                 }
             }
         });
+
+        // Observe textfields for errors
+        viewModel.getErrorFields().observe(this, errors -> {
+            // Safety check: If the ViewModel sends a null map, stop execution
+            handler.removeCallbacksAndMessages(null);
+            if (errors == null) {
+                // If errors are null, manually hide everything immediately
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                errorLayout.setVisibility(View.GONE);
+                // Create a list of all layouts to reset them all at once
+                TextInputLayout[] allLayouts = {
+                        form1Binding.tilRegisterUsername,
+                        form1Binding.tilRegisterEmail,
+                        form1Binding.tilRegisterPassword,
+                        form1Binding.tilRegisterRepassword
+                };
+
+                for (TextInputLayout til : allLayouts) {
+                    til.setError(null);
+                    updateEndIcon(til, null);
+                }
+                return;
+            }
+
+            // Map IDs to Layouts: create a temporary map to link the EditText IDs
+            HashMap<Integer, TextInputLayout> fieldMap = new HashMap<>();
+            fieldMap.put(R.id.register_username_et, form1Binding.tilRegisterUsername);
+            fieldMap.put(R.id.register_email_et, form1Binding.tilRegisterEmail);
+            fieldMap.put(R.id.register_password_et, form1Binding.tilRegisterPassword);
+            fieldMap.put(R.id.register_repassword_et, form1Binding.tilRegisterRepassword);
+
+            // Iterate through errors: The ViewModel might return multiple errors at once
+            for (Map.Entry<Integer, String> entry : errors.entrySet()) {
+                int fieldId = entry.getKey();
+                String error = entry.getValue();
+
+                // Find the corresponding layout for the field that has the error
+                TextInputLayout fieldLayout = fieldMap.get(fieldId);
+                if (fieldLayout == null) continue;
+
+                // Animate layout changes
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                // Set the Error UI: Update the Material layout and our custom TextView
+                errorLayout.setVisibility(View.VISIBLE); // Makes error text appear
+                errorTextView.setText(error);
+                updateEndIcon(fieldLayout, error);
+
+                // Delayed Disappearance: Create a timer to hide the error after 2 seconds
+                handler.postDelayed(() -> {
+                    // Animate the views sliding back into their original places
+                    TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                    // Reset UI: Hide the error box and clear the red outlines/text from the field
+                    errorLayout.setVisibility(View.GONE);
+                    updateEndIcon(fieldLayout, null);
+                }, 2000);
+            }
+        });
+    }
+
+    // Switch the end icon of a given TextInputLayout
+    private void updateEndIcon(TextInputLayout til, String error) {
+        // Check if there is actually text (ignoring just whitespace)
+        // Only apply logic if the field is the Password or Re-password field
+        if (til == form1Binding.tilRegisterPassword || til == form1Binding.tilRegisterRepassword) {
+
+            if (error != null) {
+                // Switch to custom warning icon
+                til.setEndIconMode(TextInputLayout.END_ICON_CUSTOM);
+                til.setEndIconDrawable(ContextCompat.getDrawable(this, R.drawable.icon_warning_circle));
+            } else {
+                // Default state: Password Eye Toggle
+                til.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+            }
+        }
     }
 
     private void updateNavigationButtons(int currentPage) {
@@ -164,8 +261,8 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         prevBttn.setVisibility(currentPage == 0 ? View.GONE : View.VISIBLE);
     }
 
-    // --- Form Validation & Navigation Logic ---
 
+    // --- Form Validation & Navigation Logic ---
     // Called when Next button is clicked
     private void onNextClicked() {
         int currentPage = viewModel.getCurrentPage().getValue() != null ? viewModel.getCurrentPage().getValue() : 0;
@@ -194,39 +291,12 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
     // Validation for form page 1 (username, email, password)
     private boolean validatePage1() {
-        boolean isValid = true;
-
-        String username = usernameEditText.getText().toString().trim();
-        String email = emailEditText.getText().toString().trim();
-        String password = passwordEditText.getText().toString().trim();
-        String reenterPassword = reenterPasswordEditText.getText().toString().trim();
-
-        if (username.isEmpty()) {
-            usernameEditText.setError("Username is required");
-            isValid = false;
-        }
-
-        if (email.isEmpty()) {
-            emailEditText.setError("Email is required");
-            isValid = false;
-        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailEditText.setError("Enter valid email");
-            isValid = false;
-        }
-
-        if (password.isEmpty()) {
-            passwordEditText.setError("Password is required");
-            isValid = false;
-        } else if (password.length() < 6) {
-            passwordEditText.setError("Password must be at least 6 characters");
-            isValid = false;
-        }
-
-        if (!password.equals(reenterPassword)) {
-            reenterPasswordEditText.setError("Passwords do not match");
-            isValid = false;
-        }
-
+        boolean isValid = viewModel.isFormValid(
+                form1Binding.registerUsernameEt.getText().toString(),
+                form1Binding.registerEmailEt.getText().toString(),
+                form1Binding.registerPasswordEt.getText().toString(),
+                form1Binding.registerRepasswordEt.getText().toString()
+        );
         return isValid;
     }
 

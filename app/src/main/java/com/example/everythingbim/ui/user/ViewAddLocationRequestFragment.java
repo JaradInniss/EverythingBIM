@@ -11,11 +11,11 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.everythingbim.*;
+import com.example.everythingbim.R;
 import com.example.everythingbim.ui.utils.LocationRequestAdapter;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class ViewAddLocationRequestFragment extends Fragment {
 
@@ -25,27 +25,26 @@ public class ViewAddLocationRequestFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_view_add_location_request, container, false);
+        View view = inflater.inflate(R.layout.fragment_view_add_location_request,
+                container, false);
 
         // Back button
         view.findViewById(R.id.back_btn).setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack());
 
+        // Setup RecyclerView
         RecyclerView recyclerView = view.findViewById(R.id.viewlocreq_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-//
-//        // Placeholder empty list for now — backend will populate this later
-//        recyclerView.setAdapter(new LocationRequestAdapter(
-//                new ArrayList<>(),
-//                R.layout.item_view_add_location_request
-//        ));
 
-        // serves as a dummy so you can see something displayed
-        List<Object> dummyList = new ArrayList<>();
-        dummyList.add(new Object()); // dummy item 1
-        dummyList.add(new Object()); // dummy item 2
+        // Empty list for now — backend will populate this
+        // Query when ready:
+        //   db.collection("add_location_requests")
+        //     .whereEqualTo("userId", auth.getCurrentUser().getUid())
+        //     .whereEqualTo("status", "In Review")
+        //     .get()
+        //     .addOnSuccessListener(snapshot -> adapter.setRequests(snapshot.getDocuments()));
         recyclerView.setAdapter(new LocationRequestAdapter(
-                dummyList,
+                new ArrayList<DocumentSnapshot>(),
                 R.layout.item_view_add_location_request
         ));
 
