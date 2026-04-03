@@ -56,8 +56,12 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@null">
 
-        <include layout="@layout/general_regis_form_1"/>
-        <include layout="@layout/general_regis_form_2"/>
+        <include
+            android:id="@+id/general_regis_form_1"
+            layout="@layout/general_regis_form_1"/>
+        <include
+            android:id="@+id/general_regis_form_2"
+            layout="@layout/general_regis_form_2"/>
     </ViewFlipper>
 
 

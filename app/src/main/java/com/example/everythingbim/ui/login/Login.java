@@ -3,7 +3,14 @@ package com.example.everythingbim.ui.login;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -17,11 +24,17 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
-import com.example.everythingbim.ui.utils.NavigationCommand;
+import com.example.everythingbim.databinding.ActivityLoginBinding;
+import com.google.android.material.textfield.TextInputLayout;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
     private LoginViewModel viewModel;
+    private ActivityLoginBinding binding;
     private SharedPreferences sharedPreferences;
 
     // UI elements
@@ -32,14 +45,19 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private ProgressBar progressBar;
     private TextView errorTextView;
 
+    // Variables
+    private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Initialize binding
+        binding = ActivityLoginBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_login);
+        setContentView(binding.getRoot());
 
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
-
+        // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         viewModel.setSharedPreferences(sharedPreferences);
 
@@ -59,7 +77,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         userTypeText = findViewById(R.id.user_type_txt);
         createAccountOption = findViewById(R.id.create_account_opt);
         loginBttn = findViewById(R.id.login_bttn);
-        emailEditText = findViewById(R.id.login_username_et);
+        emailEditText = findViewById(R.id.login_email_et);
         passwordEditText = findViewById(R.id.login_password_et);
         progressBar = findViewById(R.id.login_progress_bar);
         errorTextView = findViewById(R.id.login_error);
@@ -96,12 +114,50 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         });
 
         // Error messages
-        viewModel.getErrorMessage().observe(this, error -> {
-            if (error != null && !error.isEmpty()) {
-                errorTextView.setText(error);
-                errorTextView.setVisibility(View.VISIBLE);
-            } else {
+        viewModel.getErrorFields().observe(this, errors -> {
+            // Safety check: If the ViewModel sends a null map, stop execution
+            handler.removeCallbacksAndMessages(null);
+            if (errors == null) {
+                // If errors are null, manually hide everything immediately
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                 errorTextView.setVisibility(View.GONE);
+                binding.tilLoginEmail.setError(null);
+                binding.tilLoginPassword.setError(null);
+                return;
+            }
+
+            // Map IDs to Layouts: We create a temporary map to link the EditText IDs
+            HashMap<Integer, TextInputLayout> fieldMap = new HashMap<>();
+            fieldMap.put(R.id.login_email_et, binding.tilLoginEmail);
+            fieldMap.put(R.id.login_password_et, binding.tilLoginPassword);
+
+            // Iterate through errors: The ViewModel might return multiple errors at once
+            for (Map.Entry<Integer, String> entry : errors.entrySet()) {
+                int fieldId = entry.getKey();
+                String error = entry.getValue();
+
+                // Find the corresponding layout for the field that has the error
+                TextInputLayout fieldLayout = fieldMap.get(fieldId);
+                if (fieldLayout == null) continue;
+
+                // Animate layout changes
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                // Set the Error UI: Update the Material layout and our custom TextView
+                fieldLayout.setError(error);        // Shows red text under the entry field
+                fieldLayout.setErrorEnabled(true);
+                errorTextView.setVisibility(View.VISIBLE); // Makes error text appear
+                errorTextView.setText(error);
+
+                // Delayed Disappearance: Create a timer to hide the error after 2 seconds
+                handler.postDelayed(() -> {
+
+                    // Animate the views sliding back into their original places
+                    TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                    // Reset UI: Hide the error box and clear the red outlines/text from the field
+                    errorTextView.setVisibility(View.GONE);
+                    fieldLayout.setError(null);
+                    fieldLayout.setErrorEnabled(false);
+                }, 2000);
             }
         });
 
@@ -117,6 +173,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             }
         });
     }
+
+
     @Override
     public void onClick(View view) {
         int id = view.getId();
