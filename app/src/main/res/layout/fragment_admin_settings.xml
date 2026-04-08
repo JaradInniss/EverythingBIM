@@ -7,7 +7,7 @@
     android:background="@color/white"
     tools:context=".AdminSettingsFragment">
 
-    <!-- ======================== HEADER (anchored at top) ======================== -->
+    <!-- HEADER -->
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
@@ -56,7 +56,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- ======================== SCROLLABLE FORM (below header) ======================== -->
+    <!-- SCROLLABLE FORM  -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -70,9 +70,7 @@
             android:orientation="vertical"
             android:padding="12dp">
 
-            <!-- ══════════════════════════════════════
-                 SETTINGS CARD
-            ══════════════════════════════════════ -->
+            <!--SETTINGS CARD-->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -86,7 +84,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- ── Card Header ─────────────── -->
+                    <!-- Card Header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -119,7 +117,7 @@
                         android:background="@color/light_grey"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- ── Username Field ──────────── -->
+                    <!-- Username Field  -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -128,6 +126,7 @@
                         android:layout_marginBottom="10dp">
 
                         <LinearLayout
+                            android:id="@+id/username_container"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -174,7 +173,7 @@
                             android:focusable="true" />
                     </LinearLayout>
 
-                    <!-- ── Email Field ─────────────── -->
+                    <!-- Email Field -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -183,6 +182,7 @@
                         android:layout_marginBottom="10dp">
 
                         <LinearLayout
+                            android:id="@+id/email_container"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -239,12 +239,12 @@
                         android:layout_marginBottom="10dp">
 
                         <RelativeLayout
+                            android:id="@+id/password_container"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:background="@drawable/bg_admin_field"
                             android:paddingStart="12dp"
-                            android:paddingEnd="40dp"
                             android:paddingTop="6dp"
                             android:paddingBottom="8dp"
                             android:layout_marginEnd="8dp">
@@ -282,6 +282,7 @@
                                 android:contentDescription="Toggle password"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
+                                android:layout_marginEnd="8dp"
                                 app:tint="@color/dark"
                                 android:clickable="true"
                                 android:focusable="true" />
@@ -340,21 +341,38 @@
                         android:layout_marginBottom="16dp" />
 
                     <!-- ── Log Out Button ───────────── -->
-                    <Button
+                    <!-- Log Out Button (custom layout, always works) -->
+                    <LinearLayout
                         android:id="@+id/admin_logout_btn"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
-                        android:text="Log Out"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium"
-                        android:background="@drawable/bg_admin_logout_btn"
-                        android:drawableStart="@drawable/icon_sign_out"
-                        android:drawablePadding="10dp"
+                        android:orientation="horizontal"
                         android:gravity="center"
+                        android:background="@drawable/bg_admin_logout_btn"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:padding="12dp"
                         android:insetTop="0dp"
-                        android:insetBottom="0dp" />
+                        android:insetBottom="0dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/icon_sign_out"
+                            android:contentDescription="Log out" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Log Out"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

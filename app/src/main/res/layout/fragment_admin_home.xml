@@ -603,8 +603,8 @@
                     android:layout_height="20dp"
                     android:src="@drawable/icon_flag_banner"
                     android:contentDescription="@null"
-                    android:tint="@color/bright_gold"
-                    android:layout_marginEnd="10dp" />
+                    android:layout_marginEnd="10dp"
+                    app:tint="@color/bright_gold" />
 
                 <!-- Title + subtitle + date on same row -->
                 <LinearLayout
@@ -688,8 +688,8 @@
                     android:layout_height="20dp"
                     android:src="@drawable/check_circle"
                     android:contentDescription="@null"
-                    android:tint="#28965a"
-                    android:layout_marginEnd="10dp" />
+                    android:layout_marginEnd="10dp"
+                    app:tint="#28965a" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -771,8 +771,8 @@
                     android:layout_height="20dp"
                     android:src="@drawable/icon_prohibit"
                     android:contentDescription="@null"
-                    android:tint="#7b0828"
-                    android:layout_marginEnd="10dp" />
+                    android:layout_marginEnd="10dp"
+                    app:tint="#7b0828" />
 
                 <LinearLayout
                     android:layout_width="0dp"

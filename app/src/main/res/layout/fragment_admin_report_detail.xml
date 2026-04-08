@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".AdminReportDetailFragment">
+
+    <!-- ══════════════════════════════════════
+         TOOLBAR
+    ══════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/report_detail_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/prussian_blue"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp"
+        android:layout_alignParentTop="true">
+
+        <ImageButton
+            android:id="@+id/report_detail_back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/icon_caret_left"
+            android:background="@android:color/transparent"
+            android:contentDescription="Go back"
+            app:tint="@color/white"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Report Submission"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium"
+            android:gravity="center" />
+
+        <!-- Spacer to balance the back button -->
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════
+         SCROLLABLE CONTENT
+    ══════════════════════════════════════ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/report_detail_toolbar"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- ══════════════════════════════════════
+                 MAIN CARD
+            ══════════════════════════════════════ -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <!-- ── Report # row + severity badge ── -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/report_detail_number"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Report #93"
+                            android:textColor="@color/black"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <!-- Severity badge — yellow pill -->
+                        <TextView
+                            android:id="@+id/report_detail_severity_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MINOR"
+                            android:textColor="@color/black"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_severity_badge_yellow"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="5dp"
+                            android:paddingBottom="5dp" />
+
+                    </LinearLayout>
+
+                    <!-- ── Status + Submitted date row ── -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status: "
+                            android:textColor="@color/dim_grey"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_status"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="In Review"
+                            android:textColor="@color/prussian_blue"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Submitted: 2026/02/11"
+                            android:textColor="@color/dim_grey"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/light_grey"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- ── Report Type ───────────────── -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="6dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Report Type:  "
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Post"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                    </LinearLayout>
+
+                    <!-- ── Reported Issue ────────────── -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Reported Issue:  "
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_issue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Spam or fake engagement"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                    </LinearLayout>
+
+                    <!-- ── Post Content section ─────── -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Post Content:"
+                        android:textColor="@color/black"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- User -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="User:  "
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_user"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="User12342"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                    </LinearLayout>
+
+                    <!-- Posted date -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Posted:  "
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/report_detail_post_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2026/01/11"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/roboto_medium" />
+
+                    </LinearLayout>
+
+                    <!-- Caption label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Caption:"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="6dp" />
+
+                    <!-- Caption text box — light blue background -->
+                    <TextView
+                        android:id="@+id/report_detail_caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="With Zoom Workplace Pro, you'll enjoy enhanced features and benefits that will take your meetings and collaboration to the next level. These benefits include increased video quality, expanded storage, unlimited meetings, AI technology, like composing messages, meeting summaries, and more."
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:background="@drawable/bg_admin_field"
+                        android:padding="12dp"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Image label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Image"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Post image — loads from Storage URL -->
+                    <ImageView
+                        android:id="@+id/report_detail_image"
+                        android:layout_width="160dp"
+                        android:layout_height="120dp"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/bg_admin_field"
+                        android:contentDescription="Post image"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/light_grey"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- ── Admin Action section ──────── -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Admin Action:"
+                        android:textColor="@color/black"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Action Spinner -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:layout_marginBottom="20dp">
+
+                        <Spinner
+                            android:id="@+id/report_detail_action_spinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@null"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="36dp" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="12dp"
+                            android:src="@drawable/icon_caret_down"
+                            android:contentDescription="@null"
+                            app:tint="@color/dark_grey" />
+
+                    </RelativeLayout>
+
+                    <!-- Submit button -->
+                    <Button
+                        android:id="@+id/report_detail_submit_btn"
+                        android:layout_width="140dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center_horizontal"
+                        android:text="SUBMIT"
+                        android:textColor="@color/dark"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/roboto_medium"
+                        android:background="@drawable/bttn_bg_yllw"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

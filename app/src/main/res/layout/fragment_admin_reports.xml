@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".AdminReportsFragment">
+
+    <!-- ══════════════════════════════════════
+         HEADER — dark gradient panel
+    ══════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/reports_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/persian_blue"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="10dp"
+        android:layout_alignParentTop="true">
+
+        <!-- Title row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="10dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/icon_flag_banner"
+                android:contentDescription="@null"
+                android:layout_marginEnd="8dp"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reports"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/roboto_medium" />
+
+        </LinearLayout>
+
+        <!-- Search bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_reports_search"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_marginBottom="10dp">
+
+            <EditText
+                android:id="@+id/reports_search_et"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="Search ID, Username"
+                android:textSize="13sp"
+                android:textColor="@color/black"
+                android:singleLine="true"
+                android:imeOptions="actionSearch"
+                android:inputType="text" />
+
+            <ImageView
+                android:id="@+id/reports_search_btn"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/icon_magnifying_glass"
+                android:contentDescription="Search"
+                android:clickable="true"
+                android:focusable="true"
+                app:tint="@color/black" />
+
+        </LinearLayout>
+
+        <!-- Filter row — icon left, count right -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:id="@+id/reports_filter_btn"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/icon_filter"
+                android:contentDescription="Filter"
+                android:clickable="true"
+                android:focusable="true"
+                app:tint="@color/white"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Active filter tag — hidden by default -->
+            <TextView
+                android:id="@+id/reports_filter_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Major"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:fontFamily="@font/roboto_medium"
+                android:visibility="gone"
+                android:layout_marginEnd="4dp" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Total / filtered count -->
+            <TextView
+                android:id="@+id/reports_count_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:fontFamily="@font/roboto_medium" />
+
+        </LinearLayout>
+
+        <!-- Unread / Read legend -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/bg_dot_red"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unread"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="14dp" />
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/bg_dot_grey"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Read"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════
+         REPORTS LIST
+    ══════════════════════════════════════ -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/reports_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/reports_header"
+        android:padding="10dp"
+        android:clipToPadding="false"
+        android:background="@color/gray" />
+
+    <!-- ══════════════════════════════════════
+         FILTER CARD — shown/hidden on filter tap
+         Overlays the list at the top
+    ══════════════════════════════════════ -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/reports_filter_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/reports_header"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="4dp"
+        android:elevation="8dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <!-- Filter By label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Filter By:"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginBottom="10dp" />
+
+            <!-- ── Report Type ─────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report Type:"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginBottom="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <RadioGroup
+                    android:id="@+id/filter_type_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/filter_type_post"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Post"
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginEnd="20dp"
+                        android:buttonTint="@color/persian_blue" />
+
+                    <RadioButton
+                        android:id="@+id/filter_type_account"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Account"
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:buttonTint="@color/persian_blue" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+            <!-- ── Report Severity ─────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report Severity:"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginBottom="6dp" />
+
+            <RadioGroup
+                android:id="@+id/filter_severity_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <RadioButton
+                    android:id="@+id/filter_severity_minor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Minor"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_severity_moderate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Moderate"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_severity_major"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Major"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:buttonTint="@color/persian_blue" />
+
+            </RadioGroup>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Scrim — tapping outside filter card closes it -->
+    <View
+        android:id="@+id/reports_filter_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#00000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
+
+</RelativeLayout>

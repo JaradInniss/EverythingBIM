@@ -9,7 +9,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.example.everythingbim.AdminReportsFragment;
 import com.example.everythingbim.R;
 import com.example.everythingbim.ui.home.HomeFragment;
 import com.example.everythingbim.ui.map.MapFragment;
@@ -29,6 +32,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+//        // Check if the fragment has already been added
+//        if (savedInstanceState == null) {
+//            // Start a FragmentTransaction
+//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+//            // Replace the container with your new fragment
+//            transaction.replace(R.id.fragment_container_view, AdminReportsFragment.class, null);
+//            // Commit the transaction
+//            transaction.commit();
+//        }
+
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
