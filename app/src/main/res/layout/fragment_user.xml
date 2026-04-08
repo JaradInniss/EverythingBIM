@@ -85,7 +85,7 @@
                     android:id="@+id/general_tab_submissions_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -110,7 +110,7 @@
                     android:id="@+id/general_tab_my_profile_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -135,7 +135,7 @@
                     android:id="@+id/general_tab_settings_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -772,7 +772,7 @@
                         android:layout_marginStart="6dp"
                         android:src="@drawable/check_circle"
                         android:contentDescription="Verified"
-                        app:tint="@color/blue"
+                        app:tint="@color/persian_blue"
                         android:visibility="gone" />
                 </LinearLayout>
 
@@ -828,7 +828,7 @@
                     android:id="@+id/business_tab_submissions_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -853,7 +853,7 @@
                     android:id="@+id/business_tab_my_profile_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -878,7 +878,7 @@
                     android:id="@+id/business_tab_settings_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
-                    android:background="@color/yellow"
+                    android:background="@color/bright_gold"
                     android:layout_marginTop="6dp"
                     android:visibility="gone" />
             </LinearLayout>
