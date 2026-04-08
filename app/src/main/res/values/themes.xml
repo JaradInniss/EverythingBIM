@@ -11,8 +11,8 @@
     <!-- ~~~~~BUTTON STYLES~~~~~  -->
 
     <!-- Yellow Bttn Style -->
-    <style name="bttn_style_yllw">
-        <item name="android:background">@drawable/pill_bg_yllw</item>
+    <style name="rectangle_bttn_gold">
+        <item name="android:background">@drawable/bg_rectangle_gold</item>
         <item name="android:fontFamily">@font/roboto_extrabold</item>
         <item name="android:textColor">@color/black</item>
         <item name="android:textSize">16sp</item>
@@ -26,7 +26,7 @@
         <item name="android:fontFamily">@font/roboto_regular</item>
         <item name="android:paddingLeft">8dp</item>
         <item name="android:textSize">15sp</item>
-        <item name="android:background">@drawable/bg_grey</item>
+        <item name="android:background">@drawable/bg_rectangle_pale_slate</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
@@ -34,25 +34,38 @@
     <style name="email_vf_et_style">
         <item name="android:fontFamily">@font/roboto_extrabold</item>
         <item name="android:textSize">15sp</item>
-        <item name="android:background">@drawable/bg_grey</item>
+        <item name="android:background">@drawable/bg_rectangle_white</item>
         <item name="android:textColor">@color/black</item>
         <item name="android:maxLines">1</item>
         <item name="android:gravity">center</item>
     </style>
 
     <!-- Materials Component TextInputLayout Style -->
-    <style name="txtInputLayout_style">
+    <style name="auth_txtInputLayout_style">
         <item name="android:fontFamily">@font/roboto_regular</item>
-        <item name="android:background">@drawable/bg_grey</item>
-        <item name="android:padding">5dp</item>
-        <item name="android:textColor">@color/black</item>
+        <item name="android:background">@drawable/bg_rectangle_white</item>
         <item name="boxBackgroundMode">outline</item>
+        <item name="android:padding">5dp</item>
+        <item name="android:textColorHint">@color/dark</item>
+        <item name="hintTextColor">@color/black</item>
         <item name="boxStrokeColor">@color/black</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
-        <item name="hintTextColor">@color/black</item>
     </style>
 
+    <style name="txtInputLayout_style">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:background">@drawable/bg_rectangle_white</item>
+        <item name="boxBackgroundMode">outline</item>
+        <item name="android:padding">5dp</item>
+        <item name="android:textColorHint">@color/dark</item>
+        <item name="hintTextColor">@color/black</item>
+        <item name="boxStrokeColor">@color/black</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+    </style>
+
+    <!-- Materials Component TextInputEditText Style -->
     <style name="txtInputEditText_style">
         <item name="android:fontFamily">@font/roboto_regular</item>
         <item name="android:textSize">15sp</item>
@@ -60,6 +73,26 @@
         <item name="android:padding">10dp</item>
         <item name="android:background">@android:color/transparent</item>
     </style>
+
+    <!-- File Upload Field Style -->
+    <style name="file_upload_field_style">
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingRight">10dp</item>
+        <item name="android:background">@drawable/bg_rectangle_white</item>
+    </style>
+
+    <!-- File Upload Bttn Style -->
+    <style name="file_upload_bttn_style">
+        <item name="android:layout_width">45dp</item>
+        <item name="android:layout_height">45dp</item>
+        <item name="android:src">@drawable/ic_paperclip</item>
+        <item name="android:background">@drawable/bg_border_rectangle_alice_blue</item>
+    </style>
+
 
     <!-- ~~~~~TEXT STYLES~~~~~  -->
 
@@ -80,7 +113,7 @@
     <!-- Info Text Style -->
     <style name="info_txt_style">
         <item name="android:fontFamily">@font/roboto_light</item>
-        <item name="android:textSize">10sp</item>
-        <item name="android:textColor">@color/dark_grey</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/dim_grey</item>
     </style>
 </resources>

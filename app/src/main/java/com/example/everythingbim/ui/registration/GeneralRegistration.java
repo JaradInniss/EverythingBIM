@@ -1,6 +1,6 @@
 package com.example.everythingbim.ui.registration;
+
 import com.example.everythingbim.databinding.ActivityGeneralRegistrationBinding;
-import com.example.everythingbim.databinding.ActivityLoginBinding;
 import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
 import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
@@ -12,7 +12,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
-import android.util.Patterns;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +34,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 //import com.example.everythingbim.ui.registration.GeneralRegViewModel;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -42,7 +42,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class GeneralRegistration extends AppCompatActivity implements View.OnClickListener {
 
@@ -52,14 +51,13 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     private GeneralRegisForm2Binding form2Binding;
 
     // UI Elements
-    private ImageView userTypeGeneral, userTypeBusiness;
     private TextView loginOption, errorTextView;
     private ViewFlipper genRegFormViewFlipper;
-    private LinearLayout nextBttn, prevBttn, errorLayout;
+    private LinearLayout generalUserContainer, businessUserContainer, nextBttn, prevBttn, errorLayout;
     private Button submitBttn;
 
     // EditText fields from Form 1
-    private EditText usernameEditText, passwordEditText, emailEditText, rePasswordEditText;
+    private TextInputEditText usernameEditText, passwordEditText, emailEditText, rePasswordEditText;
 
     // EditText fields from Form 2 (Email Verification)
     private EditText digit1, digit2, digit3, digit4, digit5;
@@ -105,12 +103,6 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     }
 
     private void initViews() {
-        // ImageViews
-        userTypeGeneral = binding.userTypeGeneral;
-        userTypeBusiness = binding.userTypeBusiness;
-        userTypeGeneral.setOnClickListener(this);
-        userTypeBusiness.setOnClickListener(this);
-
         // TextViews
         loginOption = form1Binding.loginOpt;
         loginOption.setOnClickListener(this);
@@ -120,6 +112,10 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         genRegFormViewFlipper = binding.regFormViewflipper;
 
         // Linear Layouts
+        generalUserContainer = binding.generalUserContainer;
+        businessUserContainer = binding.businessUserContainer;
+        generalUserContainer.setOnClickListener(this);
+        businessUserContainer.setOnClickListener(this);
         nextBttn = form1Binding.nextBttn;
         prevBttn = form2Binding.prevBttn;
         nextBttn.setOnClickListener(this);
@@ -233,16 +229,28 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     // Switch the end icon of a given TextInputLayout
     private void updateEndIcon(TextInputLayout til, String error) {
         // Check if there is actually text (ignoring just whitespace)
-        // Only apply logic if the field is the Password or Re-password field
-        if (til == form1Binding.tilRegisterPassword || til == form1Binding.tilRegisterRepassword) {
-
+        // Check if the field is a password field
+        if (til == form1Binding.tilRegisterUsername || til == form1Binding.tilRegisterEmail) {
             if (error != null) {
                 // Switch to custom warning icon
                 til.setEndIconMode(TextInputLayout.END_ICON_CUSTOM);
-                til.setEndIconDrawable(ContextCompat.getDrawable(this, R.drawable.icon_warning_circle));
+                til.setEndIconDrawable(ContextCompat.getDrawable(this, R.drawable.ic_warning_circle));
+                til.setEndIconTintList(ContextCompat.getColorStateList(this, R.color.dark_amaranth));
+            } else {
+                // Default state: Empty
+                til.setEndIconMode(TextInputLayout.END_ICON_NONE);
+            }
+        }
+        if (til == form1Binding.tilRegisterPassword || til == form1Binding.tilRegisterRepassword) {
+            if (error != null) {
+                // Switch to custom warning icon
+                til.setEndIconMode(TextInputLayout.END_ICON_CUSTOM);
+                til.setEndIconDrawable(ContextCompat.getDrawable(this, R.drawable.ic_warning_circle));
+                til.setEndIconTintList(ContextCompat.getColorStateList(this, R.color.dark_amaranth));
             } else {
                 // Default state: Password Eye Toggle
                 til.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+                til.setEndIconTintList(ContextCompat.getColorStateList(this, R.color.black));
             }
         }
     }
@@ -453,9 +461,9 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     @Override
     public void onClick(View view) {
         int id = view.getId();
-        if (id == R.id.user_type_general) {
+        if (id == R.id.general_user_container) {
             Toast.makeText(this, "General User", Toast.LENGTH_SHORT).show();
-        } else if (id == R.id.user_type_business) {
+        } else if (id == R.id.business_user_container) {
             viewModel.navigateTo(BusinessRegistration.class);
         } else if (id == R.id.login_opt) {
             viewModel.navigateTo(Login.class);

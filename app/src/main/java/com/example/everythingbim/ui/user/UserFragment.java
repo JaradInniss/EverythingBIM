@@ -1,6 +1,5 @@
 package com.example.everythingbim.ui.user;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -54,7 +53,7 @@ public class UserFragment extends Fragment {
         view.findViewById(R.id.business_edit_email_btn).setOnClickListener(v ->{
             toggleFieldEdit(
                     view.findViewById(R.id.business_edit_email_et),
-                    (ImageButton) view.findViewById(R.id.business_edit_email_et)
+                    view.findViewById(R.id.business_edit_email_btn) // Use the _btn ID instead
             );
         });
 
@@ -113,13 +112,19 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
-            button.setImageResource(R.drawable.check_circle); // confirmation icon
+            button.setBackgroundResource(R.drawable.bg_rectangle_blue);
+            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
+            ));
         } else {
             // Disable editing / save
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
-            button.setImageResource(R.drawable.icon_edit); // swap back to edit icon
+            button.setBackgroundResource(R.drawable.bg_rectangle_pale_slate);
+            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
+            ));
 
             // Hide keyboard
             android.view.inputmethod.InputMethodManager imm =

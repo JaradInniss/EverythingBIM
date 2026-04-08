@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId "com.example.everythingbim"
         minSdk 24
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
@@ -41,7 +41,6 @@ dependencies {
     implementation libs.appcompat
     implementation libs.activity
     implementation libs.constraintlayout
-    implementation libs.play.services.maps
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
@@ -51,11 +50,13 @@ dependencies {
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
     implementation libs.firebase.storage
-    implementation 'com.google.android.gms:play-services-maps:18.2.0'
-    implementation 'com.google.android.gms:play-services-location:21.0.1' // optional for user location
+    
+    // Google Maps and Location
+    implementation 'com.google.android.gms:play-services-maps:19.0.0'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+    
     implementation "androidx.room:room-runtime:2.6.0"
     annotationProcessor "androidx.room:room-compiler:2.6.0"
-//    implementation "androidx.room:room-ktx:2.6.0" // if using Kotlin
 }
 
 apply plugin: 'com.google.gms.google-services'

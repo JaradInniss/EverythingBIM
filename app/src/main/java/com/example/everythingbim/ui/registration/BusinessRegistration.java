@@ -1,13 +1,19 @@
 package com.example.everythingbim.ui.registration;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.OpenableColumns;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -33,11 +39,20 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.File;
+import com.example.everythingbim.databinding.ActivityBusinessRegistrationBinding;
+import com.example.everythingbim.databinding.BusinessRegisForm1Binding;
+import com.example.everythingbim.databinding.BusinessRegisForm2Binding;
+import com.example.everythingbim.databinding.BusinessRegisForm3Binding;
+import com.example.everythingbim.databinding.BusinessRegisForm4Binding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.utils.FileAdapter;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -47,21 +62,26 @@ import android.view.inputmethod.EditorInfo;
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
 
     private BusinessRegViewModel viewModel;
+    private ActivityBusinessRegistrationBinding binding;
+    private BusinessRegisForm1Binding form1Binding;
+    private BusinessRegisForm2Binding form2Binding;
+    private BusinessRegisForm3Binding form3Binding;
+    private BusinessRegisForm4Binding form4Binding;
+
 
     // UI Elements
     private ImageView userTypeGeneral, userTypeBusiness;
     private TextView loginOption, imgUploadCount, fileUploadCount;
     private ViewFlipper busRegFormViewFlipper;
-    private LinearLayout nextBttn1, nextBttn2, nextBttn3, prevBttn1, prevBttn2, prevBttn3;
+    private LinearLayout generalUserContainer, businessUserContainer, nextBttn1, nextBttn2, nextBttn3, prevBttn1, prevBttn2, prevBttn3, form1ErrorLayout, form3ErrorLayout;
     private RecyclerView imgIconContainer, fileIconContainer;
     private Button submitBttn;
     private ImageButton uploadImgBttn, uploadFileBttn;
     private ProgressBar progressBar;
-    private TextView errorTextView;
+    private TextView form1RegErrorTv, form3RegErrorTv, errorTextView;
 
     // Form fields (match IDs from layouts)
-    private EditText businessNameEt, businessEmailEt, contactNumberEt, businessAddressEt, businessDescriptionEt;
-    private EditText passwordEt, confirmPasswordEt;
+    private TextInputEditText businessUsername, businessEmailEt, businessNameEt, contactNumberEt, businessAddressEt, businessDescriptionEt, passwordEt, rePasswordEt;
 
     // Adapters
     private FileAdapter imageAdapter, fileAdapter;
@@ -74,11 +94,20 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     private EditText digit1, digit2, digit3, digit4, digit5;
     private ImageView checkIcon, warningIcon;
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Initialize binding
+        binding = ActivityBusinessRegistrationBinding.inflate(getLayoutInflater());
+        form1Binding = binding.businessRegisForm1;
+        form2Binding = binding.businessRegisForm2;
+        form3Binding = binding.businessRegisForm3;
+        form4Binding = binding.businessRegisForm4;
+
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_business_registration);
+        setContentView(binding.getRoot());
 
         viewModel = new ViewModelProvider(this).get(BusinessRegViewModel.class);
 
@@ -93,33 +122,39 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     }
 
     private void initViews() {
-        // ImageViews
-        userTypeGeneral = findViewById(R.id.user_type_general);
-        userTypeBusiness = findViewById(R.id.user_type_business);
-        userTypeBusiness.setOnClickListener(this);
-        userTypeGeneral.setOnClickListener(this);
         // TextViews
-        loginOption = findViewById(R.id.login_opt);
+        loginOption = form1Binding.loginOpt;
         loginOption.setOnClickListener(this);
-        imgUploadCount = findViewById(R.id.img_upload_count);
-        fileUploadCount = findViewById(R.id.file_upload_count);
+        imgUploadCount = form4Binding.imgUploadCount;
+        fileUploadCount = form4Binding.fileUploadCount;
+        form1RegErrorTv = form1Binding.form1RegErrorTv;
+        form3RegErrorTv = form3Binding.form3RegErrorTv;
+
         // ViewFlipper
-        busRegFormViewFlipper = findViewById(R.id.reg_form_viewflipper);
+        busRegFormViewFlipper = binding.regFormViewflipper;
 
         // Linear Layouts
-        nextBttn1 = findViewById(R.id.next_bttn1);
-        nextBttn2 = findViewById(R.id.next_bttn2);
-        nextBttn3 = findViewById(R.id.next_bttn3);
+        generalUserContainer = binding.generalUserContainer;
+        businessUserContainer = binding.businessUserContainer;
+        generalUserContainer.setOnClickListener(this);
+        businessUserContainer.setOnClickListener(this);
+
+        nextBttn1 = form1Binding.nextBttn1;
+        nextBttn2 = form2Binding.nextBttn2;
+        nextBttn3 = form3Binding.nextBttn3;
         nextBttn1.setOnClickListener(this);
         nextBttn2.setOnClickListener(this);
         nextBttn3.setOnClickListener(this);
 
-        prevBttn1 = findViewById(R.id.prev_bttn1);
-        prevBttn2 = findViewById(R.id.prev_bttn2);
-        prevBttn3 = findViewById(R.id.prev_bttn3);
+        prevBttn1 = form2Binding.prevBttn1;
+        prevBttn2 = form3Binding.prevBttn2;
+        prevBttn3 = form4Binding.prevBttn3;
         prevBttn1.setOnClickListener(this);
         prevBttn2.setOnClickListener(this);
         prevBttn3.setOnClickListener(this);
+
+        form1ErrorLayout = form1Binding.regErrorLayout;
+        form3ErrorLayout = form3Binding.regErrorLayout;
 
         // Buttons
         submitBttn = findViewById(R.id.submit_bttn);
@@ -129,23 +164,23 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         uploadFileBttn = findViewById(R.id.upload_file_bttn);
         uploadFileBttn.setOnClickListener(this);
 
-        // Progress bar and error text
+        // Progress bar
         progressBar = findViewById(R.id.progress_bar);
-        errorTextView = findViewById(R.id.error_text);
 
         // Form fields – IDs from the included layouts
-        businessNameEt = findViewById(R.id.business_name_et);
-        businessEmailEt = findViewById(R.id.business_email_et);
-        contactNumberEt = findViewById(R.id.contact_number_et);
-        businessAddressEt = findViewById(R.id.business_address_et);
-        businessDescriptionEt = findViewById(R.id.business_description_et);
-        passwordEt = findViewById(R.id.password_et);
-        confirmPasswordEt = findViewById(R.id.confirm_password_et);
+        businessUsername = form1Binding.businessRegisterUsernameEt;
+        businessEmailEt = form1Binding.businessRegisterEmailEt;
+        passwordEt = form1Binding.businessRegisterPasswordEt;
+        rePasswordEt = form1Binding.businessRegisterRepasswordEt;
+        businessNameEt = form3Binding.registerBusinessNameEt;
+        contactNumberEt = form3Binding.registerContactNumberEt;
+        businessAddressEt = form3Binding.registerBusinessAddressEt;
+        businessDescriptionEt = form3Binding.registerBusinessDescriptionEt;
 
         // RecyclerViews
-        imgIconContainer = findViewById(R.id.img_icon_container);
+        imgIconContainer = form4Binding.imgIconContainer;
         imgIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        fileIconContainer = findViewById(R.id.file_icon_container);
+        fileIconContainer = form4Binding.fileIconContainer;
         fileIconContainer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
         // Adapters
@@ -155,13 +190,13 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         fileIconContainer.setAdapter(fileAdapter);
 
         // Digit fields
-        digit1 = findViewById(R.id.digit1);
-        digit2 = findViewById(R.id.digit2);
-        digit3 = findViewById(R.id.digit3);
-        digit4 = findViewById(R.id.digit4);
-        digit5 = findViewById(R.id.digit5);
-        checkIcon = findViewById(R.id.check_icon);
-        warningIcon = findViewById(R.id.warning_icon);
+        digit1 = form2Binding.digit1;
+        digit2 = form2Binding.digit2;
+        digit3 = form2Binding.digit3;
+        digit4 = form2Binding.digit4;
+        digit5 = form2Binding.digit5;
+        checkIcon = form2Binding.checkIcon;
+        warningIcon = form2Binding.warningIcon;
 
         // Auto‑advance and backspace handling
         setDigitAutoAdvance();
@@ -244,11 +279,20 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         // Observe file lists
         viewModel.getImageList().observe(this, images -> {
             imageAdapter.updateList(images);
-            imgUploadCount.setText(String.format(Locale.US, "(%d)", images.size()));
+            if (images.size() == 0 || images.isEmpty()) {
+                imgUploadCount.setText("");
+            } else {
+                imgUploadCount.setText(String.format(Locale.US, "| %d", images.size()));
+            }
         });
+
         viewModel.getFileList().observe(this, files -> {
             fileAdapter.updateList(files);
-            fileUploadCount.setText(String.format(Locale.US, "(%d)", files.size()));
+            if (files.size() == 0 || files.isEmpty()) {
+                fileUploadCount.setText("");
+            } else {
+                fileUploadCount.setText(String.format(Locale.US, "| %d", files.size()));
+            }
         });
 
         // Loading and error states
@@ -259,15 +303,6 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             } else {
                 progressBar.setVisibility(View.GONE);
                 submitBttn.setEnabled(true);
-            }
-        });
-
-        viewModel.getErrorMessage().observe(this, error -> {
-            if (error != null && !error.isEmpty()) {
-                errorTextView.setText(error);
-                errorTextView.setVisibility(View.VISIBLE);
-            } else {
-                errorTextView.setVisibility(View.GONE);
             }
         });
 
@@ -296,18 +331,132 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             }
         });
+
+        // Observe error messages
+        viewModel.getErrorFields().observe(this, errors -> {
+            // Get current active form bindings based on page
+            handler.removeCallbacksAndMessages(null);
+
+            int pageNum = viewModel.getCurrentPage().getValue() != null ? viewModel.getCurrentPage().getValue() : 0;
+
+            // 1. Identify the current page's Error UI components
+            LinearLayout currentErrorLayout;
+            TextView currentErrorTv;
+
+            switch (pageNum) {
+                case 0:
+                    currentErrorLayout = form1Binding.regErrorLayout;
+                    currentErrorTv = form1Binding.form1RegErrorTv;
+                    break;
+                case 1:
+                    currentErrorLayout = form2Binding.regErrorLayout;
+                    currentErrorTv = form2Binding.form2RegErrorTv;
+                    break;
+                case 2:
+                    currentErrorLayout = form3Binding.regErrorLayout;
+                    currentErrorTv = form3Binding.form3RegErrorTv;
+                    break;
+                case 3:
+                    currentErrorLayout = form4Binding.regErrorLayout;
+                    currentErrorTv = form4Binding.form4RegErrorTv;
+                    break;
+                default:
+                    return;
+            }
+
+            if (errors == null || errors.isEmpty()) {
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                currentErrorLayout.setVisibility(View.GONE);
+                resetAllFieldErrors(); // Helper method defined below
+                return;
+            }
+
+            Map.Entry<Integer, String> firstError = errors.entrySet().iterator().next();
+            TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+            currentErrorLayout.setVisibility(View.VISIBLE);
+            currentErrorTv.setText(firstError.getValue());
+
+            // 3. Update icons for EVERY field currently in error
+            for (Map.Entry<Integer, String> entry : errors.entrySet()) {
+                TextInputLayout til = getTextInputLayoutById(entry.getKey());
+                if (til != null) {
+                    updateEndIcon(til, entry.getValue());
+                }
+            }
+
+            // 4. Auto-hide timer
+            handler.postDelayed(() -> {
+                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                currentErrorLayout.setVisibility(View.GONE);
+
+                // CRITICAL: Reset ALL icons on this page after the 2 seconds
+                resetAllFieldErrors();
+            }, 2000);
+        });
+    }
+
+    private void updateEndIcon(TextInputLayout til, String error) {
+        if (til == null) return;
+
+        // Check if it's a password-style field (needs toggle)
+        boolean isPasswordField = (til == form1Binding.tilBusinessRegisterPassword ||
+                til == form1Binding.tilBusinessRegisterRepassword);
+
+        if (error != null) {
+            // Show Warning Icon
+            til.setEndIconMode(TextInputLayout.END_ICON_CUSTOM);
+            til.setEndIconDrawable(ContextCompat.getDrawable(this, R.drawable.ic_warning_circle));
+            til.setEndIconTintList(ContextCompat.getColorStateList(this, R.color.dark_amaranth));
+        } else {
+            // Reset to Default
+            if (isPasswordField) {
+                til.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+                til.setEndIconTintList(ContextCompat.getColorStateList(this, R.color.black));
+            } else {
+                til.setEndIconMode(TextInputLayout.END_ICON_NONE);
+            }
+        }
+    }
+
+    private TextInputLayout getTextInputLayoutById(int id) {
+        if (id == R.id.business_register_username_et) return form1Binding.tilBusinessRegisterUsername;
+        if (id == R.id.business_register_email_et) return form1Binding.tilBusinessRegisterEmail;
+        if (id == R.id.business_register_password_et) return form1Binding.tilBusinessRegisterPassword;
+        if (id == R.id.business_register_repassword_et) return form1Binding.tilBusinessRegisterRepassword;
+
+        if (id == R.id.register_business_name_et) return form3Binding.tilRegisterBusinessNameEt;
+        if (id == R.id.register_contact_number_et) return form3Binding.tilRegisterContactNumberEt;
+        if (id == R.id.register_business_address_et) return form3Binding.tilRegisterBusinessAddressEt;
+        if (id == R.id.register_business_description_et) return form3Binding.tilRegisterBusinessDescriptionEt;
+
+        return null;
+    }
+
+    private void resetAllFieldErrors() {
+        TextInputLayout[] allLayouts = {
+                form1Binding.tilBusinessRegisterUsername, form1Binding.tilBusinessRegisterEmail,
+                form1Binding.tilBusinessRegisterPassword, form1Binding.tilBusinessRegisterRepassword,
+                form3Binding.tilRegisterBusinessNameEt, form3Binding.tilRegisterContactNumberEt,
+                form3Binding.tilRegisterBusinessAddressEt, form3Binding.tilRegisterBusinessDescriptionEt
+        };
+        for (TextInputLayout til : allLayouts) {
+            if (til != null) {
+                til.setError(null);
+                updateEndIcon(til, null);
+            }
+        }
     }
 
     // --- Permission handling ---
     private void requestFilePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.READ_MEDIA_IMAGES,
-                            android.Manifest.permission.READ_MEDIA_VIDEO},
+                    new String[]{Manifest.permission.READ_MEDIA_IMAGES,
+                            Manifest.permission.READ_MEDIA_VIDEO},
                     MEDIA_PERMISSION_REQUEST_CODE);
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     MEDIA_PERMISSION_REQUEST_CODE);
         }
     }
@@ -315,10 +464,10 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     private boolean hasFilePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this,
-                    android.Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
+                    Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
         } else {
             return ContextCompat.checkSelfPermission(this,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+                    Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
@@ -403,9 +552,9 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     public void onClick(View view) {
         int id = view.getId();
 
-        if (id == R.id.user_type_general) {
+        if (id == R.id.general_user_container) {
             viewModel.navigateTo(GeneralRegistration.class);
-        } else if (id == R.id.user_type_business) {
+        } else if (id == R.id.business_user_container) {
             Toast.makeText(this, "Currently Business User", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.login_opt) {
             viewModel.navigateTo(Login.class);
@@ -415,18 +564,33 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             handleFileUpload();
         } else if (id == R.id.next_bttn1 || id == R.id.next_bttn2 || id == R.id.next_bttn3) {
             int currentPage = viewModel.getCurrentPage().getValue() != null ? viewModel.getCurrentPage().getValue() : 0;
-            if (currentPage == 1) {
+            if (currentPage == 0) {
                 // Page 1 is the verification page – verify code first
+                boolean valid = viewModel.isPageValid(0,
+                        businessUsername.getText().toString(),
+                        businessEmailEt.getText().toString(),
+                        passwordEt.getText().toString(),
+                        rePasswordEt.getText().toString()
+                );
+                if (valid) viewModel.nextPage();
+
+            } else if (currentPage == 1) {
                 verifyCodeAndProceed();
-            } else {
-                viewModel.nextPage();
+            } else if (currentPage == 2) {
+                boolean valid = viewModel.isPageValid(2,
+                        businessNameEt.getText().toString(),
+                        contactNumberEt.getText().toString(),
+                        businessAddressEt.getText().toString(),
+                        businessDescriptionEt.getText().toString()
+                );
+                if (valid) viewModel.nextPage();
             }
         } else if (id == R.id.prev_bttn1 || id == R.id.prev_bttn2 || id == R.id.prev_bttn3) {
             viewModel.prevPage();
         } else if (id == R.id.submit_bttn) {
             String email = businessEmailEt.getText().toString().trim();
             String password = passwordEt.getText().toString().trim();
-            String confirm = confirmPasswordEt.getText().toString().trim();
+            String confirm = rePasswordEt.getText().toString().trim();
 
             if (!password.equals(confirm)) {
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();

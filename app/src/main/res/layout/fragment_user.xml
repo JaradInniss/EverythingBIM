@@ -31,7 +31,7 @@
                 android:id="@+id/general_user_profile_iv"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:src="@drawable/icon_user_circle"
+                android:src="@drawable/ic_user_circle"
                 app:tint="@color/light_grey" />
 
             <!-- User -->
@@ -83,7 +83,7 @@
                     <ImageView
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:src="@drawable/icon_user_circle_gear">
+                        android:src="@drawable/ic_user_circle">
                     </ImageView>
 
                     <TextView
@@ -126,7 +126,7 @@
                         app:boxStrokeColor="@color/light_grey"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="2dp"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:hint="Email"
                         app:hintTextColor="@color/light_grey">
 
@@ -146,8 +146,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:src="@drawable/icon_edit"
-                        android:background="@drawable/bg_grey"
+                        android:src="@drawable/ic_edit"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:layout_marginStart="5dp"
                         android:clickable="true"/>
                 </LinearLayout>
@@ -169,7 +169,7 @@
                         android:layout_weight="1"
                         android:padding="5dp"
                         android:hint="Password"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         app:boxBackgroundMode="outline"
                         app:boxStrokeColor="@color/light_grey"
                         app:boxStrokeWidth="1dp"
@@ -195,8 +195,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:background="@drawable/bg_grey"
-                        android:src="@drawable/icon_edit"
+                        android:background="@drawable/bg_rectangle_pale_slate"
+                        android:src="@drawable/ic_edit"
                         android:layout_marginStart="5dp"
                         android:clickable="true"/>
 
@@ -233,7 +233,7 @@
                     <ImageView
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:src="@drawable/icon_note_pencil"/>
+                        android:src="@drawable/ic_note_pencil"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -282,7 +282,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -292,7 +292,7 @@
                             android:id="@+id/locreq_new_btn_iv"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_plus"
+                            android:src="@drawable/ic_plus"
                             app:tint="@color/black" />
 
                         <TextView
@@ -312,7 +312,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -323,7 +323,7 @@
                             android:id="@+id/locreq_view_btn_iv"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_view"
+                            android:src="@drawable/ic_view"
                             app:tint="@color/black" />
 
                         <TextView
@@ -343,7 +343,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -354,7 +354,7 @@
                             android:id="@+id/locreq_view_btn_iv_2"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_flag"
+                            android:src="@drawable/ic_flag"
                             app:tint="@color/black"/>
 
                         <TextView
@@ -429,7 +429,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -439,7 +439,7 @@
                             android:id="@+id/inforeq_new_btn_iv"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_plus"
+                            android:src="@drawable/ic_plus"
                             app:tint="@color/black" />
 
                         <TextView
@@ -459,7 +459,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -470,7 +470,7 @@
                             android:id="@+id/inforeq_view_btn_iv"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_view"
+                            android:src="@drawable/ic_view"
                             app:tint="@color/black" />
 
                         <TextView
@@ -490,7 +490,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -500,7 +500,7 @@
                             android:id="@+id/inforeq_view_btn_iv_2"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_flag"
+                            android:src="@drawable/ic_flag"
                             app:tint="@color/black" />
 
                         <TextView
@@ -573,7 +573,7 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginStart="10dp"
-                android:src="@drawable/icon_user_circle" />
+                android:src="@drawable/ic_user_circle" />
 
             <!-- User -->
             <TextView
@@ -618,7 +618,7 @@
                     <ImageView
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:src="@drawable/icon_user_circle_gear">
+                        android:src="@drawable/ic_user_circle">
                     </ImageView>
                     <TextView
                         android:layout_width="wrap_content"
@@ -656,7 +656,7 @@
                         app:boxStrokeWidthFocused="2dp"
                         app:hintTextColor="@color/light_grey"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_rounded"
+                        android:background="@drawable/bg_rectangle_dim_grey"
                         >
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -675,8 +675,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:src="@drawable/icon_edit"
-                        android:background="@drawable/bg_rounded_button"
+                        android:src="@drawable/ic_edit"
+                        android:background="@drawable/bg_rectangle_amaranth"
                         android:layout_marginStart="8dp"
                         android:clickable="true"/>
                 </LinearLayout>
@@ -701,7 +701,7 @@
                         app:hintTextColor="@color/light_grey"
                         app:passwordToggleEnabled="true"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_rounded">
+                        android:background="@drawable/bg_rectangle_dim_grey">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/business_edit_password_et"
@@ -719,8 +719,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:background="@drawable/bg_rounded_button"
-                        android:src="@drawable/icon_edit"
+                        android:background="@drawable/bg_rectangle_amaranth"
+                        android:src="@drawable/ic_edit"
                         android:layout_marginStart="8dp"
                         android:clickable="true"/>
                 </LinearLayout>
@@ -743,7 +743,7 @@
                         app:boxStrokeWidthFocused="2dp"
                         app:hintTextColor="@color/light_grey"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_rounded">
+                        android:background="@drawable/bg_rectangle_dim_grey">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/business_edit_address_et"
@@ -761,8 +761,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:background="@drawable/bg_rounded_button"
-                        android:src="@drawable/icon_edit"
+                        android:background="@drawable/bg_rectangle_amaranth"
+                        android:src="@drawable/ic_edit"
                         android:layout_marginStart="8dp"
                         android:clickable="true"/>
                 </LinearLayout>
@@ -785,7 +785,7 @@
                         app:boxStrokeWidthFocused="2dp"
                         app:hintTextColor="@color/light_grey"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_rounded">
+                        android:background="@drawable/bg_rectangle_dim_grey">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/business_edit_desc_et"
@@ -803,8 +803,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:focusable="true"
-                        android:background="@drawable/bg_rounded_button"
-                        android:src="@drawable/icon_edit"
+                        android:background="@drawable/bg_rectangle_amaranth"
+                        android:src="@drawable/ic_edit"
                         android:layout_marginStart="8dp"
                         android:clickable="true"/>
                 </LinearLayout>
@@ -834,7 +834,7 @@
                     <ImageView
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:src="@drawable/icon_note_pencil"/>
+                        android:src="@drawable/ic_note_pencil"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -880,7 +880,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_rounded"
+                        android:background="@drawable/bg_rectangle_dim_grey"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -891,7 +891,7 @@
                             android:id="@+id/accver_view_btn_iv"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_view"
+                            android:src="@drawable/ic_view"
                             android:contentDescription="View in review submissions"
                             app:tint="@color/black" />
 
@@ -913,7 +913,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:background="@drawable/bg_rounded"
+                        android:background="@drawable/bg_rectangle_dim_grey"
                         android:padding="8dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -924,7 +924,7 @@
                             android:id="@+id/accver_view_btn_iv_2"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:src="@drawable/icon_flag"
+                            android:src="@drawable/ic_flag"
                             android:contentDescription="View completed submissions"
                             app:tint="@color/grey"/>
                         <TextView

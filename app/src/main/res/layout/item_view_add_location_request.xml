@@ -79,7 +79,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="In Review"
-                            android:textColor="@color/blue"
+                            android:textColor="@color/persian_blue"
                             android:textSize="12sp"
                             android:textStyle="bold"/>
 
@@ -90,7 +90,7 @@
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:layout_marginStart="8dp"
-                        android:src="@drawable/icon_view"
+                        android:src="@drawable/ic_view"
                         android:contentDescription="Status Icon" />
 
                 </LinearLayout>
@@ -129,7 +129,7 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rounded"
+                android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -161,7 +161,7 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rounded"
+                android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -194,7 +194,7 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rounded"
+                android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -223,7 +223,7 @@
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_rounded"
+                android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="12dp">
 
                 <LinearLayout
