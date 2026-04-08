@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -10,17 +11,18 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/barbados_outline"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:alpha="0.15"
+        android:src="@drawable/barbados_outline" />
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
         android:layout_gravity="end"
         android:layout_marginTop="15dp"
         android:layout_marginRight="15dp"
+        android:gravity="center"
+        android:orientation="vertical"
         android:padding="5dp">
 
         <ImageButton
@@ -30,86 +32,260 @@
             android:background="@drawable/bg_rectangle_pale_slate"/>
 
         <TextView
+            style="@style/info_txt_style"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:text="View History"
-            android:textColor="@color/light_grey"
-            style="@style/info_txt_style"/>
+            android:textColor="@color/light_grey" />
 
     </LinearLayout>
 
-
-    
-    <RelativeLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center">
+        android:fillViewport="true">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@id/image_upload_opts_container"
-            android:layout_marginBottom="80dp"
-            android:layout_centerHorizontal="true"
-            android:text="Welcome User"
-            style="@style/heading_txt_style" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@id/image_upload_opts_container"
-            android:layout_marginBottom="40dp"
-            android:layout_centerHorizontal="true"
-            android:text="Use Our AI To Identify Anywhere On BIM"
-            style="@style/subheading_txt_style" />
-
-        <!-- Upload Options -->
         <LinearLayout
-            android:id="@+id/image_upload_opts_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingTop="96dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="32dp">
 
-            <!-- Camera Option -->
+            <TextView
+                style="@style/heading_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome User" />
+
+            <TextView
+                style="@style/subheading_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="Use our demo pipeline to identify a Barbadian landmark from a photo."
+                android:textAlignment="center" />
+
             <LinearLayout
-                android:layout_width="100dp"
-                android:layout_height="124dp"
-                android:layout_marginRight="30dp"
+                android:id="@+id/image_upload_opts_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="48dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="100dp"
+                    android:layout_height="124dp"
+                    android:layout_marginRight="24dp"
+                    android:background="@drawable/bg_grey"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageButton
+                        android:id="@+id/camera_opt_bttn"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/bg_dark"
+                        android:elevation="8dp"
+                        android:src="@drawable/icon_camera"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_light"
+                        android:text="Take Photo"
+                        android:textColor="@color/black"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="100dp"
+                    android:layout_height="124dp"
+                    android:layout_marginLeft="24dp"
+                    android:background="@drawable/bg_grey"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageButton
+                        android:id="@+id/gallery_opt_bttn"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/bg_dark"
+                        android:elevation="8dp"
+                        android:src="@drawable/icon_images"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_light"
+                        android:text="Gallery"
+                        android:textColor="@color/black"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/home_preview_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/bg_grey"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:background="@drawable/bg_rectangle_pale_slate">
+
+                <TextView
+                    android:id="@+id/home_source_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/pill_bg_yllw"
+                    android:fontFamily="@font/roboto_medium"
+                    android:paddingLeft="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingRight="12dp"
+                    android:paddingBottom="6dp"
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    tools:text="Gallery" />
+
+                <TextView
+                    android:id="@+id/home_file_name_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/roboto_regular"
+                    android:textColor="@color/dark"
+                    android:textSize="12sp"
+                    tools:text="parliament_demo.jpg" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/home_analyzing_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_rounded"
                 android:gravity="center"
                 android:orientation="vertical"
                 android:background="@drawable/bg_rectangle_pale_slate">
 
                 <TextView
+                    android:id="@+id/home_result_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:fontFamily="@font/roboto_medium"
-                    android:text="Take Photo"
                     android:textColor="@color/black"
-                    android:textSize="12dp" />
+                    android:textSize="20sp"
+                    tools:text="Barbados Parliament Buildings" />
+
+                <TextView
+                    android:id="@+id/home_result_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/roboto_regular"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    tools:text="Historic neo-Gothic government buildings in Bridgetown and among Barbados' most recognizable civic landmarks." />
+
+                <TextView
+                    android:id="@+id/home_result_detail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/roboto_light"
+                    android:textColor="@color/dark_grey"
+                    android:textSize="12sp"
+                    tools:text="Matched demo token in filename" />
             </LinearLayout>
 
-            <!-- Gallery Option -->
             <LinearLayout
-                android:layout_width="100dp"
-                android:layout_height="124dp"
-                android:layout_marginLeft="30dp"
-                android:gravity="center"
+                android:id="@+id/home_unknown_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_grey"
                 android:orientation="vertical"
-                android:background="@drawable/bg_rectangle_pale_slate">
+                android:padding="18dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/roboto_medium"
-                    android:text="Gallery"
+                    android:text="No demo match found"
                     android:textColor="@color/black"
-                    android:textSize="12dp" />
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/home_unknown_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/roboto_regular"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    tools:text="Try a filename containing parliament, kensington, or cathedral." />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/home_error_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_grey"
+                android:orientation="vertical"
+                android:padding="18dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_medium"
+                    android:text="Unable to continue"
+                    android:textColor="@color/black"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/home_error_message"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/roboto_regular"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    tools:text="Camera permission was denied." />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/home_retry_bttn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bttn_bg_yllw"
+                android:fontFamily="@font/roboto_extrabold"
+                android:gravity="center"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:text="Try Another Photo"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
         </LinearLayout>
-
-    </RelativeLayout>
-
+    </ScrollView>
 
 </FrameLayout>

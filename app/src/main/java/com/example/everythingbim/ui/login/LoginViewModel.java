@@ -1,6 +1,8 @@
 package com.example.everythingbim.ui.login;
 
+import static androidx.core.content.ContextCompat.startActivity;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;

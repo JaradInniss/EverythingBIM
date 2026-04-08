@@ -5,6 +5,7 @@
     android:id="@+id/view_completed_location_req"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark"
     tools:context=".ui.user.ViewCompletedLocationRequestFragment">
 
     <LinearLayout
@@ -23,22 +24,20 @@
             android:src="@drawable/ic_caret_left"
             android:background="@android:color/transparent"
             android:contentDescription="Go Back"
-            android:layout_marginEnd="8dp"
-            app:tint="@color/white" />
+            app:tint="@color/white"
+            android:layout_marginEnd="8dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="View Add Location Request"
+                android:text="View Completed Location Requests"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
-
             <TextView
                 android:id="@+id/viewlocreq_user_id_tv"
                 android:layout_width="wrap_content"
@@ -46,10 +45,8 @@
                 android:text="User #102MA21"
                 android:textColor="@color/light_grey"
                 android:textSize="12sp" />
-
         </LinearLayout>
     </LinearLayout>
-
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Two icon buttons: General Users and Business Users -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <ImageButton
+                android:id="@+id/btn_general_users"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/icon_user_circle"
+                android:background="@drawable/icon_button_bg"
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                android:layout_marginEnd="8dp"
+                />
+
+            <ImageButton
+                android:id="@+id/btn_business_users"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/icon_business"
+                android:background="@drawable/icon_button_bg"
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                android:layout_marginStart="8dp"
+                 />
+        </LinearLayout>
+
+        <!-- Search Bar (rounded with search icon inside) -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <EditText
+                android:id="@+id/search_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Search For User"
+                android:drawableStart="@drawable/icon_search"
+                android:drawablePadding="12dp"
+                android:paddingVertical="12dp"
+                android:paddingHorizontal="16dp"
+                android:background="@android:color/transparent"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Location Requests Section (same as before) -->
+        <TextView
+            android:id="@+id/tv_location_requests_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Location Requests (201)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_location_requests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:id="@+id/tv_location_unread"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Unread"
+                android:textColor="@color/primary"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="16dp" />
+
+            <TextView
+                android:id="@+id/tv_location_read"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Read"
+                android:textColor="@color/gray"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Information Requests Section -->
+        <TextView
+            android:id="@+id/tv_info_requests_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Information Requests (88)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_info_requests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tv_info_unread"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Unread"
+                android:textColor="@color/primary"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="16dp" />
+
+            <TextView
+                android:id="@+id/tv_info_read"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Read"
+                android:textColor="@color/gray"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
