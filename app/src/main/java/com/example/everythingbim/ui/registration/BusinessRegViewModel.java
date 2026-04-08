@@ -1,12 +1,14 @@
 package com.example.everythingbim.ui.registration;
 
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.BusinessProfile;
 import com.example.everythingbim.data.models.File;
 import com.example.everythingbim.ui.login.Login;
@@ -19,6 +21,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +47,8 @@ public class BusinessRegViewModel extends ViewModel {
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private final SingleLiveEvent<Class<?>> navigationEvent = new SingleLiveEvent<>();
     private final SingleLiveEvent<String> infoMessage = new SingleLiveEvent<>();
+    private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
+    private String currPassword = "";
 
     // Verification code
     private String demoVerificationCode;
@@ -58,6 +63,7 @@ public class BusinessRegViewModel extends ViewModel {
     public SingleLiveEvent<Class<?>> getNavigationEvent() { return navigationEvent; }
     public SingleLiveEvent<String> getInfoMessage() { return infoMessage; }
     public LiveData<Boolean> getIsCodeValid() { return isCodeValid; }
+    public LiveData<HashMap<Integer, String>> getErrorFields() { return errorFields; }
 
     // Form field getters/setters
     public MutableLiveData<String> getCompanyName() { return companyName; }
@@ -79,9 +85,6 @@ public class BusinessRegViewModel extends ViewModel {
         // If moving from page 1 (verification) to page 2, verify code first
         if (curr == 1) {
             // Verification must be done by the activity before calling nextPage()
-            // We'll use a separate method to verify and then call nextPage() if valid
-            // This method will not increment on its own.
-            // Instead, we'll let the activity call verifyAndProceed()
             return;
         }
 
@@ -105,11 +108,118 @@ public class BusinessRegViewModel extends ViewModel {
     public void addFile(File file) { List<File> curr = fileList.getValue(); if (curr != null) { curr.add(file); fileList.setValue(curr); } }
     public void removeFile(int position) { List<File> curr = fileList.getValue(); if (curr != null && position < curr.size()) { curr.remove(position); fileList.setValue(curr); } }
 
+    public void setErrorField(int fieldId, String errorMessage) {
+        HashMap<Integer, String> curr = errorFields.getValue();
+        // Use LinkedHashMap to preserve the order (Username -> Email -> Password)
+        if (curr == null) curr = new java.util.LinkedHashMap<>();
+
+        if (errorMessage == null) {
+            curr.remove(fieldId);
+        } else {
+            curr.put(fieldId, errorMessage);
+        }
+        errorFields.setValue(curr.isEmpty() ? null : curr);
+    }
+
+    // Validate fields and set error message if invalid
+    public void validateUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            setErrorField(R.id.business_register_username_et, "Username Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.business_register_username_et, null);
+        }
+    }
+    public void validateEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            setErrorField(R.id.business_register_email_et, "Email Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.business_register_email_et, null);
+        }
+    }
+    public void validatePassword(String password) {
+        currPassword = password;
+        if (password == null || password.isEmpty()) {
+            setErrorField(R.id.business_register_password_et, "Password Field Cannot Be Empty");
+        }
+        else if (password.length() < 8) {
+            setErrorField(R.id.business_register_password_et, "Password Must Be At Least 8 Characters");
+        }
+        else {
+            setErrorField(R.id.business_register_password_et, null);
+        }
+    }
+    public void validateRePassword(String repassword) {
+        if (repassword == null || repassword.isEmpty()) {
+            setErrorField(R.id.business_register_repassword_et, "Confirm Password Field Cannot Be Empty");
+        }
+        else if (!repassword.equals(currPassword)) {
+            setErrorField(R.id.business_register_repassword_et, "Passwords Must Match");
+        }
+        else {
+            setErrorField(R.id.business_register_repassword_et, null);
+        }
+    }
+    public void validateBusinessName(String businessName) {
+        if (businessName == null || businessName.trim().isEmpty()) {
+            setErrorField(R.id.register_business_name_et, "Business Name Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.register_business_name_et, null);
+        }
+    }
+    public void validatePhoneNumber(String phoneNum) {
+        if (phoneNum == null || phoneNum.trim().isEmpty()) {
+            setErrorField(R.id.register_contact_number_et, "Phone Number Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.register_contact_number_et, null);
+        }
+    }
+    public void validateAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            setErrorField(R.id.register_business_address_et, "Address Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.register_business_address_et, null);
+        }
+    }
+    public void validateBusinessDescription(String description) {
+        if (description == null || description.trim().isEmpty()) {
+            setErrorField(R.id.register_business_description_et, "Business Description Field Cannot Be Empty");
+        }
+        else {
+            setErrorField(R.id.register_business_description_et, null);
+        }
+    }
+
+    public boolean isPageValid(int pageNum, String... params) {
+        errorMessage.setValue(null);
+        errorFields.setValue(null); // Clear previous errors
+
+        if (pageNum == 0) { // Form 1: Credentials
+            validateUsername(params[0]);
+            validateEmail(params[1]);
+            validatePassword(params[2]);
+            validateRePassword(params[3]);
+        }
+        else if (pageNum == 2) { // Form 3: Business Details
+            validateBusinessName(params[0]);
+            validatePhoneNumber(params[1]);
+            validateAddress(params[2]);
+            validateBusinessDescription(params[3]);
+        }
+
+        return errorFields.getValue() == null;
+    }
+
     // --- Demo verification ---
     private void generateDemoCode() {
         demoVerificationCode = String.valueOf((int) (Math.random() * 90000) + 10000);
         infoMessage.setValue("Demo verification code: " + demoVerificationCode);
         isCodeValid.setValue(false);
+        Log.d("BusinessRegViewModel", "Generated demo verification code: " + demoVerificationCode);
     }
 
     public boolean verifyAndProceed(String enteredCode) {
@@ -162,34 +272,40 @@ public class BusinessRegViewModel extends ViewModel {
 
         List<com.google.android.gms.tasks.Task<Uri>> uploadTasks = new ArrayList<>();
 
-        for (File file : imageList.getValue()) {
-            StorageReference ref = storage.getReference()
-                    .child("businesses")
-                    .child(userId)
-                    .child("images")
-                    .child(UUID.randomUUID().toString());
-            UploadTask uploadTask = ref.putFile(file.getUri());
-            com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
-                if (!task.isSuccessful()) throw task.getException();
-                return ref.getDownloadUrl();
-            });
-            uploadTasks.add(urlTask);
-            urlTask.addOnSuccessListener(uri -> imageUrls.add(uri.toString()));
+        List<File> images = imageList.getValue();
+        if (images != null) {
+            for (File file : images) {
+                StorageReference ref = storage.getReference()
+                        .child("businesses")
+                        .child(userId)
+                        .child("images")
+                        .child(UUID.randomUUID().toString());
+                UploadTask uploadTask = ref.putFile(file.getUri());
+                com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    return ref.getDownloadUrl();
+                });
+                uploadTasks.add(urlTask);
+                urlTask.addOnSuccessListener(uri -> imageUrls.add(uri.toString()));
+            }
         }
 
-        for (File file : fileList.getValue()) {
-            StorageReference ref = storage.getReference()
-                    .child("businesses")
-                    .child(userId)
-                    .child("files")
-                    .child(UUID.randomUUID().toString());
-            UploadTask uploadTask = ref.putFile(file.getUri());
-            com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
-                if (!task.isSuccessful()) throw task.getException();
-                return ref.getDownloadUrl();
-            });
-            uploadTasks.add(urlTask);
-            urlTask.addOnSuccessListener(uri -> fileUrls.add(uri.toString()));
+        List<File> files = fileList.getValue();
+        if (files != null) {
+            for (File file : files) {
+                StorageReference ref = storage.getReference()
+                        .child("businesses")
+                        .child(userId)
+                        .child("files")
+                        .child(UUID.randomUUID().toString());
+                UploadTask uploadTask = ref.putFile(file.getUri());
+                com.google.android.gms.tasks.Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    return ref.getDownloadUrl();
+                });
+                uploadTasks.add(urlTask);
+                urlTask.addOnSuccessListener(uri -> fileUrls.add(uri.toString()));
+            }
         }
 
         Tasks.whenAllSuccess(uploadTasks)
@@ -217,7 +333,7 @@ public class BusinessRegViewModel extends ViewModel {
                                     registrationFailed("Failed to save profile: " + e.getMessage());
                                 });
                     } else {
-                        registrationFailed("File upload failed: " + task.getException().getMessage());
+                        registrationFailed("File upload failed: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
                     }
                 });
     }
@@ -245,9 +361,6 @@ public class BusinessRegViewModel extends ViewModel {
         errorMessage.setValue(message);
     }
 
-    /**
-     * SingleLiveEvent – ensures the event is delivered only once.
-     */
     public static class SingleLiveEvent<T> extends MutableLiveData<T> {
         private final AtomicBoolean pending = new AtomicBoolean(false);
 

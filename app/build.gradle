@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId "com.example.everythingbim"
         minSdk 24
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
@@ -42,7 +42,6 @@ dependencies {
     implementation libs.appcompat
     implementation libs.activity
     implementation libs.constraintlayout
-    implementation libs.play.services.maps
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
@@ -59,6 +58,5 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:18.4.1'
     implementation "androidx.room:room-runtime:2.6.0"
     annotationProcessor "androidx.room:room-compiler:2.6.0"
-//    implementation "androidx.room:room-ktx:2.6.0" // if using Kotlin
 }
 

@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
+    <!-- ===== Primary Colors ===== -->
+    <color name="true_cobalt">#203088</color>
+    <color name="prussian_blue">#080C22</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Custom Colors -->
-    <color name="red">#870000</color>
-    <color name="gold">#FFDE00</color>
-    <color name="green">#009407</color>
-    <color name="blue">#1F37B2</color>
-    <color name="grey">#D9D9D9</color>
-    <color name="pale_grey">#EBEBEB</color>
-    <color name="light_grey">#BFBFBF</color>
-    <color name="dark_grey">#6B6B6B</color>
+    <!-- ===== Secondary Colors ===== -->
+    <color name="dark_amaranth">#7B0828</color>
+    <color name="bright_gold">#FFDE00</color>
+    <color name="shamrock">#009407</color>
+    <color name="persian_blue">#1F37B2</color>
+    <color name="autumn_ember">#C15000</color>
+
+    <!-- ===== Accent Colors ===== -->
+    <color name="periwinkle">#BDC7FF</color>
+    <color name="alice_blue">#DBE4EE</color>
+    <color name="old_gold">#CCB200</color>
+
+    <!-- ===== Neutral Colors ===== -->
+    <color name="black">#FF000000</color>
+    <color name="ink_black">#060A1B</color>
+    <color name="space_indigo">#212438</color>
     <color name="dark">#272727</color>
-    <color name="yellow">#FFD700</color>
-    <color name="background">#F5F5F5</color>
-    <color name="primary">#6200EE</color>
-    <color name="secondary">#03DAC5</color>
-    <color name="gray">#9E9E9E</color>
+    <color name="dim_grey">#6B6D7A</color>
+    <color name="pale_slate">#B5B6BD</color>
+    <color name="grey">#D9D9D9</color>
+    <color name="light_grey">#BFBFBF</color>
+    <color name="celadon">#9DDAB9</color>
+    <color name="old_rose">#DB869E</color>
 </resources>

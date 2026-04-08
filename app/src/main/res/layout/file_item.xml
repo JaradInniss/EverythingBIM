@@ -9,9 +9,9 @@
     <!-- File Icon -->
     <ImageView
         android:id="@+id/file_icon"
-        android:layout_width="30dp"
-        android:layout_height="35dp"
-        android:src="@drawable/icon_file_generic"/>
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_file_generic"/>
 
     <LinearLayout
         android:layout_width="60dp"
@@ -35,10 +35,10 @@
         <!-- Trash Icon -->
         <ImageView
             android:id="@+id/delete_file_bttn"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
             android:layout_marginStart="2dp"
-            android:src="@drawable/icon_trash"/>
+            android:src="@drawable/ic_trash"/>
 
     </LinearLayout>
 

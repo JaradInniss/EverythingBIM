@@ -20,7 +20,7 @@
             android:id="@+id/back_btn"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/icon_caret_left"
+            android:src="@drawable/ic_caret_left"
             android:background="@android:color/transparent"
             android:contentDescription="Go Back"
             app:tint="@color/white"
