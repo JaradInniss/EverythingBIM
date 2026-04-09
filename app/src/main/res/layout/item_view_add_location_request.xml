@@ -73,7 +73,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="In Review"
-                            android:textColor="@color/blue"
+                            android:textColor="@color/persian_blue"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -82,8 +82,9 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginStart="8dp"
-                        android:src="@drawable/icon_view"
-                        android:contentDescription="Status icon" />
+                        android:src="@drawable/ic_view"
+                        android:contentDescription="Status Icon" />
+
                 </LinearLayout>
             </LinearLayout>
 
@@ -118,8 +119,9 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_grey"
-                android:layout_marginBottom="10dp">
+                android:background="@drawable/bg_rectangle_dim_grey"
+                android:layout_marginBottom="16dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewlocreq_name_et"
                     android:layout_width="match_parent"
@@ -147,8 +149,9 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_grey"
-                android:layout_marginBottom="10dp">
+                android:background="@drawable/bg_rectangle_dim_grey"
+                android:layout_marginBottom="16dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewlocreq_desc_et"
                     android:layout_width="match_parent"
@@ -176,8 +179,9 @@
                 app:boxBackgroundMode="outline"
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_grey"
-                android:layout_marginBottom="10dp">
+                android:background="@drawable/bg_rectangle_dim_grey"
+                android:layout_marginBottom="16dp">
+
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewlocreq_reason_et"
                     android:layout_width="match_parent"
@@ -202,7 +206,7 @@
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_grey"
+                android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="12dp">
                 <LinearLayout
                     android:id="@+id/viewlocreq_image_container"

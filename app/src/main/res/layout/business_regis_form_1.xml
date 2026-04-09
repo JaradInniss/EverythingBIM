@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@drawable/bttn_bg_pale_grey"
+    android:background="@drawable/bg_rectangle_periwinkle"
     android:elevation="10dp">
 
     <!-- Form -->
@@ -33,7 +33,8 @@
             android:text="1 of 4"
             android:textSize="10dp"
             android:textAlignment="center"
-            android:layout_centerInParent="true"/>
+            android:layout_centerInParent="true"
+            android:textColor="@color/black"/>
 
         <!-- User Type Text -->
         <TextView
@@ -43,17 +44,18 @@
             android:text="Business User"
             android:textSize="15dp"
             android:textAlignment="viewEnd"
+            android:letterSpacing="0.02"
             android:layout_alignParentEnd="true"
             android:fontFamily="@font/roboto_bold"
             android:textColor="@color/black"/>
 
     </RelativeLayout>
 
-    <!-- Separation Line -->
+    <!-- Separator Line -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="@color/black"/>
+        android:layout_height="3dp"
+        android:background="@drawable/bg_pill_blue" />
 
     <!-- Section Text -->
     <TextView
@@ -63,46 +65,107 @@
         android:text="Account Credentials"
         android:textSize="15dp"
         android:textColor="@color/black"
-        android:fontFamily="@font/roboto_regular"/>
+        android:fontFamily="@font/roboto_medium"/>
 
-    <!-- Username Field -->
-    <EditText
-        android:id="@+id/business_username_et"
+    <LinearLayout
+        android:id="@+id/reg_error_layout"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_marginTop="10dp"
-        android:hint="Username"
-        style="@style/et_style"/>
+        android:visibility="gone">
 
-    <!-- Email Field -->
-    <EditText
-        android:id="@+id/business_email_et"
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/ic_info"
+            app:tint="@color/dark_amaranth"/>
+
+        <TextView
+            android:id="@+id/form1_reg_error_tv"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/dark_amaranth"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+    <!-- Username Field (ID: business_register_username_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_business_register_username"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="Username"
+        style="@style/auth_txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/business_register_username_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="text"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Email Field (ID: business_register_email_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_business_register_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:hint="Email"
-        android:inputType="textEmailAddress"
-        style="@style/et_style"/>
+        style="@style/auth_txtInputLayout_style">
 
-    <!-- Password Field -->
-    <EditText
-        android:id="@+id/password_et"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/business_register_email_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textEmailAddress"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Password Field (ID: business_register_password_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_business_register_password"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:hint="Password"
-        android:inputType="textPassword"
-        style="@style/et_style"/>
+        app:passwordToggleEnabled="true"
+        style="@style/auth_txtInputLayout_style">
 
-    <!-- Confirm Password Field -->
-    <EditText
-        android:id="@+id/confirm_password_et"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/business_register_password_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textPassword"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Re-enter Password Field (ID: business_register_repassword_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_business_register_repassword"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"
         android:hint="Re-enter Password"
-        android:inputType="textPassword"
-        style="@style/et_style"/>
+        app:passwordToggleEnabled="true"
+        style="@style/auth_txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/business_register_repassword_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="textPassword"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Next Button -->
     <LinearLayout
@@ -113,7 +176,7 @@
         android:layout_marginTop="20dp"
         android:gravity="center"
         android:layout_gravity="center_horizontal"
-        android:background="@drawable/pill_bg_yllw">
+        android:background="@drawable/bg_rectangle_gold">
 
         <TextView
             android:layout_width="wrap_content"
@@ -126,7 +189,7 @@
         <ImageView
             android:layout_width="25dp"
             android:layout_height="25dp"
-            android:src="@drawable/icon_caret_right"/>
+            android:src="@drawable/ic_caret_right"/>
     </LinearLayout>
 
     <!-- Already Have An Account? -->
@@ -136,7 +199,8 @@
         android:layout_gravity="center"
         android:layout_marginTop="20dp"
         android:text="Already Have An Account?"
-        android:fontFamily="@font/roboto_light"/>
+        android:textColor="@color/dark"
+        android:fontFamily="@font/roboto_medium"/>
 
     <!-- Login Option -->
     <TextView
@@ -147,7 +211,8 @@
         android:layout_marginTop="5dp"
         android:textAlignment="center"
         android:text="Login"
+        android:textSize="16sp"
         android:fontFamily="@font/roboto_bold"
-        android:textColor="@color/blue"/>
+        android:textColor="@color/persian_blue"/>
 
 </LinearLayout>

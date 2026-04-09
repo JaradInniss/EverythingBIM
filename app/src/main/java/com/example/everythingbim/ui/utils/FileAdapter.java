@@ -55,15 +55,15 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     // Get Appropriate File Icon
     private int getFileIcon(String mimeType) {
         // If empty return generic icon
-        if (mimeType == null) { return R.drawable.icon_file_generic; }
+        if (mimeType == null) { return R.drawable.ic_file_generic; }
         // If PNG return png icon
-        else if (mimeType.equals("image/png")) { return R.drawable.icon_file_png; }
+        else if (mimeType.equals("image/png")) { return R.drawable.ic_file_png; }
         // If JPEG or JPG return jpg icon
-        else if (mimeType.equals("image/jpeg") || mimeType.equals("image/jpg")) { return R.drawable.icon_file_jpg; }
+        else if (mimeType.equals("image/jpeg") || mimeType.equals("image/jpg")) { return R.drawable.ic_file_jpg; }
         // If PDF return pdf icon
-        else if (mimeType.equals("application/pdf")) { return R.drawable.icon_file_pdf; }
+        else if (mimeType.equals("application/pdf")) { return R.drawable.ic_file_pdf; }
 
-        return R.drawable.icon_file_generic;
+        return R.drawable.ic_file_generic;
     }
 
     // Interface for file deletion

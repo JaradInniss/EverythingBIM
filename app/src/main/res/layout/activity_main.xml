@@ -25,9 +25,8 @@
         android:layout_alignParentBottom="true"
         android:layout_gravity="center"
         android:elevation="5dp"
-        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu"
-        android:background="@color/dark"
+        android:background="@color/prussian_blue"
         app:itemIconTint="@color/nav_item_color_selector"
         app:itemTextColor="@color/nav_item_color_selector"/>
 

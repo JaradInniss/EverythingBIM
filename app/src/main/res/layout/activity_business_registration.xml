@@ -6,59 +6,146 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="10dp"
-    android:gravity="center"
+    android:gravity="center_horizontal"
+    android:background="@drawable/bg_main"
     tools:context=".ui.login.Login">
 
-    <!-- User Type Selection -->
     <LinearLayout
-        android:id="@+id/user_type_selection"
-        android:layout_width="220dp"
-        android:layout_height="75dp"
+        android:id="@+id/logo_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginLeft="70dp"
+        android:layout_marginTop="20dp"
         android:layout_marginBottom="20dp"
-        android:background="@drawable/pill_bg_pale_grey"
-        android:layout_above="@id/reg_form_viewflipper"
-        android:elevation="20dp">
+        android:layout_centerHorizontal="true"
+        android:gravity="center_vertical">
 
         <ImageView
-            android:id="@+id/user_type_business"
+            android:id="@+id/logo"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/everything_bim_icon"/>
+
+        <TextView
+            android:id="@+id/title_txt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingTop="10dp"
-            android:paddingRight="20dp"
-            android:paddingLeft="20dp"
-            android:paddingBottom="10dp"
-            android:layout_marginRight="20dp"
-            android:background="@drawable/pill_bg_yllw"
-            android:src="@drawable/icon_storefront_bold"/>
-
-        <ImageView
-            android:id="@+id/user_type_general"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="10dp"
-            android:paddingRight="20dp"
-            android:paddingLeft="20dp"
-            android:paddingBottom="10dp"
-            android:layout_marginLeft="20dp"
-            android:src="@drawable/icon_user_bold"/>
-
+            android:layout_below="@id/logo"
+            android:layout_marginLeft="10dp"
+            android:text="Everything BIM"
+            android:textColor="@color/white"
+            android:textSize="30sp"
+            android:fontFamily="@font/pacifico"/>
     </LinearLayout>
 
-    <!-- Business Registration Form Flipper -->
-    <ViewFlipper
-        android:id="@+id/reg_form_viewflipper"
-        android:layout_width="360dp"
+    <LinearLayout
+        android:id="@+id/login_form_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@null">
+        android:orientation="vertical"
+        android:layout_below="@id/logo_container"
+        android:gravity="center">
 
-        <include layout="@layout/business_regis_form_1"/>
-        <include layout="@layout/business_regis_form_2"/>
-        <include layout="@layout/business_regis_form_3"/>
-        <include layout="@layout/business_regis_form_4"/>
-    </ViewFlipper>
+        <!-- User Type Selection -->
+        <LinearLayout
+            android:id="@+id/user_type_selection"
+            android:layout_width="220dp"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="5dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/bg_rectangle_periwinkle"
+            android:layout_above="@id/reg_form_viewflipper"
+            android:elevation="20dp">
+
+            <LinearLayout
+                android:id="@+id/general_user_container"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/general_user_iv"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_user"
+                    app:tint="@color/dark" />
+
+                <TextView
+                    android:id="@+id/general_user_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="General"
+                    android:textColor="@color/dark"
+                    android:fontFamily="@font/roboto_medium"/>
+            </LinearLayout>
+
+            <View
+                android:layout_width="2dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_pill_blue"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"/>
+
+            <LinearLayout
+                android:id="@+id/business_user_container"
+                android:layout_width="100dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:background="@drawable/bg_rectangle_blue">
+
+                <ImageView
+                    android:id="@+id/business_user_iv"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_storefront"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/business_user_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="Business"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/roboto_medium"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Business Registration Form Flipper -->
+        <ViewFlipper
+            android:id="@+id/reg_form_viewflipper"
+            android:layout_width="360dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@null">
+
+            <include
+                android:id="@+id/business_regis_form_1"
+                layout="@layout/business_regis_form_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <include
+                android:id="@+id/business_regis_form_2"
+                layout="@layout/business_regis_form_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <include
+                android:id="@+id/business_regis_form_3"
+                layout="@layout/business_regis_form_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <include
+                android:id="@+id/business_regis_form_4"
+                layout="@layout/business_regis_form_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </ViewFlipper>
+
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progress_bar"
@@ -67,16 +154,6 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/reg_form_viewflipper"
         android:layout_marginTop="20dp"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/error_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/progress_bar"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
-        android:textColor="@color/red"
         android:visibility="gone" />
 
 </RelativeLayout>

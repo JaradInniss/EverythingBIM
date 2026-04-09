@@ -4,9 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark"
-    tools:context=".ui.home.HomeFragment">
-
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.home.HomeFragment"
+    android:background="@drawable/bg_main">
+    
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -27,8 +28,8 @@
         <ImageButton
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/bg_grey"
-            android:src="@drawable/icon_clock_reverse" />
+            android:src="@drawable/ic_clock_reverse"
+            android:background="@drawable/bg_rectangle_pale_slate"/>
 
         <TextView
             style="@style/info_txt_style"
@@ -141,17 +142,7 @@
                 android:background="@drawable/bg_grey"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/home_preview_image"
-                    android:layout_width="match_parent"
-                    android:layout_height="220dp"
-                    android:adjustViewBounds="true"
-                    android:background="@drawable/bg_dark"
-                    android:contentDescription="@string/app_name"
-                    android:scaleType="centerCrop" />
+                android:background="@drawable/bg_rectangle_pale_slate">
 
                 <TextView
                     android:id="@+id/home_source_label"
@@ -187,61 +178,7 @@
                 android:background="@drawable/bg_rounded"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:padding="18dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/pill_bg_yllw"
-                    android:fontFamily="@font/roboto_medium"
-                    android:paddingLeft="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingRight="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="Demo Mode"
-                    android:textColor="@color/black"
-                    android:textSize="12sp" />
-
-                <ProgressBar
-                    android:id="@+id/home_analyzing_progress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp" />
-
-                <TextView
-                    android:id="@+id/home_analyzing_label"
-                    style="@style/subheading_txt_style"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center"
-                    tools:text="Analyzing image in demo mode..." />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/home_result_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_grey"
-                android:orientation="vertical"
-                android:padding="18dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/home_result_badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/pill_bg_yllw"
-                    android:fontFamily="@font/roboto_medium"
-                    android:paddingLeft="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingRight="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="Demo Mode"
-                    android:textColor="@color/black"
-                    android:textSize="12sp" />
+                android:background="@drawable/bg_rectangle_pale_slate">
 
                 <TextView
                     android:id="@+id/home_result_title"

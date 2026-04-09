@@ -4,18 +4,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -25,11 +26,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.ActivityLoginBinding;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
@@ -38,12 +39,14 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private SharedPreferences sharedPreferences;
 
     // UI elements
-    private ImageView userTypeGeneral, userTypeBusiness;
-    private TextView userTypeText, createAccountOption;
+    private ImageView generalUserIcon, businessUserIcon;
+    private TextView userTypeText, createAccountOption, generalUserText, businessUserText;
     private Button loginBttn;
-    private EditText emailEditText, passwordEditText;
+    private TextInputEditText emailEditText, passwordEditText;
     private ProgressBar progressBar;
     private TextView errorTextView;
+    private LinearLayout generalUserContainer, businessUserContainer;
+
 
     // Variables
     private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -72,33 +75,72 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     }
 
     private void initViews() {
-        userTypeGeneral = findViewById(R.id.user_type_general);
-        userTypeBusiness = findViewById(R.id.user_type_business);
-        userTypeText = findViewById(R.id.user_type_txt);
-        createAccountOption = findViewById(R.id.create_account_opt);
-        loginBttn = findViewById(R.id.login_bttn);
-        emailEditText = findViewById(R.id.login_email_et);
-        passwordEditText = findViewById(R.id.login_password_et);
-        progressBar = findViewById(R.id.login_progress_bar);
-        errorTextView = findViewById(R.id.login_error);
+        // Image Views
+        generalUserIcon = binding.generalUserIv;
+        businessUserIcon = binding.businessUserIv;
 
-        userTypeGeneral.setOnClickListener(this);
-        userTypeBusiness.setOnClickListener(this);
+        // Linear Layouts
+        generalUserContainer = binding.generalUserContainer;
+        businessUserContainer = binding.businessUserContainer;
+        generalUserContainer.setOnClickListener(this);
+        businessUserContainer.setOnClickListener(this);
+
+        // Text Views
+        generalUserText = binding.generalUserTv;
+        businessUserText = binding.businessUserTv;
+        userTypeText = binding.userTypeText;
+        errorTextView = binding.loginError;
+        createAccountOption = binding.createAccountOpt;
         createAccountOption.setOnClickListener(this);
+
+        // Buttons
+        loginBttn = binding.loginBttn;
         loginBttn.setOnClickListener(this);
+
+        // Edit Texts
+        emailEditText = binding.loginEmailEt;
+        passwordEditText = binding.loginPasswordEt;
+
+        // Progress Bar
+        progressBar = binding.loginProgressBar;
     }
 
     private void setupObservers() {
-        // Observe user type selection (icons and text)
+
+        // Observe user type selection (icons, texts, and background)
         viewModel.getSelectedUserType().observe(this, userType -> {
             if (userType == UserType.GENERAL) {
-                userTypeGeneral.setBackgroundResource(R.drawable.pill_bg_yllw);
-                userTypeBusiness.setBackgroundResource(0);
-                userTypeText.setText(R.string.general_user);
-            } else {
-                userTypeBusiness.setBackgroundResource(R.drawable.pill_bg_yllw);
-                userTypeGeneral.setBackgroundResource(0);
-                userTypeText.setText(R.string.business_user);
+                generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.white)));
+                businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
+
+                generalUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+                businessUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.dark));
+
+                generalUserContainer.setBackgroundResource(R.drawable.bg_rectangle_blue);
+                businessUserContainer.setBackgroundResource(0);
+
+                userTypeText.setText("General User");
+            } else if (userType == UserType.BUSINESS) {
+                generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
+                businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.white)));
+
+                generalUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.dark));
+                businessUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.white));
+
+                generalUserContainer.setBackgroundResource(0);
+                businessUserContainer.setBackgroundResource(R.drawable.bg_rectangle_blue);
+                userTypeText.setText("Business User");
+            }
+            else {
+                generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
+                businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
+
+                generalUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.dark));
+                businessUserText.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.dark));
+
+                generalUserContainer.setBackgroundResource(0);
+                businessUserContainer.setBackgroundResource(0);
+                userTypeText.setText("");
             }
         });
 
@@ -110,6 +152,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             } else {
                 progressBar.setVisibility(View.GONE);
                 loginBttn.setEnabled(true);
+            }
+        });
+
+        viewModel.getToastMessage().observe(this, message -> {
+            if (message != null) {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -182,9 +230,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             String email = emailEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
             viewModel.onLoginClicked(email, password);
-        } else if (id == R.id.user_type_general) {
+        } else if (id == R.id.general_user_container) {
             viewModel.setSelectedUserType(UserType.GENERAL);
-        } else if (id == R.id.user_type_business) {
+        } else if (id == R.id.business_user_container) {
             viewModel.setSelectedUserType(UserType.BUSINESS);
         } else if (id == R.id.create_account_opt) {
             viewModel.onCreateAccountClicked();

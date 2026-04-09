@@ -7,25 +7,35 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.everythingbim.ui.login.Login;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.OnMapsSdkInitializedCallback;
 
-public class SplashActivity extends AppCompatActivity {
+public class SplashActivity extends AppCompatActivity implements OnMapsSdkInitializedCallback {
+
+    private static final  String TAG = "SplashActivity";
 
     private AnimatorSet pulseAnimator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize Maps SDK to use latest renderer
+        MapsInitializer.initialize(getApplicationContext(), MapsInitializer.Renderer.LATEST, this);
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_splash);
 
@@ -73,5 +83,17 @@ public class SplashActivity extends AppCompatActivity {
             pulseAnimator.cancel();
         }
         super.onDestroy();
+    }
+
+    @Override
+    public void onMapsSdkInitialized(@NonNull MapsInitializer.Renderer renderer) {
+        switch (renderer) {
+            case LATEST:
+                Log.d(TAG, "The latest version of the renderer is used.");
+                break;
+            case LEGACY:
+                Log.d(TAG, "The legacy version of the renderer is used.");
+                break;
+        }
     }
 }

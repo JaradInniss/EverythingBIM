@@ -1,6 +1,5 @@
 package com.example.everythingbim.ui.user;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -242,13 +241,19 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
-            button.setImageResource(R.drawable.icon_check);
+            button.setBackgroundResource(R.drawable.bg_rectangle_blue);
+            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
+            ));
         } else {
             // Save / disable editing
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
-            button.setImageResource(R.drawable.icon_edit);
+            button.setBackgroundResource(R.drawable.bg_rectangle_pale_slate);
+            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
+            ));
 
             // Hide keyboard
             android.view.inputmethod.InputMethodManager imm =

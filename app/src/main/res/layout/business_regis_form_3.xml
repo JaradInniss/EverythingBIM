@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@drawable/bttn_bg_pale_grey"
+    android:background="@drawable/bg_rectangle_periwinkle"
     android:elevation="10dp">
 
     <!-- Form -->
@@ -33,7 +33,8 @@
             android:text="3 of 4"
             android:textSize="10dp"
             android:textAlignment="center"
-            android:layout_centerInParent="true"/>
+            android:layout_centerInParent="true"
+            android:textColor="@color/black"/>
 
         <!-- User Type Text -->
         <TextView
@@ -52,8 +53,8 @@
     <!-- Separation Line -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="@color/black"/>
+        android:layout_height="3dp"
+        android:background="@drawable/bg_pill_blue"/>
 
     <!-- Section Text -->
     <TextView
@@ -63,7 +64,32 @@
         android:text="Business Details"
         android:textSize="15dp"
         android:textColor="@color/black"
-        android:fontFamily="@font/roboto_regular"/>
+        android:fontFamily="@font/roboto_medium"/>
+
+    <LinearLayout
+        android:id="@+id/reg_error_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/ic_info"
+            app:tint="@color/dark_amaranth"/>
+
+        <TextView
+            android:id="@+id/form3_reg_error_tv"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/dark_amaranth"
+            android:textSize="13sp"/>
+    </LinearLayout>
 
     <!-- Info Text -->
     <LinearLayout
@@ -74,10 +100,10 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/icon_info"
-            app:tint="@color/dark_grey"/>
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@drawable/ic_info"
+            app:tint="@color/dim_grey"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -87,62 +113,96 @@
             style="@style/info_txt_style"/>
     </LinearLayout>
 
-    <!-- Business Name -->
-    <EditText
-        android:id="@+id/business_name_et"
+    <!-- Business Name Field (ID: register_business_name_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_business_name_et"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
         android:hint="Business Name"
-        style="@style/et_style"/>
+        style="@style/auth_txtInputLayout_style">
 
-    <!-- Contact Number -->
-    <EditText
-        android:id="@+id/contact_number_et"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_business_name_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="text"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Contact Number Field (ID: register_contact_number_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_contact_number_et"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:hint="Contact Number"
-        android:inputType="phone"
-        style="@style/et_style"/>
+        style="@style/auth_txtInputLayout_style">
 
-    <!-- Business Address -->
-    <EditText
-        android:id="@+id/business_address_et"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_contact_number_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="phone"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Business Address Field (ID: register_business_address_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_business_address_et"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:hint="Business Address/Location"
-        style="@style/et_style"/>
+        android:hint="Business Address"
+        style="@style/auth_txtInputLayout_style">
 
-    <!-- Business Description -->
-    <EditText
-        android:id="@+id/business_description_et"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_business_address_et"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:inputType="text"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Business Description Field (ID: register_business_description_et) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_register_business_description_et"
         android:layout_width="match_parent"
         android:layout_height="95dp"
         android:layout_marginTop="20dp"
         android:hint="Business Description"
-        android:gravity="top"
-        android:paddingTop="5dp"
-        android:maxLines="10"
-        android:scrollbars="vertical"
-        android:scrollbarThumbVertical="@color/dark"
-        android:scrollbarTrackVertical="@color/light_grey"
-        style="@style/et_style"/>
+        style="@style/auth_txtInputLayout_style">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/register_business_description_et"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:inputType="textMultiLine"
+            android:gravity="top"
+            android:maxLines="10"
+            android:scrollbars="vertical"
+            android:scrollbarThumbVertical="@color/dark"
+            android:scrollbarTrackVertical="@color/light_grey"
+            style="@style/txtInputEditText_style"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Info Text -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="10dp"
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/icon_info"
-            app:tint="@color/dark_grey"/>
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@drawable/ic_info"
+            app:tint="@color/dim_grey"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -170,12 +230,12 @@
             android:layout_alignParentStart="true"
             android:gravity="center"
             android:layout_gravity="center_horizontal"
-            android:background="@drawable/pill_bg_yllw">
+            android:background="@drawable/bg_rectangle_gold">
 
             <ImageView
                 android:layout_width="25dp"
                 android:layout_height="25dp"
-                android:src="@drawable/icon_caret_left"/>
+                android:src="@drawable/ic_caret_left"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -195,7 +255,7 @@
             android:layout_alignParentEnd="true"
             android:gravity="center"
             android:layout_gravity="center_horizontal"
-            android:background="@drawable/pill_bg_yllw">
+            android:background="@drawable/bg_rectangle_gold">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -208,7 +268,7 @@
             <ImageView
                 android:layout_width="25dp"
                 android:layout_height="25dp"
-                android:src="@drawable/icon_caret_right"/>
+                android:src="@drawable/ic_caret_right"/>
         </LinearLayout>
     </RelativeLayout>
 

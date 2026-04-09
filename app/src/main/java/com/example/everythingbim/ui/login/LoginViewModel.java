@@ -33,16 +33,20 @@ public class LoginViewModel extends ViewModel {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private SharedPreferences sharedPreferences; // may be null
-    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.GENERAL);
+    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.ADMIN);
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
+
+    private final SingleLiveEvent<String> toastMessage = new SingleLiveEvent<>();
 
     // Getters
     public LiveData<UserType> getSelectedUserType() { return selectedUserType; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<HashMap<Integer, String>> getErrorFields() { return errorFields; }
     public SingleLiveEvent<NavigationCommand> getNavigationEvent() { return navigationEvent; }
+    public SingleLiveEvent<String> getToastMessage() { return toastMessage; }
+
 
     // Setters
     public void setSelectedUserType(UserType userType) { selectedUserType.setValue(userType); }
@@ -103,25 +107,25 @@ public class LoginViewModel extends ViewModel {
         }
         navigationEvent.setValue(new NavigationCommand(MainActivity.class));
 
-        isLoading.setValue(true);
-        errorFields.setValue(null);
-
-        auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    isLoading.setValue(false);
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = auth.getCurrentUser();
-                        if (user != null) {
-                            fetchUserTypeAndNavigate(user.getUid());
-                        } else {
-                            setErrorField(R.id.login_error, "Authentication Error");
-                        }
-                    } else {
-                        String error = task.getException() != null ?
-                                task.getException().getMessage() : "Authentication failed";
-                        setErrorField(R.id.login_error, error);
-                    }
-                });
+//        isLoading.setValue(true);
+//        errorFields.setValue(null);
+//
+//        auth.signInWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(task -> {
+//                    isLoading.setValue(false);
+//                    if (task.isSuccessful()) {
+//                        FirebaseUser user = auth.getCurrentUser();
+//                        if (user != null) {
+//                            fetchUserTypeAndNavigate(user.getUid());
+//                        } else {
+//                            setErrorField(R.id.login_error, "Authentication Error");
+//                        }
+//                    } else {
+//                        String error = task.getException() != null ?
+//                                task.getException().getMessage() : "Authentication failed";
+//                        setErrorField(R.id.login_error, error);
+//                    }
+//                });
     }
 
     private void fetchUserTypeAndNavigate(String userId) {
@@ -177,10 +181,15 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void onCreateAccountClicked() {
+        Log.d("LoginViewModel", "User Type: " + selectedUserType.getValue());
         if (selectedUserType.getValue() == UserType.GENERAL) {
             navigationEvent.setValue(new NavigationCommand(GeneralRegistration.class));
-        } else {
+        } else if (selectedUserType.getValue() == UserType.BUSINESS) {
             navigationEvent.setValue(new NavigationCommand(BusinessRegistration.class));
+        }
+        else if (selectedUserType.getValue() == UserType.ADMIN) {
+            Log.d("LoginViewModel", "Checked for Admin");
+            toastMessage.setValue("Please select a user type");
         }
     }
 

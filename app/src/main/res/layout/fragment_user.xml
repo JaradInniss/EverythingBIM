@@ -772,7 +772,7 @@
                         android:layout_marginStart="6dp"
                         android:src="@drawable/check_circle"
                         android:contentDescription="Verified"
-                        app:tint="@color/persian_blue"
+                        app:tint="@color/blue"
                         android:visibility="gone" />
                 </LinearLayout>
 

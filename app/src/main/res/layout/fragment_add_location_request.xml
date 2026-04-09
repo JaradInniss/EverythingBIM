@@ -21,7 +21,7 @@
             android:id="@+id/back_btn"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/icon_caret_left"
+            android:src="@drawable/ic_caret_left"
             android:background="@android:color/transparent"
             android:contentDescription="Go back"
             app:tint="@color/white"
@@ -97,7 +97,8 @@
                             android:id="@+id/search_bar"
                             android:layout_width="match_parent"
                             android:layout_height="40dp"
-                            android:background="@drawable/pill_bg_grey"
+                            android:layout_gravity="center_horizontal"
+                            android:background="@drawable/bg_pill_alice_blue"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
                             android:paddingStart="12dp"
@@ -117,12 +118,10 @@
                                 android:imeOptions="actionSearch" />
                             <ImageView
                                 android:id="@+id/search_bttn"
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/icon_magnifying_glass"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:contentDescription="Search"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginRight="10dp"
+                                android:src="@drawable/ic_magnifying_glass"
                                 app:tint="@color/black" />
                         </LinearLayout>
 
@@ -140,8 +139,9 @@
                     <com.google.android.gms.maps.MapView
                         android:id="@+id/viewlocreq_map"
                         android:layout_width="match_parent"
-                        android:layout_height="160dp"
-                        android:layout_marginBottom="14dp" />
+                        android:layout_height="90dp"
+                        android:background="@drawable/bg_rectangle_pale_slate"
+                        android:layout_marginBottom="16dp" />
 
                     <!-- Location Name -->
                     <TextView
@@ -156,9 +156,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:boxBackgroundMode="outline"
-                        app:boxStrokeWidth="0dp"
-                        app:boxStrokeWidthFocused="0dp"
-                        android:background="@drawable/bg_grey"
+                        app:boxStrokeColor="@color/light_grey"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:layout_marginBottom="10dp">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/location_name_et"
@@ -183,9 +184,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:boxBackgroundMode="outline"
-                        app:boxStrokeWidth="0dp"
-                        app:boxStrokeWidthFocused="0dp"
-                        android:background="@drawable/bg_grey"
+                        app:boxStrokeColor="@color/light_grey"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="2dp"
+                        android:background="@drawable/bg_rectangle_pale_slate"
                         android:layout_marginBottom="10dp">
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/location_desc_et"
@@ -238,26 +240,11 @@
                         android:layout_marginBottom="4dp" />
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_grey"
-                        android:layout_marginBottom="10dp">
-                        <Spinner
-                            android:id="@+id/reason_spinner"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@null"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="36dp" />
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:layout_marginEnd="10dp"
-                            android:src="@drawable/icon_caret_down"
-                            android:contentDescription="@null"
-                            app:tint="@color/dark_grey" />
-                    </RelativeLayout>
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_rectangle_pale_slate"
+                        android:padding="10dp"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="10dp" />
 
                     <!-- Images of Location -->
                     <TextView
@@ -274,8 +261,8 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:padding="5dp"
-                        android:background="@drawable/bg_grey"
-                        android:layout_marginBottom="4dp">
+                        android:background="@drawable/bg_rectangle_pale_slate">
+
                         <HorizontalScrollView
                             android:layout_width="0dp"
                             android:layout_height="70dp"
@@ -290,12 +277,10 @@
                         </HorizontalScrollView>
                         <ImageButton
                             android:id="@+id/upload_img_bttn"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/icon_paperclip"
-                            android:background="@drawable/bg_grey"
-                            android:contentDescription="Upload images"
-                            app:tint="@color/dark_grey" />
+                            android:layout_width="45dp"
+                            android:layout_height="45dp"
+                            android:src="@drawable/ic_paperclip"
+                            android:background="@drawable/bg_rectangle_pale_slate"/>
                     </LinearLayout>
 
                     <!-- Allowed types -->
@@ -307,11 +292,11 @@
                         android:layout_marginBottom="14dp"
                         android:gravity="center_vertical">
                         <ImageView
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
-                            android:src="@drawable/icon_info"
-                            android:contentDescription="@null"
-                            app:tint="@color/dark_grey" />
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_info"
+                            app:tint="@color/dim_grey"/>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -327,7 +312,7 @@
                         android:layout_height="48dp"
                         android:layout_gravity="center_horizontal"
                         android:text="SUBMIT"
-                        style="@style/bttn_style_yllw" />
+                        style="@style/rectangle_bttn_gold"/>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
