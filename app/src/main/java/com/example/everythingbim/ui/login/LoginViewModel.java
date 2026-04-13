@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
+import com.example.everythingbim.AdminActivity;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
@@ -105,9 +106,14 @@ public class LoginViewModel extends ViewModel {
         if (!isFormValid(email, password)) {
             return;
         }
-        navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+        if (selectedUserType.getValue() == UserType.ADMIN) {
+            navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
+        } else {
+            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+        }
+    }
 
-//        isLoading.setValue(true);
+    //        isLoading.setValue(true);
 //        errorFields.setValue(null);
 //
 //        auth.signInWithEmailAndPassword(email, password)
@@ -126,7 +132,6 @@ public class LoginViewModel extends ViewModel {
 //                        setErrorField(R.id.login_error, error);
 //                    }
 //                });
-    }
 
     private void fetchUserTypeAndNavigate(String userId) {
         isLoading.setValue(true);
@@ -177,7 +182,11 @@ public class LoginViewModel extends ViewModel {
         }
         Bundle extras = new Bundle();
         extras.putString("userType", userType);
-        navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
+        if ("admin".equals(userType)) {
+            navigationEvent.setValue(new NavigationCommand(AdminActivity.class, extras));
+        } else {
+            navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
+        }
     }
 
     public void onCreateAccountClicked() {

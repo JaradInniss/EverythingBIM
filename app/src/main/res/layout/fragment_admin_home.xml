@@ -61,7 +61,7 @@
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:src="@drawable/icon_bell"
-            android:background="@drawable/bg_rounded_button"
+            android:background="@drawable/button_rounded"
             android:scaleType="center"
             android:contentDescription="Notifications" />
 
@@ -115,7 +115,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp"
-                        android:background="@color/true_cobalr"
+                        android:background="@color/true_cobalt"
                         android:gravity="center">
 
                         <!-- Icon at the top -->
@@ -180,7 +180,7 @@
                         <ImageView
                             android:layout_width="40dp"
                             android:layout_height="40dp"
-                            android:src="@drawable/icon_info"
+                            android:src="@drawable/ic_info"
                             android:contentDescription="Information Icon" />
 
                         <TextView
@@ -686,7 +686,7 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/check_circle"
+                    android:src="@drawable/ic_check_circle"
                     android:contentDescription="@null"
                     android:layout_marginEnd="10dp"
                     app:tint="#28965a" />
@@ -769,7 +769,7 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/icon_prohibit"
+                    android:src="@drawable/ic_prohibit"
                     android:contentDescription="@null"
                     android:layout_marginEnd="10dp"
                     app:tint="#7b0828" />

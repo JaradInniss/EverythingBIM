@@ -1,6 +1,8 @@
 package com.example.everythingbim;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -17,12 +19,14 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.example.everythingbim.ui.login.Login;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class AdminSettingsFragment extends Fragment {
 
     // UI components
-    private ImageButton editUsernameBtn, editEmailBtn, editPasswordBtn;
+    private ImageButton editUsernameBtn, editEmailBtn, editPasswordBtn, eyeBtn;
     private LinearLayout usernameContainer, emailContainer;
     private RelativeLayout passwordContainer;
     private TextInputEditText usernameField, emailField, passwordField;
@@ -31,6 +35,9 @@ public class AdminSettingsFragment extends Fragment {
     private boolean isEditingUsername = false;
     private boolean isEditingEmail = false;
     private boolean isEditingPassword = false;
+
+    // Password visibility state
+    private boolean isPasswordVisible = false;
 
     @Nullable
     @Override
@@ -41,6 +48,7 @@ public class AdminSettingsFragment extends Fragment {
         // Initialize views
         initViews(root);
         setupEditButtons();
+        setupPasswordToggle();
 
         return root;
     }
@@ -49,6 +57,7 @@ public class AdminSettingsFragment extends Fragment {
         editUsernameBtn = root.findViewById(R.id.admin_edit_username_btn);
         editEmailBtn = root.findViewById(R.id.admin_edit_email_btn);
         editPasswordBtn = root.findViewById(R.id.admin_edit_password_btn);
+        eyeBtn = root.findViewById(R.id.admin_password_eye_btn);
 
         usernameContainer = root.findViewById(R.id.username_container);
         emailContainer = root.findViewById(R.id.email_container);
@@ -57,6 +66,18 @@ public class AdminSettingsFragment extends Fragment {
         usernameField = root.findViewById(R.id.admin_username_et);
         emailField = root.findViewById(R.id.admin_email_et);
         passwordField = root.findViewById(R.id.admin_password_et);
+
+        // Logout button
+        View logoutBtn = root.findViewById(R.id.admin_logout_btn);
+        logoutBtn.setOnClickListener(v -> performLogout());
+    }
+
+    private void performLogout() {
+        FirebaseAuth.getInstance().signOut();
+        Intent intent = new Intent(requireContext(), Login.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
     }
 
     private void setupEditButtons() {
@@ -153,5 +174,22 @@ public class AdminSettingsFragment extends Fragment {
         }
         // Flip the state after the operation
         toggleState.run();
+    }
+
+    private void setupPasswordToggle() {
+        eyeBtn.setOnClickListener(v -> {
+            if (isPasswordVisible) {
+                // Hide password
+                passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark)));
+            } else {
+                // Show password
+                passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
+            }
+            // Keep cursor at the end
+            passwordField.setSelection(passwordField.getText() != null ? passwordField.getText().length() : 0);
+            isPasswordVisible = !isPasswordVisible;
+        });
     }
 }

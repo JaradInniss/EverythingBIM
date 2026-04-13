@@ -77,7 +77,7 @@
                 android:id="@+id/reports_search_btn"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:src="@drawable/icon_magnifying_glass"
+                android:src="@drawable/ic_magnifying_glass"
                 android:contentDescription="Search"
                 android:clickable="true"
                 android:focusable="true"
@@ -243,6 +243,17 @@
                     android:orientation="horizontal">
 
                     <RadioButton
+                        android:id="@+id/filter_type_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="All"
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginEnd="20dp"
+                        android:buttonTint="@color/persian_blue" />
+
+                    <RadioButton
                         android:id="@+id/filter_type_post"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -285,6 +296,17 @@
                 android:layout_marginBottom="4dp">
 
                 <RadioButton
+                    android:id="@+id/filter_severity_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
                     android:id="@+id/filter_severity_minor"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -311,6 +333,58 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Major"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:buttonTint="@color/persian_blue" />
+
+            </RadioGroup>
+
+            <!-- ── Report Status (Read/Unread) ─── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report Status:"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginBottom="6dp"
+                android:layout_marginTop="10dp" />
+
+            <RadioGroup
+                android:id="@+id/filter_status_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <RadioButton
+                    android:id="@+id/filter_status_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_status_unread"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Unread"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_status_read"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Read"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:fontFamily="@font/roboto_medium"

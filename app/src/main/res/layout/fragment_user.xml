@@ -28,7 +28,7 @@
                 android:id="@+id/general_user_profile_iv"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
-                android:src="@drawable/icon_user_circle"
+                android:src="@drawable/ic_user_circle"
                 android:contentDescription="@null"
                 app:tint="@color/light_grey" />
 
@@ -200,7 +200,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -209,7 +209,7 @@
                                         android:id="@+id/locreq_new_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_plus"
+                                        android:src="@drawable/ic_plus"
                                         android:contentDescription="New location request"
                                         app:tint="@color/black" />
                                     <TextView
@@ -228,7 +228,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -237,7 +237,7 @@
                                         android:id="@+id/locreq_view_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_view"
+                                        android:src="@drawable/ic_view"
                                         android:contentDescription="View in review location requests"
                                         app:tint="@color/black" />
                                     <TextView
@@ -256,7 +256,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true">
@@ -264,7 +264,7 @@
                                         android:id="@+id/locreq_view_btn_iv_2"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_flag"
+                                        android:src="@drawable/ic_flag"
                                         android:contentDescription="View completed location requests"
                                         app:tint="@color/black" />
                                     <TextView
@@ -329,7 +329,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -338,7 +338,7 @@
                                         android:id="@+id/inforeq_new_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_plus"
+                                        android:src="@drawable/ic_plus"
                                         android:contentDescription="New information request"
                                         app:tint="@color/black" />
                                     <TextView
@@ -357,7 +357,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -366,7 +366,7 @@
                                         android:id="@+id/inforeq_view_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_view"
+                                        android:src="@drawable/ic_view"
                                         android:contentDescription="View in review information requests"
                                         app:tint="@color/black" />
                                     <TextView
@@ -385,7 +385,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true">
@@ -393,7 +393,7 @@
                                         android:id="@+id/inforeq_view_btn_iv_2"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_flag"
+                                        android:src="@drawable/ic_flag"
                                         android:contentDescription="View completed information requests"
                                         app:tint="@color/black" />
                                     <TextView
@@ -473,7 +473,7 @@
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical"
-                                android:background="@drawable/bg_grey"
+                                android:background="@drawable/bg_rectangle_dim_grey"
                                 android:padding="10dp"
                                 android:layout_marginBottom="16dp">
                                 <TextView
@@ -488,7 +488,7 @@
                                     android:id="@+id/general_user_edit_bio_btn"
                                     android:layout_width="30dp"
                                     android:layout_height="30dp"
-                                    android:src="@drawable/icon_edit"
+                                    android:src="@drawable/ic_edit"
                                     android:background="@android:color/transparent"
                                     android:contentDescription="Edit bio"
                                     android:clickable="true"
@@ -553,7 +553,7 @@
                                 <ImageView
                                     android:layout_width="25dp"
                                     android:layout_height="25dp"
-                                    android:src="@drawable/icon_user_circle_gear"
+                                    android:src="@drawable/ic_user_gear"
                                     android:contentDescription="@null" />
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -589,7 +589,7 @@
                                     app:boxStrokeWidthFocused="2dp"
                                     app:hintTextColor="@color/light_grey"
                                     android:layout_marginEnd="8dp"
-                                    android:background="@drawable/bg_grey">
+                                    android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText
                                         android:id="@+id/general_user_edit_username_et"
                                         android:layout_width="match_parent"
@@ -606,7 +606,7 @@
                                     android:id="@+id/general_user_edit_username_btn"
                                     android:layout_width="40dp"
                                     android:layout_height="40dp"
-                                    android:src="@drawable/icon_edit"
+                                    android:src="@drawable/ic_edit"
                                     android:background="@android:color/transparent"
                                     android:contentDescription="Edit username"
                                     android:clickable="true"
@@ -631,7 +631,7 @@
                                     app:boxStrokeWidthFocused="2dp"
                                     app:hintTextColor="@color/light_grey"
                                     android:layout_marginEnd="8dp"
-                                    android:background="@drawable/bg_grey">
+                                    android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText
                                         android:id="@+id/general_user_edit_email_et"
                                         android:layout_width="match_parent"
@@ -648,7 +648,7 @@
                                     android:id="@+id/general_user_edit_email_btn"
                                     android:layout_width="40dp"
                                     android:layout_height="40dp"
-                                    android:src="@drawable/icon_edit"
+                                    android:src="@drawable/ic_edit"
                                     android:background="@android:color/transparent"
                                     android:contentDescription="Edit email"
                                     android:clickable="true"
@@ -674,7 +674,7 @@
                                     app:hintTextColor="@color/light_grey"
                                     app:passwordToggleEnabled="true"
                                     android:layout_marginEnd="8dp"
-                                    android:background="@drawable/bg_grey">
+                                    android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText
                                         android:id="@+id/general_user_edit_password_et"
                                         android:layout_width="match_parent"
@@ -691,7 +691,7 @@
                                     android:id="@+id/general_user_edit_password_btn"
                                     android:layout_width="40dp"
                                     android:layout_height="40dp"
-                                    android:src="@drawable/icon_edit"
+                                    android:src="@drawable/ic_edit"
                                     android:background="@android:color/transparent"
                                     android:contentDescription="Edit password"
                                     android:clickable="true"
@@ -741,7 +741,7 @@
                 android:id="@+id/business_user_profile_iv"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
-                android:src="@drawable/icon_user_circle"
+                android:src="@drawable/ic_user_circle"
                 android:contentDescription="@null"
                 app:tint="@color/light_grey" />
 
@@ -770,7 +770,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="6dp"
-                        android:src="@drawable/check_circle"
+                        android:src="@drawable/ic_check_circle"
                         android:contentDescription="Verified"
                         app:tint="@color/blue"
                         android:visibility="gone" />
@@ -928,7 +928,7 @@
                                 <ImageView
                                     android:layout_width="20dp"
                                     android:layout_height="20dp"
-                                    android:src="@drawable/icon_note_pencil"
+                                    android:src="@drawable/ic_note_pencil"
                                     android:contentDescription="@null" />
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -968,7 +968,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -977,7 +977,7 @@
                                         android:id="@+id/accver_view_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_view"
+                                        android:src="@drawable/ic_view"
                                         android:contentDescription="View in review submissions"
                                         app:tint="@color/black" />
                                     <TextView
@@ -995,7 +995,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true">
@@ -1003,7 +1003,7 @@
                                         android:id="@+id/accver_view_btn_iv_2"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_flag"
+                                        android:src="@drawable/ic_flag"
                                         android:contentDescription="View completed submissions"
                                         app:tint="@color/black" />
                                     <TextView
@@ -1063,7 +1063,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true"
@@ -1072,7 +1072,7 @@
                                         android:id="@+id/addloc_view_btn_iv"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_view"
+                                        android:src="@drawable/ic_view"
                                         android:contentDescription="View in review location requests"
                                         app:tint="@color/black" />
                                     <TextView
@@ -1090,7 +1090,7 @@
                                     android:layout_weight="1"
                                     android:orientation="vertical"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_grey"
+                                    android:background="@drawable/bg_rectangle_dim_grey"
                                     android:padding="8dp"
                                     android:clickable="true"
                                     android:focusable="true">
@@ -1098,7 +1098,7 @@
                                         android:id="@+id/addloc_view_btn_iv_2"
                                         android:layout_width="24dp"
                                         android:layout_height="24dp"
-                                        android:src="@drawable/icon_flag"
+                                        android:src="@drawable/ic_flag"
                                         android:contentDescription="View completed location requests"
                                         app:tint="@color/black" />
                                 </LinearLayout>
@@ -1169,7 +1169,7 @@
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical"
-                                android:background="@drawable/bg_grey"
+                                android:background="@drawable/bg_rectangle_dim_grey"
                                 android:padding="10dp"
                                 android:layout_marginBottom="16dp">
                                 <TextView
@@ -1184,7 +1184,7 @@
                                     android:id="@+id/business_user_edit_bio_btn"
                                     android:layout_width="30dp"
                                     android:layout_height="30dp"
-                                    android:src="@drawable/icon_edit"
+                                    android:src="@drawable/ic_edit"
                                     android:background="@android:color/transparent"
                                     android:contentDescription="Edit bio"
                                     android:clickable="true"
@@ -1249,7 +1249,7 @@
                                 <ImageView
                                     android:layout_width="25dp"
                                     android:layout_height="25dp"
-                                    android:src="@drawable/icon_user_circle_gear"
+                                    android:src="@drawable/ic_user_gear"
                                     android:contentDescription="@null" />
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -1269,34 +1269,34 @@
 
                             <!-- Email -->
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
-                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Email" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_grey">
+                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Email" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_email_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textEmailAddress" android:text="anonymous@gmail.com" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton android:id="@+id/business_edit_email_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/icon_edit" android:background="@android:color/transparent" android:contentDescription="Edit email" android:clickable="true" android:focusable="true" />
+                                <ImageButton android:id="@+id/business_edit_email_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@android:color/transparent" android:contentDescription="Edit email" android:clickable="true" android:focusable="true" />
                             </LinearLayout>
 
                             <!-- Password -->
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
-                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Password" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" app:passwordToggleEnabled="true" android:layout_marginEnd="8dp" android:background="@drawable/bg_grey">
+                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Password" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" app:passwordToggleEnabled="true" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_password_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPassword" android:text="**********" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton android:id="@+id/business_edit_password_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/icon_edit" android:background="@android:color/transparent" android:contentDescription="Edit password" android:clickable="true" android:focusable="true" />
+                                <ImageButton android:id="@+id/business_edit_password_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@android:color/transparent" android:contentDescription="Edit password" android:clickable="true" android:focusable="true" />
                             </LinearLayout>
 
                             <!-- Business Description -->
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
-                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Business Description" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_grey">
+                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Business Description" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_desc_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textLongMessage" android:text="The Best Product in the 246" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton android:id="@+id/business_edit_desc_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/icon_edit" android:background="@android:color/transparent" android:contentDescription="Edit business description" android:clickable="true" android:focusable="true" />
+                                <ImageButton android:id="@+id/business_edit_desc_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@android:color/transparent" android:contentDescription="Edit business description" android:clickable="true" android:focusable="true" />
                             </LinearLayout>
 
                             <!-- Address -->
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
-                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Address" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_grey">
+                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Address" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
                                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_address_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPostalAddress" android:text="112 Barb Lane, Market Hill, St. James" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton android:id="@+id/business_edit_address_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/icon_edit" android:background="@android:color/transparent" android:contentDescription="Edit address" android:clickable="true" android:focusable="true" />
+                                <ImageButton android:id="@+id/business_edit_address_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@android:color/transparent" android:contentDescription="Edit address" android:clickable="true" android:focusable="true" />
                             </LinearLayout>
 
                             <!-- Add field button -->
@@ -1306,13 +1306,13 @@
                                 android:layout_height="40dp"
                                 android:orientation="vertical"
                                 android:gravity="center"
-                                android:background="@drawable/bg_grey"
+                                android:background="@drawable/bg_rectangle_dim_grey"
                                 android:clickable="true"
                                 android:focusable="true">
                                 <ImageView
                                     android:layout_width="20dp"
                                     android:layout_height="20dp"
-                                    android:src="@drawable/icon_plus"
+                                    android:src="@drawable/ic_plus"
                                     android:contentDescription="Add new field"
                                     app:tint="@color/black" />
                             </LinearLayout>

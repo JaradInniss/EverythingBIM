@@ -3,11 +3,11 @@
 
     <item
         android:id="@+id/admin_navbar_user"
-        android:icon="@drawable/icon_user_reg"
+        android:icon="@drawable/ic_user"
         android:title="USERS" />
     <item
         android:id="@+id/admin_navbar_home"
-        android:icon="@drawable/icon_home"
+        android:icon="@drawable/ic_home"
         android:title="HOME" />
     <item
         android:id="@+id/admin_navbar_reports"

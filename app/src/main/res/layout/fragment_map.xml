@@ -37,7 +37,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:contentDescription="@string/app_name"
-                    android:src="@drawable/icon_search" />
+                    android:src="@drawable/ic_magnifying_glass" />
 
                 <EditText
                     android:id="@+id/map_search_input"

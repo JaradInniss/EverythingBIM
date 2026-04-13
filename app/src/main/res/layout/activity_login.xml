@@ -65,7 +65,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_user"
-                    android:tint="@color/dark"/>
+                    app:tint="@color/dark" />
                 
                 <TextView
                     android:id="@+id/general_user_tv"
@@ -95,7 +95,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_storefront"
-                    android:tint="@color/dark"/>
+                    app:tint="@color/dark" />
 
                 <TextView
                     android:id="@+id/business_user_tv"

@@ -210,7 +210,7 @@
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="42dp"
-                        android:background="@drawable/bg_grey"
+                        android:background="@drawable/bg_rectangle_dim_grey"
                         android:layout_marginBottom="10dp">
                         <Spinner
                             android:id="@+id/place_type_spinner"

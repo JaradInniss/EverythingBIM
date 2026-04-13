@@ -28,8 +28,17 @@ import java.util.Locale;
 
 public class AdminReportDetailFragment extends Fragment {
 
-    // ─── Bundle key passed from AdminReportsFragment ──
+    // ─── Bundle keys passed from AdminReportsFragment ──
     public static final String ARG_DOC_ID = "doc_id";
+    public static final String ARG_NUMBER = "number";
+    public static final String ARG_TITLE = "title";
+    public static final String ARG_TYPE = "type";
+    public static final String ARG_SEVERITY = "severity";
+    public static final String ARG_DATE = "date";
+    public static final String ARG_REPORTED_USER = "reportedUser";
+    public static final String ARG_CAPTION = "caption";
+    public static final String ARG_IMAGE_URL = "imageUrl";
+    public static final String ARG_STATUS = "status";
 
     // ─── Views ───────────────────────────────
     private TextView numberTv;
@@ -49,28 +58,131 @@ public class AdminReportDetailFragment extends Fragment {
     private String selectedAction = "";
     private String docId          = "";
 
+    // ─── Cached report data ─────────────────
+    private String cachedNumber     = "";
+    private String cachedTitle      = "";
+    private String cachedType       = "";
+    private String cachedSeverity   = "";
+    private String cachedDate       = "";
+    private String cachedStatus     = "";
+    private String cachedReportedUser = "";
+    private String cachedCaption    = "";
+    private String cachedImageUrl   = "";
+
     // ─── Firebase ────────────────────────────
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
 
-    // ─── Admin action options ─────────────────
+    // ─── Admin action options organized by severity ─────────────────
+    // MAJOR: Emergency/immediate actions
+    private static final String ACTION_REMOVE_IMMEDIATE = "Remove Content Immediately";
+    private static final String ACTION_SUSPEND_TEMP = "Suspend Account (Temporary)";
+    private static final String ACTION_SUSPEND_PERM = "Suspend Account (Permanent)";
+    private static final String ACTION_LOCK_INVESTIGATION = "Lock Account Pending Investigation";
+    private static final String ACTION_ESCALATE_LAW = "Escalate to Law Enforcement";
+    private static final String ACTION_CRISIS_REFERRAL = "Refer to Crisis Intervention";
+    private static final String ACTION_WATCHLIST = "Flag for Watch-List Monitoring";
+    private static final String ACTION_NOTIFY_URGENT = "Notify Reporter (Urgent Action)";
+    private static final String ACTION_CASE_NOTES_MAJOR = "Add Case Notes";
+
+    // MODERATE: Serious but non-emergency
+    private static final String ACTION_REMOVE_POST = "Remove Specific Post/Comment";
+    private static final String ACTION_WARN_1ST = "Issue Formal Warning (1st)";
+    private static final String ACTION_WARN_2ND = "Issue Formal Warning (2nd/Final)";
+    private static final String ACTION_RESTRICT = "Restrict Account Features";
+    private static final String ACTION_SHADOW_RESTRICT = "Shadow-Restrict Account";
+    private static final String ACTION_PRE_APPROVAL = "Require Pre-Approval for Posts";
+    private static final String ACTION_MISINFO_LABEL = "Add Misinformation Label";
+    private static final String ACTION_REQUEST_EDIT = "Request Content Edit/Removal";
+    private static final String ACTION_DISMISS_BORDERLINE = "Dismiss (Borderline Report)";
+    private static final String ACTION_NOTIFY_OUTCOME = "Notify Reporter of Outcome";
+    private static final String ACTION_CASE_NOTES_MOD = "Add Case Notes";
+
+    // MINOR: Low-severity/automation-friendly
+    private static final String ACTION_DISMISS_NO_ACTION = "Dismiss Report (No Action Needed)";
+    private static final String ACTION_REMOVE_SPAM = "Remove Content (Spam/Fake Engagement)";
+    private static final String ACTION_SOFT_MUTE = "Soft-Mute in Recommendations";
+    private static final String ACTION_AUTO_WARN = "Issue Automated Warning";
+    private static final String ACTION_MARK_BOT = "Mark as Bot/Satire Account";
+    private static final String ACTION_MERGE_DUPLICATES = "Merge Duplicate Reports";
+    private static final String ACTION_NOTIFY_NO_VIOLATION = "Notify Reporter (No Violation Found)";
+
+    // CROSS-CATEGORY: Any severity
+    private static final String ACTION_VIEW_HISTORY = "View Full Report History";
+    private static final String ACTION_BULK_ACTION = "Bulk Action (Multiple Reports)";
+    private static final String ACTION_ASSIGN_MOD = "Assign to Moderator/Escalation";
+    private static final String ACTION_SET_DEADLINE = "Set Review Deadline/SLA";
+    private static final String ACTION_UNDO = "Undo Previous Action";
+    private static final String ACTION_EXPORT = "Export Case Data";
+    private static final String ACTION_APPEAL_QUEUE = "Appeal Queue Review";
+
     private static final String[] ACTIONS = {
             "Select Action",
-            "Dismiss Report",
-            "Warn User",
-            "Remove Post",
-            "Suspend Account",
-            "Ban Account"
+            // MAJOR
+            "━━ MAJOR ━━",
+            ACTION_REMOVE_IMMEDIATE,
+            ACTION_SUSPEND_TEMP,
+            ACTION_SUSPEND_PERM,
+            ACTION_LOCK_INVESTIGATION,
+            ACTION_ESCALATE_LAW,
+            ACTION_CRISIS_REFERRAL,
+            ACTION_WATCHLIST,
+            ACTION_NOTIFY_URGENT,
+            ACTION_CASE_NOTES_MAJOR,
+            // MODERATE
+            "━━ MODERATE ━━",
+            ACTION_REMOVE_POST,
+            ACTION_WARN_1ST,
+            ACTION_WARN_2ND,
+            ACTION_RESTRICT,
+            ACTION_SHADOW_RESTRICT,
+            ACTION_PRE_APPROVAL,
+            ACTION_MISINFO_LABEL,
+            ACTION_REQUEST_EDIT,
+            ACTION_DISMISS_BORDERLINE,
+            ACTION_NOTIFY_OUTCOME,
+            ACTION_CASE_NOTES_MOD,
+            // MINOR
+            "━━ MINOR ━━",
+            ACTION_DISMISS_NO_ACTION,
+            ACTION_REMOVE_SPAM,
+            ACTION_SOFT_MUTE,
+            ACTION_AUTO_WARN,
+            ACTION_MARK_BOT,
+            ACTION_MERGE_DUPLICATES,
+            ACTION_NOTIFY_NO_VIOLATION,
+            // CROSS-CATEGORY
+            "━━ ACTIONS ━━",
+            ACTION_VIEW_HISTORY,
+            ACTION_BULK_ACTION,
+            ACTION_ASSIGN_MOD,
+            ACTION_SET_DEADLINE,
+            ACTION_UNDO,
+            ACTION_EXPORT,
+            ACTION_APPEAL_QUEUE
     };
 
     // ────────────────────────────────────────────────────────
-    // FACTORY — pass the Firestore document ID from the list
+    // FACTORY — pass all Report fields from the list
     // ────────────────────────────────────────────────────────
 
-    public static AdminReportDetailFragment newInstance(String docId) {
+    public static AdminReportDetailFragment newInstance(
+            String docId, String number, String title, String type,
+            String severity, String date, String reportedUser,
+            String caption, String imageUrl, String status) {
+
         AdminReportDetailFragment f = new AdminReportDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOC_ID, docId);
+        args.putString(ARG_NUMBER, number);
+        args.putString(ARG_TITLE, title);
+        args.putString(ARG_TYPE, type);
+        args.putString(ARG_SEVERITY, severity);
+        args.putString(ARG_DATE, date);
+        args.putString(ARG_REPORTED_USER, reportedUser);
+        args.putString(ARG_CAPTION, caption);
+        args.putString(ARG_IMAGE_URL, imageUrl);
+        args.putString(ARG_STATUS, status);
         f.setArguments(args);
         return f;
     }
@@ -93,6 +205,15 @@ public class AdminReportDetailFragment extends Fragment {
 
         if (getArguments() != null) {
             docId = getArguments().getString(ARG_DOC_ID, "");
+            cachedNumber = getArguments().getString(ARG_NUMBER, "");
+            cachedTitle = getArguments().getString(ARG_TITLE, "");
+            cachedType = getArguments().getString(ARG_TYPE, "Post");
+            cachedSeverity = getArguments().getString(ARG_SEVERITY, "Minor");
+            cachedDate = getArguments().getString(ARG_DATE, "");
+            cachedStatus = getArguments().getString(ARG_STATUS, "In Review");
+            cachedReportedUser = getArguments().getString(ARG_REPORTED_USER, "");
+            cachedCaption = getArguments().getString(ARG_CAPTION, "");
+            cachedImageUrl = getArguments().getString(ARG_IMAGE_URL, "");
         }
 
         // Bind views
@@ -111,7 +232,7 @@ public class AdminReportDetailFragment extends Fragment {
 
         // Back button
         view.findViewById(R.id.report_detail_back_btn).setOnClickListener(v ->
-                requireActivity().getSupportFragmentManager().popBackStack());
+                getParentFragmentManager().popBackStack());
 
         setupActionSpinner();
         loadReportData();
@@ -123,66 +244,35 @@ public class AdminReportDetailFragment extends Fragment {
     }
 
     // ────────────────────────────────────────────────────────
-    // LOAD REPORT DATA FROM FIRESTORE
+    // LOAD REPORT DATA FROM PASSED BUNDLE (NO FIRESTORE)
+    // Firestore fetch will be implemented in future
     // ────────────────────────────────────────────────────────
 
     private void loadReportData() {
-        if (docId.isEmpty()) return;
+        // Display cached data from bundle (passed from list)
+        numberTv.setText("Report " + cachedNumber);
 
-        db.collection("reports").document(docId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
+        severityBadge.setText(cachedSeverity.toUpperCase());
+        applySeverityBadgeColor(cachedSeverity);
 
-                    // Report number
-                    long number = doc.contains("number") ? doc.getLong("number") : 0;
-                    numberTv.setText("Report #" + number);
+        statusTv.setText(cachedStatus);
+        applyStatusColor(cachedStatus);
 
-                    // Severity badge — colour changes per severity
-                    String severity = doc.getString("severity");
-                    if (severity == null) severity = "Minor";
-                    severityBadge.setText(severity.toUpperCase());
-                    applySeverityBadgeColor(severity);
+        dateTv.setText("Submitted: " + cachedDate);
 
-                    // Status
-                    String status = doc.getString("status");
-                    statusTv.setText(status != null ? status : "In Review");
-                    applyStatusColor(status);
+        typeTv.setText(cachedType);
 
-                    // Submitted date
-                    com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
-                    if (ts != null) {
-                        String date = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-                                .format(ts.toDate());
-                        dateTv.setText("Submitted: " + date);
-                    }
+        issueTv.setText(cachedTitle);
 
-                    // Report type + issue
-                    typeTv.setText(doc.getString("type") != null
-                            ? doc.getString("type") : "Post");
-                    issueTv.setText(doc.getString("issue") != null
-                            ? doc.getString("issue") : "");
+        userTv.setText(cachedReportedUser);
 
-                    // Post content
-                    userTv.setText(doc.getString("reportedUser") != null
-                            ? doc.getString("reportedUser") : "");
-                    com.google.firebase.Timestamp postTs = doc.getTimestamp("postDate");
-                    if (postTs != null) {
-                        postDateTv.setText(new SimpleDateFormat("yyyy/MM/dd",
-                                Locale.getDefault()).format(postTs.toDate()));
-                    }
-                    captionTv.setText(doc.getString("caption") != null
-                            ? doc.getString("caption") : "");
+        postDateTv.setText(""); // Not passed from list
 
-                    // Load post image from Storage URL if available
-                    String imageUrl = doc.getString("imageUrl");
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        loadImageFromStorage(imageUrl);
-                    }
+        captionTv.setText(cachedCaption);
 
-                    // Mark as read in Firestore
-                    doc.getReference().update("read", true);
-                });
+        if (cachedImageUrl != null && !cachedImageUrl.isEmpty()) {
+            loadImageFromStorage(cachedImageUrl);
+        }
     }
 
     // ────────────────────────────────────────────────────────
@@ -250,16 +340,25 @@ public class AdminReportDetailFragment extends Fragment {
 
             @Override
             public boolean isEnabled(int position) {
-                return position != 0; // disable "Select Action" prompt
+                // Disable header items (positions 1, 12, 25, 34)
+                if (position == 0) return false; // "Select Action"
+                if (position == 1 || position == 12 || position == 25 || position == 34) return false;
+                return true;
             }
 
             @Override
             public View getDropDownView(int position, @Nullable View convertView,
                                         @NonNull ViewGroup parent) {
                 View v = super.getDropDownView(position, convertView, parent);
-                ((TextView) v).setTextColor(position == 0
-                        ? android.graphics.Color.GRAY
-                        : android.graphics.Color.BLACK);
+                TextView tv = (TextView) v;
+                if (position == 0 || position == 1 || position == 12 || position == 25 || position == 34) {
+                    // Header items - gray and bold style
+                    tv.setTextColor(android.graphics.Color.GRAY);
+                    tv.setTypeface(null, android.graphics.Typeface.BOLD);
+                } else {
+                    tv.setTextColor(android.graphics.Color.BLACK);
+                    tv.setTypeface(null, android.graphics.Typeface.NORMAL);
+                }
                 return v;
             }
         };
@@ -270,7 +369,13 @@ public class AdminReportDetailFragment extends Fragment {
         actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                selectedAction = pos != 0 ? ACTIONS[pos] : "";
+                // Header positions are disabled - reset to first valid if selected
+                if (pos == 0 || pos == 1 || pos == 12 || pos == 25 || pos == 34) {
+                    actionSpinner.setSelection(0);
+                    selectedAction = "";
+                    return;
+                }
+                selectedAction = ACTIONS[pos];
             }
             @Override
             public void onNothingSelected(AdapterView<?> p) { selectedAction = ""; }

@@ -25,7 +25,7 @@
             android:id="@+id/report_detail_back_btn"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/icon_caret_left"
+            android:src="@drawable/ic_caret_left"
             android:background="@android:color/transparent"
             android:contentDescription="Go back"
             app:tint="@color/white"
@@ -384,7 +384,7 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:fontFamily="@font/roboto_medium"
-                        android:background="@drawable/bttn_bg_yllw"
+                        android:background="@drawable/bg_pill_gold"
                         android:insetTop="0dp"
                         android:insetBottom="0dp" />
 

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_main"
+    tools:context=".AdminLocationRequestDetailsFragment">
+
+    <!-- TOOLBAR -->
+    <LinearLayout
+        android:id="@+id/loc_detail_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_main"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp"
+        android:layout_alignParentTop="true">
+
+        <ImageButton
+            android:id="@+id/loc_detail_back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_caret_left"
+            android:background="@android:color/transparent"
+            android:contentDescription="Go back"
+            app:tint="@color/white"
+            android:layout_marginEnd="4dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="View Location Request"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium"
+            android:gravity="center" />
+
+        <View android:layout_width="36dp" android:layout_height="36dp" />
+
+    </LinearLayout>
+
+    <!-- SCROLLABLE CONTENT -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/loc_detail_toolbar"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="20dp">
+
+            <!-- ══ BORDER WRAPPER — bg changed to green/red on action ══ -->
+            <LinearLayout
+                android:id="@+id/loc_detail_card_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_default"
+                android:padding="2dp">
+
+                <!-- Inner white content -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white"
+                    android:padding="14dp">
+
+                    <!-- Request # + Status + Date -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginBottom="2dp">
+                        <TextView android:id="@+id/loc_detail_number"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Request #201"
+                            android:textColor="@color/black" android:textSize="15sp"
+                            android:textStyle="bold" android:fontFamily="@font/roboto_medium" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:orientation="vertical" android:gravity="end">
+                            <TextView android:id="@+id/loc_detail_status"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Status: In Review" android:textColor="@color/true_cobalt"
+                                android:textSize="12sp" android:fontFamily="@font/roboto_medium" />
+                            <TextView android:id="@+id/loc_detail_date"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Submitted: 2026/02/11" android:textColor="@color/dim_grey"
+                                android:textSize="11sp" android:fontFamily="@font/roboto_medium" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView android:id="@+id/loc_detail_submitted_by"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:textColor="@color/dim_grey" android:textSize="12sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="10dp" />
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/light_grey" android:layout_marginBottom="10dp" />
+
+                    <!-- Map -->
+                    <com.google.android.gms.maps.MapView
+                        android:id="@+id/loc_detail_map"
+                        android:layout_width="match_parent" android:layout_height="150dp"
+                        android:layout_marginBottom="10dp" />
+
+                    <!-- Location Name -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Location Name" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView android:id="@+id/loc_detail_location_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="10dp" />
+
+                    <!-- Location Coordinates -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Location Coordinates" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:background="@drawable/bg_admin_field" android:layout_marginBottom="10dp">
+                        <TextView android:id="@+id/loc_detail_coordinates"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:padding="10dp"
+                            android:textColor="@color/black" android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                            android:src="@drawable/ic_pin_area" android:contentDescription="@null"
+                            android:layout_marginEnd="10dp" app:tint="@color/true_cobalt" />
+                    </LinearLayout>
+
+                    <!-- Location Description -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Location Description" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView android:id="@+id/loc_detail_description"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="10dp" />
+
+                    <!-- Place Type -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Place Type" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView android:id="@+id/loc_detail_place_type"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="10dp" />
+
+                    <!-- Reason For Request -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Reason For Request" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView android:id="@+id/loc_detail_reason"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="10dp" />
+
+                    <!-- Images -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Images of Location" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="6dp" />
+                    <HorizontalScrollView android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:scrollbars="none"
+                        android:layout_marginBottom="16dp">
+                        <LinearLayout android:id="@+id/loc_detail_images_container"
+                            android:layout_width="wrap_content" android:layout_height="80dp"
+                            android:orientation="horizontal" android:gravity="center_vertical" />
+                    </HorizontalScrollView>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/light_grey" android:layout_marginBottom="14dp" />
+
+                    <!-- Resolution info — shown after action -->
+                    <LinearLayout android:id="@+id/loc_detail_resolution_container"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical" android:visibility="gone"
+                        android:layout_marginBottom="10dp">
+                        <TextView android:id="@+id/loc_detail_resolution_date"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:textColor="@color/black" android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium" android:layout_marginBottom="4dp" />
+                        <TextView android:id="@+id/loc_detail_resolution_by"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:textColor="@color/black" android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium" android:layout_marginBottom="4dp" />
+                        <LinearLayout android:id="@+id/loc_detail_rejection_reason_row"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:orientation="vertical" android:visibility="gone">
+                            <TextView android:id="@+id/loc_detail_rejection_reason"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:textColor="@color/black" android:textSize="13sp"
+                                android:fontFamily="@font/roboto_medium" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Accept / Reject buttons -->
+                    <LinearLayout android:id="@+id/loc_detail_action_buttons"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center">
+                        <Button android:id="@+id/loc_detail_accept_btn"
+                            android:layout_width="120dp" android:layout_height="46dp"
+                            android:text="Accept" android:textColor="@color/black"
+                            android:textSize="14sp" android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_border_rectangle_celadon"
+                            android:insetTop="0dp" android:insetBottom="0dp"
+                            android:layout_marginEnd="16dp" />
+                        <Button android:id="@+id/loc_detail_reject_btn"
+                            android:layout_width="120dp" android:layout_height="46dp"
+                            android:text="Reject" android:textColor="@color/black"
+                            android:textSize="14sp" android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_border_rectangle_old_rose"
+                            android:insetTop="0dp" android:insetBottom="0dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+            <!-- END WRAPPER -->
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

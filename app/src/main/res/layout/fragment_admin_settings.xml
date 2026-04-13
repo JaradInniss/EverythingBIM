@@ -95,7 +95,7 @@
                         <ImageView
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:src="@drawable/icon_user_circle_gear"
+                            android:src="@drawable/ic_user_gear"
                             android:contentDescription="@null"
                             android:layout_marginEnd="10dp"
                             app:tint="@color/prussian_blue" />
@@ -164,11 +164,11 @@
                             android:id="@+id/admin_edit_username_btn"
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:src="@drawable/icon_edit"
-                            android:background="@drawable/bg_admin_edit_btn"
+                            android:src="@drawable/ic_edit"
+                            android:background="@drawable/bg_admin_edit_btn_grey"
                             android:contentDescription="Edit username"
                             android:padding="10dp"
-                            app:tint="@color/white"
+                            app:tint="@color/black"
                             android:clickable="true"
                             android:focusable="true" />
                     </LinearLayout>
@@ -221,7 +221,7 @@
                             android:id="@+id/admin_edit_email_btn"
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:src="@drawable/icon_edit"
+                            android:src="@drawable/ic_edit"
                             android:background="@drawable/bg_admin_edit_btn_grey"
                             android:contentDescription="Edit email"
                             android:padding="10dp"
@@ -292,7 +292,7 @@
                             android:id="@+id/admin_edit_password_btn"
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:src="@drawable/icon_edit"
+                            android:src="@drawable/ic_edit"
                             android:background="@drawable/bg_admin_edit_btn_grey"
                             android:contentDescription="Edit password"
                             android:padding="10dp"

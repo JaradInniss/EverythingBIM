@@ -154,6 +154,7 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/reg_form_viewflipper"
         android:layout_marginTop="20dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        tools:ignore="NotSibling" />
 
 </RelativeLayout>

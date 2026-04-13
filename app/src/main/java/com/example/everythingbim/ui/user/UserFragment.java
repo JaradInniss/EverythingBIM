@@ -160,9 +160,9 @@ public class UserFragment extends Fragment {
                 .getSharedPreferences("user_prefs", requireActivity().MODE_PRIVATE);
         prefs.edit().clear().apply();
 
-        Intent intent = new Intent(requireContext(), Login.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+//        Intent intent = new Intent(requireContext(), Login.class);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//        startActivity(intent);
 
         requireActivity().finish();
     }

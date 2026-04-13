@@ -224,7 +224,7 @@
                     android:layout_width="15dp"
                     android:layout_height="15dp"
                     android:src="@drawable/ic_plus"
-                    android:tint="@color/black"/>
+                    app:tint="@color/black" />
 
                 <HorizontalScrollView
                     android:layout_width="0dp"
@@ -260,7 +260,7 @@
                 android:layout_height="20dp"
                 android:layout_marginRight="8dp"
                 android:src="@drawable/ic_plus"
-                android:tint="@color/white"/>
+                app:tint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"

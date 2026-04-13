@@ -174,7 +174,7 @@ public class AddLocationRequestFragment extends Fragment {
         locationDescEt    = view.findViewById(R.id.location_desc_et);
         searchResultsList = view.findViewById(R.id.search_results_list);
         placeTypeSpinner  = view.findViewById(R.id.place_type_spinner);
-        reasonSpinner     = view.findViewById(R.id.reason_spinner);
+       // reasonSpinner     = view.findViewById(R.id.reason_spinner);
         submitBtn         = view.findViewById(R.id.submit_bttn);
 
         // Back button

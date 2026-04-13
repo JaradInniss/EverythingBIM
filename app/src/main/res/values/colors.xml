@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ===== Primary Colors ===== -->
-    <color name="true_cobalr">#203088</color>
+    <color name="true_cobalt">#203088</color>
     <color name="prussian_blue">#080C22</color>
     <color name="white">#FFFFFFFF</color>
 

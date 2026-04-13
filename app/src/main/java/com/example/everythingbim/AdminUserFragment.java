@@ -1,64 +1,620 @@
 package com.example.everythingbim;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link AdminUserFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.example.everythingbim.R;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 public class AdminUserFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    // ─── Tab state ───────────────────────────
+    // NONE = default (blank), GENERAL, BUSINESS
+    private enum Tab { NONE, GENERAL, BUSINESS }
+    private Tab activeTab = Tab.NONE;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    // ─── Search filter ────────────────────────
+    // ID_NO or USERNAME
+    private enum SearchFilter { ID_NO, USERNAME }
+    private SearchFilter searchFilter = SearchFilter.USERNAME;
 
-    public AdminUserFragment() {
-        // Required empty public constructor
-    }
+    // ─── Business read filter ─────────────────
+    private enum BizFilter { ALL, UNREAD, READ }
+    private BizFilter bizFilter = BizFilter.ALL;
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AdminUserFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static AdminUserFragment newInstance(String param1, String param2) {
-        AdminUserFragment fragment = new AdminUserFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    // ─── Views ───────────────────────────────
+    private LinearLayout btnGeneral, btnBusiness;
+    private EditText searchEt;
+    private View searchResultsCard;
+    private LinearLayout searchResultsContainer;
+    private TextView filterIdPill, filterUsernamePill;
+    private LinearLayout generalContent, businessContent;
+    private View generalLegend;
 
+    // General lists
+    private LinearLayout generalLocReqContainer;
+    private LinearLayout generalInfoReqContainer;
+
+    // Business lists
+    private LinearLayout businessVerReqContainer;
+    private TextView bizFilterAll, bizFilterUnread, bizFilterRead;
+
+    // ─── Firebase ────────────────────────────
+    private FirebaseFirestore db;
+
+    // ─── Data ────────────────────────────────
+    private List<RequestItem> allLocReqs      = new ArrayList<>();
+    private List<RequestItem> allInfoReqs     = new ArrayList<>();
+    private List<RequestItem> allBizVerReqs   = new ArrayList<>();
+    private List<UserItem>    allUsers        = new ArrayList<>();
+    private List<UserItem>    allBizUsers     = new ArrayList<>();
+
+    // ────────────────────────────────────────────────────────
+    // LIFECYCLE
+    // ────────────────────────────────────────────────────────
+
+    @Nullable
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
+        View view = inflater.inflate(R.layout.fragment_admin_user, container, false);
+        db = FirebaseFirestore.getInstance();
+
+        // Bind header views
+        btnGeneral  = view.findViewById(R.id.general_user_container);
+        btnBusiness = view.findViewById(R.id.business_user_container);
+        searchEt    = view.findViewById(R.id.users_search_et);
+
+        // Bind search card
+        searchResultsCard      = view.findViewById(R.id.users_search_results_card);
+        searchResultsContainer = view.findViewById(R.id.users_search_results_container);
+        filterIdPill           = view.findViewById(R.id.search_filter_id);
+        filterUsernamePill     = view.findViewById(R.id.search_filter_username);
+
+        // Bind content panels
+        generalContent  = view.findViewById(R.id.users_general_content);
+        businessContent = view.findViewById(R.id.users_business_content);
+        generalLegend   = view.findViewById(R.id.general_legend);
+
+        // Bind general list containers
+        generalLocReqContainer  = view.findViewById(R.id.general_locreq_container);
+        generalInfoReqContainer = view.findViewById(R.id.general_inforeq_container);
+
+        // Bind business containers
+        businessVerReqContainer = view.findViewById(R.id.business_verreq_container);
+        bizFilterAll    = view.findViewById(R.id.biz_filter_all);
+        bizFilterUnread = view.findViewById(R.id.biz_filter_unread);
+        bizFilterRead   = view.findViewById(R.id.biz_filter_read);
+
+        // Default — both panels hidden until a tab is clicked
+        setTabState(Tab.NONE);
+
+        // ── Tab buttons ───────────────────────
+        btnGeneral.setOnClickListener(v -> {
+            setTabState(Tab.GENERAL);
+            loadGeneralData();
+        });
+
+        btnBusiness.setOnClickListener(v -> {
+            setTabState(Tab.BUSINESS);
+            loadBusinessData();
+        });
+
+        // ── View All buttons ────────────────────
+        view.findViewById(R.id.general_locreq_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("location"))
+                        .addToBackStack(null).commit());
+
+        view.findViewById(R.id.general_inforeq_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("info"))
+                        .addToBackStack(null).commit());
+
+        // ── Search text watcher ───────────────
+        searchEt.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int i, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().trim();
+                if (query.length() >= 2) {
+                    showSearchResults(query);
+                } else {
+                    searchResultsCard.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        // ── Search filter pills ────────────────
+        filterIdPill.setOnClickListener(v -> {
+            searchFilter = SearchFilter.ID_NO;
+            filterIdPill.setBackgroundResource(R.drawable.bg_search_filter_active);
+            filterIdPill.setTextColor(android.graphics.Color.WHITE);
+            filterUsernamePill.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+            filterUsernamePill.setTextColor(
+                    getResources().getColor(R.color.black, null));
+            String q = searchEt.getText().toString().trim();
+            if (q.length() >= 2) showSearchResults(q);
+        });
+
+        filterUsernamePill.setOnClickListener(v -> {
+            searchFilter = SearchFilter.USERNAME;
+            filterUsernamePill.setBackgroundResource(R.drawable.bg_search_filter_active);
+            filterUsernamePill.setTextColor(android.graphics.Color.WHITE);
+            filterIdPill.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+            filterIdPill.setTextColor(
+                    getResources().getColor(R.color.black, null));
+            String q = searchEt.getText().toString().trim();
+            if (q.length() >= 2) showSearchResults(q);
+        });
+
+        // ── Business read filter pills ─────────
+        bizFilterAll.setOnClickListener(v -> {
+            bizFilter = BizFilter.ALL;
+            updateBizFilterPills();
+            renderBusinessVerReqs();
+        });
+        bizFilterUnread.setOnClickListener(v -> {
+            bizFilter = BizFilter.UNREAD;
+            updateBizFilterPills();
+            renderBusinessVerReqs();
+        });
+        bizFilterRead.setOnClickListener(v -> {
+            bizFilter = BizFilter.READ;
+            updateBizFilterPills();
+            renderBusinessVerReqs();
+        });
+
+        return view;
+    }
+
+    // ────────────────────────────────────────────────────────
+    // TAB STATE — switches button backgrounds and content visibility
+    // ────────────────────────────────────────────────────────
+
+    private void setTabState(Tab tab) {
+        activeTab = tab;
+
+        // Clear search
+        searchResultsCard.setVisibility(View.GONE);
+        searchEt.setText("");
+
+        switch (tab) {
+            case GENERAL:
+                btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_active);
+                btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                generalContent.setVisibility(View.VISIBLE);
+                businessContent.setVisibility(View.GONE);
+                generalLegend.setVisibility(View.VISIBLE);
+                break;
+            case BUSINESS:
+                btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_active);
+                btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                businessContent.setVisibility(View.VISIBLE);
+                generalContent.setVisibility(View.GONE);
+                generalLegend.setVisibility(View.GONE);
+                break;
+            default: // NONE
+                btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                generalContent.setVisibility(View.GONE);
+                businessContent.setVisibility(View.GONE);
+                generalLegend.setVisibility(View.GONE);
+                break;
         }
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_admin_user, container, false);
+    // ────────────────────────────────────────────────────────
+    // LOAD GENERAL DATA
+    // Loads Location Requests and Info Requests for all users
+    // ────────────────────────────────────────────────────────
+
+    private void loadGeneralData() {
+        // Clear lists at the START before any Firestore calls
+        allUsers.clear();
+        allLocReqs.clear();
+        allInfoReqs.clear();
+
+        // Load all users (for search)
+        db.collection("users")
+                .whereEqualTo("userType", "general")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        allUsers.add(new UserItem(
+                                doc.getId(),
+                                doc.getString("username") != null
+                                        ? doc.getString("username") : "User",
+                                false
+                        ));
+                    }
+                });
+
+        // Location Requests — ordered by createdAt desc, limit 3
+        db.collection("add_location_requests")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(3)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        allLocReqs.add(buildRequestItem(doc));
+                    }
+                    if (allLocReqs.isEmpty()) addLocReqPlaceholders();
+                    renderGeneralLocReqs();
+                    updateGeneralCounts(snap.size(), -1);
+                })
+                .addOnFailureListener(e -> {
+                    addLocReqPlaceholders();
+                    renderGeneralLocReqs();
+                });
+
+        // Information Requests
+        db.collection("add_info_requests")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(3)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        allInfoReqs.add(buildRequestItem(doc));
+                    }
+                    if (allInfoReqs.isEmpty()) addInfoReqPlaceholders();
+                    renderGeneralInfoReqs();
+                    updateGeneralCounts(-1, snap.size());
+                })
+                .addOnFailureListener(e -> {
+                    addInfoReqPlaceholders();
+                    renderGeneralInfoReqs();
+                });
+    }
+
+    private void addLocReqPlaceholders() {
+        allLocReqs.add(new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,""));
+        allLocReqs.add(new RequestItem("#200","Marton Gardens",  "User","2026/02/01",false,""));
+        allLocReqs.add(new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true, ""));
+    }
+
+    private void addInfoReqPlaceholders() {
+        allInfoReqs.add(new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,""));
+        allInfoReqs.add(new RequestItem("#87","Marton Gardens",         "User","2026/02/01",true, ""));
+        allInfoReqs.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,""));
+    }
+
+    private void updateGeneralCounts(int locCount, int infoCount) {
+        if (locCount >= 0) {
+            TextView tv = requireView().findViewById(R.id.general_locreq_count);
+            if (tv != null) tv.setText(String.valueOf(locCount));
+        }
+        if (infoCount >= 0) {
+            TextView tv = requireView().findViewById(R.id.general_inforeq_count);
+            if (tv != null) tv.setText(String.valueOf(infoCount));
+        }
+    }
+
+    // ────────────────────────────────────────────────────────
+    // LOAD BUSINESS DATA
+    // ────────────────────────────────────────────────────────
+
+    private void loadBusinessData() {
+        // Clear lists at the START before any Firestore calls
+        allBizUsers.clear();
+        allBizVerReqs.clear();
+
+        // Load business users for search
+        db.collection("businesses")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        boolean verified = Boolean.TRUE.equals(doc.getBoolean("verified"));
+                        String name = doc.getString("BusinessName") != null
+                                ? doc.getString("BusinessName") : "Business";
+                        allBizUsers.add(new UserItem(doc.getId(), name, verified));
+                    }
+                });
+
+        // Business verification requests
+        db.collection("businesses")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(8)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
+                        String name = doc.getString("BusinessName") != null
+                                ? doc.getString("BusinessName") : "Business";
+                        Timestamp ts = doc.getTimestamp("createdAt");
+                        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
+                                Locale.getDefault()).format(ts.toDate()) : "";
+                        allBizVerReqs.add(new RequestItem(
+                                "#" + (allBizVerReqs.size() + 521), name,
+                                "User", date, read, doc.getId()));
+                    }
+                    if (allBizVerReqs.isEmpty()) addBizVerReqPlaceholders();
+                    renderBusinessVerReqs();
+                    TextView tv = requireView().findViewById(R.id.business_verreq_count);
+                    if (tv != null) tv.setText(String.valueOf(snap.size()));
+                })
+                .addOnFailureListener(e -> {
+                    addBizVerReqPlaceholders();
+                    renderBusinessVerReqs();
+                });
+    }
+
+    // Navigate to AdminUserRequestsFragment showing all requests of given type
+    private void navigateToAllRequests(String requestType) {
+        if (getParentFragment() instanceof AdminFragment) {
+            ((AdminFragment) getParentFragment()).navigateToUserRequests(requestType);
+        }
+    }
+
+    private void addBizVerReqPlaceholders() {
+        allBizVerReqs.add(new RequestItem("#523","Hackerton's Pub",      "User","2026/02/11",false,""));
+        allBizVerReqs.add(new RequestItem("#522","Jordan's Supermarket", "User","2026/02/01",true, ""));
+        allBizVerReqs.add(new RequestItem("#521","Grillz By Kriz",       "User","2026/01/28",false,""));
+    }
+
+    // ────────────────────────────────────────────────────────
+    // RENDER METHODS — inflate item rows into containers
+    // ────────────────────────────────────────────────────────
+    // RENDER METHODS — inflate item rows into containers
+    // ────────────────────────────────────────────────────────
+
+    private void renderGeneralLocReqs() {
+        generalLocReqContainer.removeAllViews();
+        for (RequestItem item : allLocReqs) {
+            generalLocReqContainer.addView(inflateGeneralRequestRow(item, "location"));
+        }
+    }
+
+    private void renderGeneralInfoReqs() {
+        generalInfoReqContainer.removeAllViews();
+        for (RequestItem item : allInfoReqs) {
+            generalInfoReqContainer.addView(inflateGeneralRequestRow(item, "info"));
+        }
+    }
+
+    private void renderBusinessVerReqs() {
+        businessVerReqContainer.removeAllViews();
+        int displayedCount = 0;
+        for (RequestItem item : allBizVerReqs) {
+            // Apply biz read filter
+            if (bizFilter == BizFilter.UNREAD && item.read) continue;
+            if (bizFilter == BizFilter.READ && !item.read) continue;
+            businessVerReqContainer.addView(inflateRequestRow(item));
+            displayedCount++;
+        }
+        TextView tv = requireView().findViewById(R.id.business_verreq_count);
+        if (tv != null) tv.setText(String.valueOf(displayedCount));
+    }
+
+    // Inflates item_admin_user_request.xml for GENERAL requests
+    private View inflateGeneralRequestRow(RequestItem item, String requestType) {
+        View row = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_admin_user_request,
+                        generalLocReqContainer, false);
+
+        ((TextView) row.findViewById(R.id.user_req_number)).setText(item.number);
+        ((TextView) row.findViewById(R.id.user_req_title)).setText(item.title);
+        ((TextView) row.findViewById(R.id.user_req_submitted_by))
+                .setText("Submitted By: " + item.submittedBy);
+        ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
+
+        // Dot colour
+        row.findViewById(R.id.user_req_dot).setBackgroundResource(
+                item.read ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+
+        // View button colour — cobalt if unread, grey if read
+        TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
+        viewBtn.setTextColor(item.read
+                ? android.graphics.Color.parseColor("#9e9e9e")
+                : android.graphics.Color.parseColor("#203088"));
+
+        viewBtn.setOnClickListener(v -> {
+            Fragment parentFrag = getParentFragment();
+            if (parentFrag instanceof AdminFragment) {
+                ((AdminFragment) parentFrag).navigateToRequestDetail(requestType, item.docId);
+            }
+        });
+
+        return row;
+    }
+
+    // Inflates item_admin_user_request.xml for BUSINESS requests
+    private View inflateRequestRow(RequestItem item) {
+        View row = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_admin_user_request,
+                        businessVerReqContainer, false);
+
+        ((TextView) row.findViewById(R.id.user_req_number)).setText(item.number);
+        ((TextView) row.findViewById(R.id.user_req_title)).setText(item.title);
+        ((TextView) row.findViewById(R.id.user_req_submitted_by))
+                .setText("Submitted By: " + item.submittedBy);
+        ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
+
+        // Dot colour
+        row.findViewById(R.id.user_req_dot).setBackgroundResource(
+                item.read ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+
+        // View button colour — cobalt if unread, grey if read
+        TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
+        viewBtn.setTextColor(item.read
+                ? android.graphics.Color.parseColor("#9e9e9e")
+                : android.graphics.Color.parseColor("#203088"));
+
+        viewBtn.setOnClickListener(v -> {
+            Fragment parentFrag = getParentFragment();
+            if (parentFrag instanceof AdminFragment) {
+                ((AdminFragment) parentFrag).navigateToRequestDetail("business_verification", item.docId);
+            }
+        });
+
+        return row;
+    }
+
+    // ────────────────────────────────────────────────────────
+    // SEARCH — shows matching users in the search results card
+    // ────────────────────────────────────────────────────────
+
+    private void showSearchResults(String query) {
+        searchResultsContainer.removeAllViews();
+
+        List<UserItem> source = (activeTab == Tab.BUSINESS) ? allBizUsers : allUsers;
+        List<UserItem> matches = new ArrayList<>();
+
+        String lowerQuery = query.toLowerCase();
+
+        for (UserItem user : source) {
+            boolean match = searchFilter == SearchFilter.USERNAME
+                    ? user.username.toLowerCase().contains(lowerQuery)
+                    : user.userId.toLowerCase().contains(lowerQuery);
+            if (match) matches.add(user);
+        }
+
+        // If Firestore data not loaded yet, show placeholder results
+        if (source.isEmpty()) {
+            if (activeTab == Tab.BUSINESS) {
+                matches.add(new UserItem("biz001", "Chefette", true));
+            } else {
+                matches.add(new UserItem("usr001", "HarryOsborne12", false));
+                matches.add(new UserItem("usr002", "BevOsborne", false));
+            }
+        }
+
+        for (UserItem user : matches) {
+            searchResultsContainer.addView(inflateUserSearchRow(user));
+        }
+
+        searchResultsCard.setVisibility(View.VISIBLE);
+    }
+
+    // Inflates item_admin_user_search_result.xml and binds data
+    private View inflateUserSearchRow(UserItem user) {
+        View row = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_admin_user_search_result,
+                        searchResultsContainer, false);
+
+        ((TextView) row.findViewById(R.id.search_result_username))
+                .setText(user.username);
+
+        // Show verified badge for business users
+        ImageView verifiedBadge = row.findViewById(R.id.search_result_verified);
+        verifiedBadge.setVisibility(user.verified ? View.VISIBLE : View.GONE);
+
+        row.findViewById(R.id.search_result_view_btn).setOnClickListener(v -> {
+            // TODO: navigate to user detail
+        });
+
+        return row;
+    }
+
+    // ────────────────────────────────────────────────────────
+    // BUSINESS FILTER PILLS — update active state visually
+    // ────────────────────────────────────────────────────────
+
+    private void updateBizFilterPills() {
+        // Reset all to inactive
+        bizFilterAll.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        bizFilterUnread.setBackgroundResource(R.drawable.bg_biz_unread_pill);
+        bizFilterRead.setBackgroundResource(R.drawable.bg_biz_read_pill);
+
+        int white  = android.graphics.Color.WHITE;
+        int dark   = getResources().getColor(R.color.black, null);
+
+        bizFilterAll.setTextColor(dark);
+        bizFilterUnread.setTextColor(dark);
+        bizFilterRead.setTextColor(dark);
+
+        switch (bizFilter) {
+            case ALL:
+                bizFilterAll.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizFilterAll.setTextColor(white);
+                break;
+            case UNREAD:
+                bizFilterUnread.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizFilterUnread.setTextColor(white);
+                break;
+            case READ:
+                bizFilterRead.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizFilterRead.setTextColor(white);
+                break;
+        }
+    }
+
+    // ────────────────────────────────────────────────────────
+    // HELPERS — build model from Firestore document
+    // ────────────────────────────────────────────────────────
+
+    private RequestItem buildRequestItem(QueryDocumentSnapshot doc) {
+        String number = doc.contains("number")
+                ? "#" + doc.getLong("number")
+                : "#" + doc.getId().substring(0, 3).toUpperCase();
+        String name = doc.getString("locationName") != null
+                ? doc.getString("locationName")
+                : doc.getString("title") != null
+                ? doc.getString("title") : "Request";
+        String submittedBy = doc.getString("submittedByUsername") != null
+                ? doc.getString("submittedByUsername") : "User";
+        boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
+        Timestamp ts = doc.getTimestamp("createdAt");
+        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
+                Locale.getDefault()).format(ts.toDate()) : "";
+        return new RequestItem(number, name, submittedBy, date, read, doc.getId());
+    }
+
+    // ────────────────────────────────────────────────────────
+    // DATA MODELS
+    // ────────────────────────────────────────────────────────
+
+    private static class RequestItem {
+        String number, title, submittedBy, date, docId;
+        boolean read;
+
+        RequestItem(String number, String title, String submittedBy,
+                    String date, boolean read, String docId) {
+            this.number      = number;
+            this.title       = title;
+            this.submittedBy = submittedBy;
+            this.date        = date;
+            this.read        = read;
+            this.docId       = docId;
+        }
+    }
+
+    private static class UserItem {
+        String userId, username;
+        boolean verified;
+
+        UserItem(String userId, String username, boolean verified) {
+            this.userId   = userId;
+            this.username = username;
+            this.verified = verified;
+        }
     }
 }
