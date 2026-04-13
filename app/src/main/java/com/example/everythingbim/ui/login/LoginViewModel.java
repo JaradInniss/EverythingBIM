@@ -55,7 +55,6 @@ public class LoginViewModel extends ViewModel {
     }
 
     // Logic Functions
-
     public void setErrorField(int fieldId, String errorMessage) {
         HashMap<Integer, String> currError = errorFields.getValue();
         if (currError == null) { currError = new HashMap<>(); }

@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="View"
-            android:textColor="@color/primary"
+            android:textColor="@color/dark_amaranth"
             android:textSize="14sp"
             android:padding="8dp"
             android:clickable="true"
@@ -61,7 +61,7 @@
             android:layout_weight="1"
             android:text="Submitted By: User"
             android:textSize="12sp"
-            android:textColor="@color/gray" />
+            android:textColor="@color/dim_grey" />
 
         <TextView
             android:id="@+id/tv_date"
@@ -69,7 +69,7 @@
             android:layout_height="wrap_content"
             android:text="2026/02/11"
             android:textSize="12sp"
-            android:textColor="@color/gray" />
+            android:textColor="@color/dim_grey" />
     </LinearLayout>
 
 </LinearLayout>

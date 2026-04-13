@@ -2,6 +2,8 @@ package com.example.everythingbim.ui.home;
 
 import androidx.annotation.NonNull;
 
+import com.example.everythingbim.data.models.SelectedImage;
+
 public class DemoIdentifier {
     private final DemoLandmarkRepository landmarkRepository;
 

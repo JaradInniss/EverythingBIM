@@ -3,6 +3,8 @@ package com.example.everythingbim.ui.home;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.everythingbim.data.models.SelectedImage;
+
 public class HomeUiState {
     public enum Status {
         IDLE,

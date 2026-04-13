@@ -1,62 +1,57 @@
 package com.example.everythingbim.ui.home;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class HomeViewModel extends ViewModel {
-    private static final long PREVIEW_DELAY_MS = 250L;
-    private static final long ANALYSIS_DELAY_MS = 1200L;
+import com.example.everythingbim.data.models.SelectedImage;
 
-    private final MutableLiveData<HomeUiState> uiState = new MutableLiveData<>(HomeUiState.idle());
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final DemoIdentifier demoIdentifier = new DemoIdentifier(new DemoLandmarkRepository());
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class HomeViewModel extends ViewModel {
+
+    private final SingleLiveEvent<SelectedImage> navigationEvent = new SingleLiveEvent<>();
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
     @NonNull
-    public LiveData<HomeUiState> getUiState() {
-        return uiState;
+    public LiveData<SelectedImage> getNavigationEvent() {
+        return navigationEvent;
+    }
+
+    @NonNull
+    public LiveData<String> getErrorMessage() {
+        return errorMessage;
     }
 
     public void onImageSelected(@NonNull SelectedImage selectedImage) {
-        handler.removeCallbacksAndMessages(null);
-        uiState.setValue(HomeUiState.preview(selectedImage));
-        handler.postDelayed(() -> startAnalysis(selectedImage), PREVIEW_DELAY_MS);
+        navigationEvent.setValue(selectedImage);
     }
 
     public void onSelectionError(@NonNull String message) {
-        handler.removeCallbacksAndMessages(null);
-        uiState.setValue(HomeUiState.error(null, message));
+        errorMessage.setValue(message);
     }
 
-    public void reset() {
-        handler.removeCallbacksAndMessages(null);
-        uiState.setValue(HomeUiState.idle());
-    }
+    /**
+     * SingleLiveEvent - ensures the event is delivered only once.
+     */
+    public static class SingleLiveEvent<T> extends MutableLiveData<T> {
+        private final AtomicBoolean pending = new AtomicBoolean(false);
 
-    private void startAnalysis(@NonNull SelectedImage selectedImage) {
-        uiState.setValue(HomeUiState.analyzing(selectedImage, "Analyzing image in demo mode..."));
-        handler.postDelayed(() -> completeAnalysis(selectedImage), ANALYSIS_DELAY_MS);
-    }
-
-    private void completeAnalysis(@NonNull SelectedImage selectedImage) {
-        DemoIdentificationResult result = demoIdentifier.identify(selectedImage);
-        if (result.getType() == DemoIdentificationResult.Type.MATCH && result.getLandmark() != null) {
-            uiState.setValue(HomeUiState.result(selectedImage, result.getLandmark(), result.getMatchDetail()));
-        } else {
-            uiState.setValue(HomeUiState.unknown(
-                    selectedImage,
-                    result.getMatchDetail() != null ? result.getMatchDetail() : ""
-            ));
+        @Override
+        public void setValue(T value) {
+            pending.set(true);
+            super.setValue(value);
         }
-    }
 
-    @Override
-    protected void onCleared() {
-        handler.removeCallbacksAndMessages(null);
-        super.onCleared();
+        @Override
+        public void observe(@NonNull androidx.lifecycle.LifecycleOwner owner,
+                            @NonNull androidx.lifecycle.Observer<? super T> observer) {
+            super.observe(owner, t -> {
+                if (pending.compareAndSet(true, false)) {
+                    observer.onChanged(t);
+                }
+            });
+        }
     }
 }
