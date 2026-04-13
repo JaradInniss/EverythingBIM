@@ -3,16 +3,15 @@
 
     <item
         android:id="@+id/admin_navbar_user"
-        android:icon="@drawable/icon_user_reg"
-        android:title="USERS" />
+        android:icon="@drawable/ic_multi_users"
+        android:title="Users" />
     <item
         android:id="@+id/admin_navbar_home"
-        android:icon="@drawable/icon_home"
-        android:title="HOME" />
-
+        android:icon="@drawable/ic_home"
+        android:title="Home" />
 
     <item
         android:id="@+id/admin_navbar_settings"
-        android:icon="@drawable/icon_settings"
-        android:title="SETTINGS" />
+        android:icon="@drawable/ic_gear"
+        android:title="Settings" />
 </menu>

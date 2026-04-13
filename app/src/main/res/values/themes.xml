@@ -98,7 +98,7 @@
 
     <!-- Heading Text Style (For Dark BGs) -->
     <style name="heading_txt_style">
-        <item name="android:fontFamily">@font/roboto_bold</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/white</item>
     </style>
@@ -107,6 +107,50 @@
     <style name="subheading_txt_style">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- === Normal Text Styles === -->
+
+    <!-- Grey Medium Text Style -->
+    <style name="grey_medium_txt_style">
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/dim_grey</item>
+    </style>
+
+    <!-- Grey Small Text Style -->
+    <style name="grey_small_txt_style">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/dim_grey</item>
+    </style>
+
+    <!-- Black Medium Text Style -->
+    <style name="black_medium_txt_style">
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <!-- Black Small Text Style -->
+    <style name="black_small_txt_style">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <!-- White Medium Text Style -->
+    <style name="white_medium_txt_style">
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- White Small Text Style -->
+    <style name="white_small_txt_style">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:textSize">12sp</item>
         <item name="android:textColor">@color/white</item>
     </style>
 

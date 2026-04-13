@@ -1,4 +1,4 @@
-package com.example.everythingbim.ui.home;
+package com.example.everythingbim.data.models;
 
 import android.net.Uri;
 

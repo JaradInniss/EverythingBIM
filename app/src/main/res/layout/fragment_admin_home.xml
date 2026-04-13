@@ -5,7 +5,7 @@
     android:id="@+id/admin_home"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
+    android:background="@drawable/bg_main"
     tools:context=".AdminHomeFragment">
 
     <ScrollView
@@ -65,13 +65,13 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/red"
+                        android:background="@color/dark_amaranth"
                         android:padding="8dp">
                         <ImageView
                             android:id="@+id/icon_reports"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/icon_flag"
+                            android:src="@drawable/ic_flag_banner"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:layout_constraintBottom_toTopOf="@+id/tv_reports_count"
@@ -127,14 +127,14 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/blue"
+                        android:background="@color/persian_blue"
                         android:padding="8dp">
 
                         <ImageView
                             android:id="@+id/icon_location"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/icon_location"
+                            android:src="@drawable/ic_pin_area"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:layout_constraintBottom_toTopOf="@+id/tv_location_count"
@@ -190,14 +190,14 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/blue"
+                        android:background="@color/persian_blue"
                         android:padding="8dp">
 
                         <ImageView
                             android:id="@+id/icon_business"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/icon_business"
+                            android:src="@drawable/ic_storefront"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:layout_constraintBottom_toTopOf="@+id/tv_business_count"
@@ -253,14 +253,14 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/blue"
+                        android:background="@color/persian_blue"
                         android:padding="8dp">
 
                         <ImageView
                             android:id="@+id/icon_info"
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/icon_info"
+                            android:src="@drawable/ic_info"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:layout_constraintBottom_toTopOf="@+id/tv_info_count"
