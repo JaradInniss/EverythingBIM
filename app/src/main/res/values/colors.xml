@@ -29,4 +29,14 @@
     <color name="light_grey">#BFBFBF</color>
     <color name="celadon">#9DDAB9</color>
     <color name="old_rose">#DB869E</color>
+    <color name="dark_grey">#A9A9A9</color>
+
+    <color name="red">#FFFF0000</color>
+    <color name="blue">#FF0000FF</color>
+    <color name="gray">#FF808080</color>
+    <color name="primary">#203088</color>
+    <color name="gold">#FFD700</color>
+    <color name="pale_grey">#F5F5F5</color>
+    <color name="green">#4CAF50</color>
+    <color name="dark_red">#8B0000</color>
 </resources>

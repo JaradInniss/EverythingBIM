@@ -41,9 +41,9 @@ public class DemoLandmarkRepository {
         landmarks.add(kensington);
         landmarks.add(cathedral);
 
-        registerAliases(parliament, Arrays.asList("parliament", "parliament_01", "1000791723", "1000791723.jpg"));
-        registerAliases(kensington, Arrays.asList("kensington", "kensington_02", "1000791722", "1000791722.jpg"));
-        registerAliases(cathedral, Arrays.asList("cathedral", "cathedral_03", "1000791724", "1000791724.jpg"));
+        registerAliases(parliament, Arrays.asList("parliament", "parliament_01", "1000791723", "1000791723.jpg", "35.jpg"));
+        registerAliases(kensington, Arrays.asList("kensington", "kensington_02", "1000791722", "1000791722.jpg", "37.jpg"));
+        registerAliases(cathedral, Arrays.asList("cathedral", "cathedral_03", "1000791724", "1000791724.jpg", "36.jpg"));
     }
 
     @Nullable

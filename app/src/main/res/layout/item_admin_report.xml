@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@color/white"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:layout_marginBottom="1dp">
+
+    <!-- ── Unread/Read dot ───────────────────── -->
+    <View
+        android:id="@+id/report_dot"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:background="@drawable/bg_dot_red"
+        android:layout_marginEnd="12dp" />
+
+    <!-- ── Report info ───────────────────────── -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- #Number  Title -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/report_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="#94"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/report_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Post - Hate Speech"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:fontFamily="@font/roboto_medium" />
+
+        </LinearLayout>
+
+        <!-- Severity + Submitted date -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp">
+
+            <TextView
+                android:id="@+id/report_severity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Moderate"
+                android:textColor="#e67e22"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/report_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Submitted: 2026/02/11"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ── View button ───────────────────────── -->
+    <TextView
+        android:id="@+id/report_view_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="View"
+        android:textColor="@color/dark_red"
+        android:textSize="14sp"
+        android:fontFamily="@font/roboto_medium"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

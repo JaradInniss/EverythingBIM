@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_main"
+    tools:context=".AdminBizVerificationDetailFragment">
+
+    <!-- ══ TOOLBAR ══ -->
+    <LinearLayout
+        android:id="@+id/biz_detail_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_main"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp"
+        android:layout_alignParentTop="true">
+
+        <ImageButton
+            android:id="@+id/biz_detail_back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_caret_left"
+            android:background="@android:color/transparent"
+            android:contentDescription="Go back"
+            app:tint="@color/white"
+            android:layout_marginEnd="4dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="View Account Verification Request"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium"
+            android:gravity="center" />
+
+        <View android:layout_width="36dp" android:layout_height="36dp" />
+
+    </LinearLayout>
+
+    <!-- ══ SCROLLABLE CONTENT ══ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/biz_detail_toolbar"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="100dp">
+
+            <!-- ══════════════════════════════════════
+                 BORDER WRAPPER
+                 The border state (normal/green/red) is applied
+                 to THIS wrapper, not the CardView inside.
+                 CardView ignores setBackground() — this wrapper
+                 uses padding + background to create the border effect.
+            ══════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/biz_detail_card_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_default"
+                android:padding="2dp">
+
+                <!-- Inner white card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white"
+                    android:padding="14dp">
+
+                    <!-- Request # row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="2dp">
+
+                        <TextView
+                            android:id="@+id/biz_detail_number"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Request #518"
+                            android:textColor="@color/black"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="end">
+
+                            <TextView
+                                android:id="@+id/biz_detail_status"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Status: In Review"
+                                android:textColor="@color/true_cobalt"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                            <TextView
+                                android:id="@+id/biz_detail_date"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Submitted: 2026/02/11"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="11sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Submitted by -->
+                    <TextView
+                        android:id="@+id/biz_detail_submitted_by"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Submitted By: BusinessUser #102MA21"
+                        android:textColor="@color/dim_grey"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="10dp" />
+
+                    <!-- Divider -->
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/light_grey" android:layout_marginBottom="12dp" />
+
+                    <!-- Business Name -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Business Name" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/biz_detail_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="13sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="12dp" />
+
+                    <!-- Contact Information -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Contact Information" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+
+                    <!-- Phone + Email side by side -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <!-- Phone -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_admin_field"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="30dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="8dp"
+                            android:layout_marginEnd="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Phone Number"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="10sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                            <TextView
+                                android:id="@+id/biz_detail_phone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="+1(246) 123-4567"
+                                android:textColor="@color/black"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+
+                        <!-- Email -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_admin_field"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="30dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Email"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="10sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                            <TextView
+                                android:id="@+id/biz_detail_email"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="chefette@gmail.com"
+                                android:textColor="@color/black"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Business Address/Location -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Business Address/Location" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_admin_field"
+                        android:layout_marginBottom="12dp">
+                        <TextView
+                            android:id="@+id/biz_detail_address"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:padding="10dp"
+                            android:textColor="@color/black"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium" />
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_pin_area"
+                            android:contentDescription="@null"
+                            android:layout_marginEnd="10dp"
+                            app:tint="@color/true_cobalt" />
+                    </LinearLayout>
+
+                    <!-- Business Description -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Business Description" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/biz_detail_description"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="12sp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:minHeight="60dp"
+                        android:gravity="top"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Business Type -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Business Type" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/biz_detail_type"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:background="@drawable/bg_admin_field" android:padding="10dp"
+                        android:textColor="@color/black" android:textSize="12sp"
+                        android:fontFamily="@font/roboto_medium" android:layout_marginBottom="12dp" />
+
+                    <!-- Images of Business -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Images of Business" android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="6dp" />
+                    <HorizontalScrollView android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:scrollbars="none"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:padding="6dp">
+                        <LinearLayout
+                            android:id="@+id/biz_detail_images_container"
+                            android:layout_width="wrap_content" android:layout_height="70dp"
+                            android:orientation="horizontal" android:gravity="center_vertical" />
+                    </HorizontalScrollView>
+
+                    <!-- Copies of Business Certificates/Permits -->
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Copies of Business Certificates/Permits"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="6dp" />
+                    <HorizontalScrollView android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:scrollbars="none"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:padding="6dp">
+                        <LinearLayout
+                            android:id="@+id/biz_detail_docs_container"
+                            android:layout_width="wrap_content" android:layout_height="70dp"
+                            android:orientation="horizontal" android:gravity="center_vertical" />
+                    </HorizontalScrollView>
+
+                    <!-- Divider -->
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="@color/light_grey" android:layout_marginBottom="14dp" />
+
+                    <!-- ══ RESOLUTION INFO — shown after Accept/Reject ══ -->
+                    <LinearLayout
+                        android:id="@+id/biz_detail_resolution_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:id="@+id/biz_detail_resolution_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/biz_detail_resolution_by"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:layout_marginBottom="4dp" />
+
+                        <LinearLayout
+                            android:id="@+id/biz_detail_rejection_reason_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/biz_detail_rejection_reason"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/black"
+                                android:textSize="13sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Accept / Reject buttons -->
+                    <LinearLayout
+                        android:id="@+id/biz_detail_action_buttons"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <Button
+                            android:id="@+id/biz_detail_accept_btn"
+                            android:layout_width="120dp"
+                            android:layout_height="46dp"
+                            android:text="Accept"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_border_rectangle_celadon"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:layout_marginEnd="16dp" />
+
+                        <Button
+                            android:id="@+id/biz_detail_reject_btn"
+                            android:layout_width="120dp"
+                            android:layout_height="46dp"
+                            android:text="Reject"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_border_rectangle_old_rose"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+            <!-- END BORDER WRAPPER -->
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

@@ -1,64 +1,195 @@
 package com.example.everythingbim;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link AdminSettingsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+
+import com.example.everythingbim.ui.login.Login;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+
 public class AdminSettingsFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    // UI components
+    private ImageButton editUsernameBtn, editEmailBtn, editPasswordBtn, eyeBtn;
+    private LinearLayout usernameContainer, emailContainer;
+    private RelativeLayout passwordContainer;
+    private TextInputEditText usernameField, emailField, passwordField;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    // Edit state flags
+    private boolean isEditingUsername = false;
+    private boolean isEditingEmail = false;
+    private boolean isEditingPassword = false;
 
-    public AdminSettingsFragment() {
-        // Required empty public constructor
+    // Password visibility state
+    private boolean isPasswordVisible = false;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View root = inflater.inflate(R.layout.fragment_admin_settings, container, false);
+
+        // Initialize views
+        initViews(root);
+        setupEditButtons();
+        setupPasswordToggle();
+
+        return root;
+    }
+
+    private void initViews(View root) {
+        editUsernameBtn = root.findViewById(R.id.admin_edit_username_btn);
+        editEmailBtn = root.findViewById(R.id.admin_edit_email_btn);
+        editPasswordBtn = root.findViewById(R.id.admin_edit_password_btn);
+        eyeBtn = root.findViewById(R.id.admin_password_eye_btn);
+
+        usernameContainer = root.findViewById(R.id.username_container);
+        emailContainer = root.findViewById(R.id.email_container);
+        passwordContainer = root.findViewById(R.id.password_container);
+
+        usernameField = root.findViewById(R.id.admin_username_et);
+        emailField = root.findViewById(R.id.admin_email_et);
+        passwordField = root.findViewById(R.id.admin_password_et);
+
+        // Logout button
+        View logoutBtn = root.findViewById(R.id.admin_logout_btn);
+        logoutBtn.setOnClickListener(v -> performLogout());
+    }
+
+    private void performLogout() {
+        FirebaseAuth.getInstance().signOut();
+        Intent intent = new Intent(requireContext(), Login.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
+    private void setupEditButtons() {
+        editUsernameBtn.setOnClickListener(v -> toggleEditMode(
+                isEditingUsername,
+                editUsernameBtn,
+                usernameContainer,
+                usernameField,
+                R.drawable.bg_admin_edit_btn,
+                R.drawable.bg_admin_edit_btn_grey,
+                R.drawable.bg_admin_field_highlight,
+                R.drawable.bg_admin_field,
+                () -> isEditingUsername = !isEditingUsername
+        ));
+
+        editEmailBtn.setOnClickListener(v -> toggleEditMode(
+                isEditingEmail,
+                editEmailBtn,
+                emailContainer,
+                emailField,
+                R.drawable.bg_admin_edit_btn,
+                R.drawable.bg_admin_edit_btn_grey,
+                R.drawable.bg_admin_field_highlight,
+                R.drawable.bg_admin_field,
+                () -> isEditingEmail = !isEditingEmail
+        ));
+
+        editPasswordBtn.setOnClickListener(v -> toggleEditMode(
+                isEditingPassword,
+                editPasswordBtn,
+                passwordContainer,
+                passwordField,
+                R.drawable.bg_admin_edit_btn,
+                R.drawable.bg_admin_edit_btn_grey,
+                R.drawable.bg_admin_field_highlight,
+                R.drawable.bg_admin_field,
+                () -> isEditingPassword = !isEditingPassword
+        ));
     }
 
     /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
+     * Helper method to toggle edit mode for a field.
      *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AdminSettingsFragment.
+     * @param isCurrentlyEditing Current edit state (true = editing)
+     * @param editButton The edit button (ImageButton)
+     * @param fieldContainer The container (LinearLayout or RelativeLayout) that holds the label and field
+     * @param textField The TextInputEditText to enable/disable
+     * @param activeButtonBg Drawable for active edit button (blue)
+     * @param inactiveButtonBg Drawable for inactive edit button (grey)
+     * @param activeBorder Drawable for highlighted field border (blue stroke)
+     * @param inactiveBorder Drawable for normal field border (grey stroke)
+     * @param toggleState Runnable to flip the boolean state after operation
      */
-    // TODO: Rename and change types and number of parameters
-    public static AdminSettingsFragment newInstance(String param1, String param2) {
-        AdminSettingsFragment fragment = new AdminSettingsFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private void toggleEditMode(boolean isCurrentlyEditing,
+                                ImageButton editButton,
+                                View fieldContainer,
+                                TextInputEditText textField,
+                                int activeButtonBg,
+                                int inactiveButtonBg,
+                                int activeBorder,
+                                int inactiveBorder,
+                                Runnable toggleState) {
+        if (!isCurrentlyEditing) {
+            // Activate edit mode
+            editButton.setBackgroundResource(activeButtonBg);
+            editButton.setImageTintList(ColorStateList.valueOf(Color.WHITE));
+            fieldContainer.setBackgroundResource(activeBorder);
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            textField.setFocusable(true);
+            textField.setFocusableInTouchMode(true);
+            textField.setClickable(true);
+            textField.requestFocus();
+
+            // Show keyboard
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(textField, InputMethodManager.SHOW_IMPLICIT);
+            }
+        } else {
+            // Deactivate edit mode
+            editButton.setBackgroundResource(inactiveButtonBg);
+            editButton.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark)));
+            fieldContainer.setBackgroundResource(inactiveBorder);
+
+            textField.setFocusable(false);
+            textField.setFocusableInTouchMode(false);
+            textField.setClickable(false);
+
+            // Hide keyboard
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(textField.getWindowToken(), 0);
+            }
         }
+        // Flip the state after the operation
+        toggleState.run();
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_admin_settings, container, false);
+    private void setupPasswordToggle() {
+        eyeBtn.setOnClickListener(v -> {
+            if (isPasswordVisible) {
+                // Hide password
+                passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark)));
+            } else {
+                // Show password
+                passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
+            }
+            // Keep cursor at the end
+            passwordField.setSelection(passwordField.getText() != null ? passwordField.getText().length() : 0);
+            isPasswordVisible = !isPasswordVisible;
+        });
     }
 }
