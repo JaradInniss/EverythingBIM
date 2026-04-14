@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.home.AIIdentifier"
+    android:background="@drawable/bg_main">
+
+    <LinearLayout
+        android:id="@+id/return_bttn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_caret_left"
+            app:tint="@color/white"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Home"
+            style="@style/subheading_txt_style"/>
+
+    </LinearLayout>
+
+
+    <!-- History Button -->
+    <LinearLayout
+        android:id="@+id/home_history_bttn"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="18dp"
+        android:layout_marginRight="15dp"
+        android:gravity="center"
+        android:background="@drawable/bg_rectangle_alice_blue">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_clock_reverse"
+            app:tint="@color/space_indigo" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/upload_method_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/return_bttn"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="15dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI Location Identification - "
+            style="@style/subheading_txt_style"
+            android:textSize="15sp"/>
+
+        <TextView
+            android:id="@+id/image_upload_method_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Camera Upload"
+            style="@style/subheading_txt_style"
+            android:textSize="15sp"/>
+
+    </LinearLayout>
+
+    <!-- Uploaded Image Display -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/image_container"
+        android:layout_width="370dp"
+        android:layout_height="250dp"
+        android:layout_below="@id/return_bttn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        app:cardCornerRadius="10dp"
+        android:elevation="10dp">
+
+        <!-- Image Upload Method Icon -->
+        <ImageView
+            android:id="@+id/image_upload_method_icon"
+            android:layout_width="20dp"
+            android:layout_height="18dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="5dp"
+            android:src="@drawable/ic_camera"
+            app:tint="@color/space_indigo"
+            android:elevation="10dp"/>
+
+        <!-- Uploaded Image -->
+        <ImageView
+            android:id="@+id/identifier_uploaded_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+        
+    </androidx.cardview.widget.CardView>
+
+    <!-- Analysis Response Section -->
+    <LinearLayout
+        android:id="@+id/analysis_response_container"
+        android:layout_width="340dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/image_container"
+        android:layout_marginTop="-10dp"
+        android:padding="8dp"
+        android:background="@drawable/bg_rectangle_alice_blue">
+
+        <!-- Identifier Result -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Result:"
+                style="@style/grey_medium_txt_style"/>
+
+            <TextView
+                android:id="@+id/identifier_result_tv"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:text="Place"
+                android:textColor="@color/black"
+                android:fontFamily="@font/roboto_bold"
+                style="@style/grey_medium_txt_style"/>
+        </LinearLayout>
+
+        <!-- If Result Positive Show Below -->
+        <!-- ============================= -->
+        <LinearLayout
+            android:id="@+id/positive_result_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Identifier Confidence Score -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Confidence Score:"
+                    style="@style/grey_medium_txt_style"/>
+
+                <TextView
+                    android:id="@+id/identifier_confidence_score_tv"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="5dp"
+                    android:text="100%"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/roboto_bold"
+                    style="@style/grey_medium_txt_style"/>
+            </LinearLayout>
+
+            <!-- Identifier Related Information -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="5dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Related Information:"
+                    style="@style/grey_medium_txt_style"/>
+
+                <TextView
+                    android:id="@+id/identifier_related_info_tv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Lots of text on information"
+                    style="@style/black_small_txt_style"/>
+            </LinearLayout>
+
+            <!-- Identifier Nearby Attractions -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="5dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nearby Attractions:"
+                    style="@style/grey_medium_txt_style"/>
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/nearby_attractions_rv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+
+                </HorizontalScrollView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+        <!-- ============================= -->
+
+        <!-- If Result Negative Show Below -->
+        <!-- ============================= -->
+        <LinearLayout
+            android:id="@+id/negative_result_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="5dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Unfortunately, the subject of the image you uploaded could not be recognized."
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                style="@style/grey_medium_txt_style"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Try uploading a different image of the subject in:\n1. At a different angle\n2. In different lighting"
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                style="@style/black_small_txt_style"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="If you have tried this already and the subject continues to be unrecognizable, it is likely that the subject is not in the Everything BIM dataset."
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                style="@style/black_small_txt_style"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="In this case would you be willing to send the image(s) to be added to our dataset so that we may improve our image recognition capabilities?"
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                style="@style/black_small_txt_style"/>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_margin="10dp">
+
+                <!-- Reupload Button -->
+                <TextView
+                    android:id="@+id/reupload_bttn"
+                    android:layout_width="0dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:layout_marginRight="5dp"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:gravity="center"
+                    android:text="Upload Another Image"
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:background="@drawable/bg_border_rectangle_gold"/>
+
+                <!-- Add to Dataset Button -->
+                <TextView
+                    android:id="@+id/add_to_dataset_bttn"
+                    android:layout_width="0dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:gravity="center"
+                    android:text="Send Images(s)"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:background="@drawable/bg_rectangle_blue"/>
+
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+        <!-- ============================= -->
+
+    </LinearLayout>
+    
+</RelativeLayout>

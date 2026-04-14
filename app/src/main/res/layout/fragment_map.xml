@@ -4,10 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Map View -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="@color/prussian_blue"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,125 +18,607 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/map_search_card"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Barbados"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:fontFamily="@font/roboto_bold"/>
+
+        <!-- Searchbar -->
+        <LinearLayout
+            android:id="@+id/map_searchbar"
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
             android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@android:color/white"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:background="@drawable/bg_rectangle_alice_blue">
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <EditText
+                android:id="@+id/map_search_input"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp">
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="Search for a place"
+                android:textSize="12sp"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"/>
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_magnifying_glass" />
+            <ImageView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_magnifying_glass" />
 
-                <EditText
-                    android:id="@+id/map_search_input"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:background="@android:color/transparent"
-                    android:hint="Search for a place"
-                    android:imeOptions="actionSearch"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:paddingVertical="8dp" />
+            <ProgressBar
+                android:id="@+id/map_search_progress"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
 
-                <ProgressBar
-                    android:id="@+id/map_search_progress"
-                    style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
+        <!-- Search Results View -->
         <androidx.cardview.widget.CardView
             android:id="@+id/map_search_results_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="2dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@android:color/white"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="8dp">
+            app:cardBackgroundColor="@color/alice_blue"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="10dp">
 
             <ListView
                 android:id="@+id/map_search_results_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:divider="@android:color/darker_gray"
-                android:dividerHeight="1dp"
+                android:divider="@color/dim_grey"
+                android:dividerHeight="0.5dp"
                 android:layout_marginVertical="4dp" />
+
         </androidx.cardview.widget.CardView>
+
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/map_place_details_card"
+    <!-- Map Location Details Container -->
+    <LinearLayout
+        android:id="@+id/map_location_details_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="350dp"
         android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="10dp">
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:background="@drawable/bg_split_screen_card"
+        android:elevation="8dp">
 
-        <LinearLayout
+        <View
+            android:layout_width="80dp"
+            android:layout_height="4dp"
+            android:background="@drawable/bg_rectangle_dim_grey"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="5dp"/>
+
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="5dp">
 
+            <!-- Location Name -->
             <TextView
-                android:id="@+id/map_place_name"
-                android:layout_width="match_parent"
+                android:id="@+id/map_location_name"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/black"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                android:text="Location Name"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
 
-            <TextView
-                android:id="@+id/map_place_address"
+            <!-- Location Total Ratings Container -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_below="@id/map_location_name">
+
+                <TextView
+                    android:id="@+id/map_location_address"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="5dp"
+                    android:text="Address"
+                    android:textColor="@color/black"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="2dp"
+                    android:layout_height="15dp"
+                    android:background="@drawable/bg_rectangle_dim_grey"
+                    android:layout_marginRight="5dp"/>
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_star_fill"
+                    app:tint="@color/bright_gold"/>
+
+                <!-- Location Overall Rating Text -->
+                <TextView
+                    android:id="@+id/location_overall_rating_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="5"
+                    android:textColor="@color/black"
+                    android:textSize="12sp"/>
+
+                <!-- Location Total Amount of Ratings Text -->
+                <TextView
+                    android:id="@+id/location_total_ratings_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="(100)"
+                    android:textColor="@color/black"
+                    android:textSize="12sp"/>
+
+            </LinearLayout>
+            <!-- Location Total Ratings Container [End] -->
+
+
+            <!-- Directions -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <!-- Directions Button -->
+                <LinearLayout
+                    android:id="@+id/directions_bttn"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_pill_gold">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_path"
+                        app:tint="@color/black" />
+                </LinearLayout>
+                <!-- Directions Button [End] -->
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Directions"
+                    android:textSize="10sp"
+                    android:textColor="@color/black"/>
+
+            </LinearLayout>
+            <!-- Directions [End] -->
+
+        </RelativeLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp">
+            
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="14sp"
-                android:visibility="gone" />
+                android:orientation="vertical"
+                android:paddingHorizontal="5dp">
 
-            <TextView
-                android:id="@+id/map_place_meta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:textColor="@android:color/black"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Overview"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/roboto_medium"/>
 
-            <TextView
-                android:id="@+id/map_place_contact"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="13sp"
-                android:visibility="gone" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
+                <!-- Overview Field -->
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="5dp"
+                    android:padding="5dp"
+                    android:background="@drawable/bg_rectangle_alice_blue"
+                    android:editable="false"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:textColor="@color/black"
+                    android:textSize="12dp"/>
+
+                <!-- Images Section Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Images"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- Total Images Count -->
+                    <TextView
+                        android:id="@+id/location_images_count_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="(12)"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- View All Images Button -->
+                    <LinearLayout
+                        android:id="@+id/location_images_view_all_bttn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="210dp"
+                        android:gravity="center_vertical">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View All"
+                            android:textSize="12sp"
+                            android:textColor="@color/pale_slate"/>
+                        
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="14dp"
+                            android:layout_marginLeft="5dp"
+                            android:src="@drawable/ic_caret_right"
+                            app:tint="@color/pale_slate"/>
+                    </LinearLayout>
+                    <!-- View All Images Button [End] -->
+
+                </LinearLayout>
+                <!-- Images Section Header [End] -->
+
+                <!-- Location Images Field -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="5dp"
+                    android:padding="5dp"
+                    android:scrollbars="none"
+                    android:background="@drawable/bg_rectangle_alice_blue">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/location_images_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+
+                </HorizontalScrollView>
+                <!-- Location Images Field [End] -->
+
+                <!-- Reviews Section Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reviews"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- Total Reviews Count Text -->
+                    <TextView
+                        android:id="@+id/location_reviews_count_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="(2)"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- View All Reviews Button -->
+                    <LinearLayout
+                        android:id="@+id/location_reviews_view_all_bttn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="210dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View All"
+                            android:textSize="12sp"
+                            android:textColor="@color/pale_slate"/>
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="14dp"
+                            android:layout_marginLeft="5dp"
+                            android:src="@drawable/ic_caret_right"
+                            app:tint="@color/pale_slate"/>
+                    </LinearLayout>
+                    <!-- View All Reviews Button [End] -->
+
+                </LinearLayout>
+                <!-- Reviews Section Header [End] -->
+
+                <!-- Location Reviews Field -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="5dp"
+                    android:padding="5dp"
+                    android:scrollbars="none"
+                    android:background="@drawable/bg_rectangle_alice_blue">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/location_reviews_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+
+                </HorizontalScrollView>
+                <!-- Location Reviews Field [End] -->
+
+                <!-- Write Review Button -->
+                <LinearLayout
+                    android:id="@+id/write_review_bttn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_rectangle_blue">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginRight="8dp"
+                        android:src="@drawable/ic_edit"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Write Review"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+                </LinearLayout>
+                <!-- Write Review Button [End] -->
+
+                <!-- New Review Container -->
+                <LinearLayout
+                    android:id="@+id/write_review_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:padding="5dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_rectangle_alice_blue">
+
+                    <!-- New Review Input -->
+                    <EditText
+                        android:id="@+id/new_review_input"
+                        android:layout_width="0dp"
+                        android:layout_height="80dp"
+                        android:layout_weight="1"
+                        android:layout_marginTop="5dp"
+                        android:editable="false"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:textColor="@color/black"
+                        android:textSize="12dp"
+                        android:background="@android:color/transparent"/>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Rating Stars Container -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal">
+
+                            <ImageView
+                                android:id="@+id/rating_star_1"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginRight="2dp"
+                                android:src="@drawable/ic_star_outlined"/>
+
+                            <ImageView
+                                android:id="@+id/rating_star_2"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginRight="2dp"
+                                android:src="@drawable/ic_star_outlined"/>
+
+                            <ImageView
+                                android:id="@+id/rating_star_3"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginRight="2dp"
+                                android:src="@drawable/ic_star_outlined"/>
+
+                            <ImageView
+                                android:id="@+id/rating_star_4"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginRight="2dp"
+                                android:src="@drawable/ic_star_outlined"/>
+
+                            <ImageView
+                                android:id="@+id/rating_star_5"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginRight="2dp"
+                                android:src="@drawable/ic_star_outlined"/>
+                        </LinearLayout>
+                        <!-- Rating Stars Container [End] -->
+
+                        <!-- Submit Review Button -->
+                        <LinearLayout
+                            android:id="@+id/submit_review_bttn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:padding="10dp"
+                            android:background="@drawable/bg_rectangle_blue">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="8dp"
+                                android:src="@drawable/ic_plus"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/roboto_medium"
+                                android:text="Submit"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                        <!-- Submit Review Button [End] -->
+
+                    </LinearLayout>
+
+                </LinearLayout>
+                <!-- New Review Container [End] -->
+
+
+                <!-- Posts Section Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Posts"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- Total Posts Count Text -->
+                    <TextView
+                        android:id="@+id/location_posts_count_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="(2)"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"/>
+
+                    <!-- View All Posts Button -->
+                    <LinearLayout
+                        android:id="@+id/location_psots_view_all_bttn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="220dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View All"
+                            android:textSize="12sp"
+                            android:textColor="@color/pale_slate"/>
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="14dp"
+                            android:layout_marginLeft="5dp"
+                            android:src="@drawable/ic_caret_right"
+                            app:tint="@color/pale_slate"/>
+                    </LinearLayout>
+                    <!-- View All Posts Button [End] -->
+
+                </LinearLayout>
+                <!-- Posts Section Header [End] -->
+
+                <!-- Location Posts Field -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="5dp"
+                    android:padding="5dp"
+                    android:scrollbars="none">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/location_posts_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+
+                </HorizontalScrollView>
+                <!-- Location Posts Field [End] -->
+
+            </LinearLayout>
+
+        </ScrollView>
+
+        <TextView
+            android:id="@+id/map_place_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@android:color/black"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/map_place_contact"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+    <!-- Map Location Details Container [End] -->
 
 </FrameLayout>

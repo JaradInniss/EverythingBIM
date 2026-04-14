@@ -1,38 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_main"
-    tools:context=".AdminUserFragment">
+    android:fillViewport="true">
 
-    <!-- ══════════════════════════════════════
-         HEADER — gradient, title + toggle + search
-    ══════════════════════════════════════ -->
     <LinearLayout
-        android:id="@+id/users_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/bg_main"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="10dp"
-        android:layout_alignParentTop="true">
-
-        <!-- "Users" title -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Users"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/roboto_medium"
-            android:gravity="center"
-            android:layout_marginBottom="12dp" />
+        android:padding="16dp">
 
         <!-- User Type Selection -->
         <LinearLayout
@@ -40,6 +19,7 @@
             android:layout_width="220dp"
             android:layout_height="50dp"
             android:orientation="horizontal"
+            android:gravity="center"
             android:layout_gravity="center_horizontal"
             android:padding="5dp"
             android:layout_marginBottom="20dp"
@@ -48,7 +28,7 @@
             android:elevation="20dp">
 
             <LinearLayout
-                android:id="@+id/general_user_container"
+                android:id="@+id/btn_general_users"
                 android:layout_width="100dp"
                 android:layout_height="40dp"
                 android:gravity="center">
@@ -78,7 +58,7 @@
                 android:layout_marginLeft="5dp"/>
 
             <LinearLayout
-                android:id="@+id/business_user_container"
+                android:id="@+id/btn_business_users"
                 android:layout_width="100dp"
                 android:layout_height="40dp"
                 android:gravity="center">
@@ -103,484 +83,118 @@
 
         </LinearLayout>
 
-        <!-- Search bar -->
-        <LinearLayout
+
+        <!-- Search Bar (rounded with search icon inside) -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginEnd="40dp"
-            android:layout_marginStart="40dp"
-            android:background="@drawable/bg_reports_search"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="@color/periwinkle">
 
             <EditText
-                android:id="@+id/users_search_et"
-                android:layout_width="0dp"
+                android:id="@+id/search_edit_text"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@null"
-                android:hint="Search ID, Username"
-                android:textSize="13sp"
-                android:textColor="@color/black"
-                android:singleLine="true"
-                android:imeOptions="actionSearch"
-                android:inputType="text" />
+                android:hint="Search For User"
+                android:drawableStart="@drawable/ic_magnifying_glass"
+                android:drawablePadding="10dp"
+                android:paddingVertical="12dp"
+                android:paddingHorizontal="16dp"
+                android:background="@android:color/transparent"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
 
-            <ImageView
-                android:id="@+id/users_search_btn"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_magnifying_glass"
-                android:contentDescription="Search"
-                android:clickable="true"
-                android:focusable="true"
-                app:tint="@color/black" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- Legend for General tab (centered, shown only when General is active) -->
-    <LinearLayout
-        android:id="@+id/general_legend"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_below="@id/users_header"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
-        android:visibility="gone">
-
-        <View
-            android:layout_width="10dp"
-            android:layout_height="10dp"
-            android:background="@drawable/bg_dot_red"
-            android:layout_marginEnd="4dp" />
+        <!-- Location Requests Section (same as before) -->
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_location_requests_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Unread"
-            android:textColor="@color/black"
-            android:textSize="11sp"
-            android:layout_marginEnd="12dp" />
-        <View
-            android:layout_width="10dp"
-            android:layout_height="10dp"
-            android:background="@drawable/bg_dot_grey"
-            android:layout_marginEnd="4dp" />
-        <TextView
-            android:layout_width="wrap_content"
+            android:text="Add Location Requests (201)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_location_requests"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Read"
-            android:textColor="@color/black"
-            android:textSize="11sp" />
-
-    </LinearLayout>
-
-    <!-- ══════════════════════════════════════
-         CONTENT AREA — all states live here
-    ══════════════════════════════════════ -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/general_legend"
-        android:fillViewport="true"
-        android:scrollbars="none">
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
 
-            <!-- ══════════════════════════════
-                 SEARCH RESULTS CARD
-                 Shown when user is typing — floats above lists
-            ══════════════════════════════ -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/users_search_results_card"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tv_location_unread"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="4dp"
-                android:visibility="gone"
-                android:elevation="8dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="6dp">
+                android:text="• Unread"
+                android:textColor="@color/dim_grey"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="16dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="10dp">
-
-                    <!-- Search Results header row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Search Results"
-                            android:textColor="@color/black"
-                            android:textSize="13sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:layout_marginEnd="8dp" />
-
-                        <!-- Filter icon -->
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/icon_filter"
-                            android:contentDescription="Filter"
-                            android:layout_marginEnd="10dp"
-                            app:tint="@color/black" />
-
-                        <!-- ID No. pill -->
-                        <TextView
-                            android:id="@+id/search_filter_id"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="ID No."
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:background="@drawable/bg_search_filter_inactive"
-                            android:textColor="@color/black"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <!-- Username pill -->
-                        <TextView
-                            android:id="@+id/search_filter_username"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Username"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:background="@drawable/bg_search_filter_active"
-                            android:textColor="@color/white"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                    </LinearLayout>
-
-                    <!-- Search result rows — populated dynamically -->
-                    <LinearLayout
-                        android:id="@+id/users_search_results_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- ══════════════════════════════
-                 GENERAL USER CONTENT
-                 Shown when General tab is active
-            ══════════════════════════════ -->
-            <LinearLayout
-                android:id="@+id/users_general_content"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tv_location_read"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:padding="10dp">
-
-                <!-- Location Requests section -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Location Requests"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:id="@+id/general_locreq_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="201 -"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:layout_marginEnd="4dp" />
-
-                    <TextView
-                        android:id="@+id/general_locreq_view_all"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View All >"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:clickable="true"
-                        android:focusable="true" />
-
-                </LinearLayout>
-
-                <!-- Location Requests list -->
-                <LinearLayout
-                    android:id="@+id/general_locreq_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@color/white"
-                    android:layout_marginBottom="4dp" />
-
-                <!-- Information Requests section -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Information Requests"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:id="@+id/general_inforeq_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="88 -"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:layout_marginEnd="4dp" />
-
-                    <TextView
-                        android:id="@+id/general_inforeq_view_all"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View All >"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:clickable="true"
-                        android:focusable="true" />
-
-                </LinearLayout>
-
-                <!-- Information Requests list -->
-                <LinearLayout
-                    android:id="@+id/general_inforeq_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@color/white"
-                    android:layout_marginBottom="4dp" />
-
-            </LinearLayout>
-
-            <!-- ══════════════════════════════
-                 BUSINESS USER CONTENT
-                 Shown when Business tab is active
-            ══════════════════════════════ -->
-            <LinearLayout
-                android:id="@+id/users_business_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:padding="10dp">
-
-                <!-- Business Account Verification Requests header -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginBottom="6dp">
-
-                    <!-- Label + count + View All -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="4dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Business Account Verification Requests"
-                            android:textColor="@color/white"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:fontFamily="@font/roboto_medium" />
-
-                        <TextView
-                            android:id="@+id/business_verreq_count"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="523 -"
-                            android:textColor="@color/dim_grey"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:layout_marginEnd="4dp" />
-
-                        <TextView
-                            android:id="@+id/business_verreq_view_all"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="View All >"
-                            android:textColor="@color/dim_grey"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                    </LinearLayout>
-
-                    <!-- Legend + All / Unread / Read filter pills (inline) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="6dp">
-
-                        <!-- Legend on LEFT -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <View
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
-                                android:background="@drawable/bg_dot_red"
-                                android:layout_marginEnd="4dp" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Unread"
-                                android:textColor="@color/dim_grey"
-                                android:textSize="11sp"
-                                android:layout_marginEnd="12dp" />
-                            <View
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
-                                android:background="@drawable/bg_dot_grey"
-                                android:layout_marginEnd="4dp" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Read"
-                                android:textColor="@color/dim_grey"
-                                android:textSize="11sp" />
-
-                        </LinearLayout>
-
-                        <!-- Spacer to push filter pills to right -->
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1" />
-
-                        <!-- Filter pills on RIGHT -->
-                        <TextView
-                            android:id="@+id/biz_filter_all"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="All"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:background="@drawable/bg_search_filter_active"
-                            android:textColor="@color/white"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/biz_filter_unread"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Unread"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:background="@drawable/bg_biz_unread_pill"
-                            android:textColor="@color/black"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                        <TextView
-                            android:id="@+id/biz_filter_read"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Read"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/roboto_medium"
-                            android:background="@drawable/bg_biz_read_pill"
-                            android:textColor="@color/black"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:clickable="true"
-                            android:focusable="true" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-                <!-- Business verification requests list -->
-                <LinearLayout
-                    android:id="@+id/business_verreq_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@color/white"
-                    android:layout_marginBottom="4dp" />
-
-            </LinearLayout>
-
+                android:text="• Read"
+                android:textColor="@color/dim_grey"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
-    </ScrollView>
 
-</RelativeLayout>
+        <!-- Information Requests Section -->
+        <TextView
+            android:id="@+id/tv_info_requests_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Information Requests (88)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_info_requests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tv_info_unread"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Unread"
+                android:textColor="@color/dim_grey"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginEnd="16dp" />
+
+            <TextView
+                android:id="@+id/tv_info_read"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="• Read"
+                android:textColor="@color/dim_grey"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

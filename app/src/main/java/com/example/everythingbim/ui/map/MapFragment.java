@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
+import com.example.everythingbim.data.models.MarkerDetails;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -50,20 +51,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback {
-
-    private static class MarkerDetails {
-        final String title;
-        final String subtitle;
-        final String meta;
-        final String contact;
-
-        MarkerDetails(String title, String subtitle, String meta, String contact) {
-            this.title = title;
-            this.subtitle = subtitle;
-            this.meta = meta;
-            this.contact = contact;
-        }
-    }
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final long SEARCH_DEBOUNCE_MS = 300L;
@@ -93,13 +80,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private EditText searchInput;
     private ProgressBar searchProgress;
-    private View resultsCard;
+    private View resultsCard, detailsCard;
     private ListView resultsList;
-    private View detailsCard;
-    private TextView placeNameView;
-    private TextView placeAddressView;
-    private TextView placeMetaView;
-    private TextView placeContactView;
+    private TextView placeNameView, placeAddressView, placeMetaView, placeContactView;
     private ArrayAdapter<String> resultsAdapter;
 
     private Marker searchMarker;
@@ -125,6 +108,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
+
         bindViews(view);
         setupSearchUi();
 
@@ -202,9 +186,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         searchProgress = root.findViewById(R.id.map_search_progress);
         resultsCard = root.findViewById(R.id.map_search_results_card);
         resultsList = root.findViewById(R.id.map_search_results_list);
-        detailsCard = root.findViewById(R.id.map_place_details_card);
-        placeNameView = root.findViewById(R.id.map_place_name);
-        placeAddressView = root.findViewById(R.id.map_place_address);
+        detailsCard = root.findViewById(R.id.map_location_details_container);
+        placeNameView = root.findViewById(R.id.map_location_name);
+        placeAddressView = root.findViewById(R.id.map_location_address);
         placeMetaView = root.findViewById(R.id.map_place_meta);
         placeContactView = root.findViewById(R.id.map_place_contact);
     }

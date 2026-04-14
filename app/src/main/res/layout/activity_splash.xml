@@ -8,7 +8,7 @@
     android:orientation="vertical"
     android:gravity="center"
     tools:context=".SplashActivity"
-    android:background="@color/white">
+    android:background="@drawable/bg_main">
 
     <ImageView
         android:id="@+id/splash_logo"

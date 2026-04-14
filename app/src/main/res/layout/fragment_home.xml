@@ -5,284 +5,192 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment"
-    android:background="@drawable/bg_main">
-    
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:alpha="0.15"
-        android:src="@drawable/barbados_outline" />
+    android:background="@drawable/bg_main"
+    android:paddingTop="20dp"
+    android:paddingHorizontal="20dp">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginTop="15dp"
-        android:layout_marginRight="15dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="5dp">
-
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_clock_reverse"
-            android:background="@drawable/bg_rectangle_pale_slate"/>
-
-        <TextView
-            style="@style/info_txt_style"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:text="View History"
-            android:textColor="@color/light_grey" />
-
-    </LinearLayout>
-
-    <ScrollView
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fitsSystemWindows="true">
 
+        <!-- History Button -->
+        <LinearLayout
+            android:id="@+id/home_history_bttn"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_alignParentStart="true"
+            android:gravity="center"
+            android:background="@drawable/bg_rectangle_alice_blue">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_clock_reverse"
+                app:tint="@color/space_indigo" />
+        </LinearLayout>
+
+        <!-- Notifications Button -->
+        <LinearLayout
+            android:id="@+id/notification_bttn"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_alignParentEnd="true"
+            android:gravity="center"
+            android:background="@drawable/bg_rectangle_alice_blue">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_bell"
+                app:tint="@color/space_indigo" />
+        </LinearLayout>
+
+        <!-- Home Screen Content -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@id/notification_bttn"
+            android:layout_marginTop="50dp"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingLeft="24dp"
-            android:paddingTop="96dp"
-            android:paddingRight="24dp"
-            android:paddingBottom="32dp">
+            android:padding="5dp">
 
             <TextView
-                style="@style/heading_txt_style"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Welcome User" />
+                android:text="Everything BIM"
+                android:textSize="12sp"
+                style="@style/subheading_txt_style"/>
 
             <TextView
-                style="@style/subheading_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Welcome,"
+                android:textSize="32sp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/roboto_extrabold"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User"
+                android:textSize="36sp"
+                android:textColor="@color/bright_gold"
+                android:fontFamily="@font/pacifico"/>
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:gravity="center"
-                android:text="Use our demo pipeline to identify a Barbadian landmark from a photo."
-                android:textAlignment="center" />
+                android:text="Identify any place in BIM  instantly — just point your camera or pick from your gallery."
+                android:textAlignment="center"
+                android:textSize="15sp"
+                style="@style/subheading_txt_style"/>
 
-            <LinearLayout
-                android:id="@+id/image_upload_opts_container"
-                android:layout_width="match_parent"
+            <!-- Image Upload Container -->
+            <RelativeLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="48dp"
                 android:gravity="center"
                 android:orientation="horizontal">
 
                 <LinearLayout
-                    android:layout_width="100dp"
-                    android:layout_height="124dp"
+                    android:id="@+id/camera_opt_bttn"
+                    android:layout_width="160dp"
+                    android:layout_height="200dp"
                     android:layout_marginRight="24dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    android:gravity="center"
+                    android:background="@drawable/bg_rectangle_gold"
+                    android:gravity="center_horizontal"
                     android:orientation="vertical">
 
-                    <ImageButton
-                        android:id="@+id/camera_opt_bttn"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
-                        android:layout_margin="8dp"
-                        android:background="@drawable/bg_rectangle_dim_grey"
-                        android:elevation="8dp"
-                        android:src="@drawable/ic_camera"
-                        app:tint="@color/white" />
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        app:cardCornerRadius="360dp"
+                        app:cardBackgroundColor="@color/old_gold">
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_margin="8dp"
+                            android:elevation="8dp"
+                            android:src="@drawable/ic_camera"
+                            app:tint="@color/space_indigo" />
+
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/roboto_light"
+                        android:layout_marginTop="30dp"
                         android:text="Take Photo"
                         android:textColor="@color/black"
-                        android:textSize="12sp" />
+                        style="@style/subheading_txt_style"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="Use your camera"
+                        android:textColor="@color/black"
+                        android:textSize="12sp"/>
+
                 </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="100dp"
-                    android:layout_height="124dp"
-                    android:layout_marginLeft="24dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    android:gravity="center"
+                    android:id="@+id/gallery_opt_bttn"
+                    android:layout_width="160dp"
+                    android:layout_height="200dp"
+                    android:layout_toRightOf="@id/camera_opt_bttn"
+                    android:background="@drawable/bg_rectangle_blue"
+                    android:gravity="center_horizontal"
                     android:orientation="vertical">
 
-                    <ImageButton
-                        android:id="@+id/gallery_opt_bttn"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
-                        android:layout_margin="8dp"
-                        android:background="@drawable/bg_rectangle_dim_grey"
-                        android:elevation="8dp"
-                        android:src="@drawable/ic_images"
-                        app:tint="@color/white" />
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        app:cardCornerRadius="360dp"
+                        app:cardBackgroundColor="@color/pale_blue">
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_margin="8dp"
+                            android:elevation="8dp"
+                            android:src="@drawable/ic_images"
+                            app:tint="@color/white" />
+
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/roboto_light"
+                        android:layout_marginTop="30dp"
                         android:text="Gallery"
-                        android:textColor="@color/black"
-                        android:textSize="12sp" />
+                        android:textColor="@color/white"
+                        style="@style/subheading_txt_style"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="Choose from gallery"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"/>
+
                 </LinearLayout>
-            </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/home_preview_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:background="@drawable/bg_rectangle_pale_slate">
-
-                <TextView
-                    android:id="@+id/home_source_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_pill_gold"
-                    android:fontFamily="@font/roboto_medium"
-                    android:paddingLeft="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingRight="12dp"
-                    android:paddingBottom="6dp"
-                    android:textColor="@color/black"
-                    android:textSize="12sp"
-                    tools:text="Gallery" />
-
-                <TextView
-                    android:id="@+id/home_file_name_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:fontFamily="@font/roboto_regular"
-                    android:textColor="@color/dark"
-                    android:textSize="12sp"
-                    tools:text="parliament_demo.jpg" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/home_analyzing_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:background="@drawable/bg_rectangle_pale_slate">
-
-                <TextView
-                    android:id="@+id/home_result_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/roboto_medium"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"
-                    tools:text="Barbados Parliament Buildings" />
-
-                <TextView
-                    android:id="@+id/home_result_description"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/roboto_regular"
-                    android:lineSpacingExtra="3dp"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    tools:text="Historic neo-Gothic government buildings in Bridgetown and among Barbados' most recognizable civic landmarks." />
-
-                <TextView
-                    android:id="@+id/home_result_detail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/roboto_light"
-                    android:textColor="@color/dark_grey"
-                    android:textSize="12sp"
-                    tools:text="Matched demo token in filename" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/home_unknown_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:orientation="vertical"
-                android:padding="18dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_medium"
-                    android:text="No demo match found"
-                    android:textColor="@color/black"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/home_unknown_detail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/roboto_regular"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    tools:text="Try a filename containing parliament, kensington, or cathedral." />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/home_error_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:orientation="vertical"
-                android:padding="18dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_medium"
-                    android:text="Unable to continue"
-                    android:textColor="@color/black"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/home_error_message"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/roboto_regular"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    tools:text="Camera permission was denied." />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/home_retry_bttn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_pill_gold"
-                android:fontFamily="@font/roboto_extrabold"
-                android:gravity="center"
-                android:paddingTop="14dp"
-                android:paddingBottom="14dp"
-                android:text="Try Another Photo"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:visibility="gone" />
+            </RelativeLayout>
 
         </LinearLayout>
-    </ScrollView>
+
+
+    </RelativeLayout>
 
 </FrameLayout>

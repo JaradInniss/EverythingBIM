@@ -3,12 +3,14 @@
 
     <item
         android:id="@+id/admin_navbar_user"
-        android:icon="@drawable/ic_user"
-        android:title="USERS" />
+        android:icon="@drawable/ic_multi_users"
+        android:title="Users" />
+
     <item
         android:id="@+id/admin_navbar_home"
         android:icon="@drawable/ic_home"
-        android:title="HOME" />
+        android:title="Home" />
+
     <item
         android:id="@+id/admin_navbar_reports"
         android:icon="@drawable/icon_flag_banner"
@@ -17,5 +19,5 @@
     <item
         android:id="@+id/admin_navbar_settings"
         android:icon="@drawable/icon_settings"
-        android:title="SETTINGS" />
+        android:title="Settings" />
 </menu>
