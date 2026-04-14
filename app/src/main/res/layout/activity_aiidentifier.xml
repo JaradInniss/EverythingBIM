@@ -75,14 +75,73 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/server_url_container"
+        android:layout_width="370dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/upload_method_header"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_rectangle_alice_blue"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <EditText
+            android:id="@+id/server_url_et"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@android:color/white"
+            android:hint="http://10.0.2.2:8000"
+            android:imeOptions="actionDone"
+            android:inputType="textUri"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textColor="@color/black"
+            android:textColorHint="@color/dim_grey"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/save_server_url_bttn"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_rectangle_blue"
+            android:gravity="center"
+            android:minWidth="72dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="Save"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:fontFamily="@font/roboto_medium" />
+
+        <TextView
+            android:id="@+id/health_check_bttn"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_border_rectangle_gold"
+            android:gravity="center"
+            android:minWidth="96dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="Health Check"
+            android:textColor="@color/black"
+            android:textSize="13sp"
+            android:fontFamily="@font/roboto_medium" />
+
+    </LinearLayout>
+
     <!-- Uploaded Image Display -->
     <androidx.cardview.widget.CardView
         android:id="@+id/image_container"
         android:layout_width="370dp"
         android:layout_height="250dp"
-        android:layout_below="@id/return_bttn"
+        android:layout_below="@id/server_url_container"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="12dp"
         app:cardCornerRadius="10dp"
         android:elevation="10dp">
 

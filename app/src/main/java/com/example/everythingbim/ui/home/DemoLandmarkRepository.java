@@ -47,6 +47,28 @@ public class DemoLandmarkRepository {
     }
 
     @Nullable
+    public DemoLandmark findByIdOrToken(@Nullable String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        String normalized = value.toLowerCase(Locale.US);
+        DemoLandmark byId = findById(normalized);
+        if (byId != null) {
+            return byId;
+        }
+
+        for (DemoLandmark landmark : landmarks) {
+            if (landmark.getToken().toLowerCase(Locale.US).equals(normalized)) {
+                return landmark;
+            }
+        }
+
+        String aliasMatch = aliasToLandmarkId.get(normalized);
+        return aliasMatch != null ? findById(aliasMatch) : null;
+    }
+
+    @Nullable
     public DemoLandmark findByFileName(@Nullable String fileName) {
         if (fileName == null || fileName.trim().isEmpty()) {
             return null;
