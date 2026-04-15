@@ -1,6 +1,8 @@
 package com.example.everythingbim.ui.home;
 
 import android.app.Application;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -10,20 +12,17 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.everythingbim.data.models.SelectedImage;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AIIdentifierViewModel extends AndroidViewModel {
     private final MutableLiveData<HomeUiState> uiState = new MutableLiveData<>(HomeUiState.idle());
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final RestBinaryClassifierClient classifierClient = new RestBinaryClassifierClient();
     private final DemoLandmarkRepository landmarkRepository = new DemoLandmarkRepository();
 
+    private ParliamentClassifier classifier;
     private SelectedImage selectedImage;
 
     public AIIdentifierViewModel(@NonNull Application application) {
@@ -50,106 +49,97 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         startAnalysis();
     }
 
-    public void runHealthCheck(@NonNull HealthCheckCallback callback) {
-        String baseUrl = ModelServerSettings.getBaseUrl(getApplication());
-        executorService.execute(() -> {
-            try {
-                String message = classifierClient.healthCheck(baseUrl);
-                callback.onComplete(true, message);
-            } catch (Exception exception) {
-                callback.onComplete(
-                        false,
-                        exception.getMessage() != null ? exception.getMessage() : "Health check failed."
-                );
-            }
-        });
-    }
-
     private void startAnalysis() {
         if (selectedImage == null) {
             return;
         }
 
-        String baseUrl = ModelServerSettings.getBaseUrl(getApplication());
         uiState.setValue(HomeUiState.analyzing(
                 selectedImage,
-                "Sending image to " + baseUrl + "..."
+                "Analyzing image offline..."
         ));
 
         executorService.execute(() -> {
             try {
-                byte[] imageBytes = readImageBytes(selectedImage.getUri());
-                RestPredictionResult prediction = classifierClient.predict(imageBytes, baseUrl);
+                Bitmap bitmap = readBitmap(selectedImage.getUri());
+                ParliamentClassifier.Result prediction = getClassifier().predict(bitmap);
                 handlePrediction(prediction);
             } catch (Exception exception) {
                 uiState.postValue(HomeUiState.error(
                         selectedImage,
-                        exception.getMessage() != null ? exception.getMessage() : "Prediction failed."
+                        exception.getMessage() != null ? exception.getMessage() : "Offline identification failed."
                 ));
             }
         });
     }
 
-    private void handlePrediction(@NonNull RestPredictionResult prediction) {
+    private void handlePrediction(@NonNull ParliamentClassifier.Result prediction) {
         if (selectedImage == null) {
             return;
         }
 
-        DemoLandmark landmark = landmarkRepository.findByIdOrToken(prediction.getPredictedLabel());
-        String confidenceText = String.format(Locale.US, "%.1f%%", prediction.getPositiveProbability() * 100d);
-
-        if (landmark != null && landmark.getId().equalsIgnoreCase(prediction.getPositiveLabel())) {
-            String detail = formatProbabilities(prediction.getClassProbabilities());
-            uiState.postValue(HomeUiState.result(selectedImage, landmark, confidenceText, detail));
+        if ("parliament".equalsIgnoreCase(prediction.getLabel())) {
+            DemoLandmark landmark = landmarkRepository.findByIdOrToken("parliament");
+            if (landmark != null) {
+                String confidenceText = formatConfidence(prediction.getParliamentProbability());
+                String detail = landmark.getDescription()
+                        + "\n\nDebug:"
+                        + "\nRaw parliament probability: " + formatProbability(prediction.getParliamentProbability())
+                        + "\nRaw other probability: " + formatProbability(prediction.getOtherProbability());
+                uiState.postValue(HomeUiState.result(selectedImage, landmark, confidenceText, detail));
+                return;
+            }
+            uiState.postValue(HomeUiState.error(selectedImage, "Parliament metadata is unavailable."));
             return;
         }
 
-        String unknownDetail = "Predicted label: " + prediction.getPredictedLabel()
-                + "\nPositive probability: " + confidenceText
-                + "\n" + formatProbabilities(prediction.getClassProbabilities());
-        uiState.postValue(HomeUiState.unknown(selectedImage, unknownDetail));
+        uiState.postValue(HomeUiState.unknown(
+                selectedImage,
+                "This image was not identified as the Barbados Parliament Buildings."
+                        + "\n\nDebug:"
+                        + "\nRaw parliament probability: " + formatProbability(prediction.getParliamentProbability())
+                        + "\nRaw other probability: " + formatProbability(prediction.getOtherProbability())
+        ));
     }
 
     @NonNull
-    private byte[] readImageBytes(@NonNull Uri imageUri) throws IOException {
-        try (InputStream inputStream = getApplication().getContentResolver().openInputStream(imageUri);
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+    private Bitmap readBitmap(@NonNull Uri imageUri) throws IOException {
+        try (InputStream inputStream = getApplication().getContentResolver().openInputStream(imageUri)) {
             if (inputStream == null) {
                 throw new IOException("Unable to open the selected image.");
             }
-
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            if (bitmap == null) {
+                throw new IOException("Unable to decode the selected image.");
             }
-            return outputStream.toByteArray();
+            return bitmap;
         }
     }
 
     @NonNull
-    private String formatProbabilities(@NonNull Map<String, Double> probabilities) {
-        if (probabilities.isEmpty()) {
-            return "No class probabilities returned by the server.";
+    private ParliamentClassifier getClassifier() throws IOException {
+        if (classifier == null) {
+            classifier = new ParliamentClassifier(getApplication());
         }
+        return classifier;
+    }
 
-        StringBuilder builder = new StringBuilder("Class probabilities:");
-        for (Map.Entry<String, Double> entry : probabilities.entrySet()) {
-            builder.append("\n")
-                    .append(entry.getKey())
-                    .append(": ")
-                    .append(String.format(Locale.US, "%.4f", entry.getValue()));
-        }
-        return builder.toString();
+    @NonNull
+    private String formatConfidence(float probability) {
+        return String.format(java.util.Locale.US, "%.1f%%", probability * 100f);
+    }
+
+    @NonNull
+    private String formatProbability(float probability) {
+        return String.format(java.util.Locale.US, "%.4f", probability);
     }
 
     @Override
     protected void onCleared() {
         executorService.shutdownNow();
+        if (classifier != null) {
+            classifier.close();
+        }
         super.onCleared();
-    }
-
-    public interface HealthCheckCallback {
-        void onComplete(boolean success, @NonNull String message);
     }
 }
