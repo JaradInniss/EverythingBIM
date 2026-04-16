@@ -100,9 +100,9 @@
 
                 <LinearLayout
                     android:id="@+id/camera_opt_bttn"
-                    android:layout_width="160dp"
+                    android:layout_width="155dp"
                     android:layout_height="200dp"
-                    android:layout_marginRight="24dp"
+                    android:layout_marginRight="10dp"
                     android:background="@drawable/bg_rectangle_gold"
                     android:gravity="center_horizontal"
                     android:orientation="vertical">
@@ -144,9 +144,10 @@
 
                 <LinearLayout
                     android:id="@+id/gallery_opt_bttn"
-                    android:layout_width="160dp"
+                    android:layout_width="155dp"
                     android:layout_height="200dp"
                     android:layout_toRightOf="@id/camera_opt_bttn"
+                    android:layout_marginLeft="10dp"
                     android:background="@drawable/bg_rectangle_blue"
                     android:gravity="center_horizontal"
                     android:orientation="vertical">

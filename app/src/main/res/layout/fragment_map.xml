@@ -14,55 +14,84 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="15dp"
         android:gravity="top|center_horizontal"
         android:orientation="vertical"
         android:padding="16dp">
 
         <TextView
+            android:id="@+id/map_barbados_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Barbados"
-            android:textColor="@color/white"
+            android:textColor="@color/space_indigo"
             android:textSize="20sp"
             android:fontFamily="@font/roboto_bold"/>
 
-        <!-- Searchbar -->
+
         <LinearLayout
-            android:id="@+id/map_searchbar"
             android:layout_width="match_parent"
-            android:layout_height="35dp"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            android:background="@drawable/bg_rectangle_alice_blue">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:gravity="center_vertical">
 
-            <EditText
-                android:id="@+id/map_search_input"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:hint="Search for a place"
-                android:textSize="12sp"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLines="1"/>
+            <!-- Return Button -->
+            <LinearLayout
+                android:id="@+id/map_return_bttn"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_marginRight="10dp"
+                android:gravity="center"
+                android:background="@drawable/bg_rectangle_space_indigo"
+                android:visibility="gone">
 
-            <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:contentDescription="@string/app_name"
-                android:src="@drawable/ic_magnifying_glass" />
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_caret_left"
+                    app:tint="@color/white" />
+            </LinearLayout>
 
-            <ProgressBar
-                android:id="@+id/map_search_progress"
-                style="?android:attr/progressBarStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
+            <!-- Searchbar -->
+            <LinearLayout
+                android:id="@+id/map_searchbar"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="@drawable/bg_rectangle_space_indigo">
+
+                <EditText
+                    android:id="@+id/map_search_input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Search for a place"
+                    style="@style/white_small_txt_style"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"/>
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/ic_magnifying_glass"
+                    app:tint="@color/white"/>
+
+                <ProgressBar
+                    android:id="@+id/map_search_progress"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+            </LinearLayout>
+
         </LinearLayout>
+
 
         <!-- Search Results View -->
         <androidx.cardview.widget.CardView
@@ -71,7 +100,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/alice_blue"
+            app:cardBackgroundColor="@color/space_indigo"
             app:cardCornerRadius="10dp"
             app:cardElevation="10dp">
 
@@ -81,10 +110,66 @@
                 android:layout_height="wrap_content"
                 android:divider="@color/dim_grey"
                 android:dividerHeight="0.5dp"
-                android:layout_marginVertical="4dp" />
+                android:layout_marginVertical="4dp"
+                style="@style/white_small_txt_style"/>
 
         </androidx.cardview.widget.CardView>
 
+    </LinearLayout>
+
+
+    <!-- Fix Location Button -->
+    <LinearLayout
+        android:id="@+id/map_fix_location_bttn"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="115dp"
+        android:layout_marginRight="16dp"
+        android:gravity="center"
+        android:background="@drawable/bg_rectangle_space_indigo">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_gps_fix"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Zoom In Button -->
+    <LinearLayout
+        android:id="@+id/map_zoom_in_bttn"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="70dp"
+        android:layout_marginRight="16dp"
+        android:gravity="center"
+        android:background="@drawable/bg_rectangle_space_indigo">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_plus"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Zoom Out Button -->
+    <LinearLayout
+        android:id="@+id/map_zoom_out_bttn"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="25dp"
+        android:layout_marginRight="16dp"
+        android:gravity="center"
+        android:background="@drawable/bg_rectangle_space_indigo">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_minus"
+            app:tint="@color/white"/>
     </LinearLayout>
 
     <!-- Map Location Details Container -->
@@ -96,7 +181,8 @@
         android:orientation="vertical"
         android:padding="10dp"
         android:background="@drawable/bg_split_screen_card"
-        android:elevation="8dp">
+        android:elevation="8dp"
+        android:visibility="gone">
 
         <View
             android:layout_width="80dp"
@@ -106,15 +192,19 @@
             android:layout_marginBottom="5dp"/>
 
         <RelativeLayout
+            android:id="@+id/details_peek_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="5dp">
+            android:gravity="center_vertical"
+            android:paddingHorizontal="5dp"
+            android:paddingBottom="5dp">
 
             <!-- Location Name -->
             <TextView
                 android:id="@+id/map_location_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:maxWidth="200dp"
                 android:textColor="@android:color/black"
                 android:text="Location Name"
                 android:textSize="20sp"
@@ -125,6 +215,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
+                android:layout_marginBottom="10dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_below="@id/map_location_name">
@@ -133,6 +224,7 @@
                     android:id="@+id/map_location_address"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:maxWidth="200dp"
                     android:layout_marginRight="5dp"
                     android:text="Address"
                     android:textColor="@color/black"
@@ -277,14 +369,14 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="210dp"
                         android:gravity="center_vertical">
-                        
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="View All"
                             android:textSize="12sp"
                             android:textColor="@color/pale_slate"/>
-                        
+
                         <ImageView
                             android:layout_width="16dp"
                             android:layout_height="14dp"
@@ -297,10 +389,23 @@
                 </LinearLayout>
                 <!-- Images Section Header [End] -->
 
+                <!-- No Location Images Text -->
+                <TextView
+                    android:id="@+id/no_images_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:text="No Location Images"
+                    android:textSize="14sp"
+                    style="@style/grey_small_txt_style"
+                    android:visibility="gone"/>
+
                 <!-- Location Images Field -->
                 <HorizontalScrollView
+                    android:id="@+id/location_images_field"
                     android:layout_width="match_parent"
-                    android:layout_height="80dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:padding="5dp"
                     android:scrollbars="none"
@@ -370,10 +475,25 @@
                 </LinearLayout>
                 <!-- Reviews Section Header [End] -->
 
+
+                <!-- No Location Reviews Text -->
+                <TextView
+                    android:id="@+id/no_reviews_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:text="No Location Reviews"
+                    android:textSize="14sp"
+                    style="@style/grey_small_txt_style"
+                    android:visibility="gone"/>
+
+
                 <!-- Location Reviews Field -->
                 <HorizontalScrollView
+                    android:id="@+id/location_reviews_field"
                     android:layout_width="match_parent"
-                    android:layout_height="80dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:padding="5dp"
                     android:scrollbars="none"
@@ -423,9 +543,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:padding="5dp"
+                    android:padding="8dp"
                     android:gravity="center"
-                    android:background="@drawable/bg_rectangle_alice_blue">
+                    android:background="@drawable/bg_rectangle_alice_blue"
+                    android:visibility="gone">
 
                     <!-- New Review Input -->
                     <EditText
@@ -437,8 +558,7 @@
                         android:editable="false"
                         android:gravity="top|start"
                         android:inputType="textMultiLine"
-                        android:textColor="@color/black"
-                        android:textSize="12dp"
+                        style="@style/black_small_txt_style"
                         android:background="@android:color/transparent"/>
 
                     <LinearLayout
@@ -494,7 +614,7 @@
                             android:id="@+id/submit_review_bttn"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="15dp"
                             android:gravity="center"
                             android:orientation="horizontal"
                             android:padding="10dp"
@@ -552,7 +672,7 @@
 
                     <!-- View All Posts Button -->
                     <LinearLayout
-                        android:id="@+id/location_psots_view_all_bttn"
+                        android:id="@+id/location_posts_view_all_bttn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="220dp"
@@ -577,10 +697,25 @@
                 </LinearLayout>
                 <!-- Posts Section Header [End] -->
 
+
+                <!-- No Location Posts Text -->
+                <TextView
+                    android:id="@+id/no_posts_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:text="No Location Posts"
+                    android:textSize="14sp"
+                    style="@style/grey_small_txt_style"
+                    android:visibility="gone"/>
+
+
                 <!-- Location Posts Field -->
                 <HorizontalScrollView
+                    android:id="@+id/location_posts_field"
                     android:layout_width="match_parent"
-                    android:layout_height="80dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:padding="5dp"
                     android:scrollbars="none">

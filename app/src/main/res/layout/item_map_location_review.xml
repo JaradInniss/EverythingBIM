@@ -49,12 +49,30 @@
             android:text="4.5"
             style="@style/grey_small_txt_style"/>
 
+        <ImageView
+            android:id="@+id/comments_icon"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_toRightOf="@id/map_location_related_review_rating"
+            android:layout_marginLeft="10dp"
+            android:src="@drawable/ic_comment"
+            app:tint="@color/dim_grey"/>
+
+        <TextView
+            android:id="@+id/map_location_related_review_comments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/comments_icon"
+            android:layout_marginLeft="4dp"
+            android:text="4"
+            style="@style/grey_small_txt_style"/>
+
         <TextView
             android:id="@+id/map_location_related_review_upload_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:text="2 Weeks Ago"
+            android:text="2 Wks Ago"
             style="@style/grey_small_txt_style"/>
 
     </RelativeLayout>
