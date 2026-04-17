@@ -46,7 +46,7 @@ public class AdminFragment extends Fragment {
         AdminLocationRequestDetailsFragment detailFragment = AdminLocationRequestDetailsFragment.newInstance(docId);
         getChildFragmentManager()
                 .beginTransaction()
-                .replace(R.id.admin_fragment_container, detailFragment)
+                .add(R.id.admin_fragment_container, detailFragment)
                 .addToBackStack(null)
                 .commit();
     }
@@ -55,7 +55,7 @@ public class AdminFragment extends Fragment {
         AdminInfoRequestDetailFragment detailFragment = AdminInfoRequestDetailFragment.newInstance(docId);
         getChildFragmentManager()
                 .beginTransaction()
-                .replace(R.id.admin_fragment_container, detailFragment)
+                .add(R.id.admin_fragment_container, detailFragment)
                 .addToBackStack(null)
                 .commit();
     }
@@ -64,7 +64,7 @@ public class AdminFragment extends Fragment {
         AdminBizVerificationDetailFragment detailFragment = AdminBizVerificationDetailFragment.newInstance(docId);
         getChildFragmentManager()
                 .beginTransaction()
-                .replace(R.id.admin_fragment_container, detailFragment)
+                .add(R.id.admin_fragment_container, detailFragment)
                 .addToBackStack(null)
                 .commit();
     }
