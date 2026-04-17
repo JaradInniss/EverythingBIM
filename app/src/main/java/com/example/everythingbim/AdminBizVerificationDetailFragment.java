@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,11 +31,44 @@ import java.util.Locale;
 
 public class AdminBizVerificationDetailFragment extends Fragment {
 
-    public static final String ARG_DOC_ID = "doc_id";
+    private static final String TAG = "BizVerDetail";
 
+    // ─── Bundle arg keys ─────────────────────
+    public static final String ARG_DOC_ID = "doc_id";
+    public static final String ARG_NUMBER = "number";
+    public static final String ARG_STATUS = "status";
+    public static final String ARG_DATE = "date";
+    public static final String ARG_SUBMITTED_BY = "submittedBy";
+    public static final String ARG_NAME = "name";
+    public static final String ARG_PHONE = "phone";
+    public static final String ARG_EMAIL = "email";
+    public static final String ARG_ADDRESS = "address";
+    public static final String ARG_DESCRIPTION = "description";
+    public static final String ARG_TYPE = "type";
+    public static final String ARG_RESOLVED_AT = "resolvedAt";
+    public static final String ARG_RESOLVED_BY = "resolvedBy";
+    public static final String ARG_REJECTION_REASON = "rejectionReason";
+
+    // ─── State ───────────────────────────────
     private String docId = "";
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
+
+    // ─── Cached data from Bundle ─────────────
+    private String cachedNumber = "";
+    private String cachedStatus = "";
+    private String cachedDate = "";
+    private String cachedSubmittedBy = "";
+    private String cachedName = "";
+    private String cachedPhone = "";
+    private String cachedEmail = "";
+    private String cachedAddress = "";
+    private String cachedDescription = "";
+    private String cachedType = "";
+    private String cachedResolvedAt = "";
+    private String cachedResolvedBy = "";
+    private String cachedRejectionReason = "";
+    private boolean dataFromBundle = false;
 
     // ─── Views ───────────────────────────────
     private LinearLayout cardWrapper;
@@ -48,9 +82,32 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     private LinearLayout resolutionReasonRow;
 
     // ────────────────────────────────────────────────────────
-    // FACTORY
+    // FACTORY — Bundle approach for instant display
     // ────────────────────────────────────────────────────────
 
+    public static AdminBizVerificationDetailFragment newInstance(
+            String docId, String number, String status, String date,
+            String submittedBy, String name, String phone, String email,
+            String address, String description, String type) {
+
+        AdminBizVerificationDetailFragment f = new AdminBizVerificationDetailFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_DOC_ID, docId);
+        args.putString(ARG_NUMBER, number);
+        args.putString(ARG_STATUS, status);
+        args.putString(ARG_DATE, date);
+        args.putString(ARG_SUBMITTED_BY, submittedBy);
+        args.putString(ARG_NAME, name);
+        args.putString(ARG_PHONE, phone);
+        args.putString(ARG_EMAIL, email);
+        args.putString(ARG_ADDRESS, address);
+        args.putString(ARG_DESCRIPTION, description);
+        args.putString(ARG_TYPE, type);
+        f.setArguments(args);
+        return f;
+    }
+
+    // Legacy factory for backward compatibility
     public static AdminBizVerificationDetailFragment newInstance(String docId) {
         AdminBizVerificationDetailFragment f = new AdminBizVerificationDetailFragment();
         Bundle args = new Bundle();
@@ -74,7 +131,25 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
-        if (getArguments() != null) docId = getArguments().getString(ARG_DOC_ID, "");
+        // Extract Bundle data first
+        if (getArguments() != null) {
+            docId = getArguments().getString(ARG_DOC_ID, "");
+            cachedNumber = getArguments().getString(ARG_NUMBER, "");
+            cachedStatus = getArguments().getString(ARG_STATUS, "In Review");
+            cachedDate = getArguments().getString(ARG_DATE, "");
+            cachedSubmittedBy = getArguments().getString(ARG_SUBMITTED_BY, "");
+            cachedName = getArguments().getString(ARG_NAME, "");
+            cachedPhone = getArguments().getString(ARG_PHONE, "");
+            cachedEmail = getArguments().getString(ARG_EMAIL, "");
+            cachedAddress = getArguments().getString(ARG_ADDRESS, "");
+            cachedDescription = getArguments().getString(ARG_DESCRIPTION, "");
+            cachedType = getArguments().getString(ARG_TYPE, "");
+            cachedResolvedAt = getArguments().getString(ARG_RESOLVED_AT, "");
+            cachedResolvedBy = getArguments().getString(ARG_RESOLVED_BY, "");
+            cachedRejectionReason = getArguments().getString(ARG_REJECTION_REASON, "");
+
+            dataFromBundle = !cachedNumber.isEmpty();
+        }
 
         // Bind views
         cardWrapper         = view.findViewById(R.id.biz_detail_card_wrapper);
@@ -105,20 +180,62 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         acceptBtn.setOnClickListener(v -> showAcceptDialog());
         rejectBtn.setOnClickListener(v -> showRejectDialog());
 
-        if (!docId.isEmpty()) loadData();
+        // Display Bundle data immediately if available
+        if (dataFromBundle) {
+            displayCachedData();
+        }
+
+        // Always try to fetch fresh data from Firestore as fallback
+        if (!docId.isEmpty()) {
+            loadData();
+        }
 
         return view;
     }
 
     // ────────────────────────────────────────────────────────
-    // LOAD DATA
+    // DISPLAY DATA FROM BUNDLE (instant display)
+    // ────────────────────────────────────────────────────────
+
+    private void displayCachedData() {
+        Log.d(TAG, "Displaying cached data from Bundle");
+        numberTv.setText("Request " + cachedNumber);
+        statusTv.setText("Status: " + cachedStatus);
+        dateTv.setText("Submitted: " + cachedDate);
+        submittedByTv.setText("Submitted By: " + cachedSubmittedBy);
+        nameTv.setText(cachedName);
+        phoneTv.setText(cachedPhone);
+        emailTv.setText(cachedEmail);
+        addressTv.setText(cachedAddress);
+        descriptionTv.setText(cachedDescription);
+        typeTv.setText(cachedType);
+
+        applyStatusVisual(cachedStatus);
+    }
+
+    private void applyStatusVisual(String status) {
+        if ("Completed".equals(status) || "Approved".equals(status)) {
+            applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
+        } else if ("Rejected".equals(status)) {
+            applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
+        }
+    }
+
+    // ────────────────────────────────────────────────────────
+    // LOAD DATA FROM FIRESTORE (fallback/refresh)
     // ────────────────────────────────────────────────────────
 
     private void loadData() {
+        Log.d(TAG, "Loading data from Firestore for docId: " + docId);
         db.collection("businesses").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
+                    if (!doc.exists()) {
+                        Log.e(TAG, "Document does not exist: " + docId);
+                        return;
+                    }
+
+                    Log.d(TAG, "Document found, updating fields");
 
                     long number = doc.contains("requestNumber")
                             ? doc.getLong("requestNumber") : 0;
@@ -162,6 +279,11 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     }
 
                     doc.getReference().update("read", true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load document: " + e.getMessage(), e);
+                    Toast.makeText(getContext(),
+                            "Failed to load request details", Toast.LENGTH_SHORT).show();
                 });
     }
 

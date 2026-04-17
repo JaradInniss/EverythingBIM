@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,11 +36,46 @@ import java.util.Locale;
 
 public class AdminLocationRequestDetailsFragment extends Fragment {
 
-    public static final String ARG_DOC_ID = "doc_id";
+    private static final String TAG = "LocReqDetail";
 
+    // ─── Bundle arg keys ─────────────────────
+    public static final String ARG_DOC_ID = "doc_id";
+    public static final String ARG_NUMBER = "number";
+    public static final String ARG_STATUS = "status";
+    public static final String ARG_DATE = "date";
+    public static final String ARG_SUBMITTED_BY = "submittedBy";
+    public static final String ARG_LOCATION_NAME = "locationName";
+    public static final String ARG_COORDINATES = "coordinates";
+    public static final String ARG_DESCRIPTION = "description";
+    public static final String ARG_PLACE_TYPE = "placeType";
+    public static final String ARG_REASON = "reason";
+    public static final String ARG_LATITUDE = "latitude";
+    public static final String ARG_LONGITUDE = "longitude";
+    public static final String ARG_RESOLVED_AT = "resolvedAt";
+    public static final String ARG_RESOLVED_BY = "resolvedBy";
+    public static final String ARG_REJECTION_REASON = "rejectionReason";
+
+    // ─── State ───────────────────────────────
     private String docId = "";
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
+
+    // ─── Cached data from Bundle ─────────────
+    private String cachedNumber = "";
+    private String cachedStatus = "";
+    private String cachedDate = "";
+    private String cachedSubmittedBy = "";
+    private String cachedLocationName = "";
+    private String cachedCoordinates = "";
+    private String cachedDescription = "";
+    private String cachedPlaceType = "";
+    private String cachedReason = "";
+    private double cachedLatitude = 0.0;
+    private double cachedLongitude = 0.0;
+    private String cachedResolvedAt = "";
+    private String cachedResolvedBy = "";
+    private String cachedRejectionReason = "";
+    private boolean dataFromBundle = false;
 
     // ─── Map ─────────────────────────────────
     private MapView mapView;
@@ -57,9 +93,34 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     private LinearLayout resolutionReasonRow;
 
     // ────────────────────────────────────────────────────────
-    // FACTORY
+    // FACTORY — Bundle approach for instant display
     // ────────────────────────────────────────────────────────
 
+    public static AdminLocationRequestDetailsFragment newInstance(
+            String docId, String number, String status, String date,
+            String submittedBy, String locationName, String coordinates,
+            String description, String placeType, String reason,
+            double latitude, double longitude) {
+
+        AdminLocationRequestDetailsFragment f = new AdminLocationRequestDetailsFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_DOC_ID, docId);
+        args.putString(ARG_NUMBER, number);
+        args.putString(ARG_STATUS, status);
+        args.putString(ARG_DATE, date);
+        args.putString(ARG_SUBMITTED_BY, submittedBy);
+        args.putString(ARG_LOCATION_NAME, locationName);
+        args.putString(ARG_COORDINATES, coordinates);
+        args.putString(ARG_DESCRIPTION, description);
+        args.putString(ARG_PLACE_TYPE, placeType);
+        args.putString(ARG_REASON, reason);
+        args.putDouble(ARG_LATITUDE, latitude);
+        args.putDouble(ARG_LONGITUDE, longitude);
+        f.setArguments(args);
+        return f;
+    }
+
+    // Legacy factory for backward compatibility with Firestore fallback
     public static AdminLocationRequestDetailsFragment newInstance(String docId) {
         AdminLocationRequestDetailsFragment f = new AdminLocationRequestDetailsFragment();
         Bundle args = new Bundle();
@@ -83,7 +144,27 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
 
-        if (getArguments() != null) docId = getArguments().getString(ARG_DOC_ID, "");
+        // Extract Bundle data first
+        if (getArguments() != null) {
+            docId = getArguments().getString(ARG_DOC_ID, "");
+            cachedNumber = getArguments().getString(ARG_NUMBER, "");
+            cachedStatus = getArguments().getString(ARG_STATUS, "In Review");
+            cachedDate = getArguments().getString(ARG_DATE, "");
+            cachedSubmittedBy = getArguments().getString(ARG_SUBMITTED_BY, "");
+            cachedLocationName = getArguments().getString(ARG_LOCATION_NAME, "");
+            cachedCoordinates = getArguments().getString(ARG_COORDINATES, "");
+            cachedDescription = getArguments().getString(ARG_DESCRIPTION, "");
+            cachedPlaceType = getArguments().getString(ARG_PLACE_TYPE, "");
+            cachedReason = getArguments().getString(ARG_REASON, "");
+            cachedLatitude = getArguments().getDouble(ARG_LATITUDE, 0.0);
+            cachedLongitude = getArguments().getDouble(ARG_LONGITUDE, 0.0);
+            cachedResolvedAt = getArguments().getString(ARG_RESOLVED_AT, "");
+            cachedResolvedBy = getArguments().getString(ARG_RESOLVED_BY, "");
+            cachedRejectionReason = getArguments().getString(ARG_REJECTION_REASON, "");
+
+            // If we have number, data was passed via Bundle
+            dataFromBundle = !cachedNumber.isEmpty();
+        }
 
         // Bind views
         cardWrapper    = view.findViewById(R.id.loc_detail_card_wrapper);
@@ -122,20 +203,67 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
             pinMap();
         });
 
-        if (!docId.isEmpty()) loadData();
+        // Display Bundle data immediately if available
+        if (dataFromBundle) {
+            displayCachedData();
+        }
+
+        // Always try to fetch fresh data from Firestore as fallback/refresh
+        if (!docId.isEmpty()) {
+            loadData();
+        }
 
         return view;
     }
 
     // ────────────────────────────────────────────────────────
-    // LOAD DATA
+    // DISPLAY DATA FROM BUNDLE (instant display)
+    // ────────────────────────────────────────────────────────
+
+    private void displayCachedData() {
+        Log.d(TAG, "Displaying cached data from Bundle");
+        numberTv.setText("Request " + cachedNumber);
+        statusTv.setText("Status: " + cachedStatus);
+        dateTv.setText("Submitted: " + cachedDate);
+        submittedByTv.setText("Submitted By: " + cachedSubmittedBy);
+        locationNameTv.setText(cachedLocationName);
+        coordinatesTv.setText(cachedCoordinates);
+        descriptionTv.setText(cachedDescription);
+        placeTypeTv.setText(cachedPlaceType);
+        reasonTv.setText(cachedReason);
+
+        if (cachedLatitude != 0.0 && cachedLongitude != 0.0) {
+            pinLat = cachedLatitude;
+            pinLng = cachedLongitude;
+            pinMap();
+        }
+
+        applyStatusVisual(cachedStatus);
+    }
+
+    private void applyStatusVisual(String status) {
+        if ("Completed".equals(status)) {
+            applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
+        } else if ("Rejected".equals(status)) {
+            applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
+        }
+    }
+
+    // ────────────────────────────────────────────────────────
+    // LOAD DATA FROM FIRESTORE (fallback/refresh)
     // ────────────────────────────────────────────────────────
 
     private void loadData() {
+        Log.d(TAG, "Loading data from Firestore for docId: " + docId);
         db.collection("add_location_requests").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) return;
+                    if (!doc.exists()) {
+                        Log.e(TAG, "Document does not exist: " + docId);
+                        return;
+                    }
+
+                    Log.d(TAG, "Document found, updating fields");
 
                     long number = doc.contains("number") ? doc.getLong("number") : 0;
                     numberTv.setText("Request #" + number);
@@ -178,6 +306,11 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                     }
 
                     doc.getReference().update("read", true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load document: " + e.getMessage(), e);
+                    Toast.makeText(getContext(),
+                            "Failed to load request details", Toast.LENGTH_SHORT).show();
                 });
     }
 

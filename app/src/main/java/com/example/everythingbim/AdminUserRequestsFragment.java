@@ -177,7 +177,34 @@ public class AdminUserRequestsFragment extends Fragment {
                         Timestamp ts = doc.getTimestamp("createdAt");
                         String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
                                 Locale.getDefault()).format(ts.toDate()) : "";
-                        allItems.add(new RequestItem(number, name, submittedBy, date, read, doc.getId()));
+
+                        RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
+
+                        // Populate additional fields
+                        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+                        item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
+                        item.description = doc.getString("description") != null ? doc.getString("description") : "";
+                        item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
+                        item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+
+                        Double lat = doc.getDouble("latitude");
+                        Double lng = doc.getDouble("longitude");
+                        if (lat != null && lng != null) {
+                            item.latitude = lat;
+                            item.longitude = lng;
+                            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+                        }
+
+                        // Business verification fields
+                        item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
+                        item.email = doc.getString("email") != null ? doc.getString("email") : "";
+                        item.address = doc.getString("address") != null ? doc.getString("address") : "";
+                        item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+                        if (item.businessType.isEmpty()) {
+                            item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
+                        }
+
+                        allItems.add(item);
                     }
                     if (allItems.isEmpty()) addPlaceholders();
                     applyFilters();
@@ -197,15 +224,62 @@ public class AdminUserRequestsFragment extends Fragment {
 
     private void addPlaceholders() {
         if (requestType.equals("location")) {
-            allItems.add(new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,""));
-            allItems.add(new RequestItem("#200","Marton Gardens","User","2026/02/01",false,""));
-            allItems.add(new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true,""));
-            allItems.add(new RequestItem("#198","St. Michael's Church","User","2026/01/25",true,""));
-            allItems.add(new RequestItem("#197","Bathsheba Rock","User","2026/01/20",true,""));
+            RequestItem item1 = new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"");
+            item1.locationName = "Hackerton's Pub";
+            item1.description = "Historic bar located in Bridgetown";
+            item1.placeType = "Entertainment";
+            item1.reason = "Popular landmark not on map";
+            item1.coordinates = "13.11332, -59.59877";
+            item1.latitude = 13.11332;
+            item1.longitude = -59.59877;
+            allItems.add(item1);
+
+            RequestItem item2 = new RequestItem("#200","Marton Gardens","User","2026/02/01",false,"");
+            item2.locationName = "Marton Gardens";
+            item2.description = "Beautiful garden estate";
+            item2.placeType = "Nature";
+            item2.reason = "Residential area missing from map";
+            item2.coordinates = "13.18965, -59.54321";
+            item2.latitude = 13.18965;
+            item2.longitude = -59.54321;
+            allItems.add(item2);
+
+            RequestItem item3 = new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true,"");
+            item3.locationName = "Larton's Cemetery";
+            item3.description = "Historic burial ground";
+            item3.placeType = "Historical";
+            item3.reason = "Heritage site needs marking";
+            item3.coordinates = "13.15678, -59.61234";
+            item3.latitude = 13.15678;
+            item3.longitude = -59.61234;
+            allItems.add(item3);
         } else {
-            allItems.add(new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,""));
-            allItems.add(new RequestItem("#87","Marton Gardens","User","2026/02/01",true,""));
-            allItems.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,""));
+            RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"");
+            item1.locationName = "The Emancipation Statue";
+            item1.description = "Statue commemorating emancipation";
+            item1.placeType = "Monument";
+            item1.coordinates = "13.11332, -59.59877";
+            item1.latitude = 13.11332;
+            item1.longitude = -59.59877;
+            allItems.add(item1);
+
+            RequestItem item2 = new RequestItem("#87","Marton Gardens","User","2026/02/01",true,"");
+            item2.locationName = "Marton Gardens";
+            item2.description = "Public garden and park";
+            item2.placeType = "Park";
+            item2.coordinates = "13.18965, -59.54321";
+            item2.latitude = 13.18965;
+            item2.longitude = -59.54321;
+            allItems.add(item2);
+
+            RequestItem item3 = new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"");
+            item3.locationName = "St. George Parish Church";
+            item3.description = "Historic church building";
+            item3.placeType = "Religious";
+            item3.coordinates = "13.20123, -59.55123";
+            item3.latitude = 13.20123;
+            item3.longitude = -59.55123;
+            allItems.add(item3);
         }
         countTv.setText(String.valueOf(allItems.size()));
     }
@@ -312,15 +386,53 @@ public class AdminUserRequestsFragment extends Fragment {
                 } else {
                     Fragment detail;
                     if ("location".equals(requestType)) {
-                        detail = AdminLocationRequestDetailsFragment.newInstance(item.docId);
+                        detail = AdminLocationRequestDetailsFragment.newInstance(
+                                item.docId,
+                                item.number,
+                                item.status,
+                                item.date,
+                                item.submittedBy,
+                                item.locationName,
+                                item.coordinates,
+                                item.description,
+                                item.placeType,
+                                item.reason,
+                                item.latitude,
+                                item.longitude
+                        );
                     } else if ("info".equals(requestType)) {
-                        detail = AdminInfoRequestDetailFragment.newInstance(item.docId);
+                        detail = AdminInfoRequestDetailFragment.newInstance(
+                                item.docId,
+                                item.number,
+                                item.status,
+                                item.date,
+                                item.submittedBy,
+                                item.locationName,
+                                item.coordinates,
+                                item.description,
+                                item.placeType,
+                                item.latitude,
+                                item.longitude
+                        );
                     } else {
-                        detail = AdminBizVerificationDetailFragment.newInstance(item.docId);
+                        detail = AdminBizVerificationDetailFragment.newInstance(
+                                item.docId,
+                                item.number,
+                                item.status,
+                                item.date,
+                                item.submittedBy,
+                                item.title,
+                                item.phone,
+                                item.email,
+                                item.address,
+                                item.description,
+                                item.businessType
+                        );
                     }
+
                     requireActivity().getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.admin_fragment_container, detail)
+                            .add(R.id.admin_fragment_container, detail)
                             .addToBackStack(null)
                             .commit();
                 }
@@ -348,14 +460,34 @@ public class AdminUserRequestsFragment extends Fragment {
 
     // ─── Data model ──────────────────────────
     private static class RequestItem {
-        String number, title, submittedBy, date, docId;
+        // Common fields
+        String number, title, submittedBy, date, docId, status;
         boolean read;
+
+        // Location & Info request fields
+        String locationName, description, placeType, reason, coordinates;
+        double latitude, longitude;
+
+        // Business verification fields
+        String phone, email, address, businessType;
 
         RequestItem(String number, String title, String submittedBy,
                     String date, boolean read, String docId) {
             this.number = number; this.title = title;
             this.submittedBy = submittedBy; this.date = date;
             this.read = read; this.docId = docId;
+            this.status = "In Review";
+            this.locationName = "";
+            this.description = "";
+            this.placeType = "";
+            this.reason = "";
+            this.coordinates = "";
+            this.latitude = 0.0;
+            this.longitude = 0.0;
+            this.phone = "";
+            this.email = "";
+            this.address = "";
+            this.businessType = "";
         }
     }
 }

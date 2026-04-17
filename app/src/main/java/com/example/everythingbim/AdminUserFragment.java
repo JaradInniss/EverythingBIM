@@ -126,14 +126,14 @@ public class AdminUserFragment extends Fragment {
         view.findViewById(R.id.general_locreq_view_all).setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.admin_fragment_container,
+                        .add(R.id.admin_fragment_container,
                                 AdminUserRequestsFragment.newInstance("location"))
                         .addToBackStack(null).commit());
 
         view.findViewById(R.id.general_inforeq_view_all).setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.admin_fragment_container,
+                        .add(R.id.admin_fragment_container,
                                 AdminUserRequestsFragment.newInstance("info"))
                         .addToBackStack(null).commit());
 
@@ -238,6 +238,8 @@ public class AdminUserFragment extends Fragment {
     // ────────────────────────────────────────────────────────
 
     private void loadGeneralData() {
+        if (!isAdded()) return;
+
         // Clear lists at the START before any Firestore calls
         allUsers.clear();
         allLocReqs.clear();
@@ -258,40 +260,47 @@ public class AdminUserFragment extends Fragment {
                     }
                 });
 
-        // Location Requests — ordered by createdAt desc, limit 3
+        final int[] locCount = {-1};
+        final int[] infoCount = {-1};
+
+        // Location Requests — ordered by createdAt desc, fetch ALL for accurate count
         db.collection("add_location_requests")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(3)
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
                         allLocReqs.add(buildRequestItem(doc));
                     }
+                    locCount[0] = snap.size();
                     if (allLocReqs.isEmpty()) addLocReqPlaceholders();
                     renderGeneralLocReqs();
-                    updateGeneralCounts(snap.size(), -1);
+                    if (infoCount[0] >= 0) updateGeneralCounts(locCount[0], infoCount[0]);
                 })
                 .addOnFailureListener(e -> {
                     addLocReqPlaceholders();
                     renderGeneralLocReqs();
+                    locCount[0] = 0;
+                    if (infoCount[0] >= 0) updateGeneralCounts(0, infoCount[0]);
                 });
 
-        // Information Requests
+        // Information Requests — ordered by createdAt desc, fetch ALL for accurate count
         db.collection("add_info_requests")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(3)
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
                         allInfoReqs.add(buildRequestItem(doc));
                     }
+                    infoCount[0] = snap.size();
                     if (allInfoReqs.isEmpty()) addInfoReqPlaceholders();
                     renderGeneralInfoReqs();
-                    updateGeneralCounts(-1, snap.size());
+                    if (locCount[0] >= 0) updateGeneralCounts(locCount[0], infoCount[0]);
                 })
                 .addOnFailureListener(e -> {
                     addInfoReqPlaceholders();
                     renderGeneralInfoReqs();
+                    infoCount[0] = 0;
+                    if (locCount[0] >= 0) updateGeneralCounts(locCount[0], 0);
                 });
     }
 
@@ -308,12 +317,16 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void updateGeneralCounts(int locCount, int infoCount) {
+        if (!isAdded()) return;
+        View view = getView();
+        if (view == null) return;
+
         if (locCount >= 0) {
-            TextView tv = requireView().findViewById(R.id.general_locreq_count);
+            TextView tv = view.findViewById(R.id.general_locreq_count);
             if (tv != null) tv.setText(String.valueOf(locCount));
         }
         if (infoCount >= 0) {
-            TextView tv = requireView().findViewById(R.id.general_inforeq_count);
+            TextView tv = view.findViewById(R.id.general_inforeq_count);
             if (tv != null) tv.setText(String.valueOf(infoCount));
         }
     }
@@ -339,10 +352,9 @@ public class AdminUserFragment extends Fragment {
                     }
                 });
 
-        // Business verification requests
+        // Business verification requests — fetch ALL for accurate count
         db.collection("businesses")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(8)
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
@@ -358,8 +370,7 @@ public class AdminUserFragment extends Fragment {
                     }
                     if (allBizVerReqs.isEmpty()) addBizVerReqPlaceholders();
                     renderBusinessVerReqs();
-                    TextView tv = requireView().findViewById(R.id.business_verreq_count);
-                    if (tv != null) tv.setText(String.valueOf(snap.size()));
+                    updateBizVerReqCount(snap.size());
                 })
                 .addOnFailureListener(e -> {
                     addBizVerReqPlaceholders();
@@ -388,30 +399,46 @@ public class AdminUserFragment extends Fragment {
 
     private void renderGeneralLocReqs() {
         generalLocReqContainer.removeAllViews();
+        int count = 0;
         for (RequestItem item : allLocReqs) {
+            if (count >= 3) break; // Only show first 3
             generalLocReqContainer.addView(inflateGeneralRequestRow(item, "location"));
+            count++;
         }
     }
 
     private void renderGeneralInfoReqs() {
         generalInfoReqContainer.removeAllViews();
+        int count = 0;
         for (RequestItem item : allInfoReqs) {
+            if (count >= 3) break; // Only show first 3
             generalInfoReqContainer.addView(inflateGeneralRequestRow(item, "info"));
+            count++;
         }
     }
 
     private void renderBusinessVerReqs() {
         businessVerReqContainer.removeAllViews();
         int displayedCount = 0;
+        int renderedCount = 0;
         for (RequestItem item : allBizVerReqs) {
             // Apply biz read filter
             if (bizFilter == BizFilter.UNREAD && item.read) continue;
             if (bizFilter == BizFilter.READ && !item.read) continue;
+            if (renderedCount >= 3) break; // Only show first 3
             businessVerReqContainer.addView(inflateRequestRow(item));
+            renderedCount++;
             displayedCount++;
         }
-        TextView tv = requireView().findViewById(R.id.business_verreq_count);
-        if (tv != null) tv.setText(String.valueOf(displayedCount));
+        updateBizVerReqCount(allBizVerReqs.size()); // Show total count
+    }
+
+    private void updateBizVerReqCount(int count) {
+        if (!isAdded()) return;
+        View view = getView();
+        if (view == null) return;
+        TextView tv = view.findViewById(R.id.business_verreq_count);
+        if (tv != null) tv.setText(String.valueOf(count));
     }
 
     // Inflates item_admin_user_request.xml for GENERAL requests
@@ -437,10 +464,43 @@ public class AdminUserFragment extends Fragment {
                 : android.graphics.Color.parseColor("#203088"));
 
         viewBtn.setOnClickListener(v -> {
-            Fragment parentFrag = getParentFragment();
-            if (parentFrag instanceof AdminFragment) {
-                ((AdminFragment) parentFrag).navigateToRequestDetail(requestType, item.docId);
+            Fragment detail;
+            if ("location".equals(requestType)) {
+                detail = AdminLocationRequestDetailsFragment.newInstance(
+                        item.docId,
+                        item.number,
+                        item.status,
+                        item.date,
+                        item.submittedBy,
+                        item.locationName,
+                        item.coordinates,
+                        item.description,
+                        item.placeType,
+                        item.reason,
+                        item.latitude,
+                        item.longitude
+                );
+            } else {
+                detail = AdminInfoRequestDetailFragment.newInstance(
+                        item.docId,
+                        item.number,
+                        item.status,
+                        item.date,
+                        item.submittedBy,
+                        item.locationName,
+                        item.coordinates,
+                        item.description,
+                        item.placeType,
+                        item.latitude,
+                        item.longitude
+                );
             }
+
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container, detail)
+                    .addToBackStack(null)
+                    .commit();
         });
 
         return row;
@@ -469,10 +529,25 @@ public class AdminUserFragment extends Fragment {
                 : android.graphics.Color.parseColor("#203088"));
 
         viewBtn.setOnClickListener(v -> {
-            Fragment parentFrag = getParentFragment();
-            if (parentFrag instanceof AdminFragment) {
-                ((AdminFragment) parentFrag).navigateToRequestDetail("business_verification", item.docId);
-            }
+            Fragment detail = AdminBizVerificationDetailFragment.newInstance(
+                    item.docId,
+                    item.number,
+                    item.status,
+                    item.date,
+                    item.submittedBy,
+                    item.title,
+                    item.phone,
+                    item.email,
+                    item.address,
+                    item.description,
+                    item.businessType
+            );
+
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container, detail)
+                    .addToBackStack(null)
+                    .commit();
         });
 
         return row;
@@ -585,7 +660,29 @@ public class AdminUserFragment extends Fragment {
         Timestamp ts = doc.getTimestamp("createdAt");
         String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
                 Locale.getDefault()).format(ts.toDate()) : "";
-        return new RequestItem(number, name, submittedBy, date, read, doc.getId());
+
+        RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
+
+        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+        item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
+        item.description = doc.getString("description") != null ? doc.getString("description") : "";
+        item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
+        item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+
+        Double lat = doc.getDouble("latitude");
+        Double lng = doc.getDouble("longitude");
+        if (lat != null && lng != null) {
+            item.latitude = lat;
+            item.longitude = lng;
+            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+        }
+
+        item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
+        item.email = doc.getString("email") != null ? doc.getString("email") : "";
+        item.address = doc.getString("address") != null ? doc.getString("address") : "";
+        item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+
+        return item;
     }
 
     // ────────────────────────────────────────────────────────
@@ -593,17 +690,24 @@ public class AdminUserFragment extends Fragment {
     // ────────────────────────────────────────────────────────
 
     private static class RequestItem {
-        String number, title, submittedBy, date, docId;
+        String number, title, submittedBy, date, docId, status;
         boolean read;
+        String locationName, description, placeType, reason, coordinates;
+        double latitude, longitude;
+        String phone, email, address, businessType;
 
         RequestItem(String number, String title, String submittedBy,
                     String date, boolean read, String docId) {
-            this.number      = number;
-            this.title       = title;
-            this.submittedBy = submittedBy;
-            this.date        = date;
-            this.read        = read;
-            this.docId       = docId;
+            this.number = number; this.title = title;
+            this.submittedBy = submittedBy; this.date = date;
+            this.read = read; this.docId = docId;
+            this.status = "In Review";
+            this.locationName = ""; this.description = "";
+            this.placeType = ""; this.reason = "";
+            this.coordinates = "";
+            this.latitude = 0.0; this.longitude = 0.0;
+            this.phone = ""; this.email = "";
+            this.address = ""; this.businessType = "";
         }
     }
 
