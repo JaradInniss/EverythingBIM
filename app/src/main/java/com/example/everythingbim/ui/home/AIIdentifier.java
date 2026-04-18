@@ -90,6 +90,28 @@ public class AIIdentifier extends AppCompatActivity {
         viewModel.getUiState().observe(this, this::renderState);
     }
 
+    private void applyUnknownCopy() {
+        binding.negativePrimaryMessageTv.setText(
+                "Unfortunately, the subject of the image you uploaded could not be recognized.");
+        binding.negativeRetryHintTv.setText(
+                "Try uploading a different image of the subject in:\n1. At a different angle\n2. In different lighting");
+        binding.negativeDatasetHintTv.setText(
+                "If you have tried this already and the subject continues to be unrecognizable, it is likely that the subject is not in the Everything BIM dataset.");
+        binding.negativeSendPromptTv.setText(
+                "In this case would you be willing to send the image(s) to be added to our dataset so that we may improve our image recognition capabilities?");
+    }
+
+    private void applyUncertainCopy(@NonNull HomeUiState state) {
+        binding.negativePrimaryMessageTv.setText(
+                state.getMessage() != null ? state.getMessage() : "Possible Parliament match");
+        binding.negativeRetryHintTv.setText(
+                state.getDetail() != null ? state.getDetail() : "");
+        binding.negativeDatasetHintTv.setText(
+                "Try a clearer, front-facing photo before treating this as a confirmed match.");
+        binding.negativeSendPromptTv.setText(
+                "You can keep testing with more angles while we continue improving the model.");
+    }
+
     private void renderState(@NonNull HomeUiState state) {
         TransitionManager.beginDelayedTransition(binding.analysisResponseContainer, new AutoTransition());
 
@@ -100,23 +122,38 @@ public class AIIdentifier extends AppCompatActivity {
                 binding.identifierRelatedInfoTv.setText(state.getMessage() != null ? state.getMessage() : "");
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.GONE);
+                binding.negativeConfidenceRow.setVisibility(View.GONE);
                 break;
             case RESULT:
                 if (state.getLandmark() != null) {
                     binding.identifierResultTv.setText(state.getLandmark().getDisplayName());
                     binding.identifierConfidenceScoreTv.setText(
                             state.getConfidenceText() != null ? state.getConfidenceText() : "--");
-                    binding.identifierRelatedInfoTv.setText(state.getLandmark().getDescription());
+                    binding.identifierRelatedInfoTv.setText(
+                            state.getDetail() != null ? state.getDetail() : state.getLandmark().getDescription());
                     binding.positiveResultContainer.setVisibility(View.VISIBLE);
                     binding.negativeResultContainer.setVisibility(View.GONE);
+                    binding.negativeConfidenceRow.setVisibility(View.GONE);
                 }
+                break;
+            case UNCERTAIN:
+                binding.identifierResultTv.setText("Uncertain Match");
+                binding.identifierConfidenceScoreTv.setText(
+                        state.getConfidenceText() != null ? state.getConfidenceText() : "--");
+                applyUncertainCopy(state);
+                binding.positiveResultContainer.setVisibility(View.GONE);
+                binding.negativeResultContainer.setVisibility(View.VISIBLE);
+                binding.negativeConfidenceRow.setVisibility(View.VISIBLE);
+                binding.negativeConfidenceScoreTv.setText(
+                        state.getConfidenceText() != null ? state.getConfidenceText() : "--");
                 break;
             case UNKNOWN:
                 binding.identifierResultTv.setText("Unknown Location");
                 binding.identifierConfidenceScoreTv.setText("--");
-                binding.identifierRelatedInfoTv.setText(state.getDetail() != null ? state.getDetail() : "");
+                applyUnknownCopy();
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
+                binding.negativeConfidenceRow.setVisibility(View.GONE);
                 break;
             case ERROR:
                 String errorMessage = "Error: " + (state.getMessage() != null ? state.getMessage() : "Unknown");
@@ -124,8 +161,10 @@ public class AIIdentifier extends AppCompatActivity {
                 binding.identifierConfidenceScoreTv.setText("--");
                 binding.identifierRelatedInfoTv.setText(
                         state.getDetail() != null ? state.getDetail() : "Unable to run offline identification.");
+                applyUnknownCopy();
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
+                binding.negativeConfidenceRow.setVisibility(View.GONE);
                 break;
             default:
                 break;

@@ -11,6 +11,7 @@ public class HomeUiState {
         PREVIEW_READY,
         ANALYZING,
         RESULT,
+        UNCERTAIN,
         UNKNOWN,
         ERROR
     }
@@ -62,6 +63,14 @@ public class HomeUiState {
     @NonNull
     public static HomeUiState unknown(@NonNull SelectedImage selectedImage, @NonNull String detail) {
         return new HomeUiState(Status.UNKNOWN, selectedImage, null, null, "No landmark match found", detail);
+    }
+
+    @NonNull
+    public static HomeUiState uncertain(@NonNull SelectedImage selectedImage,
+                                        @NonNull String confidenceText,
+                                        @NonNull String message,
+                                        @NonNull String detail) {
+        return new HomeUiState(Status.UNCERTAIN, selectedImage, null, confidenceText, message, detail);
     }
 
     @NonNull
