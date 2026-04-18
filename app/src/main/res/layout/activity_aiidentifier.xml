@@ -238,7 +238,33 @@
             android:layout_marginTop="5dp"
             android:visibility="gone">
 
+            <LinearLayout
+                android:id="@+id/negative_confidence_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Possible Match:"
+                    style="@style/grey_medium_txt_style"/>
+
+                <TextView
+                    android:id="@+id/negative_confidence_score_tv"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="5dp"
+                    android:text="--"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/roboto_bold"
+                    style="@style/grey_medium_txt_style"/>
+            </LinearLayout>
+
             <TextView
+                android:id="@+id/negative_primary_message_tv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Unfortunately, the subject of the image you uploaded could not be recognized."
@@ -248,6 +274,7 @@
                 style="@style/grey_medium_txt_style"/>
 
             <TextView
+                android:id="@+id/negative_retry_hint_tv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Try uploading a different image of the subject in:\n1. At a different angle\n2. In different lighting"
@@ -256,6 +283,7 @@
                 style="@style/black_small_txt_style"/>
 
             <TextView
+                android:id="@+id/negative_dataset_hint_tv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -265,6 +293,7 @@
                 style="@style/black_small_txt_style"/>
 
             <TextView
+                android:id="@+id/negative_send_prompt_tv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
