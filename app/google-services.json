@@ -22,6 +22,22 @@
           }
         },
         {
+          "client_id": "767965773842-sak62bvscujtlf7q7kg2l1b79sr6nmhc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.everythingbim",
+            "certificate_hash": "98cbbf53de54a150f8c2560133c029e158be8a68"
+          }
+        },
+        {
+          "client_id": "767965773842-vpi9nqkbddo7tqr66tplc8htn741pcj6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.everythingbim",
+            "certificate_hash": "dbbcf353efc8a21a04ac4045515e84d5018da2a6"
+          }
+        },
+        {
           "client_id": "767965773842-jt3h05f4kl6vbd3kit7il7045i6o315f.apps.googleusercontent.com",
           "client_type": 3
         }
