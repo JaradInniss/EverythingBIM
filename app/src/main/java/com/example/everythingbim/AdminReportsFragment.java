@@ -136,13 +136,6 @@ public class AdminReportsFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        isLoadingReports = false;
-        currentLoadId++; // Invalidate any pending callbacks
-    }
-
     // Filter card toggle
     private void toggleFilterCard(boolean show) {
         filterCard.setVisibility(show ? View.VISIBLE : View.GONE);
@@ -197,86 +190,85 @@ public class AdminReportsFragment extends Fragment {
         }
     }
 
-    // Load reports from Firestore
+    // Load reports from Firestore - uses snapshot listener for real-time updates
     private void loadReports() {
-        if (isLoadingReports) return;
-        isLoadingReports = true;
+        // Remove previous listener before adding new one to prevent duplicates
+        if (listenerRegistration != null) {
+            listenerRegistration.remove();
+        }
 
-        final int thisLoadId = ++currentLoadId; // Capture ID for this load
-
-        // Use Source.SERVER to bypass Firestore cache and get fresh data
-        db.collection("reports")
+        listenerRegistration = db.collection("reports")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get(com.google.firebase.firestore.Source.SERVER)
-                .addOnSuccessListener(snapshot -> {
-                    // Ignore stale callbacks from old loads
-                    if (thisLoadId != currentLoadId) {
-                        isLoadingReports = false;
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        // Show placeholder on error
+                        allReports.clear();
+                        allReports.add(new Report("#94","Post - Hate Speech",   "Post","Moderate","2026/02/11",false,"ph_report_94","User12342","This is spam content","","In Review"));
+                        allReports.add(new Report("#93","Post - Spam",          "Post","Minor",   "2026/02/11",false,"ph_report_93","User56789","Fake engagement post","","In Review"));
+                        allReports.add(new Report("#92","Account - Hacked Account","Account","Major","2026/02/11",false,"ph_report_92","HackedUser","Account was compromised","","In Review"));
+                        allReports.add(new Report("#91","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_91","User11111","Another spam post","","Completed"));
+                        applyFilters();
                         return;
                     }
 
-                    allReports.clear();
+                    if (snapshot == null || snapshot.isEmpty()) {
+                        // If Firestore is empty, show placeholder data
+                        allReports.clear();
+                        allReports.add(new Report("#94","Post - Hate Speech",   "Post","Moderate","2026/02/11",false,"ph_report_94","User12342","This is spam content","","In Review"));
+                        allReports.add(new Report("#93","Post - Spam",          "Post","Minor",   "2026/02/11",false,"ph_report_93","User56789","Fake engagement post","","In Review"));
+                        allReports.add(new Report("#92","Account - Hacked Account","Account","Major","2026/02/11",false,"ph_report_92","HackedUser","Account was compromised","","In Review"));
+                        allReports.add(new Report("#91","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_91","User11111","Another spam post","","Completed"));
+                        allReports.add(new Report("#90","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_90","User22222","More spam content","","Completed"));
+                        allReports.add(new Report("#89","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_89","User33333","Even more spam","","Completed"));
+                        allReports.add(new Report("#88","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_88","User44444","Spam again","","Completed"));
+                        allReports.add(new Report("#87","Post - Spam",          "Post","Minor",   "2026/02/09",true,"ph_report_87","User55555","Yet another spam","","Completed"));
+                    } else {
+                        allReports.clear();
+                        for (QueryDocumentSnapshot doc : snapshot) {
+                            String id       = doc.getId().substring(0, 3).toUpperCase();
+                            String title    = doc.getString("title");
+                            String type     = doc.getString("type");
+                            String severity = doc.getString("severity");
+                            String docId    = doc.getId();
+                            boolean read    = Boolean.TRUE.equals(doc.getBoolean("read"));
 
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        String id       = doc.getId().substring(0, 3).toUpperCase();
-                        String title    = doc.getString("title");
-                        String type     = doc.getString("type");
-                        String severity = doc.getString("severity");
-                        String docId    = doc.getId();
-                        boolean read    = Boolean.TRUE.equals(doc.getBoolean("read"));
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                            String date = ts != null
+                                    ? new java.text.SimpleDateFormat("yyyy/MM/dd",
+                                    java.util.Locale.getDefault()).format(ts.toDate())
+                                    : "";
 
-                        com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
-                        String date = ts != null
-                                ? new java.text.SimpleDateFormat("yyyy/MM/dd",
-                                java.util.Locale.getDefault()).format(ts.toDate())
-                                : "";
+                            String number = doc.contains("number")
+                                    ? "#" + doc.getLong("number")
+                                    : "#" + id;
 
-                        String number = doc.contains("number")
-                                ? "#" + doc.getLong("number")
-                                : "#" + id;
-
-                        allReports.add(new Report(
-                                number,
-                                title   != null ? title    : "Report",
-                                type    != null ? type     : "Post",
-                                severity != null ? severity : "Minor",
-                                date,
-                                read,
-                                doc.getId()
-                        ));
-                    }
-
-                    // If Firestore is empty, show placeholder data
-                    // Note: Using id as unique docId so mark-as-read works correctly
-                    if (allReports.isEmpty()) {
-                        allReports.add(new Report("#94","Post - Hate Speech",   "Post","Moderate","2026/02/11",false,"#94","User12342","This is spam content","","In Review"));
-                        allReports.add(new Report("#93","Post - Spam",          "Post","Minor",   "2026/02/11",false,"#93","User56789","Fake engagement post","","In Review"));
-                        allReports.add(new Report("#92","Account - Hacked Account","Account","Major","2026/02/11",false,"#92","HackedUser","Account was compromised","","In Review"));
-                        allReports.add(new Report("#91","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#91","User11111","Another spam post","","Completed"));
-                        allReports.add(new Report("#90","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#90","User22222","More spam content","","Completed"));
-                        allReports.add(new Report("#89","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#89","User33333","Even more spam","","Completed"));
-                        allReports.add(new Report("#88","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#88","User44444","Spam again","","Completed"));
-                        allReports.add(new Report("#87","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#87","User55555","Yet another spam","","Completed"));
+                            allReports.add(new Report(
+                                    number,
+                                    title   != null ? title    : "Report",
+                                    type    != null ? type     : "Post",
+                                    severity != null ? severity : "Minor",
+                                    date,
+                                    read,
+                                    doc.getId()
+                            ));
+                        }
                     }
 
                     applyFilters();
-                    isLoadingReports = false;
-                })
-                .addOnFailureListener(e -> {
-                    // Ignore stale callbacks from old loads
-                    if (thisLoadId != currentLoadId) {
-                        isLoadingReports = false;
-                        return;
-                    }
-                    // Show placeholder on error
-                    allReports.clear();
-                    allReports.add(new Report("#94","Post - Hate Speech",   "Post","Moderate","2026/02/11",false,"#94","User12342","This is spam content","","In Review"));
-                    allReports.add(new Report("#93","Post - Spam",          "Post","Minor",   "2026/02/11",false,"#93","User56789","Fake engagement post","","In Review"));
-                    allReports.add(new Report("#92","Account - Hacked Account","Account","Major","2026/02/11",false,"#92","HackedUser","Account was compromised","","In Review"));
-                    allReports.add(new Report("#91","Post - Spam",          "Post","Minor",   "2026/02/09",true,"#91","User11111","Another spam post","","Completed"));
-                    applyFilters();
-                    isLoadingReports = false;
                 });
+    }
+
+    // Listener registration for cleanup
+    private com.google.firebase.firestore.ListenerRegistration listenerRegistration;
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (listenerRegistration != null) {
+            listenerRegistration.remove();
+            listenerRegistration = null;
+        }
+        currentLoadId++; // Invalidate any pending callbacks
     }
 
     // Report data model

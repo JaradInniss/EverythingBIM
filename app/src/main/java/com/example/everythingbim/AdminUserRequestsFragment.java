@@ -130,101 +130,98 @@ public class AdminUserRequestsFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        isLoadingRequests = false;
-        currentLoadId++;
-    }
-
     // ────────────────────────────────────────────────────────
-    // LOAD DATA FROM FIRESTORE
+    // LOAD DATA FROM FIRESTORE - uses snapshot listener for real-time updates
     // ────────────────────────────────────────────────────────
 
     private void loadData() {
-        if (isLoadingRequests) return;
-        isLoadingRequests = true;
-
-        final int thisLoadId = ++currentLoadId;
-
-        // Clear items at the START to prevent any duplication
-        allItems.clear();
+        // Remove previous listener before adding new one to prevent duplicates
+        if (listenerRegistration != null) {
+            listenerRegistration.remove();
+        }
 
         String collection = requestType.equals("location")
                 ? "add_location_requests"
                 : "add_info_requests";
 
-        db.collection(collection)
+        listenerRegistration = db.collection(collection)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    if (thisLoadId != currentLoadId) {
-                        isLoadingRequests = false;
+                .addSnapshotListener((snap, error) -> {
+                    if (error != null) {
+                        addPlaceholders();
+                        applyFilters();
                         return;
                     }
 
-                    for (QueryDocumentSnapshot doc : snap) {
-                        String number = doc.contains("number")
-                                ? "#" + doc.getLong("number")
-                                : "#" + doc.getId().substring(0, 3).toUpperCase();
-                        String name = doc.getString("locationName") != null
-                                ? doc.getString("locationName")
-                                : doc.getString("title") != null
-                                ? doc.getString("title") : "Request";
-                        String submittedBy = doc.getString("submittedByUsername") != null
-                                ? doc.getString("submittedByUsername") : "User";
-                        boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
-                        Timestamp ts = doc.getTimestamp("createdAt");
-                        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
-                                Locale.getDefault()).format(ts.toDate()) : "";
+                    if (snap == null || snap.isEmpty()) {
+                        addPlaceholders();
+                    } else {
+                        allItems.clear();
+                        for (QueryDocumentSnapshot doc : snap) {
+                            String number = doc.contains("number")
+                                    ? "#" + doc.getLong("number")
+                                    : "#" + doc.getId().substring(0, 3).toUpperCase();
+                            String name = doc.getString("locationName") != null
+                                    ? doc.getString("locationName")
+                                    : doc.getString("title") != null
+                                    ? doc.getString("title") : "Request";
+                            String submittedBy = doc.getString("submittedByUsername") != null
+                                    ? doc.getString("submittedByUsername") : "User";
+                            boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
+                            Timestamp ts = doc.getTimestamp("createdAt");
+                            String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
+                                    Locale.getDefault()).format(ts.toDate()) : "";
 
-                        RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
+                            RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
 
-                        // Populate additional fields
-                        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
-                        item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
-                        item.description = doc.getString("description") != null ? doc.getString("description") : "";
-                        item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
-                        item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+                            // Populate additional fields
+                            item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+                            item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
+                            item.description = doc.getString("description") != null ? doc.getString("description") : "";
+                            item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
+                            item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
 
-                        Double lat = doc.getDouble("latitude");
-                        Double lng = doc.getDouble("longitude");
-                        if (lat != null && lng != null) {
-                            item.latitude = lat;
-                            item.longitude = lng;
-                            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+                            Double lat = doc.getDouble("latitude");
+                            Double lng = doc.getDouble("longitude");
+                            if (lat != null && lng != null) {
+                                item.latitude = lat;
+                                item.longitude = lng;
+                                item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+                            }
+
+                            // Business verification fields
+                            item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
+                            item.email = doc.getString("email") != null ? doc.getString("email") : "";
+                            item.address = doc.getString("address") != null ? doc.getString("address") : "";
+                            item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+                            if (item.businessType.isEmpty()) {
+                                item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
+                            }
+
+                            allItems.add(item);
                         }
-
-                        // Business verification fields
-                        item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
-                        item.email = doc.getString("email") != null ? doc.getString("email") : "";
-                        item.address = doc.getString("address") != null ? doc.getString("address") : "";
-                        item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
-                        if (item.businessType.isEmpty()) {
-                            item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
-                        }
-
-                        allItems.add(item);
                     }
-                    if (allItems.isEmpty()) addPlaceholders();
                     applyFilters();
                     countTv.setText(String.valueOf(allItems.size()));
-                    isLoadingRequests = false;
-                })
-                .addOnFailureListener(e -> {
-                    if (thisLoadId != currentLoadId) {
-                        isLoadingRequests = false;
-                        return;
-                    }
-                    addPlaceholders();
-                    applyFilters();
-                    isLoadingRequests = false;
                 });
+    }
+
+    // Listener registration for cleanup
+    private com.google.firebase.firestore.ListenerRegistration listenerRegistration;
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (listenerRegistration != null) {
+            listenerRegistration.remove();
+            listenerRegistration = null;
+        }
+        currentLoadId++;
     }
 
     private void addPlaceholders() {
         if (requestType.equals("location")) {
-            RequestItem item1 = new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"");
+            RequestItem item1 = new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"ph_loc_201");
             item1.locationName = "Hackerton's Pub";
             item1.description = "Historic bar located in Bridgetown";
             item1.placeType = "Entertainment";
@@ -234,7 +231,7 @@ public class AdminUserRequestsFragment extends Fragment {
             item1.longitude = -59.59877;
             allItems.add(item1);
 
-            RequestItem item2 = new RequestItem("#200","Marton Gardens","User","2026/02/01",false,"");
+            RequestItem item2 = new RequestItem("#200","Marton Gardens","User","2026/02/01",false,"ph_loc_200");
             item2.locationName = "Marton Gardens";
             item2.description = "Beautiful garden estate";
             item2.placeType = "Nature";
@@ -244,7 +241,7 @@ public class AdminUserRequestsFragment extends Fragment {
             item2.longitude = -59.54321;
             allItems.add(item2);
 
-            RequestItem item3 = new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true,"");
+            RequestItem item3 = new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true,"ph_loc_199");
             item3.locationName = "Larton's Cemetery";
             item3.description = "Historic burial ground";
             item3.placeType = "Historical";
@@ -254,7 +251,7 @@ public class AdminUserRequestsFragment extends Fragment {
             item3.longitude = -59.61234;
             allItems.add(item3);
         } else {
-            RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"");
+            RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
             item1.locationName = "The Emancipation Statue";
             item1.description = "Statue commemorating emancipation";
             item1.placeType = "Monument";
@@ -263,7 +260,7 @@ public class AdminUserRequestsFragment extends Fragment {
             item1.longitude = -59.59877;
             allItems.add(item1);
 
-            RequestItem item2 = new RequestItem("#87","Marton Gardens","User","2026/02/01",true,"");
+            RequestItem item2 = new RequestItem("#87","Marton Gardens","User","2026/02/01",true,"ph_info_87");
             item2.locationName = "Marton Gardens";
             item2.description = "Public garden and park";
             item2.placeType = "Park";
@@ -272,7 +269,7 @@ public class AdminUserRequestsFragment extends Fragment {
             item2.longitude = -59.54321;
             allItems.add(item2);
 
-            RequestItem item3 = new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"");
+            RequestItem item3 = new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86");
             item3.locationName = "St. George Parish Church";
             item3.description = "Historic church building";
             item3.placeType = "Religious";

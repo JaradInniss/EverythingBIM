@@ -53,6 +53,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     private String docId = "";
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
+    private ActivityLogger activityLogger;
 
     // ─── Cached data from Bundle ─────────────
     private String cachedNumber = "";
@@ -130,6 +131,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                 container, false);
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        activityLogger = new ActivityLogger();
 
         // Extract Bundle data first
         if (getArguments() != null) {
@@ -188,6 +190,8 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         // Always try to fetch fresh data from Firestore as fallback
         if (!docId.isEmpty()) {
             loadData();
+            // Log activity - admin viewed this business request
+            activityLogger.logView(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
         }
 
         return view;
@@ -240,25 +244,42 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     long number = doc.contains("requestNumber")
                             ? doc.getLong("requestNumber") : 0;
                     numberTv.setText("Request #" + number);
+                    cachedNumber = String.valueOf(number);
 
                     String status = doc.getString("verificationStatus");
                     if (status == null) status = "In Review";
                     statusTv.setText("Status: " + status);
+                    cachedStatus = status;
 
                     Timestamp ts = doc.getTimestamp("createdAt");
-                    if (ts != null) dateTv.setText("Submitted: " +
-                            fmt(ts));
+                    if (ts != null) {
+                        dateTv.setText("Submitted: " + fmt(ts));
+                        cachedDate = fmt(ts);
+                    }
 
                     String submittedBy = doc.getString("username");
                     submittedByTv.setText("Submitted By: BusinessUser "
                             + (submittedBy != null ? submittedBy : ""));
+                    cachedSubmittedBy = submittedBy != null ? submittedBy : "";
 
-                    nameTv.setText(nvl(doc.getString("BusinessName")));
-                    phoneTv.setText(nvl(doc.getString("phone")));
-                    emailTv.setText(nvl(doc.getString("email")));
-                    addressTv.setText(nvl(doc.getString("address")));
-                    descriptionTv.setText(nvl(doc.getString("description")));
-                    typeTv.setText(nvl(doc.getString("businessType")));
+                    String businessName = nvl(doc.getString("BusinessName"));
+                    nameTv.setText(businessName);
+                    cachedName = businessName;
+
+                    cachedPhone = nvl(doc.getString("phone"));
+                    phoneTv.setText(cachedPhone);
+
+                    cachedEmail = nvl(doc.getString("email"));
+                    emailTv.setText(cachedEmail);
+
+                    cachedAddress = nvl(doc.getString("address"));
+                    addressTv.setText(cachedAddress);
+
+                    cachedDescription = nvl(doc.getString("description"));
+                    descriptionTv.setText(cachedDescription);
+
+                    cachedType = nvl(doc.getString("businessType"));
+                    typeTv.setText(cachedType);
 
                     // Business images
                     List<String> imgUrls = (List<String>) doc.get("imageUrls");
@@ -344,6 +365,8 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         "resolvedAt",         Timestamp.now(),
                         "resolvedBy",         adminId)
                 .addOnSuccessListener(v -> {
+                    // Log approval activity
+                    activityLogger.logApproval(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
                     Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
                     applyAcceptedState(today, "Administrator");
                 })
@@ -367,6 +390,8 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         "resolvedBy",         adminId,
                         "rejectionReason",    reason)
                 .addOnSuccessListener(v -> {
+                    // Log rejection activity
+                    activityLogger.logRejection(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
                     Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
                     applyRejectedState(today, "Administrator", reason);
                 })

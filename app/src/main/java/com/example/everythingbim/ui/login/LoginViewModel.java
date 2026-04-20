@@ -105,32 +105,29 @@ public class LoginViewModel extends ViewModel {
         if (!isFormValid(email, password)) {
             return;
         }
-        if (selectedUserType.getValue() == UserType.ADMIN) {
-            navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
-        } else {
-            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
-        }
-    }
 
-    //        isLoading.setValue(true);
-//        errorFields.setValue(null);
-//
-//        auth.signInWithEmailAndPassword(email, password)
-//                .addOnCompleteListener(task -> {
-//                    isLoading.setValue(false);
-//                    if (task.isSuccessful()) {
-//                        FirebaseUser user = auth.getCurrentUser();
-//                        if (user != null) {
-//                            fetchUserTypeAndNavigate(user.getUid());
-//                        } else {
-//                            setErrorField(R.id.login_error, "Authentication Error");
-//                        }
-//                    } else {
-//                        String error = task.getException() != null ?
-//                                task.getException().getMessage() : "Authentication failed";
-//                        setErrorField(R.id.login_error, error);
-//                    }
-//                });
+        isLoading.setValue(true);
+        errorFields.setValue(null);
+
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    isLoading.setValue(false);
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            Log.d("LoginViewModel", "Firebase auth success for: " + user.getEmail());
+                            fetchUserTypeAndNavigate(user.getUid());
+                        } else {
+                            setErrorField(R.id.login_error, "Authentication Error");
+                        }
+                    } else {
+                        String error = task.getException() != null ?
+                                task.getException().getMessage() : "Authentication failed";
+                        Log.e("LoginViewModel", "Firebase auth failed: " + error);
+                        setErrorField(R.id.login_error, error);
+                    }
+                });
+    }
 
     private void fetchUserTypeAndNavigate(String userId) {
         isLoading.setValue(true);
