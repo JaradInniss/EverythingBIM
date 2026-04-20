@@ -56,6 +56,8 @@ dependencies {
     implementation libs.lifecycle.livedata
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
+    implementation 'com.google.firebase:firebase-appcheck-debug'
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
     implementation libs.firebase.firestore
     implementation libs.firebase.storage
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
