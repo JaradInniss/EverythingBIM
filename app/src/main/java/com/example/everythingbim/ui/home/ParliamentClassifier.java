@@ -19,6 +19,11 @@ public class ParliamentClassifier implements AutoCloseable {
     private static final int INPUT_SIZE = 224;
     private static final int CHANNEL_COUNT = 3;
     private static final float PARLIAMENT_THRESHOLD = 0.80f;
+    private static final float OTHER_THRESHOLD = 0.45f;
+
+    public static final String LABEL_PARLIAMENT = "parliament";
+    public static final String LABEL_OTHER = "other";
+    public static final String LABEL_UNCERTAIN = "uncertain";
 
     private final Interpreter interpreter;
 
@@ -48,7 +53,14 @@ public class ParliamentClassifier implements AutoCloseable {
 
         float parliamentProbability = Math.max(0f, Math.min(1f, output[0][0]));
         float otherProbability = 1f - parliamentProbability;
-        String label = parliamentProbability >= PARLIAMENT_THRESHOLD ? "parliament" : "other";
+        String label;
+        if (parliamentProbability >= PARLIAMENT_THRESHOLD) {
+            label = LABEL_PARLIAMENT;
+        } else if (parliamentProbability <= OTHER_THRESHOLD) {
+            label = LABEL_OTHER;
+        } else {
+            label = LABEL_UNCERTAIN;
+        }
         return new Result(label, parliamentProbability, otherProbability);
     }
 

@@ -78,27 +78,32 @@ public class AIIdentifierViewModel extends AndroidViewModel {
             return;
         }
 
-        if ("parliament".equalsIgnoreCase(prediction.getLabel())) {
+        if (ParliamentClassifier.LABEL_PARLIAMENT.equalsIgnoreCase(prediction.getLabel())) {
             DemoLandmark landmark = landmarkRepository.findByIdOrToken("parliament");
             if (landmark != null) {
                 String confidenceText = formatConfidence(prediction.getParliamentProbability());
-                String detail = landmark.getDescription()
-                        + "\n\nDebug:"
-                        + "\nRaw parliament probability: " + formatProbability(prediction.getParliamentProbability())
-                        + "\nRaw other probability: " + formatProbability(prediction.getOtherProbability());
-                uiState.postValue(HomeUiState.result(selectedImage, landmark, confidenceText, detail));
+                uiState.postValue(HomeUiState.result(selectedImage, landmark, confidenceText, landmark.getDescription()));
                 return;
             }
             uiState.postValue(HomeUiState.error(selectedImage, "Parliament metadata is unavailable."));
             return;
         }
 
+        if (ParliamentClassifier.LABEL_UNCERTAIN.equalsIgnoreCase(prediction.getLabel())) {
+            uiState.postValue(HomeUiState.uncertain(
+                    selectedImage,
+                    formatConfidence(prediction.getParliamentProbability()),
+                    "Possible Parliament match",
+                    "The model sees some Parliament-like features, but this image is still too close to call confidently."
+                            + "\nTry a clearer, front-facing photo with better lighting."
+                            + "\nPossible Parliament match: " + formatConfidence(prediction.getParliamentProbability())
+            ));
+            return;
+        }
+
         uiState.postValue(HomeUiState.unknown(
                 selectedImage,
                 "This image was not identified as the Barbados Parliament Buildings."
-                        + "\n\nDebug:"
-                        + "\nRaw parliament probability: " + formatProbability(prediction.getParliamentProbability())
-                        + "\nRaw other probability: " + formatProbability(prediction.getOtherProbability())
         ));
     }
 
@@ -127,11 +132,6 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     @NonNull
     private String formatConfidence(float probability) {
         return String.format(java.util.Locale.US, "%.1f%%", probability * 100f);
-    }
-
-    @NonNull
-    private String formatProbability(float probability) {
-        return String.format(java.util.Locale.US, "%.4f", probability);
     }
 
     @Override
