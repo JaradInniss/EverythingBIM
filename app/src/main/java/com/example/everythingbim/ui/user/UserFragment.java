@@ -98,24 +98,24 @@ public class UserFragment extends Fragment {
                 navigateTo(new ViewCompletedLocationRequestFragment()));
 
         view.findViewById(R.id.inforeq_new_btn).setOnClickListener(v -> {
-            // TODO: navigate to Add Information Request screen
+                navigateTo(new AddInformationRequestFragment());
         });
 
         view.findViewById(R.id.inforeq_view_btn).setOnClickListener(v -> {
-            // TODO: navigate to View Information Request screen
+                navigateTo(new ViewAddInformationRequestFragment());
         });
 
         view.findViewById(R.id.inforeq_view_btn_2).setOnClickListener(v -> {
-            // TODO: navigate to View Completed Information Request screen
+                navigateTo(new ViewCompletedInformationRequestFragment());
         });
 
         // ── Business User navigation buttons ─────
         view.findViewById(R.id.accver_view_btn).setOnClickListener(v -> {
-            // TODO: navigate to View Account Verification screen
+                navigateTo(new ViewAccountVerificationRequestFragment());
         });
 
         view.findViewById(R.id.accver_view_btn_2).setOnClickListener(v -> {
-            // TODO: navigate to View Completed Account Verification screen
+                navigateTo(new ViewCompletedAccountVerificationRequestFragment());
         });
 
         view.findViewById(R.id.addloc_view_btn).setOnClickListener(v -> {
@@ -126,6 +126,9 @@ public class UserFragment extends Fragment {
             // TODO: navigate to View Completed Add Location to Address screen
         });
 
+        view.findViewById(R.id.business_add_field_btn).setOnClickListener(v -> {
+            navigateTo(new AddBusinessLocationRequestFragment());
+        });
         // ── General User edit field toggles ──────
         setupEditToggle(view,
                 R.id.general_user_edit_username_et,
