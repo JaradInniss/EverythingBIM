@@ -11,342 +11,195 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/return_bttn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="26dp"
-                android:src="@drawable/ic_caret_left"
-                app:tint="@color/white"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:text="Posts"
-                style="@style/subheading_txt_style"/>
-
-        </LinearLayout>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
-
-            <!-- Create Post Heading -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="Create Post"
-                style="@style/heading_txt_style"/>
-
-            <!-- Submit Button -->
-            <LinearLayout
-                android:id="@+id/prev_bttn2"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_alignParentEnd="true"
-                android:layout_gravity="center_horizontal"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp">
-
-                <ImageView
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:layout_marginRight="8dp"
-                    android:src="@drawable/ic_plus"
-                    app:tint="@color/white" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_medium"
-                    android:text="Share"
-                    android:textColor="@color/white"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-        </RelativeLayout>
-
-
-        <!-- Searchbar and dropdown-->
+        <!-- ====== Posts Header Section ====== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-
-            <!-- Searchbar -->
-            <LinearLayout
-                android:id="@+id/search_bar"
-                android:layout_width="match_parent"
-                android:layout_height="35dp"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/bg_rectangle_white"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingVertical="5dp">
-
-                <!-- Location Field -->
-                <EditText
-                    android:id="@+id/search_et"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="1"
-                    android:background="@null"
-                    android:fontFamily="@font/roboto_medium"
-                    android:hint="Location"
-                    android:inputType="text"
-                    android:singleLine="true"
-                    android:textSize="13sp"
-                    android:textColor="@color/black"/>
-
-                <!-- Search Button -->
-                <ImageView
-                    android:id="@+id/search_bttn"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginRight="10dp"
-                    android:src="@drawable/ic_magnifying_glass"
-                    app:tint="@color/black" />
-            </LinearLayout>
-
-            <ListView
-                android:id="@+id/search_results_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"/>
-
-        </LinearLayout>
-
-        <!-- Image Field -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-
-            <!-- Image Field Heading -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Image:"
-                style="@style/subheading_txt_style"/>
-
-            <!-- Upload Options -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingVertical="10dp"
-                android:gravity="center_horizontal"
-                android:orientation="horizontal">
-
-                <!-- Camera Option -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal"
-                    android:layout_marginRight="2dp"
-                    android:gravity="center_horizontal"
-                    android:padding="10dp"
-                    android:background="@drawable/bg_rectangle_prussian_blue">
-
-                    <ImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_marginRight="8dp"
-                        android:src="@drawable/ic_camera"
-                        app:tint="@color/white"/>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Take Photo"
-                            style="@style/white_small_txt_style"
-                            android:textAlignment="center"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:fontFamily="@font/roboto_light"
-                            android:text="Use device camera"
-                            android:textColor="@color/white"
-                            android:textSize="10sp"
-                            android:textAlignment="center"/>
-
-                    </LinearLayout>
-
-
-                </LinearLayout>
-
-                <!-- Gallery Option -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal"
-                    android:layout_marginLeft="2dp"
-                    android:gravity="center_horizontal"
-                    android:padding="10dp"
-                    android:background="@drawable/bg_rectangle_prussian_blue">
-
-                    <ImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_marginRight="8dp"
-                        android:src="@drawable/ic_images"
-                        app:tint="@color/white"/>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Gallery"
-                            style="@style/white_small_txt_style"
-                            android:textAlignment="center"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:fontFamily="@font/roboto_light"
-                            android:text="Choose from files"
-                            android:textColor="@color/white"
-                            android:textSize="10sp"
-                            android:textAlignment="center"/>
-
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
-        </LinearLayout>
-
-
-        <!-- Caption Field Heading -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Caption:"
-            style="@style/subheading_txt_style"/>
-
-        <!-- Caption Field -->
-        <EditText
-            android:id="@+id/caption_et"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginTop="5dp"
-            android:padding="5dp"
-            android:background="@drawable/bg_rectangle_white"
-            android:gravity="top|start"
-            android:inputType="textMultiLine"
-            android:textColor="@color/black"
-            android:textSize="12dp" />
-
-
-        <!-- Tag User Field Heading -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Tag User:"
-            style="@style/subheading_txt_style"/>
-
-        <!-- Tag User Field -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_gravity="center_horizontal"
-            android:background="@drawable/bg_rectangle_white"
             android:orientation="vertical"
-            android:padding="10dp">
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="20dp">
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginTop="5dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_rectangle_blue">
+                android:layout_height="wrap_content">
 
+                <!-- Create Post Heading -->
                 <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Posts"
+                    style="@style/heading_txt_style"/>
+
+                <!-- Submit Button -->
+                <LinearLayout
+                    android:id="@+id/prev_bttn2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center"
+                    android:orientation="horizontal"
                     android:paddingLeft="10dp"
-                    android:paddingRight="8dp"
-                    android:paddingTop="3dp"
-                    android:text="\@"
-                    android:textColor="@color/white"
-                    android:fontFamily="@font/roboto_extrabold"/>
+                    android:paddingRight="10dp"
+                    android:background="@drawable/bg_rectangle_gold">
 
-                <EditText
-                    android:id="@+id/user_tag_et"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@null"
-                    android:textColor="@color/white"
-                    android:textSize="12dp"
-                    android:fontFamily="@font/roboto_regular"
-                    android:singleLine="true"/>
-            </LinearLayout>
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginRight="8dp"
+                        android:src="@drawable/ic_plus"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Create"
+                        android:textSize="14sp"
+                        style="@style/black_medium_txt_style"/>
+                </LinearLayout>
+
+            </RelativeLayout>
 
 
+            <!-- Searchbar and dropdown-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="5dp"
-                android:gravity="center_vertical">
+                android:layout_marginTop="20dp"
+                android:orientation="vertical">
 
-                <ImageView
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:src="@drawable/ic_plus"
-                    android:tint="@color/black"/>
+                <!-- Searchbar -->
+                <LinearLayout
+                    android:id="@+id/posts_search_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="35dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/bg_rectangle_white"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp">
 
-                <HorizontalScrollView
-                    android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_weight="1"
-                    android:scrollbars="none">
+                    <!-- Location Field -->
+                    <EditText
+                        android:id="@+id/posts_search_et"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10dp"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="Search for Account or Location"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        style="@style/black_small_txt_style"/>
 
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/tags_container"
+                    <!-- Search Button -->
+                    <ImageView
+                        android:id="@+id/posts_search_bttn"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginRight="10dp"
+                        android:src="@drawable/ic_magnifying_glass"/>
+                </LinearLayout>
+
+                <!-- Search Results View -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/posts_search_results_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="10dp">
+
+                    <!-- Search Results Header -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="4dp"/>
-                </HorizontalScrollView>
+                        android:gravity="center_vertical"
+                        android:paddingVertical="5dp"
+                        android:paddingHorizontal="10dp"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:text="Search Results"
+                            android:textSize="13sp"
+                            style="@style/black_medium_txt_style"/>
+
+                        <!-- Filter icon -->
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_funnel"
+                            android:contentDescription="Filter"
+                            app:tint="@color/black" />
+
+                        <View
+                            android:layout_width="2dp"
+                            android:layout_height="20dp"
+                            android:layout_marginHorizontal="15dp"
+                            android:background="@drawable/bg_rectangle_pale_slate"/>
+
+                        <!-- Account Filter Option -->
+                        <TextView
+                            android:id="@+id/posts_search_filter_account"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="4dp"
+                            android:paddingHorizontal="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@drawable/bg_search_filter_inactive"
+                            android:text="Account"
+                            style="@style/black_small_txt_style"/>
+
+                        <!-- Location Filter Option -->
+                        <TextView
+                            android:id="@+id/posts_search_filter_location"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="4dp"
+                            android:paddingHorizontal="10dp"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@drawable/bg_search_filter_inactive"
+                            android:text="Location"
+                            style="@style/black_small_txt_style"/>
+
+                    </LinearLayout>
+
+                    <ListView
+                        android:id="@+id/posts_search_results_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:divider="@color/dim_grey"
+                        android:dividerHeight="0.5dp"
+                        android:layout_marginVertical="4dp"
+                        style="@style/white_small_txt_style"/>
+
+                </androidx.cardview.widget.CardView>
+
             </LinearLayout>
+
         </LinearLayout>
+        <!-- ====== Posts Header Section [END] ====== -->
+
+        <!-- ====== Posts Section ====== -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/posts_rv"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="2dp"
+            android:clipToPadding="false"/>
 
     </LinearLayout>
 
