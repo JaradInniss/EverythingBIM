@@ -20,9 +20,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
-            android:name=".ui.home.AIIdentifier"
+            android:name=".ui.map.MapViewAllActivity"
             android:exported="false" />
-        <!-- Move the API key meta-data here -->
+        <activity
+            android:name=".ui.home.AIIdentifier"
+            android:exported="false" /> <!-- Move the API key meta-data here -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0" />
@@ -39,8 +41,8 @@
 
         <activity
             android:name=".ui.main.MainActivity"
-            android:windowSoftInputMode="adjustPan"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ui.registration.BusinessRegistration"
             android:exported="false" />

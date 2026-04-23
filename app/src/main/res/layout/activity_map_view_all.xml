@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    tools:context=".ui.map.MapViewAllActivity">
+
+    <!-- ===== Page Header Section ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:background="@color/prussian_blue">
+
+        <!-- Return Button -->
+        <LinearLayout
+            android:id="@+id/return_bttn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_caret_left"
+                app:tint="@color/white"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="Map"
+                style="@style/white_medium_txt_style"/>
+
+        </LinearLayout>
+        <!-- Return Button [END] -->
+
+        <TextView
+            android:id="@+id/viewall_location_name_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/return_bttn"
+            android:layout_marginVertical="5dp"
+            android:layout_marginLeft="5dp"
+            android:text="Location"
+            android:textSize="20sp"
+            style="@style/white_medium_txt_style"/>
+
+        <!-- View All Type Container (Images/Reviews/Posts) -->
+        <LinearLayout
+            android:id="@+id/viewall_type_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/viewall_location_name_tv"
+            android:layout_marginLeft="5dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/viewall_type_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View All"
+                style="@style/grey_medium_txt_style"/>
+
+            <View
+                android:layout_width="2dp"
+                android:layout_height="15dp"
+                android:layout_marginHorizontal="10dp"
+                android:background="@drawable/bg_rectangle_pale_slate"/>
+
+            <TextView
+                android:id="@+id/viewall_type_count_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10"
+                style="@style/grey_medium_txt_style"/>
+
+        </LinearLayout>
+        <!-- View All Type Container [END] -->
+
+        <!-- Reviews Rating Container -->
+        <LinearLayout
+            android:id="@+id/viewall_overall_rating_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/viewall_location_name_tv"
+            android:layout_toRightOf="@id/viewall_type_container"
+            android:layout_marginLeft="20dp"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/viewall_location_overall_rating_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_star_fill"
+                app:tint="@color/bright_gold"/>
+
+            <TextView
+                android:id="@+id/viewall_location_overall_rating_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/rating_star_icon"
+                android:layout_marginLeft="4dp"
+                android:text="4.5"
+                style="@style/grey_medium_txt_style"/>
+
+        </LinearLayout>
+        <!-- Reviews Rating Container [END] -->
+
+
+        <ImageView
+            android:id="@+id/viewall_filter_bttn_unselected"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_below="@id/viewall_type_container"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="5dp"
+            android:src="@drawable/ic_funnel"
+            app:tint="@color/white"/>
+
+    </RelativeLayout>
+
+
+    <!-- Filter Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginHorizontal="5dp"
+        android:layout_marginTop="-35dp"
+        android:paddingHorizontal="5dp"
+        android:paddingVertical="5dp"
+        android:background="@drawable/bg_border_rectangle_alice_blue"
+        android:elevation="10dp"
+        android:visibility="gone">
+
+        <!-- Filter Icon Container -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Filter Icon -->
+            <ImageView
+                android:id="@+id/viewall_filter_bttn_selected"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_funnel"
+                app:tint="@color/space_indigo"/>
+
+            <!-- Filter By label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="Filter By:"
+                style="@style/black_medium_txt_style"/>
+
+        </LinearLayout>
+        <!-- Filter Icon Container [END] -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:layout_marginLeft="5dp"
+            android:text="Rating:"
+            android:textSize="14sp"
+            style="@style/black_medium_txt_style"/>
+
+        <!-- Filter Options Container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <!-- Radio Group -->
+            <RadioGroup
+                android:id="@+id/filter_type_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginLeft="5dp"
+                android:gravity="center">
+
+                <!-- Five-Star Option -->
+                <RadioButton
+                    android:id="@+id/filter_type_five_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="5"
+                    android:textSize="14sp"
+                    style="@style/black_small_txt_style"
+                    android:buttonTint="@color/persian_blue"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_star_fill"/>
+
+                <!-- Four-Star Option -->
+                <RadioButton
+                    android:id="@+id/filter_type_four_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="4"
+                    android:textSize="14sp"
+                    style="@style/black_small_txt_style"
+                    android:buttonTint="@color/persian_blue"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_star_fill"/>
+
+                <!-- Three-Star Option -->
+                <RadioButton
+                    android:id="@+id/filter_type_three_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="3"
+                    android:textSize="14sp"
+                    style="@style/black_small_txt_style"
+                    android:buttonTint="@color/persian_blue"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_star_fill"/>
+
+                <!-- Two-Star Option -->
+                <RadioButton
+                    android:id="@+id/filter_type_two_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="2"
+                    android:textSize="14sp"
+                    style="@style/black_small_txt_style"
+                    android:buttonTint="@color/persian_blue"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_star_fill"/>
+
+                <!-- One-Star Option -->
+                <RadioButton
+                    android:id="@+id/filter_type_one_stars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="1"
+                    android:textSize="14sp"
+                    style="@style/black_small_txt_style"
+                    android:buttonTint="@color/persian_blue"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_star_fill"/>
+
+            </RadioGroup>
+            <!-- Radio Group [END] -->
+
+        </LinearLayout>
+        <!-- Filter Options Container [END] -->
+
+    </LinearLayout>
+    <!-- Filter Container [END] -->
+
+
+    <!-- ===== List View Section ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/viewall_images_rv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/viewall_reviews_rv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/viewall_posts_rv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+</LinearLayout>

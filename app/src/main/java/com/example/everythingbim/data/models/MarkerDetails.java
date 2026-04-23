@@ -7,22 +7,24 @@ import java.util.List;
 
 public class MarkerDetails {
 
+    public final long id; // Added ID to track the database primary key
     public final String title;
     public final String subtitle;
     public final String meta;
     public final String contact;
     public final float rating;
     public final String overview;
-    public String placeType;
+    public final String placeType;
 
     // Lists
     public final List<String> imageUrls;
     public final List<ReviewEntity> reviews;
     public final List<PostEntity> posts;
 
-    public MarkerDetails(String title, String subtitle, String meta, String contact,
+    public MarkerDetails(long id, String title, String subtitle, String meta, String contact,
                          float rating, String overview, String placeType,
                          List<String> imageUrls, List<ReviewEntity> reviews, List<PostEntity> posts) {
+        this.id = id;
         this.title = title;
         this.subtitle = subtitle;
         this.meta = meta;
