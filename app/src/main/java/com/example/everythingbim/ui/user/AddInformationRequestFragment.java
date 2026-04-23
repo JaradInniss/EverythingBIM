@@ -75,7 +75,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-public class AddLocationRequestFragment extends Fragment {
+public class AddInformationRequestFragment extends Fragment {
 
     // ─── Map ────────────────────────────────────
     private MapView mapView;
@@ -91,7 +91,6 @@ public class AddLocationRequestFragment extends Fragment {
     private TextInputEditText locationDescEt;
     private ListView searchResultsList;
     private Spinner placeTypeSpinner;
-    private Spinner reasonSpinner;
     private Button submitBtn;
     private RecyclerView imgIconContainer;
     private FileAdapter imageAdapter;
@@ -108,7 +107,6 @@ public class AddLocationRequestFragment extends Fragment {
 
     // ─── Form values ─────────────────────────────
     private String selectedPlaceType = "";
-    private String selectedReason    = "";
     private double selectedLat       = 0.0;
     private double selectedLng       = 0.0;
 
@@ -151,15 +149,6 @@ public class AddLocationRequestFragment extends Fragment {
             "Other"
     };
 
-    private static final String[] REASONS = {
-            "Select Reason",
-            "Not In System",
-            "New Business / Store / Restaurant / Place of Interest",
-            "Location Has Moved",
-            "Location Name Has Changed",
-            "Other"
-    };
-
     // ────────────────────────────────────────────────────────
     // LIFECYCLE
     // ────────────────────────────────────────────────────────
@@ -170,7 +159,7 @@ public class AddLocationRequestFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_add_location_request, container, false);
+        View view = inflater.inflate(R.layout.fragment_add_information_request, container, false);
 
         // Initialize Firebase
         db      = FirebaseFirestore.getInstance();
@@ -186,7 +175,6 @@ public class AddLocationRequestFragment extends Fragment {
         locationDescEt    = view.findViewById(R.id.location_desc_et);
         searchResultsList = view.findViewById(R.id.search_results_list);
         placeTypeSpinner  = view.findViewById(R.id.place_type_spinner);
-        reasonSpinner     = view.findViewById(R.id.request_reason_spinner);
         submitBtn         = view.findViewById(R.id.submit_bttn);
 
         // Back button
@@ -235,7 +223,6 @@ public class AddLocationRequestFragment extends Fragment {
         submitBtn.setOnClickListener(v -> validateAndSubmit());
 
         setupPlaceTypeSpinner();
-        setupReasonSpinner();
         setupMap(view, savedInstanceState);
 
         return view;
@@ -334,9 +321,9 @@ public class AddLocationRequestFragment extends Fragment {
     // ────────────────────────────────────────────────────────
 
     private void setupMap(View view, Bundle savedInstanceState) {
-        mapView = view.findViewById(R.id.viewlocreq_map);
+        mapView = view.findViewById(R.id.viewinforeq_map);
         if (mapView == null) {
-            Log.d("AddLocationRequest", "Map view not found in layout");
+            Log.d("AddInformationRequest", "Map view not found in layout");
             return;
         }
 
@@ -400,32 +387,6 @@ public class AddLocationRequestFragment extends Fragment {
         });
     }
 
-    private void setupReasonSpinner() {
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                requireContext(), android.R.layout.simple_spinner_item, REASONS) {
-
-            @Override public boolean isEnabled(int position) { return position != 0; }
-
-            @Override
-            public View getDropDownView(int position, @Nullable View convertView,
-                                        @NonNull ViewGroup parent) {
-                View v = super.getDropDownView(position, convertView, parent);
-                ((android.widget.TextView) v).setTextColor(
-                        position == 0 ? android.graphics.Color.GRAY
-                                : android.graphics.Color.BLACK);
-                return v;
-            }
-        };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        reasonSpinner.setAdapter(adapter);
-        reasonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                selectedReason = pos != 0 ? REASONS[pos] : "";
-            }
-            @Override public void onNothingSelected(AdapterView<?> p) { selectedReason = ""; }
-        });
-    }
-
     // ────────────────────────────────────────────────────────
     // PLACES SEARCH
     // ────────────────────────────────────────────────────────
@@ -433,7 +394,7 @@ public class AddLocationRequestFragment extends Fragment {
     private void initializePlacesClient() {
         String apiKey = getMapsApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
-            Log.e("AddLocationRequest", "Google Maps API key not found");
+            Log.e("AddInformationRequest", "Google Maps API key not found");
             return;
         }
         if (!Places.isInitialized()) {
@@ -648,11 +609,6 @@ public class AddLocationRequestFragment extends Fragment {
                     "Please select a place type", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (selectedReason.isEmpty()) {
-            Toast.makeText(getContext(),
-                    "Please select a reason for request", Toast.LENGTH_SHORT).show();
-            return;
-        }
         if (selectedLat == 0.0 && selectedLng == 0.0) {
             Toast.makeText(getContext(),
                     "Please pin a location on the map", Toast.LENGTH_SHORT).show();
@@ -678,7 +634,7 @@ public class AddLocationRequestFragment extends Fragment {
 
         for (File file : selectedImages) {
             StorageReference ref = storage.getReference()
-                    .child("location_requests")
+                    .child("information_requests")
                     .child(userId)
                     .child("images")
                     .child(UUID.randomUUID().toString());
@@ -717,14 +673,13 @@ public class AddLocationRequestFragment extends Fragment {
         request.put("locationName",  locationName);
         request.put("description",   locationDesc);
         request.put("placeType",     selectedPlaceType);
-        request.put("reason",        selectedReason);
         request.put("latitude",      selectedLat);
         request.put("longitude",     selectedLng);
         request.put("imageUrls",     imageUrls);
         request.put("status",        "In Review");
         request.put("createdAt",     Timestamp.now());
 
-        db.collection("add_location_requests")
+        db.collection("add_information_requests")
                 .add(request)
                 .addOnSuccessListener(doc -> {
                     Toast.makeText(getContext(),

@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/add_business_location_request"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/light_grey"
+    tools:context=".ui.user.AddBusinessLocationRequestFragment">
+
+   <LinearLayout
+       android:id="@+id/addbizlocreq_toolbar"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="horizontal"
+       android:background="@color/dark"
+       android:gravity="center_vertical"
+       android:padding="12dp">
+
+       <ImageButton
+           android:id="@+id/back_btn"
+           android:layout_width="36dp"
+           android:layout_height="36dp"
+           android:src="@drawable/ic_caret_left"
+           android:background="@android:color/transparent"
+           android:contentDescription="Go Back"
+           app:tint="@color/white"
+           android:layout_marginEnd="8dp" />
+
+       <LinearLayout
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:orientation="vertical">
+           <TextView
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:text="New Add Business Location Request"
+               android:textColor="@color/white"
+               android:textSize="16sp"
+               android:textStyle="bold" />
+           <TextView
+               android:id="@+id/viewinforeq_user_id_tv"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:text="BusinessUser #102MA21"
+               android:textColor="@color/light_grey"
+               android:textSize="12sp" />
+       </LinearLayout>
+   </LinearLayout>
+    <LinearLayout
+        android:id="@+id/addbizlocreq_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@+id/addbizlocreq_toolbar"
+        android:padding="4dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/addbizlocreq_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/ic_info"
+                        app:tint="@color/bright_gold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Only Proceed If You Wish To Add A New Branch"
+                        android:textColor="@color/light_grey"
+                        android:layout_gravity="center" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:padding="12dp">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Complete The Form With The Required Information"
+                android:textSize="13sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp"/>
+
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:id="@+id/search_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@drawable/bg_rectangle_alice_blue"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp">
+                    <EditText
+                        android:id="@+id/search_et"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:fontFamily="@font/roboto_medium"
+                        android:hint="Location"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        android:textSize="12sp"
+                        android:textColor="@color/black"
+                        android:imeOptions="actionSearch" />
+                    <ImageView
+                        android:id="@+id/search_bttn"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginRight="10dp"
+                        android:src="@drawable/ic_magnifying_glass"
+                        app:tint="@color/black" />
+                </LinearLayout>
+
+                <ListView
+                    android:id="@+id/search_results_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/white"
+                    android:elevation="4dp"
+                    android:visibility="gone" />
+
+
+            </LinearLayout>
+
+            <!-- Map -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="10dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_rectangle_alice_blue">
+
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/viewbizlocreq_map"
+                    android:layout_width="match_parent"
+                    android:layout_height="90dp"/>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Location Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Location Name"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:layout_marginBottom="4dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/location_name_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:boxBackgroundMode="outline"
+                app:boxStrokeColor="@color/light_grey"
+                app:boxStrokeWidth="1dp"
+                app:boxStrokeWidthFocused="2dp"
+                android:background="@drawable/bg_rectangle_alice_blue"
+                android:layout_marginBottom="10dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/location_name_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textSize="12sp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <!-- Place Type -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Place Type"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:layout_marginBottom="4dp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_rectangle_alice_blue"
+                android:layout_marginBottom="10dp">
+                <Spinner
+                    android:id="@+id/place_type_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="36dp" />
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/icon_caret_down"
+                    android:contentDescription="@null"
+                    app:tint="@color/black" />
+            </RelativeLayout>
+            <!-- Images of Location -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Images of Location"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Image Upload Field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/bg_rectangle_alice_blue"
+                style="@style/file_upload_field_style">
+
+                <HorizontalScrollView
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:scrollbars="none">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/img_icon_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="4dp"/>
+
+                </HorizontalScrollView>
+
+                <ImageButton
+                    android:id="@+id/upload_img_bttn"
+                    style="@style/file_upload_bttn_style"/>
+
+
+            </LinearLayout>
+
+
+            <!-- Allowed types -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="14dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="@color/dim_grey"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="Allowed: jpeg, png"
+                    style="@style/info_txt_style" />
+            </LinearLayout>
+
+            <!-- Submit -->
+            <Button
+                android:id="@+id/submit_bttn"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:text="SUBMIT"
+                style="@style/rectangle_bttn_gold"/>
+            <!-- Notice -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="14dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="@color/dim_grey"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="After submission,you should be notified within 1-3 days regarding submission results."
+                    style="@style/info_txt_style" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+    </LinearLayout>
+</RelativeLayout>

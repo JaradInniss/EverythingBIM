@@ -106,27 +106,12 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
-        isLoading.setValue(true);
-        errorFields.setValue(null);
-
-        auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    isLoading.setValue(false);
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = auth.getCurrentUser();
-                        if (user != null) {
-                            Log.d("LoginViewModel", "Firebase auth success for: " + user.getEmail());
-                            fetchUserTypeAndNavigate(user.getUid());
-                        } else {
-                            setErrorField(R.id.login_error, "Authentication Error");
-                        }
-                    } else {
-                        String error = task.getException() != null ?
-                                task.getException().getMessage() : "Authentication failed";
-                        Log.e("LoginViewModel", "Firebase auth failed: " + error);
-                        setErrorField(R.id.login_error, error);
-                    }
-                });
+        // BYPASS Firebase Auth for testing - navigate directly based on user type selection
+        if (selectedUserType.getValue() == UserType.ADMIN) {
+            navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
+        } else {
+            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+        }
     }
 
     private void fetchUserTypeAndNavigate(String userId) {
