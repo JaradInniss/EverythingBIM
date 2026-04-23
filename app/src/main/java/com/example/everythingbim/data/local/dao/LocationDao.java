@@ -11,6 +11,7 @@ import com.example.everythingbim.data.local.entities.LocationWithDetails;
 
 import java.util.List;
 
+@Dao
 public interface LocationDao {
     @Transaction
     @Query("SELECT * FROM locations WHERE locationId = :id")
