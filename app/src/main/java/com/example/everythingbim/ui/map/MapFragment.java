@@ -2,6 +2,7 @@ package com.example.everythingbim.ui.map;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -141,6 +142,39 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         return view;
     }
 
+    private void bindViews(View root) {
+        searchInput = root.findViewById(R.id.map_search_input);
+        searchProgress = root.findViewById(R.id.map_search_progress);
+        searchResultsContainer = root.findViewById(R.id.map_search_results_card);
+        searchResultsList = root.findViewById(R.id.map_search_results_list);
+        detailsContainer = root.findViewById(R.id.map_location_details_container);
+        detailsHeader = root.findViewById(R.id.details_peek_header);
+        barbadosText = root.findViewById(R.id.map_barbados_tv);
+        placeName = root.findViewById(R.id.map_location_name);
+        placeAddress = root.findViewById(R.id.map_location_address);
+        placeRating = root.findViewById(R.id.location_overall_rating_tv);
+        noImagesText = root.findViewById(R.id.no_images_tv);
+        noPostsText = root.findViewById(R.id.no_posts_tv);
+        noReviewsText = root.findViewById(R.id.no_reviews_tv);
+        imagesCount = root.findViewById(R.id.location_images_count_tv);
+        reviewsCount = root.findViewById(R.id.location_reviews_count_tv);
+        postsCount = root.findViewById(R.id.location_posts_count_tv);
+        imagesField = root.findViewById(R.id.location_images_field);
+        reviewsField = root.findViewById(R.id.location_reviews_field);
+        postsField = root.findViewById(R.id.location_posts_field);
+        zoomInButton = root.findViewById(R.id.map_zoom_in_bttn);
+        zoomOutButton = root.findViewById(R.id.map_zoom_out_bttn);
+        fixLocationButton = root.findViewById(R.id.map_fix_location_bttn);
+        returnButton = root.findViewById(R.id.map_return_bttn);
+        returnButton.setOnClickListener(this);
+        viewAllImagesBttn = root.findViewById(R.id.location_images_view_all_bttn);
+        viewAllImagesBttn.setOnClickListener(this);
+        viewAllReviewsBttn = root.findViewById(R.id.location_reviews_view_all_bttn);
+        viewAllReviewsBttn.setOnClickListener(this);
+        viewAllPostsBttn = root.findViewById(R.id.location_posts_view_all_bttn);
+        viewAllPostsBttn.setOnClickListener(this);
+    }
+
     @Override
     public void onDestroyView() {
         searchHandler.removeCallbacksAndMessages(null);
@@ -162,6 +196,48 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         returnButton = null;
         selectedPlace = null;
         super.onDestroyView();
+    }
+
+    @Override
+    public void onClick(View view) {
+        int bttnId = view.getId();
+
+        if (bttnId == R.id.map_fix_location_bttn) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
+                    if (location != null) {
+                        LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                        if (MapViewModel.BARBADOS_BOUNDS.contains(userLocation)) {
+                            map.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f));
+                        } else {
+                            Toast.makeText(requireContext(), "You are currently outside of Barbados", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            } else {
+                requestLocationPermissions();
+            }
+        }
+        else if (bttnId == R.id.map_zoom_in_bttn) {
+            map.animateCamera(CameraUpdateFactory.zoomIn());
+        }
+        else if (bttnId == R.id.map_zoom_out_bttn) {
+            map.animateCamera(CameraUpdateFactory.zoomOut());
+        }
+        else if (bttnId == R.id.map_return_bttn) {
+            mapViewModel.setDetailsUIState(MapDetailsState.HIDDEN);
+        }
+        else if (bttnId == R.id.location_images_view_all_bttn)
+        {
+            mapViewModel.onViewAllClicked("IMAGES");
+        }
+        else if (bttnId == R.id.location_reviews_view_all_bttn) {
+            mapViewModel.onViewAllClicked("REVIEWS");
+        }
+        else if (bttnId == R.id.location_posts_view_all_bttn) {
+            mapViewModel.onViewAllClicked("POSTS");
+        }
     }
 
     @Override
@@ -199,6 +275,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             marker.showInfoWindow();
 
             mapViewModel.setFocusedLocation(position);
+            
+            // Set metadata for navigation
+            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
+            
             mapViewModel.setDetailsUIState(MapDetailsState.FULL);
             return true;
         });
@@ -219,38 +299,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         });
     }
 
-    private void bindViews(View root) {
-        searchInput = root.findViewById(R.id.map_search_input);
-        searchProgress = root.findViewById(R.id.map_search_progress);
-        searchResultsContainer = root.findViewById(R.id.map_search_results_card);
-        searchResultsList = root.findViewById(R.id.map_search_results_list);
-        detailsContainer = root.findViewById(R.id.map_location_details_container);
-        detailsHeader = root.findViewById(R.id.details_peek_header);
-        barbadosText = root.findViewById(R.id.map_barbados_tv);
-        placeName = root.findViewById(R.id.map_location_name);
-        placeAddress = root.findViewById(R.id.map_location_address);
-        placeRating = root.findViewById(R.id.location_overall_rating_tv);
-        noImagesText = root.findViewById(R.id.no_images_tv);
-        noPostsText = root.findViewById(R.id.no_posts_tv);
-        noReviewsText = root.findViewById(R.id.no_reviews_tv);
-        imagesCount = root.findViewById(R.id.location_images_count_tv);
-        reviewsCount = root.findViewById(R.id.location_reviews_count_tv);
-        postsCount = root.findViewById(R.id.location_posts_count_tv);
-        imagesField = root.findViewById(R.id.location_images_field);
-        reviewsField = root.findViewById(R.id.location_reviews_field);
-        postsField = root.findViewById(R.id.location_posts_field);
-        zoomInButton = root.findViewById(R.id.map_zoom_in_bttn);
-        zoomOutButton = root.findViewById(R.id.map_zoom_out_bttn);
-        fixLocationButton = root.findViewById(R.id.map_fix_location_bttn);
-        returnButton = root.findViewById(R.id.map_return_bttn);
-        returnButton.setOnClickListener(this);
-        viewAllImagesBttn = root.findViewById(R.id.location_images_view_all_bttn);
-        viewAllReviewsBttn = root.findViewById(R.id.location_reviews_view_all_bttn);
-        viewAllPostsBttn = root.findViewById(R.id.location_posts_view_all_bttn);
-    }
-
     private void setUpObservers() {
         mapViewModel.getDetailsUIState().observe(getViewLifecycleOwner(), this::updateUIState);
+
+        mapViewModel.getNavigationEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event == null) return;
+
+            Intent intent = new Intent(requireContext(), event.getDestination());
+            intent.putExtras(event.getExtras());
+            startActivity(intent);
+        });
     }
 
     private void updateUIState(MapDetailsState state) {
@@ -336,38 +394,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (imm != null) {
                 imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
             }
-        }
-    }
-
-    @Override
-    public void onClick(View view) {
-        int bttnId = view.getId();
-
-        if (bttnId == R.id.map_fix_location_bttn) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
-                fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
-                    if (location != null) {
-                        LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                        if (MapViewModel.BARBADOS_BOUNDS.contains(userLocation)) {
-                            map.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f));
-                        } else {
-                            Toast.makeText(requireContext(), "You are currently outside of Barbados", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            } else {
-                requestLocationPermissions();
-            }
-        }
-        else if (bttnId == R.id.map_zoom_in_bttn) {
-            map.animateCamera(CameraUpdateFactory.zoomIn());
-        }
-        else if (bttnId == R.id.map_zoom_out_bttn) {
-            map.animateCamera(CameraUpdateFactory.zoomOut());
-        }
-        else if (bttnId == R.id.map_return_bttn) {
-            mapViewModel.setDetailsUIState(MapDetailsState.HIDDEN);
         }
     }
 
@@ -468,6 +494,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (selectedPlace != null && selectedPlace.getLatLng() != null) {
                 renderMarkers();
                 mapViewModel.setFocusedLocation(selectedPlace.getLatLng());
+                
+                // Set metadata for navigation
+                mapViewModel.setSelectedLocationMetadata(-1, selectedPlace.getName());
+                
                 mapViewModel.setDetailsUIState(MapDetailsState.FULL);
                 showPlaceDetails(buildMarkerDetails(selectedPlace));
             }
@@ -491,6 +521,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     .snippet(buildStoredMarkerSnippet(marker)));
             if (savedMarker != null) {
                 savedMarker.setTag(new MarkerDetails(
+                        marker.id,
                         buildStoredMarkerTitle(marker),
                         buildStoredMarkerSnippet(marker),
                         "", "", 0.0f, "", "",
@@ -520,7 +551,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noImagesText.setVisibility(View.VISIBLE);
             imagesCount.setVisibility(View.GONE);
             imagesField.setVisibility(View.GONE);
-            viewAllImagesBttn.setVisibility(View.GONE);
+            //viewAllImagesBttn.setVisibility(View.GONE);
         } else {
             noImagesText.setVisibility(View.GONE);
             imagesCount.setText(String.format(java.util.Locale.US, "(%d)", details.imageUrls.size()));
@@ -532,7 +563,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noReviewsText.setVisibility(View.VISIBLE);
             reviewsCount.setVisibility(View.GONE);
             reviewsField.setVisibility(View.GONE);
-            viewAllReviewsBttn.setVisibility(View.GONE);
+            //viewAllReviewsBttn.setVisibility(View.GONE);
         } else {
             noReviewsText.setVisibility(View.GONE);
             reviewsCount.setText(String.format(java.util.Locale.US, "(%d)", details.reviews.size()));
@@ -544,7 +575,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noPostsText.setVisibility(View.VISIBLE);
             postsCount.setVisibility(View.GONE);
             postsField.setVisibility(View.GONE);
-            viewAllPostsBttn.setVisibility(View.GONE);
+            //viewAllPostsBttn.setVisibility(View.GONE);
         } else {
             noPostsText.setVisibility(View.GONE);
             postsCount.setText(String.format(java.util.Locale.US, "(%d)", details.posts.size()));
@@ -583,7 +614,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         String title = marker.getTitle() != null ? marker.getTitle() : "Saved marker";
         String snippet = marker.getSnippet() != null ? marker.getSnippet() : "Coordinates: " + formatLatLng(marker.getPosition().latitude, marker.getPosition().longitude);
 
-        return new MarkerDetails(title, snippet, "", "", 0.0f, "", "",
+        return new MarkerDetails(-1, title, snippet, "", "", 0.0f, "", "",
                 new ArrayList<String>(), new ArrayList<ReviewEntity>(), new ArrayList<PostEntity>());
     }
 
@@ -592,7 +623,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         renderMarkers();
         searchMarker = map.addMarker(new MarkerOptions().position(poi.latLng).title(poi.name));
 
-        MarkerDetails details = new MarkerDetails(poi.name, "Loading address...", "", "", 0.0f, "", "",
+        MarkerDetails details = new MarkerDetails(-1, poi.name, "Loading address...", "", "", 0.0f, "", "",
                 new ArrayList<String>(), new ArrayList<ReviewEntity>(), new ArrayList<PostEntity>());
 
         if (searchMarker != null) {
@@ -601,6 +632,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         }
         showPlaceDetails(details);
         mapViewModel.setFocusedLocation(poi.latLng);
+        
+        // Set metadata for navigation
+        mapViewModel.setSelectedLocationMetadata(-1, details.title);
+        
         mapViewModel.setDetailsUIState(MapDetailsState.FULL);
 
         if (placesClient != null && poi.placeId != null) {
@@ -619,6 +654,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 searchMarker.setTag(details);
                 showPlaceDetails(details);
             }
+            
+            // Update metadata once details are fetched
+            mapViewModel.setSelectedLocationMetadata(-1, details.title);
+            
             showSearchLoading(false);
         }).addOnFailureListener(error -> {
             showSearchLoading(false);
@@ -630,7 +669,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     @NonNull
     private MarkerDetails buildMarkerDetails(@Nullable Place place) {
-        if (place == null) return new MarkerDetails("", "", "", "", 0.0f, "", "",
+        if (place == null) return new MarkerDetails(-1, "", "", "", "", 0.0f, "", "",
                 new ArrayList<String>(), new ArrayList<ReviewEntity>(), new ArrayList<PostEntity>());
 
         float rating = (place.getRating() != null) ? place.getRating().floatValue() : 0.0f;
@@ -638,6 +677,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         String type = (place.getTypes() != null && !place.getTypes().isEmpty()) ? place.getTypes().get(0).name() : "";
 
         return new MarkerDetails(
+                -1,
                 getPlaceName(place),
                 getPlaceAddress(place),
                 "",

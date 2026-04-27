@@ -367,7 +367,7 @@
                         android:id="@+id/location_images_view_all_bttn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="210dp"
+                        android:layout_marginLeft="220dp"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -453,7 +453,7 @@
                         android:id="@+id/location_reviews_view_all_bttn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="210dp"
+                        android:layout_marginLeft="220dp"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -675,7 +675,7 @@
                         android:id="@+id/location_posts_view_all_bttn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="220dp"
+                        android:layout_marginLeft="230dp"
                         android:gravity="center_vertical">
 
                         <TextView

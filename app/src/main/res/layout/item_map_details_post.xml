@@ -18,6 +18,7 @@
             app:cardCornerRadius="5dp">
 
             <ImageView
+                android:id="@+id/map_location_related_post_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 
