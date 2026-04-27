@@ -551,7 +551,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noImagesText.setVisibility(View.VISIBLE);
             imagesCount.setVisibility(View.GONE);
             imagesField.setVisibility(View.GONE);
-            viewAllImagesBttn.setVisibility(View.GONE);
+            //viewAllImagesBttn.setVisibility(View.GONE);
         } else {
             noImagesText.setVisibility(View.GONE);
             imagesCount.setText(String.format(java.util.Locale.US, "(%d)", details.imageUrls.size()));
@@ -563,7 +563,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noReviewsText.setVisibility(View.VISIBLE);
             reviewsCount.setVisibility(View.GONE);
             reviewsField.setVisibility(View.GONE);
-            viewAllReviewsBttn.setVisibility(View.GONE);
+            //viewAllReviewsBttn.setVisibility(View.GONE);
         } else {
             noReviewsText.setVisibility(View.GONE);
             reviewsCount.setText(String.format(java.util.Locale.US, "(%d)", details.reviews.size()));
@@ -575,7 +575,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noPostsText.setVisibility(View.VISIBLE);
             postsCount.setVisibility(View.GONE);
             postsField.setVisibility(View.GONE);
-            viewAllPostsBttn.setVisibility(View.GONE);
+            //viewAllPostsBttn.setVisibility(View.GONE);
         } else {
             noPostsText.setVisibility(View.GONE);
             postsCount.setText(String.format(java.util.Locale.US, "(%d)", details.posts.size()));

@@ -16,9 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
-import com.example.everythingbim.data.models.MapDetailsState;
 
-public class MapViewAllActivity extends AppCompatActivity {
+public class MapViewAllActivity extends AppCompatActivity implements View.OnClickListener {
 
     private MapViewAllViewModel viewModel;
     private GalleryAdapter imagesAdapter;
@@ -27,8 +26,8 @@ public class MapViewAllActivity extends AppCompatActivity {
 
     private RecyclerView imagesRv, reviewsRv, postsRv;
     private TextView locationNameTv, typeTv, countTv, overallRatingTv;
-    private LinearLayout overallRatingContainer, filterContainer;
-    private View filterBttn;
+    private LinearLayout returnBttn, overallRatingContainer, filterContainer;
+    private View filterBttn1, filterBttn2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +52,15 @@ public class MapViewAllActivity extends AppCompatActivity {
         countTv = findViewById(R.id.viewall_type_count_tv);
         overallRatingTv = findViewById(R.id.viewall_location_overall_rating_tv);
         overallRatingContainer = findViewById(R.id.viewall_overall_rating_container);
-        filterBttn = findViewById(R.id.viewall_filter_bttn_unselected);
-        
+
+        filterBttn1 = findViewById(R.id.viewall_filter_bttn_unselected);
+        filterBttn1.setOnClickListener(this);
+        filterBttn2 = findViewById(R.id.viewall_filter_bttn_selected);
+        filterBttn2.setOnClickListener(this);
+        filterContainer = findViewById(R.id.viewall_filter_container);
+        returnBttn = findViewById(R.id.return_bttn);
+        returnBttn.setOnClickListener(this);
+
         imagesRv = findViewById(R.id.viewall_images_rv);
         reviewsRv = findViewById(R.id.viewall_reviews_rv);
         postsRv = findViewById(R.id.viewall_posts_rv);
@@ -73,8 +79,6 @@ public class MapViewAllActivity extends AppCompatActivity {
 
         postsRv.setLayoutManager(new GridLayoutManager(this, 2));
         postsRv.setAdapter(postsAdapter);
-
-        findViewById(R.id.return_bttn).setOnClickListener(v -> finish());
     }
 
     private void setupViewModel() {
@@ -120,7 +124,7 @@ public class MapViewAllActivity extends AppCompatActivity {
         reviewsRv.setVisibility(View.GONE);
         postsRv.setVisibility(View.GONE);
         overallRatingContainer.setVisibility(View.GONE);
-        filterBttn.setVisibility(View.GONE);
+        filterBttn1.setVisibility(View.GONE);
 
         if ("IMAGES".equalsIgnoreCase(viewType)) {
             imagesRv.setVisibility(View.VISIBLE);
@@ -128,7 +132,7 @@ public class MapViewAllActivity extends AppCompatActivity {
         else if ("REVIEWS".equalsIgnoreCase(viewType)) {
             reviewsRv.setVisibility(View.VISIBLE);
             overallRatingContainer.setVisibility(View.VISIBLE);
-            filterBttn.setVisibility(View.VISIBLE);
+            filterBttn1.setVisibility(View.VISIBLE);
         }
         else if ("POSTS".equalsIgnoreCase(viewType)) {
             postsRv.setVisibility(View.VISIBLE);
@@ -137,5 +141,20 @@ public class MapViewAllActivity extends AppCompatActivity {
 
     private void updateCount(int size) {
         countTv.setText(String.valueOf(size));
+    }
+
+    @Override
+    public void onClick(View view) {
+        int bttnId = view.getId();
+
+        if (bttnId == R.id.viewall_filter_bttn_unselected) {
+            filterContainer.setVisibility(View.VISIBLE);
+        }
+        else if (bttnId == R.id.viewall_filter_bttn_selected) {
+            filterContainer.setVisibility(View.GONE);
+        }
+        else if (bttnId == R.id.return_bttn) {
+            finish();
+        }
     }
 }
