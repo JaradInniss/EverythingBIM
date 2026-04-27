@@ -7,7 +7,7 @@
     android:padding="4dp">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/viewlocreq_card"
+        android:id="@+id/viewinforeq_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardElevation="4dp"
@@ -100,7 +100,7 @@
 
             <!-- Map -->
             <com.google.android.gms.maps.MapView
-                android:id="@+id/viewlocreq_map"
+                android:id="@+id/viewinforeq_map"
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
                 android:layout_marginBottom="14dp" />
@@ -114,7 +114,7 @@
                 android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_name_layout"
+                android:id="@+id/viewinforeq_name_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="outline"
@@ -124,7 +124,7 @@
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_name_et"
+                    android:id="@+id/viewinforeq_name_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
@@ -144,7 +144,7 @@
                 android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_desc_layout"
+                android:id="@+id/viewinforeq_desc_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="outline"
@@ -154,7 +154,7 @@
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_desc_et"
+                    android:id="@+id/viewinforeq_desc_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
@@ -174,7 +174,7 @@
                 android:textColor="@color/black"
                 android:textSize="13sp"/>
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_place_type_layout"
+                android:id="@+id/viewinforeq_place_type_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -184,7 +184,7 @@
                 app:boxStrokeWidthFocused="0dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_place_type_et"
+                    android:id="@+id/viewinforeq_place_type_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
@@ -204,7 +204,7 @@
                 android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_reason_layout"
+                android:id="@+id/viewinforeq_reason_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="outline"
@@ -214,7 +214,7 @@
                 android:layout_marginBottom="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_reason_et"
+                    android:id="@+id/viewinforeq_reason_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
@@ -240,7 +240,7 @@
                 android:background="@drawable/bg_rectangle_dim_grey"
                 android:layout_marginBottom="12dp">
                 <LinearLayout
-                    android:id="@+id/viewlocreq_image_container"
+                    android:id="@+id/viewinforeq_image_container"
                     android:layout_width="wrap_content"
                     android:layout_height="80dp"
                     android:orientation="horizontal"
@@ -258,20 +258,20 @@
 
             <!-- Accepted details -->
             <LinearLayout
-                android:id="@+id/viewlocreq_accepted_container"
+                android:id="@+id/viewinforeq_accepted_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
                 <TextView
-                    android:id="@+id/viewlocreq_accepted_date_tv"
+                    android:id="@+id/viewinforeq_accepted_date_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:layout_marginBottom="4dp" />
                 <TextView
-                    android:id="@+id/viewlocreq_accepted_by_tv"
+                    android:id="@+id/viewinforeq_accepted_by_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
@@ -280,27 +280,27 @@
 
             <!-- Rejected details -->
             <LinearLayout
-                android:id="@+id/viewlocreq_rejected_container"
+                android:id="@+id/viewinforeq_rejected_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
                 <TextView
-                    android:id="@+id/viewlocreq_rejected_date_tv"
+                    android:id="@+id/viewinforeq_rejected_date_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:layout_marginBottom="4dp" />
                 <TextView
-                    android:id="@+id/viewlocreq_rejected_by_tv"
+                    android:id="@+id/viewinforeq_rejected_by_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:layout_marginBottom="4dp" />
                 <TextView
-                    android:id="@+id/viewlocreq_rejection_reason_tv"
+                    android:id="@+id/viewinforeq_rejection_reason_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"

@@ -6,9 +6,9 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,12 +17,16 @@ import androidx.fragment.app.Fragment;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +34,7 @@ import java.util.Map;
  */
 public class AdminHomeFragment extends Fragment {
 
+    private static final int MAX_RECENT_ACTIVITIES = 3;
     private static final float MAX_BAR_HEIGHT_DP = 120f;
 
     // Firestore instance
@@ -45,6 +50,17 @@ public class AdminHomeFragment extends Fragment {
     private TextView tvInfoCount, tvInfoIncremental;
     private TextView tvLocationCount, tvLocationIncremental;
     private TextView tvReportsCount, tvReportsIncremental;
+
+    // View references for recent activity items
+    private LinearLayout activityItem1, activityItem2, activityItem3;
+    private ImageView iconActivity1, iconActivity2, iconActivity3;
+    private TextView tvActivityTitle1, tvActivityTitle2, tvActivityTitle3;
+    private TextView tvActivitySubtitle1, tvActivitySubtitle2, tvActivitySubtitle3;
+    private TextView tvActivityTime1, tvActivityTime2, tvActivityTime3;
+    private TextView tvActivityView1, tvActivityView2, tvActivityView3;
+
+    // Activity data storage
+    private List<ActivityItem> recentActivities = new ArrayList<>();
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -107,89 +123,299 @@ public class AdminHomeFragment extends Fragment {
         tvReportsCount = view.findViewById(R.id.tv_reports_count);
         tvReportsIncremental = view.findViewById(R.id.tv_reports_count_incremental);
 
+        // Initialize recent activity views
+        activityItem1 = view.findViewById(R.id.activity_item_1);
+        activityItem2 = view.findViewById(R.id.activity_item_2);
+        activityItem3 = view.findViewById(R.id.activity_item_3);
+        iconActivity1 = view.findViewById(R.id.icon_activity_1);
+        iconActivity2 = view.findViewById(R.id.icon_activity_2);
+        iconActivity3 = view.findViewById(R.id.icon_activity_3);
+        tvActivityTitle1 = view.findViewById(R.id.tv_activity_title_1);
+        tvActivityTitle2 = view.findViewById(R.id.tv_activity_title_2);
+        tvActivityTitle3 = view.findViewById(R.id.tv_activity_title_3);
+        tvActivitySubtitle1 = view.findViewById(R.id.tv_activity_subtitle_1);
+        tvActivitySubtitle2 = view.findViewById(R.id.tv_activity_subtitle_2);
+        tvActivitySubtitle3 = view.findViewById(R.id.tv_activity_subtitle_3);
+        tvActivityTime1 = view.findViewById(R.id.tv_activity_time_1);
+        tvActivityTime2 = view.findViewById(R.id.tv_activity_time_2);
+        tvActivityTime3 = view.findViewById(R.id.tv_activity_time_3);
+        tvActivityView1 = view.findViewById(R.id.tv_activity_view_1);
+        tvActivityView2 = view.findViewById(R.id.tv_activity_view_2);
+        tvActivityView3 = view.findViewById(R.id.tv_activity_view_3);
+
+        // Setup activity item click listeners
+        setupActivityClickListeners();
+
         // Load data from Firestore
         loadDashboardData();
+
+        // Start listening for new activities
+        listenForNewActivities();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh data when returning to this fragment
         loadDashboardData();
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (activityListenerRegistration != null) {
+            activityListenerRegistration.remove();
+            activityListenerRegistration = null;
+        }
+    }
+
+    /**
+     * Sets up click listeners for activity items to navigate to detail screens.
+     */
+    private void setupActivityClickListeners() {
+        View.OnClickListener clickListener = v -> {
+            int position = -1;
+            if (v == activityItem1 || v == tvActivityView1) position = 0;
+            else if (v == activityItem2 || v == tvActivityView2) position = 1;
+            else if (v == activityItem3 || v == tvActivityView3) position = 2;
+
+            if (position >= 0 && position < recentActivities.size()) {
+                ActivityItem activity = recentActivities.get(position);
+                navigateToActivityDetail(activity);
+            }
+        };
+
+        if (activityItem1 != null) activityItem1.setOnClickListener(clickListener);
+        if (activityItem2 != null) activityItem2.setOnClickListener(clickListener);
+        if (activityItem3 != null) activityItem3.setOnClickListener(clickListener);
+        if (tvActivityView1 != null) tvActivityView1.setOnClickListener(clickListener);
+        if (tvActivityView2 != null) tvActivityView2.setOnClickListener(clickListener);
+        if (tvActivityView3 != null) tvActivityView3.setOnClickListener(clickListener);
+    }
+
+    /**
+     * Navigates to the appropriate detail fragment based on activity type.
+     * Passes all available activity data to the detail fragment.
+     */
+    private void navigateToActivityDetail(ActivityItem activity) {
+        Fragment fragment = null;
+        Bundle args = new Bundle();
+
+        // Pass all activity data to the detail fragment
+        args.putString("doc_id", activity.requestId);
+        args.putString("requestTitle", activity.requestTitle != null ? activity.requestTitle : "");
+        args.putString("requestType", activity.requestType != null ? activity.requestType : "");
+
+        switch (activity.requestType) {
+            case ActivityLogger.TYPE_REPORT:
+                fragment = new AdminReportDetailFragment();
+                break;
+            case ActivityLogger.TYPE_BUSINESS:
+                fragment = new AdminBizVerificationDetailFragment();
+                break;
+            case ActivityLogger.TYPE_LOCATION:
+                fragment = new AdminLocationRequestDetailsFragment();
+                break;
+            case ActivityLogger.TYPE_INFO:
+                fragment = new AdminInfoRequestDetailFragment();
+                break;
+        }
+
+        if (fragment != null) {
+            fragment.setArguments(args);
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.admin_fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        }
+    }
+
+    // Listener registration for cleanup
+    private com.google.firebase.firestore.ListenerRegistration activityListenerRegistration;
+
+    /**
+     * Listens for new activities in real-time.
+     */
+    private void listenForNewActivities() {
+        // Remove previous listener before adding new one to prevent duplicates
+        if (activityListenerRegistration != null) {
+            activityListenerRegistration.remove();
+            activityListenerRegistration = null;
+        }
+
+        activityListenerRegistration = db.collection("admin_activities")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                        if (error != null) return;
+                        if (value != null && !value.getDocumentChanges().isEmpty()) {
+                            // Check if this is actually a new document (not just re-reading same data)
+                            String newDocId = value.getDocumentChanges().get(0).getDocument().getId();
+                            if (!newDocId.equals(lastProcessedActivityId)) {
+                                lastProcessedActivityId = newDocId;
+                                loadRecentActivities();
+                            }
+                        }
+                    }
+                });
+    }
+
+    private String lastProcessedActivityId = null;
+
     /**
      * Loads all dashboard data from Firestore.
-     * Counts unread requests per type and weekly volume data.
      */
     private void loadDashboardData() {
-        // Load unread counts for each request type
         loadUnreadCounts();
-
-        // Load weekly volume data
         loadWeeklyVolumeData();
+        loadRecentActivities();
+    }
+
+    /**
+     * Loads recent activities from Firestore.
+     */
+    private void loadRecentActivities() {
+        db.collection("admin_activities")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(MAX_RECENT_ACTIVITIES)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    recentActivities.clear();
+                    for (DocumentSnapshot doc : snapshots) {
+                        ActivityItem item = new ActivityItem();
+                        item.requestType = doc.getString("requestType");
+                        item.action = doc.getString("action");
+                        item.requestTitle = doc.getString("requestTitle");
+                        item.requestId = doc.getString("requestId");
+                        item.adminUsername = doc.getString("adminUsername");
+                        item.timestamp = doc.getTimestamp("timestamp");
+                        item.displayTime = doc.getString("displayTime");
+                        recentActivities.add(item);
+                    }
+                    updateActivityUI();
+                });
+    }
+
+    /**
+     * Updates the UI with recent activities.
+     */
+    private void updateActivityUI() {
+        if (getView() == null) return;
+
+        // Reset all to invisible first
+        if (activityItem1 != null) activityItem1.setVisibility(View.GONE);
+        if (activityItem2 != null) activityItem2.setVisibility(View.GONE);
+        if (activityItem3 != null) activityItem3.setVisibility(View.GONE);
+
+        for (int i = 0; i < recentActivities.size() && i < MAX_RECENT_ACTIVITIES; i++) {
+            ActivityItem activity = recentActivities.get(i);
+
+            switch (i) {
+                case 0:
+                    updateActivityItem(activityItem1, iconActivity1, tvActivityTitle1,
+                            tvActivitySubtitle1, tvActivityTime1, activity);
+                    if (activityItem1 != null) activityItem1.setVisibility(View.VISIBLE);
+                    break;
+                case 1:
+                    updateActivityItem(activityItem2, iconActivity2, tvActivityTitle2,
+                            tvActivitySubtitle2, tvActivityTime2, activity);
+                    if (activityItem2 != null) activityItem2.setVisibility(View.VISIBLE);
+                    break;
+                case 2:
+                    updateActivityItem(activityItem3, iconActivity3, tvActivityTitle3,
+                            tvActivitySubtitle3, tvActivityTime3, activity);
+                    if (activityItem3 != null) activityItem3.setVisibility(View.VISIBLE);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Updates a single activity item view.
+     */
+    private void updateActivityItem(LinearLayout itemView, ImageView iconView,
+                                    TextView titleView, TextView subtitleView,
+                                    TextView timeView, ActivityItem activity) {
+        if (itemView == null) return;
+
+        // Set icon based on request type
+        if (iconView != null) {
+            switch (activity.requestType) {
+                case ActivityLogger.TYPE_REPORT:
+                    iconView.setImageResource(R.drawable.ic_flag_banner);
+                    iconView.setColorFilter(requireContext().getResources().getColor(R.color.bright_gold, null));
+                    break;
+                case ActivityLogger.TYPE_BUSINESS:
+                    iconView.setImageResource(R.drawable.ic_storefront);
+                    iconView.setColorFilter(requireContext().getResources().getColor(R.color.prussian_blue, null));
+                    break;
+                case ActivityLogger.TYPE_LOCATION:
+                    iconView.setImageResource(R.drawable.ic_pin_area);
+                    iconView.setColorFilter(requireContext().getResources().getColor(R.color.prussian_blue, null));
+                    break;
+                case ActivityLogger.TYPE_INFO:
+                    iconView.setImageResource(R.drawable.ic_info);
+                    iconView.setColorFilter(requireContext().getResources().getColor(R.color.prussian_blue, null));
+                    break;
+            }
+        }
+
+        // Set title: "View [RequestType]" e.g., "View Report"
+        if (titleView != null) {
+            titleView.setText("View " + activity.requestType);
+        }
+
+        // Set subtitle: "[Action] - [Title]" e.g., "Approved - Post-Spam"
+        if (subtitleView != null) {
+            String subtitle = activity.action;
+            if (activity.requestTitle != null && !activity.requestTitle.isEmpty()) {
+                subtitle += " - " + activity.requestTitle;
+            }
+            subtitleView.setText(subtitle);
+        }
+
+        // Set time: time ago format
+        if (timeView != null && activity.timestamp != null) {
+            String timeAgo = ActivityLogger.getTimeAgo(activity.timestamp);
+            timeView.setText(" • " + timeAgo);
+        }
     }
 
     /**
      * Loads unread request counts from each collection.
-     * Collections: add_business_requests, add_info_requests, add_location_requests, add_reports
      */
     private void loadUnreadCounts() {
-        // Query business requests where read = false
         db.collection("add_business_requests")
                 .whereEqualTo("read", false)
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    updateBusinessCount(count, 0); // incremental would come from comparison with previous period
-                })
-                .addOnFailureListener(e -> {
-                    updateBusinessCount(0, 0);
-                });
+                .addOnSuccessListener(snapshot -> updateBusinessCount(snapshot.size(), 0))
+                .addOnFailureListener(e -> updateBusinessCount(0, 0));
 
-        // Query info requests where read = false
         db.collection("add_info_requests")
                 .whereEqualTo("read", false)
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    updateInfoCount(count, 0);
-                })
-                .addOnFailureListener(e -> {
-                    updateInfoCount(0, 0);
-                });
+                .addOnSuccessListener(snapshot -> updateInfoCount(snapshot.size(), 0))
+                .addOnFailureListener(e -> updateInfoCount(0, 0));
 
-        // Query location requests where read = false
         db.collection("add_location_requests")
                 .whereEqualTo("read", false)
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    updateLocationCount(count, 0);
-                })
-                .addOnFailureListener(e -> {
-                    updateLocationCount(0, 0);
-                });
+                .addOnSuccessListener(snapshot -> updateLocationCount(snapshot.size(), 0))
+                .addOnFailureListener(e -> updateLocationCount(0, 0));
 
-        // Query reports where read = false
         db.collection("add_reports")
                 .whereEqualTo("read", false)
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    updateReportsCount(count, 0);
-                })
-                .addOnFailureListener(e -> {
-                    updateReportsCount(0, 0);
-                });
+                .addOnSuccessListener(snapshot -> updateReportsCount(snapshot.size(), 0))
+                .addOnFailureListener(e -> updateReportsCount(0, 0));
     }
 
     /**
      * Loads weekly volume data for the bar chart.
-     * Queries all request collections and groups by day of week.
      */
     private void loadWeeklyVolumeData() {
-        // Get start of current week (Monday)
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -197,7 +423,6 @@ public class AdminHomeFragment extends Fragment {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
-        // Parallel queries for all collections
         Task<QuerySnapshot> businessTask = db.collection("add_business_requests")
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
@@ -214,13 +439,11 @@ public class AdminHomeFragment extends Fragment {
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
-        // Combine all tasks
         Tasks.whenAllSuccess(businessTask, infoTask, locationTask, reportsTask)
                 .addOnSuccessListener(results -> {
                     Map<String, Integer> weeklyData = new LinkedHashMap<>();
                     int totalThisWeek = 0;
 
-                    // Initialize all days to 0
                     weeklyData.put("mon", 0);
                     weeklyData.put("tue", 0);
                     weeklyData.put("wed", 0);
@@ -229,7 +452,6 @@ public class AdminHomeFragment extends Fragment {
                     weeklyData.put("sat", 0);
                     weeklyData.put("sun", 0);
 
-                    // Process each collection result
                     for (Object result : results) {
                         if (result instanceof QuerySnapshot) {
                             QuerySnapshot snapshot = (QuerySnapshot) result;
@@ -260,17 +482,11 @@ public class AdminHomeFragment extends Fragment {
                         }
                     }
 
-                    // Calculate previous week total for incremental (simplified - just use 10% less)
                     int previousWeekTotal = (int) (totalThisWeek * 0.9);
                     int incremental = totalThisWeek - previousWeekTotal;
-
-                    // Update chart
                     updateRequestVolumeChart(weeklyData, totalThisWeek, incremental);
-
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to load chart data", Toast.LENGTH_SHORT).show();
-                    // Show empty chart on failure
                     Map<String, Integer> emptyData = new LinkedHashMap<>();
                     emptyData.put("mon", 0);
                     emptyData.put("tue", 0);
@@ -283,102 +499,54 @@ public class AdminHomeFragment extends Fragment {
                 });
     }
 
-    /**
-     * Updates the business request card count.
-     */
     private void updateBusinessCount(int count, int incremental) {
-        if (tvBusinessCount != null) {
-            tvBusinessCount.setText(String.format("%02d", count));
-        }
+        if (tvBusinessCount != null) tvBusinessCount.setText(String.format("%02d", count));
         if (tvBusinessIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvBusinessIncremental.setText(text);
-            int color = incremental >= 0
-                    ? getResources().getColor(R.color.green, getContext().getTheme())
-                    : getResources().getColor(R.color.dark_amaranth, getContext().getTheme());
-            tvBusinessIncremental.setTextColor(color);
         }
     }
 
-    /**
-     * Updates the info request card count.
-     */
     private void updateInfoCount(int count, int incremental) {
-        if (tvInfoCount != null) {
-            tvInfoCount.setText(String.format("%02d", count));
-        }
+        if (tvInfoCount != null) tvInfoCount.setText(String.format("%02d", count));
         if (tvInfoIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvInfoIncremental.setText(text);
-            int color = incremental >= 0
-                    ? getResources().getColor(R.color.green, getContext().getTheme())
-                    : getResources().getColor(R.color.dark_amaranth, getContext().getTheme());
-            tvInfoIncremental.setTextColor(color);
         }
     }
 
-    /**
-     * Updates the location request card count.
-     */
     private void updateLocationCount(int count, int incremental) {
-        if (tvLocationCount != null) {
-            tvLocationCount.setText(String.format("%02d", count));
-        }
+        if (tvLocationCount != null) tvLocationCount.setText(String.format("%02d", count));
         if (tvLocationIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvLocationIncremental.setText(text);
-            int color = incremental >= 0
-                    ? getResources().getColor(R.color.green, getContext().getTheme())
-                    : getResources().getColor(R.color.dark_amaranth, getContext().getTheme());
-            tvLocationIncremental.setTextColor(color);
         }
     }
 
-    /**
-     * Updates the reports card count.
-     */
     private void updateReportsCount(int count, int incremental) {
-        if (tvReportsCount != null) {
-            tvReportsCount.setText(String.format("%02d", count));
-        }
+        if (tvReportsCount != null) tvReportsCount.setText(String.format("%02d", count));
         if (tvReportsIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvReportsIncremental.setText(text);
-            int color = incremental >= 0
-                    ? getResources().getColor(R.color.green, getContext().getTheme())
-                    : getResources().getColor(R.color.dark_amaranth, getContext().getTheme());
-            tvReportsIncremental.setTextColor(color);
         }
     }
 
     /**
-     * Updates the Request Volume bar chart with weekly data.
-     *
-     * @param weeklyData  Map with day keys ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
-     *                    and Integer request counts as values. Order is preserved.
-     * @param total       Total requests for the week
-     * @param incremental Change in requests compared to previous period (positive or negative)
+     * Updates the Request Volume bar chart.
      */
     public void updateRequestVolumeChart(@NonNull Map<String, Integer> weeklyData,
                                           int total, int incremental) {
-        if (getContext() == null || getView() == null) {
-            return;
-        }
+        if (getContext() == null || getView() == null) return;
 
-        // Calculate max value for scaling
-        int maxValue = 1; // Avoid division by zero
+        int maxValue = 1;
         for (Integer value : weeklyData.values()) {
-            if (value != null && value > maxValue) {
-                maxValue = value;
-            }
+            if (value != null && value > maxValue) maxValue = value;
         }
 
-        // Get density for dp to pixel conversion
         DisplayMetrics dm = getResources().getDisplayMetrics();
         float maxBarHeightPx = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, MAX_BAR_HEIGHT_DP, dm);
 
-        // Update bars and values
         updateBar(barMon, tvMonValue, weeklyData.get("mon"), maxValue, maxBarHeightPx);
         updateBar(barTue, tvTueValue, weeklyData.get("tue"), maxValue, maxBarHeightPx);
         updateBar(barWed, tvWedValue, weeklyData.get("wed"), maxValue, maxBarHeightPx);
@@ -387,7 +555,6 @@ public class AdminHomeFragment extends Fragment {
         updateBar(barSat, tvSatValue, weeklyData.get("sat"), maxValue, maxBarHeightPx);
         updateBar(barSun, tvSunValue, weeklyData.get("sun"), maxValue, maxBarHeightPx);
 
-        // Update total and incremental
         if (tvRequestVolumeTotal != null) {
             tvRequestVolumeTotal.setText(String.format(" - %d", total));
         }
@@ -397,54 +564,34 @@ public class AdminHomeFragment extends Fragment {
                     ? String.format(" +%d", incremental)
                     : String.format(" %d", incremental);
             tvRequestVolumeIncremental.setText(incrementalText);
-
-            // Set color based on positive or negative
-            int color = incremental >= 0
-                    ? getResources().getColor(R.color.green, getContext().getTheme())
-                    : getResources().getColor(R.color.dark_amaranth, getContext().getTheme());
-            tvRequestVolumeIncremental.setTextColor(color);
         }
     }
 
-    /**
-     * Helper method to update a single bar's height and value text.
-     */
     private void updateBar(View bar, TextView valueText, Integer value,
                           int maxValue, float maxBarHeightPx) {
-        if (bar == null || valueText == null || value == null) {
-            return;
-        }
+        if (bar == null || valueText == null || value == null) return;
 
-        // Update value text
         valueText.setText(String.valueOf(value));
-
-        // Calculate proportional height
         float proportionalHeight = (value / (float) maxValue) * maxBarHeightPx;
         int minHeightPx = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 4f, getResources().getDisplayMetrics());
         int barHeightPx = Math.max((int) proportionalHeight, minHeightPx);
 
-        // Apply new height
         LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) bar.getLayoutParams();
         params.height = barHeightPx;
         bar.setLayoutParams(params);
     }
 
     /**
-     * Convenience method with individual day params.
+     * Data class for activity items.
      */
-    public void updateRequestVolumeChart(int mon, int tue, int wed, int thu,
-                                         int fri, int sat, int sun,
-                                         int total, int incremental) {
-        Map<String, Integer> weeklyData = new LinkedHashMap<>();
-        weeklyData.put("mon", mon);
-        weeklyData.put("tue", tue);
-        weeklyData.put("wed", wed);
-        weeklyData.put("thu", thu);
-        weeklyData.put("fri", fri);
-        weeklyData.put("sat", sat);
-        weeklyData.put("sun", sun);
-
-        updateRequestVolumeChart(weeklyData, total, incremental);
+    private static class ActivityItem {
+        String requestType;
+        String action;
+        String requestTitle;
+        String requestId;
+        String adminUsername;
+        com.google.firebase.Timestamp timestamp;
+        String displayTime;
     }
 }

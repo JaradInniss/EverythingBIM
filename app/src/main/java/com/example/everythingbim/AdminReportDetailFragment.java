@@ -1,8 +1,11 @@
 package com.example.everythingbim;
 
+import static android.content.ContentValues.TAG;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.everythingbim.R;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
@@ -72,6 +76,9 @@ public class AdminReportDetailFragment extends Fragment {
     // ─── Firebase ────────────────────────────
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
+
+    // ─── Activity Logger ────────────────────
+    private ActivityLogger activityLogger;
 
     // ─── Admin action options organized by severity ─────────────────
     // MAJOR: Emergency/immediate actions
@@ -202,6 +209,7 @@ public class AdminReportDetailFragment extends Fragment {
 
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        activityLogger = new ActivityLogger();
 
         if (getArguments() != null) {
             docId = getArguments().getString(ARG_DOC_ID, "");
@@ -237,6 +245,11 @@ public class AdminReportDetailFragment extends Fragment {
         setupActionSpinner();
         loadReportData();
 
+        // Log activity - admin viewed this report
+        if (!docId.isEmpty()) {
+            activityLogger.logView(ActivityLogger.TYPE_REPORT, cachedTitle, docId);
+        }
+
         // Submit
         submitBtn.setOnClickListener(v -> submitAction());
 
@@ -244,35 +257,92 @@ public class AdminReportDetailFragment extends Fragment {
     }
 
     // ────────────────────────────────────────────────────────
-    // LOAD REPORT DATA FROM PASSED BUNDLE (NO FIRESTORE)
-    // Firestore fetch will be implemented in future
+    // LOAD REPORT DATA - uses cached bundle data or fetches from Firestore
     // ────────────────────────────────────────────────────────
 
     private void loadReportData() {
-        // Display cached data from bundle (passed from list)
+        // If we have cached title, display it directly (came from list with full data)
+        // Otherwise fetch from Firestore using docId (came from activity log)
+        if (cachedTitle != null && !cachedTitle.isEmpty()) {
+            displayCachedData();
+        } else if (!docId.isEmpty()) {
+            fetchReportFromFirestore();
+        }
+    }
+
+    private void displayCachedData() {
         numberTv.setText("Report " + cachedNumber);
 
-        severityBadge.setText(cachedSeverity.toUpperCase());
-        applySeverityBadgeColor(cachedSeverity);
+        if (cachedSeverity != null) {
+            severityBadge.setText(cachedSeverity.toUpperCase());
+            applySeverityBadgeColor(cachedSeverity);
+        }
 
-        statusTv.setText(cachedStatus);
+        statusTv.setText(cachedStatus != null ? cachedStatus : "In Review");
         applyStatusColor(cachedStatus);
 
         dateTv.setText("Submitted: " + cachedDate);
 
-        typeTv.setText(cachedType);
+        typeTv.setText(cachedType != null ? cachedType : "Post");
 
         issueTv.setText(cachedTitle);
 
-        userTv.setText(cachedReportedUser);
+        userTv.setText(cachedReportedUser != null ? cachedReportedUser : "");
 
-        postDateTv.setText(""); // Not passed from list
+        postDateTv.setText("");
 
-        captionTv.setText(cachedCaption);
+        captionTv.setText(cachedCaption != null ? cachedCaption : "");
 
         if (cachedImageUrl != null && !cachedImageUrl.isEmpty()) {
             loadImageFromStorage(cachedImageUrl);
         }
+    }
+
+    private void fetchReportFromFirestore() {
+        db.collection("reports").document(docId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String id = doc.getId().substring(0, 3).toUpperCase();
+                        String number = doc.contains("number")
+                                ? "#" + doc.getLong("number")
+                                : "#" + id;
+
+                        numberTv.setText("Report " + number);
+                        severityBadge.setText(doc.getString("severity") != null
+                                ? doc.getString("severity").toUpperCase() : "Minor");
+                        applySeverityBadgeColor(doc.getString("severity"));
+                        statusTv.setText(doc.getString("status") != null
+                                ? doc.getString("status") : "In Review");
+                        applyStatusColor(doc.getString("status"));
+
+                        com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                        String date = ts != null
+                                ? new java.text.SimpleDateFormat("yyyy/MM/dd",
+                                java.util.Locale.getDefault()).format(ts.toDate())
+                                : "";
+                        dateTv.setText("Submitted: " + date);
+
+                        typeTv.setText(doc.getString("type") != null
+                                ? doc.getString("type") : "Post");
+                        issueTv.setText(doc.getString("title") != null
+                                ? doc.getString("title") : "Report");
+                        userTv.setText(doc.getString("reportedUser") != null
+                                ? doc.getString("reportedUser") : "");
+                        captionTv.setText(doc.getString("caption") != null
+                                ? doc.getString("caption") : "");
+
+                        String imageUrl = doc.getString("imageUrl");
+                        if (imageUrl != null && !imageUrl.isEmpty()) {
+                            loadImageFromStorage(imageUrl);
+                        }
+                    } else {
+                        issueTv.setText("Report not found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    issueTv.setText("Error loading report");
+                });
     }
 
     // ────────────────────────────────────────────────────────
@@ -395,6 +465,11 @@ public class AdminReportDetailFragment extends Fragment {
         }
         if (docId.isEmpty()) return;
 
+        // ADD THIS LOG:
+        Log.d(TAG, "submitAction - docId: " + docId + ", auth: " +
+                (FirebaseAuth.getInstance().getCurrentUser() != null ?
+                        FirebaseAuth.getInstance().getCurrentUser().getEmail() : "NOT LOGGED IN"));
+
         submitBtn.setEnabled(false);
         submitBtn.setText(getString(R.string.processing));
 
@@ -405,6 +480,8 @@ public class AdminReportDetailFragment extends Fragment {
                         "resolvedAt", com.google.firebase.Timestamp.now()
                 )
                 .addOnSuccessListener(v -> {
+                    // Log the completion activity
+                    activityLogger.logCompletion(ActivityLogger.TYPE_REPORT, cachedTitle, docId);
                     Toast.makeText(getContext(),
                             "Action submitted: " + selectedAction,
                             Toast.LENGTH_SHORT).show();

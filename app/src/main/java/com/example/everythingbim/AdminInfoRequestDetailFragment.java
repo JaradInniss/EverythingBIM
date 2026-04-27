@@ -53,6 +53,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
     private String docId = "";
     private FirebaseFirestore db;
     private FirebaseStorage   storage;
+    private ActivityLogger activityLogger;
 
     // ─── Cached data from Bundle ─────────────
     private String cachedNumber = "";
@@ -128,6 +129,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_admin_info_request_detail, container, false);
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        activityLogger = new ActivityLogger();
 
         // Extract Bundle data first
         if (getArguments() != null) {
@@ -183,6 +185,8 @@ public class AdminInfoRequestDetailFragment extends Fragment {
         // Always try to fetch fresh data from Firestore as fallback
         if (!docId.isEmpty()) {
             loadData();
+            // Log activity - admin viewed this info request
+            activityLogger.logView(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
         }
 
         return view;
@@ -232,38 +236,62 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
                     long number = doc.contains("number") ? doc.getLong("number") : 0;
                     numberTv.setText("Request #" + number);
+                    cachedNumber = String.valueOf(number);
 
                     String status = doc.getString("status");
                     if (status == null) status = "In Review";
                     statusTv.setText("Status: " + status);
+                    cachedStatus = status;
 
                     Timestamp ts = doc.getTimestamp("createdAt");
-                    if (ts != null) dateTv.setText("Submitted: " + fmt(ts));
+                    if (ts != null) {
+                        dateTv.setText("Submitted: " + fmt(ts));
+                        cachedDate = fmt(ts);
+                    }
 
                     String sub = doc.getString("submittedByUsername");
                     submittedByTv.setText("Submitted By: User "
                             + (sub != null ? sub : ""));
+                    cachedSubmittedBy = sub != null ? sub : "";
 
-                    locationNameTv.setText(nvl(doc.getString("locationName")));
-                    descriptionTv.setText(nvl(doc.getString("description")));
-                    placeTypeTv.setText(nvl(doc.getString("placeType")));
+                    String locationName = nvl(doc.getString("locationName"));
+                    locationNameTv.setText(locationName);
+                    cachedLocationName = locationName;
+
+                    String description = nvl(doc.getString("description"));
+                    descriptionTv.setText(description);
+                    cachedDescription = description;
+
+                    String placeType = nvl(doc.getString("placeType"));
+                    placeTypeTv.setText(placeType);
+                    cachedPlaceType = placeType;
 
                     Double lat = doc.getDouble("latitude");
                     Double lng = doc.getDouble("longitude");
-                    if (lat != null && lng != null)
-                        coordinatesTv.setText(String.format(Locale.getDefault(),
-                                "%.5f, %.5f", lat, lng));
+                    if (lat != null && lng != null) {
+                        String coords = String.format(Locale.getDefault(),
+                                "%.5f, %.5f", lat, lng);
+                        coordinatesTv.setText(coords);
+                        cachedCoordinates = coords;
+                        cachedLatitude = lat;
+                        cachedLongitude = lng;
+                    }
 
                     List<String> urls = (List<String>) doc.get("imageUrls");
                     if (urls != null) for (String url : urls) loadImage(url);
 
                     if ("Completed".equals(status)) {
-                        applyAcceptedState(fmt(doc.getTimestamp("resolvedAt")),
-                                nvl(doc.getString("resolvedBy")));
+                        String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
+                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")));
+                        cachedResolvedAt = resolvedAt;
+                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
                     } else if ("Rejected".equals(status)) {
-                        applyRejectedState(fmt(doc.getTimestamp("resolvedAt")),
-                                nvl(doc.getString("resolvedBy")),
-                                nvl(doc.getString("rejectionReason")));
+                        String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
+                        String rejectionReason = nvl(doc.getString("rejectionReason"));
+                        applyRejectedState(resolvedAt, nvl(doc.getString("resolvedBy")), rejectionReason);
+                        cachedResolvedAt = resolvedAt;
+                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
+                        cachedRejectionReason = rejectionReason;
                     }
 
                     doc.getReference().update("read", true);
@@ -321,6 +349,8 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId())
                 .addOnSuccessListener(v -> {
+                    // Log approval activity
+                    activityLogger.logApproval(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
                     Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
                     applyAcceptedState(todayStr(), "Administrator");
                 })
@@ -336,6 +366,8 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         "resolvedBy", getAdminId(),
                         "rejectionReason", reason)
                 .addOnSuccessListener(v -> {
+                    // Log rejection activity
+                    activityLogger.logRejection(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
                     Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
                     applyRejectedState(todayStr(), "Administrator", reason);
                 })

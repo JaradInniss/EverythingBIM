@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.user.AddLocationRequestFragment">
+    tools:context=".ui.user.AddInformationRequestFragment">
 
     <!-- Toolbar -->
     <LinearLayout
-        android:id="@+id/add_locreq_toolbar"
+        android:id="@+id/add_inforeq_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -34,12 +34,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Create New Add Location Request"
+                android:text="Create New Add Information Request"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 android:textStyle="bold" />
             <TextView
-                android:id="@+id/add_locreq_user_id_tv"
+                android:id="@+id/add_inforeq_user_id_tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="#102MA21"
@@ -48,11 +48,11 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Scrollable form -->
+    <!-- Scrollable Form -->
     <ScrollView
+        android:layout_below="@+id/add_inforeq_toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/add_locreq_toolbar"
         android:fillViewport="true">
 
         <LinearLayout
@@ -63,7 +63,7 @@
             android:padding="10dp">
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/add_locreq_card"
+                android:id="@+id/add_inforeq_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardElevation="6dp"
@@ -76,7 +76,7 @@
                     android:orientation="vertical"
                     android:padding="12dp">
 
-                    <!-- Form header -->
+                    <!-- Form Header -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -86,54 +86,51 @@
                         android:textColor="@color/black"
                         android:textSize="13sp" />
 
-                    <!-- Search bar + dropdown -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="10dp">
+
                     <LinearLayout
+                        android:id="@+id/search_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_horizontal"
+                        android:background="@drawable/bg_rectangle_alice_blue"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp">
+                        <EditText
+                            android:id="@+id/search_et"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:fontFamily="@font/roboto_medium"
+                            android:hint="Location"
+                            android:inputType="text"
+                            android:singleLine="true"
+                            android:textSize="12sp"
+                            android:textColor="@color/black"
+                            android:imeOptions="actionSearch" />
+                        <ImageView
+                            android:id="@+id/search_bttn"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginRight="10dp"
+                            android:src="@drawable/ic_magnifying_glass"
+                            app:tint="@color/black" />
+                    </LinearLayout>
+
+                    <ListView
+                        android:id="@+id/search_results_list"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginBottom="10dp">
-
-                        <LinearLayout
-                            android:id="@+id/search_bar"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:layout_gravity="center_horizontal"
-                            android:background="@drawable/bg_rectangle_alice_blue"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp">
-                            <EditText
-                                android:id="@+id/search_et"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:background="@null"
-                                android:fontFamily="@font/roboto_medium"
-                                android:hint="Location"
-                                android:inputType="text"
-                                android:singleLine="true"
-                                android:textSize="12sp"
-                                android:textColor="@color/black"
-                                android:imeOptions="actionSearch" />
-                            <ImageView
-                                android:id="@+id/search_bttn"
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:layout_marginRight="10dp"
-                                android:src="@drawable/ic_magnifying_glass"
-                                app:tint="@color/black" />
-                        </LinearLayout>
-
-                        <ListView
-                            android:id="@+id/search_results_list"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:background="@color/white"
-                            android:elevation="4dp"
-                            android:divider="@color/light_grey"
-                            android:dividerHeight="1dp"
-                            android:visibility="gone" />
+                        android:background="@color/white"
+                        android:elevation="4dp"
+                        android:visibility="gone" />
 
                     </LinearLayout>
 
@@ -145,13 +142,11 @@
                         android:layout_marginBottom="16dp"
                         android:background="@drawable/bg_rectangle_alice_blue">
 
-                        <com.google.android.gms.maps.MapView
-                            android:id="@+id/viewlocreq_map"
-                            android:layout_width="match_parent"
-                            android:layout_height="90dp"/>
-
+                    <com.google.android.gms.maps.MapView
+                        android:id="@+id/viewinforeq_map"
+                        android:layout_width="match_parent"
+                        android:layout_height="90dp"/>
                     </androidx.cardview.widget.CardView>
-
 
                     <!-- Location Name -->
                     <TextView
@@ -245,38 +240,6 @@
                             app:tint="@color/black" />
                     </RelativeLayout>
 
-                    <!-- Reason For Request -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Reason For Request"
-                        android:textColor="@color/black"
-                        android:textSize="13sp"
-                        android:layout_marginBottom="4dp" />
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_rectangle_alice_blue"
-                        android:layout_marginBottom="10dp">
-                        <Spinner
-                            android:id="@+id/request_reason_spinner"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@null"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="36dp" />
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:layout_marginEnd="10dp"
-                            android:src="@drawable/icon_caret_down"
-                            android:contentDescription="@null"
-                            app:tint="@color/black" />
-                    </RelativeLayout>
-
                     <!-- Images of Location -->
                     <TextView
                         android:layout_width="wrap_content"
@@ -346,6 +309,29 @@
                         android:layout_gravity="center_horizontal"
                         android:text="SUBMIT"
                         style="@style/rectangle_bttn_gold"/>
+
+                    <!-- Notice -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="14dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:src="@drawable/ic_info"
+                            app:tint="@color/dim_grey"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="After submission,you should be notified within 1-3 days regarding submission results."
+                            style="@style/info_txt_style" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
