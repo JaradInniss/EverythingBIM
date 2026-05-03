@@ -324,6 +324,7 @@
 
                 <!-- Overview Field -->
                 <EditText
+                    android:id="@+id/map_overview_input"
                     android:layout_width="match_parent"
                     android:layout_height="80dp"
                     android:layout_marginTop="5dp"

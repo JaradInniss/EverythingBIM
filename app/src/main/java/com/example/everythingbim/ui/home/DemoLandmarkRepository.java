@@ -13,6 +13,10 @@ import java.util.Map;
 import java.util.Random;
 
 public class DemoLandmarkRepository {
+    private static final double PARLIAMENT_LATITUDE = 13.0969861d;
+    private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
+    private static final int PARLIAMENT_NEARBY_RADIUS_METERS = 1000;
+
     private final List<DemoLandmark> landmarks = new ArrayList<>();
     private final Map<String, String> aliasToLandmarkId = new HashMap<>();
     private final Random random = new Random();
@@ -22,19 +26,28 @@ public class DemoLandmarkRepository {
                 "parliament",
                 "parliament",
                 "Barbados Parliament Buildings",
-                "Historic neo-Gothic government buildings in Bridgetown and among Barbados' most recognizable civic landmarks."
+                "Historic neo-Gothic government buildings in Bridgetown and among Barbados' most recognizable civic landmarks.",
+                PARLIAMENT_LATITUDE,
+                PARLIAMENT_LONGITUDE,
+                PARLIAMENT_NEARBY_RADIUS_METERS
         );
         DemoLandmark kensington = new DemoLandmark(
                 "kensington",
                 "kensington",
                 "Kensington Oval",
-                "A famous Bridgetown cricket ground and one of Barbados' best-known sporting venues."
+                "A famous Bridgetown cricket ground and one of Barbados' best-known sporting venues.",
+                13.1000d,
+                -59.6160d,
+                0
         );
         DemoLandmark cathedral = new DemoLandmark(
                 "cathedral",
                 "cathedral",
                 "St. Michael's Cathedral",
-                "A major Anglican cathedral in Bridgetown known for its long history and distinctive architecture."
+                "A major Anglican cathedral in Bridgetown known for its long history and distinctive architecture.",
+                13.0979d,
+                -59.6105d,
+                0
         );
 
         landmarks.add(parliament);

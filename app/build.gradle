@@ -1,7 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
 }
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { stream ->
+        localProperties.load(stream)
+    }
+}
+def routesApiKey = localProperties.getProperty("ROUTES_API_KEY", "")
 
 android {
     namespace 'com.example.everythingbim'
@@ -15,6 +26,7 @@ android {
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "ML_API_BASE_URL", "\"http://10.0.2.2:8000\""
+        buildConfigField "String", "ROUTES_API_KEY", "\"${routesApiKey}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
