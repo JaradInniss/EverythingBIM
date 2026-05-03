@@ -7,15 +7,24 @@ public class DemoLandmark {
     private final String token;
     private final String displayName;
     private final String description;
+    private final double latitude;
+    private final double longitude;
+    private final int nearbyRadiusMeters;
 
     public DemoLandmark(@NonNull String id,
                         @NonNull String token,
                         @NonNull String displayName,
-                        @NonNull String description) {
+                        @NonNull String description,
+                        double latitude,
+                        double longitude,
+                        int nearbyRadiusMeters) {
         this.id = id;
         this.token = token;
         this.displayName = displayName;
         this.description = description;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.nearbyRadiusMeters = nearbyRadiusMeters;
     }
 
     @NonNull
@@ -36,5 +45,17 @@ public class DemoLandmark {
     @NonNull
     public String getDescription() {
         return description;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public int getNearbyRadiusMeters() {
+        return nearbyRadiusMeters;
     }
 }

@@ -32,22 +32,28 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.everythingbim.BuildConfig;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.data.models.MarkerDetails;
+import com.example.everythingbim.ui.home.NearbySavedLocation;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.PointOfInterest;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -56,16 +62,31 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, View.OnClickListener {
+    public static final String ARG_OPEN_FOCUS_LOCATION = "arg_open_focus_location";
+    public static final String ARG_FOCUS_LATITUDE = "arg_focus_latitude";
+    public static final String ARG_FOCUS_LONGITUDE = "arg_focus_longitude";
+    public static final String ARG_FOCUS_TITLE = "arg_focus_title";
+    public static final String ARG_FOCUS_SUBTITLE = "arg_focus_subtitle";
+    public static final String ARG_OPEN_ROUTE_PREVIEW = "arg_open_route_preview";
+    public static final String ARG_ROUTE_LOCATIONS = "arg_route_locations";
+
+    private static final double PARLIAMENT_LATITUDE = 13.0969861d;
+    private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final long SEARCH_DEBOUNCE_MS = 300L;
 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService routeExecutor = Executors.newSingleThreadExecutor();
     private final List<MarkerEntity> storedMarkers = new ArrayList<>();
     private final List<AutocompletePrediction> autocompletePredictions = new ArrayList<>();
     private final List<String> predictionLabels = new ArrayList<>();
@@ -90,13 +111,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private AutocompleteSessionToken autocompleteSessionToken;
 
     private EditText searchInput;
+    private EditText overviewInput;
     private ProgressBar searchProgress;
     private View searchResultsContainer, detailsContainer;
     private ListView searchResultsList;
     private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn;
     private HorizontalScrollView imagesField, reviewsField, postsField;
     private RelativeLayout detailsHeader;
-    private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText;
+    private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
     private ArrayAdapter<String> searchResultsAdapter;
 
     // Custom UI Buttons
@@ -105,6 +127,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private Marker searchMarker;
     private Place selectedPlace;
     private boolean suppressSearchTextChange;
+    private LatLng externalFocusLatLng;
+    private String externalFocusTitle;
+    private String externalFocusSubtitle;
+    private final ArrayList<NearbySavedLocation> routePreviewLocations = new ArrayList<>();
+    private Polyline routePreviewPolyline;
+    private Polyline routePreviewOutlinePolyline;
+    private RoutesApiService.RoutePreviewData routePreviewData;
+    private boolean routePreviewFetchInProgress;
+    private String routePreviewErrorMessage;
 
     public MapFragment() {
     }
@@ -115,6 +146,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         mapViewModel = new ViewModelProvider(this).get(MapViewModel.class);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         initializePlacesClient();
+        readFocusArguments();
     }
 
     @Override
@@ -144,6 +176,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     private void bindViews(View root) {
         searchInput = root.findViewById(R.id.map_search_input);
+        overviewInput = root.findViewById(R.id.map_overview_input);
         searchProgress = root.findViewById(R.id.map_search_progress);
         searchResultsContainer = root.findViewById(R.id.map_search_results_card);
         searchResultsList = root.findViewById(R.id.map_search_results_list);
@@ -153,6 +186,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         placeName = root.findViewById(R.id.map_location_name);
         placeAddress = root.findViewById(R.id.map_location_address);
         placeRating = root.findViewById(R.id.location_overall_rating_tv);
+        placeMeta = root.findViewById(R.id.map_place_meta);
+        placeContact = root.findViewById(R.id.map_place_contact);
         noImagesText = root.findViewById(R.id.no_images_tv);
         noPostsText = root.findViewById(R.id.no_posts_tv);
         noReviewsText = root.findViewById(R.id.no_reviews_tv);
@@ -173,12 +208,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         viewAllReviewsBttn.setOnClickListener(this);
         viewAllPostsBttn = root.findViewById(R.id.location_posts_view_all_bttn);
         viewAllPostsBttn.setOnClickListener(this);
+        View directionsButton = root.findViewById(R.id.directions_bttn);
+        directionsButton.setOnClickListener(this);
     }
 
     @Override
     public void onDestroyView() {
         searchHandler.removeCallbacksAndMessages(null);
         searchInput = null;
+        overviewInput = null;
         searchProgress = null;
         searchResultsContainer = null;
         searchResultsList = null;
@@ -187,6 +225,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         placeName = null;
         placeAddress = null;
         placeRating = null;
+        placeMeta = null;
+        placeContact = null;
         reviewsCount = null;
         searchResultsAdapter = null;
         searchMarker = null;
@@ -195,6 +235,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         fixLocationButton = null;
         returnButton = null;
         selectedPlace = null;
+        routeExecutor.shutdownNow();
         super.onDestroyView();
     }
 
@@ -237,6 +278,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         }
         else if (bttnId == R.id.location_posts_view_all_bttn) {
             mapViewModel.onViewAllClicked("POSTS");
+        }
+        else if (bttnId == R.id.directions_bttn) {
+            openDirectionsSheet();
         }
     }
 
@@ -297,6 +341,44 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             }
             renderMarkers();
         });
+
+        if (!routePreviewLocations.isEmpty()) {
+            mapViewModel.setFocusedLocation(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
+            mapViewModel.setSelectedLocationMetadata(-1, "Parliament route preview");
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            showRoutePreview();
+        } else if (externalFocusLatLng != null) {
+            mapViewModel.setFocusedLocation(externalFocusLatLng);
+            mapViewModel.setSelectedLocationMetadata(-1, externalFocusTitle != null ? externalFocusTitle : "Selected location");
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            showExternalFocusedLocation();
+        }
+    }
+
+    private void readFocusArguments() {
+        Bundle args = getArguments();
+        if (args == null) {
+            return;
+        }
+
+        if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
+            externalFocusLatLng = new LatLng(
+                    args.getDouble(ARG_FOCUS_LATITUDE, 0d),
+                    args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
+            );
+            externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+            externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
+        }
+
+        if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
+            routePreviewLocations.clear();
+            Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
+            if (value instanceof ArrayList) {
+                @SuppressWarnings("unchecked")
+                ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
+                routePreviewLocations.addAll(restored);
+            }
+        }
     }
 
     private void setUpObservers() {
@@ -512,6 +594,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (map == null) return;
         map.clear();
         searchMarker = null;
+        routePreviewPolyline = null;
+        routePreviewOutlinePolyline = null;
 
         for (MarkerEntity marker : storedMarkers) {
             LatLng position = new LatLng(marker.latitude, marker.longitude);
@@ -538,14 +622,377 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (searchMarker != null) {
                 searchMarker.setTag(buildMarkerDetails(selectedPlace));
             }
+        } else if (externalFocusLatLng != null) {
+            searchMarker = map.addMarker(new MarkerOptions()
+                    .position(externalFocusLatLng)
+                    .title(externalFocusTitle != null ? externalFocusTitle : "Selected location")
+                    .snippet(externalFocusSubtitle != null ? externalFocusSubtitle : ""));
+            if (searchMarker != null) {
+                searchMarker.setTag(new MarkerDetails(
+                        -1,
+                        externalFocusTitle != null ? externalFocusTitle : "Selected location",
+                        externalFocusSubtitle != null ? externalFocusSubtitle : "",
+                        "",
+                        "",
+                        0.0f,
+                        "",
+                        "",
+                        new ArrayList<String>(),
+                        new ArrayList<ReviewEntity>(),
+                        new ArrayList<PostEntity>()
+                ));
+            }
         }
+
+        if (!routePreviewLocations.isEmpty()) {
+            drawRoutePreview();
+        }
+    }
+
+    private void showExternalFocusedLocation() {
+        renderMarkers();
+        if (searchMarker != null) {
+            MarkerDetails details = getMarkerDetails(searchMarker);
+            showPlaceDetails(details);
+            searchMarker.showInfoWindow();
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(externalFocusLatLng, 17f));
+        }
+    }
+
+    private void showRoutePreview() {
+        loadRoutePreviewIfNeeded();
+
+        float totalDistanceMeters = routePreviewData != null
+                ? routePreviewData.distanceMeters
+                : calculateRoutePreviewDistanceMeters();
+        int estimatedMinutes = routePreviewData != null
+                ? Math.max(1, (int) Math.ceil(routePreviewData.durationSeconds / 60d))
+                : estimateWalkingMinutes(totalDistanceMeters);
+        renderMarkers();
+
+        MarkerDetails details = new MarkerDetails(
+                -1,
+                "Parliament route preview",
+                routePreviewLocations.size() + " selected stop" + (routePreviewLocations.size() == 1 ? "" : "s"),
+                "Walking preview | " + formatDistance(totalDistanceMeters) + " | " + estimatedMinutes + " min walk",
+                buildRouteStopSummary(),
+                0.0f,
+                buildRouteOverview(),
+                "route",
+                new ArrayList<String>(),
+                new ArrayList<ReviewEntity>(),
+                new ArrayList<PostEntity>()
+        );
+        showPlaceDetails(details);
+        fitRoutePreviewBounds();
+    }
+
+    private void drawRoutePreview() {
+        if (map == null || routePreviewLocations.isEmpty()) {
+            return;
+        }
+
+        ArrayList<LatLng> routePoints = new ArrayList<>();
+        LatLng parliament = new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE);
+        routePoints.add(parliament);
+
+        Marker parliamentMarker = map.addMarker(new MarkerOptions()
+                .position(parliament)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                .title("Barbados Parliament Buildings")
+                .snippet("Start"));
+        if (parliamentMarker != null) {
+            parliamentMarker.setTag(new MarkerDetails(
+                    -1,
+                    "Barbados Parliament Buildings",
+                    "Route starting point",
+                    "",
+                    "",
+                    0.0f,
+                    "",
+                    "",
+                    new ArrayList<String>(),
+                    new ArrayList<ReviewEntity>(),
+                    new ArrayList<PostEntity>()
+            ));
+        }
+
+        for (int index = 0; index < routePreviewLocations.size(); index++) {
+            NearbySavedLocation stop = routePreviewLocations.get(index);
+            LatLng stopLatLng = new LatLng(stop.getLatitude(), stop.getLongitude());
+            routePoints.add(stopLatLng);
+
+            float markerHue = index == routePreviewLocations.size() - 1
+                    ? BitmapDescriptorFactory.HUE_RED
+                    : BitmapDescriptorFactory.HUE_ORANGE;
+            String markerTitle = (index + 1) + ". " + stop.getName();
+            String markerSnippet = index == routePreviewLocations.size() - 1
+                    ? "Destination | " + stop.getDistanceLabel()
+                    : "Stop " + (index + 1) + " | " + stop.getDistanceLabel();
+
+            Marker routeMarker = map.addMarker(new MarkerOptions()
+                    .position(stopLatLng)
+                    .icon(BitmapDescriptorFactory.defaultMarker(markerHue))
+                    .title(markerTitle)
+                    .snippet(markerSnippet));
+            if (routeMarker != null) {
+                routeMarker.setTag(new MarkerDetails(
+                        stop.getLocationId(),
+                        markerTitle,
+                        stop.getDescriptionOrFallback(),
+                        markerSnippet,
+                        "",
+                        stop.getRating(),
+                        stop.getDescriptionOrFallback(),
+                        stop.getCategory() != null ? stop.getCategory() : "",
+                        new ArrayList<String>(),
+                        new ArrayList<ReviewEntity>(),
+                        new ArrayList<PostEntity>()
+                ));
+            }
+        }
+
+        List<LatLng> polylinePoints = routePreviewData != null
+                && routePreviewData.path != null
+                && !routePreviewData.path.isEmpty()
+                ? routePreviewData.path
+                : routePoints;
+
+        routePreviewOutlinePolyline = map.addPolyline(new PolylineOptions()
+                .addAll(polylinePoints)
+                .width(16f)
+                .color(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
+
+        routePreviewPolyline = map.addPolyline(new PolylineOptions()
+                .addAll(polylinePoints)
+                .width(9f)
+                .color(ContextCompat.getColor(requireContext(), R.color.space_indigo)));
+    }
+
+    private void fitRoutePreviewBounds() {
+        if (map == null || routePreviewLocations.isEmpty()) {
+            return;
+        }
+
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        if (routePreviewData != null && routePreviewData.path != null && !routePreviewData.path.isEmpty()) {
+            for (LatLng point : routePreviewData.path) {
+                builder.include(point);
+            }
+        } else {
+            builder.include(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
+            for (NearbySavedLocation stop : routePreviewLocations) {
+                builder.include(new LatLng(stop.getLatitude(), stop.getLongitude()));
+            }
+        }
+        map.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 120));
+    }
+
+    @NonNull
+    private String buildRouteStopSummary() {
+        StringBuilder summary = new StringBuilder("Stops: Parliament");
+        for (int index = 0; index < routePreviewLocations.size(); index++) {
+            summary.append(" -> ")
+                    .append(index + 1)
+                    .append(". ")
+                    .append(routePreviewLocations.get(index).getName());
+        }
+        return summary.toString();
+    }
+
+    private float calculateRoutePreviewDistanceMeters() {
+        if (routePreviewLocations.isEmpty()) {
+            return 0f;
+        }
+
+        float totalDistance = 0f;
+        double currentLat = PARLIAMENT_LATITUDE;
+        double currentLng = PARLIAMENT_LONGITUDE;
+        for (NearbySavedLocation stop : routePreviewLocations) {
+            float[] result = new float[1];
+            android.location.Location.distanceBetween(
+                    currentLat,
+                    currentLng,
+                    stop.getLatitude(),
+                    stop.getLongitude(),
+                    result
+            );
+            totalDistance += result[0];
+            currentLat = stop.getLatitude();
+            currentLng = stop.getLongitude();
+        }
+        return totalDistance;
+    }
+
+    private int estimateWalkingMinutes(float meters) {
+        if (meters <= 0f) {
+            return 0;
+        }
+        double metersPerMinute = 5000d / 60d;
+        return Math.max(1, (int) Math.ceil(meters / metersPerMinute));
+    }
+
+    private void loadRoutePreviewIfNeeded() {
+        if (routePreviewData != null || routePreviewFetchInProgress || routePreviewLocations.isEmpty()) {
+            return;
+        }
+
+        String apiKey = BuildConfig.ROUTES_API_KEY;
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            routePreviewErrorMessage = "Routes API key unavailable. Showing direct preview instead.";
+            return;
+        }
+
+        routePreviewFetchInProgress = true;
+        routeExecutor.execute(() -> {
+            try {
+                RoutesApiService.RoutePreviewData fetched = RoutesApiService.fetchWalkingRoute(
+                        apiKey,
+                        new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE),
+                        new ArrayList<>(routePreviewLocations)
+                );
+                if (!isAdded()) {
+                    return;
+                }
+                requireActivity().runOnUiThread(() -> {
+                    routePreviewFetchInProgress = false;
+                    routePreviewErrorMessage = null;
+                    routePreviewData = fetched;
+                    if (map != null) {
+                        showRoutePreview();
+                    }
+                });
+            } catch (Exception error) {
+                if (!isAdded()) {
+                    return;
+                }
+                requireActivity().runOnUiThread(() -> {
+                    routePreviewFetchInProgress = false;
+                    routePreviewErrorMessage = "Unable to load road-following directions yet. Showing direct preview.";
+                    Toast.makeText(requireContext(), routePreviewErrorMessage, Toast.LENGTH_SHORT).show();
+                    if (map != null) {
+                        showRoutePreview();
+                    }
+                });
+            }
+        });
+    }
+
+    @NonNull
+    private String buildRouteOverview() {
+        if (routePreviewFetchInProgress) {
+            return "Loading walking directions...";
+        }
+
+        if (routePreviewData != null && routePreviewData.steps != null && !routePreviewData.steps.isEmpty()) {
+            StringBuilder builder = new StringBuilder();
+            int stepCount = Math.min(routePreviewData.steps.size(), 5);
+            for (int index = 0; index < stepCount; index++) {
+                RoutesApiService.RouteStep step = routePreviewData.steps.get(index);
+                if (builder.length() > 0) {
+                    builder.append("\n");
+                }
+                builder.append(index + 1)
+                        .append(". ")
+                        .append(step.instructions);
+                if (step.distanceMeters > 0) {
+                    builder.append(" (")
+                            .append(formatDistance(step.distanceMeters))
+                            .append(")");
+                }
+            }
+            if (routePreviewData.steps.size() > stepCount) {
+                builder.append("\n...");
+            }
+            return builder.toString();
+        }
+
+        if (routePreviewErrorMessage != null && !routePreviewErrorMessage.trim().isEmpty()) {
+            return routePreviewErrorMessage;
+        }
+
+        return "Walking preview from Parliament through the selected nearby locations.";
+    }
+
+    private void openDirectionsSheet() {
+        if (routePreviewData == null || routePreviewData.steps == null || routePreviewData.steps.isEmpty()) {
+            Toast.makeText(requireContext(), "Directions are still loading.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        float totalDistanceMeters = routePreviewData.distanceMeters;
+        int estimatedMinutes = Math.max(1, (int) Math.ceil(routePreviewData.durationSeconds / 60d));
+        String summary = routePreviewLocations.size() + " stop"
+                + (routePreviewLocations.size() == 1 ? "" : "s")
+                + " | "
+                + formatDistance(totalDistanceMeters)
+                + " | "
+                + estimatedMinutes
+                + " min walk";
+
+        ArrayList<RouteDirectionsBottomSheet.RouteStepItem> steps = new ArrayList<>();
+        for (int index = 0; index < routePreviewData.steps.size(); index++) {
+            RoutesApiService.RouteStep step = routePreviewData.steps.get(index);
+            steps.add(new RouteDirectionsBottomSheet.RouteStepItem(
+                    index + 1,
+                    step.instructions,
+                    formatDistance(step.distanceMeters),
+                    formatDuration(step.durationSeconds)
+            ));
+        }
+
+        RouteDirectionsBottomSheet sheet = RouteDirectionsBottomSheet.newInstance(
+                steps,
+                "Walking directions",
+                summary
+        );
+        sheet.show(getChildFragmentManager(), "route_directions_sheet");
+    }
+
+    @NonNull
+    private String formatDistance(float meters) {
+        if (meters >= 1000f) {
+            return String.format(Locale.US, "%.1f km", meters / 1000f);
+        }
+        return String.format(Locale.US, "%.0f m", meters);
+    }
+
+    @NonNull
+    private String formatDuration(long seconds) {
+        if (seconds <= 0L) {
+            return "0 min";
+        }
+        long minutes = Math.max(1L, Math.round(seconds / 60.0));
+        return minutes + " min";
     }
 
     private void showPlaceDetails(@NonNull MarkerDetails details) {
         if (detailsContainer == null) return;
         placeName.setText(details.title);
         placeAddress.setText(details.subtitle);
-        placeRating.setText(String.format(java.util.Locale.US, "%.1f", details.rating));
+        placeRating.setText(String.format(Locale.US, "%.1f", details.rating));
+        if (overviewInput != null) {
+            overviewInput.setText(details.overview != null ? details.overview : "");
+        }
+        if (placeMeta != null) {
+            if (details.meta != null && !details.meta.trim().isEmpty()) {
+                placeMeta.setText(details.meta);
+                placeMeta.setVisibility(View.VISIBLE);
+            } else {
+                placeMeta.setText("");
+                placeMeta.setVisibility(View.GONE);
+            }
+        }
+
+        if (placeContact != null) {
+            if (details.contact != null && !details.contact.trim().isEmpty()) {
+                placeContact.setText(details.contact);
+                placeContact.setVisibility(View.VISIBLE);
+            } else {
+                placeContact.setText("");
+                placeContact.setVisibility(View.GONE);
+            }
+        }
 
         if (details.imageUrls == null || details.imageUrls.isEmpty()) {
             noImagesText.setVisibility(View.VISIBLE);
