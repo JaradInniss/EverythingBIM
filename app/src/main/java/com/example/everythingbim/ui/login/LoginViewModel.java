@@ -106,11 +106,22 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
-        // BYPASS Firebase Auth for testing - navigate directly based on user type selection
-        if (selectedUserType.getValue() == UserType.ADMIN) {
+        UserType userType = selectedUserType.getValue();
+        String userTypeStr = (userType == UserType.BUSINESS) ? "Business" : "General";
+
+        // Save userType to SharedPreferences (matching what UserFragment expects)
+        if (sharedPreferences != null) {
+            sharedPreferences.edit().putString("userType", userTypeStr).apply();
+            sharedPreferences.edit().putString("user_type", userTypeStr).apply();
+        }
+
+        if (userType == UserType.ADMIN) {
             navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
         } else {
-            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+            Bundle extras = new Bundle();
+            extras.putString("userType", userTypeStr);
+            extras.putString("user_type", userTypeStr);
+            navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
         }
     }
 
