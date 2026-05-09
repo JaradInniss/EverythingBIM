@@ -3,7 +3,6 @@ package com.example.everythingbim.ui.main;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,19 +12,14 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.everythingbim.AdminReportsFragment;
 import com.example.everythingbim.R;
-import com.example.everythingbim.ui.home.NearbySavedLocation;
 import com.example.everythingbim.ui.home.HomeFragment;
 import com.example.everythingbim.ui.map.MapFragment;
 import com.example.everythingbim.ui.posts.PostFragment;
 import com.example.everythingbim.ui.user.UserFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_OPEN_MAP_FOCUS = "open_map_focus";

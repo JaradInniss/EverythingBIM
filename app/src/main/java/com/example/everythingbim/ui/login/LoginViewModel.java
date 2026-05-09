@@ -1,8 +1,5 @@
 package com.example.everythingbim.ui.login;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,18 +11,16 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
-import com.example.everythingbim.AdminActivity;
+import com.example.everythingbim.ui.admin.AdminActivity;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.NavigationCommand;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
