@@ -18,10 +18,12 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.everythingbim.R;
 
+/**
+ * Fragment that displays a grid of posts and provides search/filtering functionality.
+ */
 public class PostFragment extends Fragment {
 
     private PostViewModel viewModel;
@@ -41,6 +43,7 @@ public class PostFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_post, container, false);
     }
 
@@ -48,8 +51,10 @@ public class PostFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
+        // Find views by ID
         recyclerView = view.findViewById(R.id.posts_rv);
         createPostButton = view.findViewById(R.id.prev_bttn2);
         searchBar = view.findViewById(R.id.posts_search_bar);
@@ -63,48 +68,68 @@ public class PostFragment extends Fragment {
         setupListeners();
     }
 
+    /**
+     * Configures the RecyclerView with a GridLayoutManager and sets up the click listener for posts.
+     */
     private void setupRecyclerView() {
         adapter = new PostAdapter();
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3)); // 3 columns grid
         recyclerView.setAdapter(adapter);
 
+        // Handle post selection: navigate to ViewPost activity
         adapter.setOnPostClickListener(post -> {
-            // TODO: Navigate to post viewing screen
-            Toast.makeText(getContext(), "Post clicked: " + post.postId, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getActivity(), ViewPost.class);
+            intent.putExtra("POST_ID", post.postId);
+            startActivity(intent);
         });
     }
 
+    /**
+     * Observes LiveData from the ViewModel to update the UI when data changes.
+     */
     private void setupObservers() {
+        // Observe the list of posts
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
             if (posts != null) {
                 adapter.setPosts(posts);
             }
         });
 
+        // Observe the current filter type (Account vs Location)
         viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
             updateFilterUI(type);
         });
     }
 
+    /**
+     * Sets up click listeners for the search bar, filter buttons, and create post button.
+     */
     private void setupListeners() {
+        // Navigate to create post screen
         createPostButton.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), CreatePostActivity.class);
             startActivity(intent);
         });
 
+        // Show search results when search bar gains focus
         searchEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 searchResultsCard.setVisibility(View.VISIBLE);
             }
         });
 
-        // Also show when clicked if already focused or to ensure visibility
+        // Show search results on click
         searchEditText.setOnClickListener(v -> searchResultsCard.setVisibility(View.VISIBLE));
 
+        // Handle filter type selection
         filterAccount.setOnClickListener(v -> viewModel.setFilterType("account"));
         filterLocation.setOnClickListener(v -> viewModel.setFilterType("location"));
     }
 
+    /**
+     * Updates the visual state of the filter buttons based on the selected type.
+     * @param type The active filter type ("account" or "location").
+     */
     private void updateFilterUI(String type) {
         if ("account".equals(type)) {
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_active);

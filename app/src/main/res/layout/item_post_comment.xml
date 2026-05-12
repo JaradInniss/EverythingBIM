@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    app:cardCornerRadius="5dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/space_indigo"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/comment_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Username"
+            android:textSize="14sp"
+            style="@style/white_small_txt_style"
+            android:fontFamily="@font/roboto_medium"/>
+
+        <TextView
+            android:id="@+id/comment_replying_to"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/comment_username"
+            android:layout_marginTop="4dp"
+            android:layout_marginRight="10dp"
+            android:text="Re: Other User"
+            style="@style/white_small_txt_style"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/comment_upload_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/comment_username"
+            android:layout_toRightOf="@id/comment_replying_to"
+            android:layout_marginTop="4dp"
+            android:text="2026/01/01"
+            style="@style/white_small_txt_style"/>
+
+        <TextView
+            android:id="@+id/comment_body"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/comment_upload_date"
+            android:layout_alignParentStart="true"
+            android:layout_toLeftOf="@id/reply_bttn"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="10dp"
+            android:text="Comment body"
+            style="@style/white_small_txt_style"/>
+
+        <!-- Reply Button -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/reply_bttn"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            app:cardCornerRadius="4dp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginRight="8dp"
+            app:cardBackgroundColor="@color/white">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_reply"
+                app:tint="@color/space_indigo" />
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Comment Replies Button & Count -->
+        <LinearLayout
+            android:id="@+id/comment_replies"
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:orientation="horizontal"
+            android:layout_below="@id/reply_bttn"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="15dp"
+            android:layout_marginRight="5dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_reply"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/comment_reply_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="2dp"
+                android:text="10"
+                style="@style/white_small_txt_style"/>
+
+        </LinearLayout>
+
+        <View
+            android:id="@+id/comment_reply_separator"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/comment_body"
+            android:layout_marginVertical="8dp"
+            android:background="@color/white"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/replies_rv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/comment_reply_separator"
+            android:layout_marginTop="5dp">
+        </androidx.recyclerview.widget.RecyclerView>
+
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>
