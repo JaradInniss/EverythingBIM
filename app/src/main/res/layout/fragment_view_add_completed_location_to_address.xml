@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/view_completed_account_verification_req"
-    android:background="@color/dark"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.user.ViewCompletedAccountVerificationRequestFragment">
+    tools:context=".ViewCompletedAddLocationToAddressFragment">
 
     <LinearLayout
-        android:id="@+id/viewcompleted_accver_toolbar"
+        android:id="@+id/addviewlocation_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:background="@color/dark"
+        android:gravity="center_vertical"
         android:padding="12dp">
 
         <ImageButton
@@ -22,11 +21,8 @@
             android:layout_height="36dp"
             android:src="@drawable/ic_caret_left"
             android:background="@android:color/transparent"
-            android:contentDescription="Go Back"
-            app:tint="@color/white"
             android:layout_marginEnd="8dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto"/>
-
+            app:tint="@color/white" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -35,12 +31,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="View Account Verification Request"
+                android:text="New Add View Location Request"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
             <TextView
-                android:id="@+id/viewcompleted_accverreq_user_id_tv"
+                android:id="@+id/viewlocareq_user_id_tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="BusinessUser #102MA21"
@@ -52,7 +48,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/viewcompleted_accver_toolbar"
+        android:layout_below="@id/addviewlocation_toolbar"
         android:fillViewport="true"
         android:background="@color/light_grey">
 
@@ -67,13 +63,13 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:padding="40dp"
-                android:text="No completed verification requests.\nYour completed requests will appear here."
+                android:text="No completed location to address requests.\nYour completed requests will appear here."
                 android:textColor="@color/dim_grey"
                 android:textSize="14sp"
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/viewcompleted_accverreq_recycler"
+                android:id="@+id/viewlocationtoaddreq_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"

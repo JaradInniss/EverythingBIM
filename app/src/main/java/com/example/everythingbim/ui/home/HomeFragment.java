@@ -24,6 +24,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.FragmentHomeBinding;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +43,14 @@ public class HomeFragment extends Fragment {
     private ActivityResultLauncher<String> galleryPickerLauncher;
     private ActivityResultLauncher<String> galleryPermissionLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private ActivityResultLauncher<String> locationPermissionLauncher;
     private ActivityResultLauncher<Uri> takePictureLauncher;
+    private FusedLocationProviderClient fusedLocationClient;
+    private boolean gpsAvailable;
+    private boolean locationPermissionGranted;
+    private Double lastKnownLatitude;
+    private Double lastKnownLongitude;
+    private SelectedImage pendingLocationVerificationImage;
 
     public HomeFragment() {
     }
@@ -50,6 +59,7 @@ public class HomeFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         registerLaunchers();
     }
 
@@ -89,6 +99,21 @@ public class HomeFragment extends Fragment {
                 }
         );
 
+        locationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    locationPermissionGranted = isGranted;
+                    if (isGranted) {
+                        refreshLocationContext();
+                    }
+
+                    if (pendingLocationVerificationImage != null) {
+                        launchIdentifier(pendingLocationVerificationImage);
+                        pendingLocationVerificationImage = null;
+                    }
+                }
+        );
+
         takePictureLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicture(),
                 success -> {
@@ -113,11 +138,7 @@ public class HomeFragment extends Fragment {
     private void observeViewModel() {
         viewModel.getNavigationEvent().observe(getViewLifecycleOwner(), selectedImage -> {
             if (selectedImage != null) {
-                Intent intent = new Intent(requireContext(), AIIdentifier.class);
-                intent.putExtra("image_uri", selectedImage.getUri().toString());
-                intent.putExtra("image_source", selectedImage.getSource());
-                intent.putExtra("display_name", selectedImage.getDisplayName());
-                startActivity(intent);
+                handleSelectedImage(selectedImage);
             }
         });
 
@@ -128,7 +149,34 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void handleSelectedImage(@NonNull SelectedImage selectedImage) {
+        if (hasLocationPermission()) {
+            locationPermissionGranted = true;
+            refreshLocationContext();
+            launchIdentifier(selectedImage);
+            return;
+        }
+
+        pendingLocationVerificationImage = selectedImage;
+        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+    }
+
+    private void launchIdentifier(@NonNull SelectedImage selectedImage) {
+        Intent intent = new Intent(requireContext(), AIIdentifier.class);
+        intent.putExtra("image_uri", selectedImage.getUri().toString());
+        intent.putExtra("image_source", selectedImage.getSource());
+        intent.putExtra("display_name", selectedImage.getDisplayName());
+        intent.putExtra("gps_available", gpsAvailable);
+        intent.putExtra("gps_permission_granted", locationPermissionGranted);
+        if (lastKnownLatitude != null && lastKnownLongitude != null) {
+            intent.putExtra("user_latitude", lastKnownLatitude);
+            intent.putExtra("user_longitude", lastKnownLongitude);
+        }
+        startActivity(intent);
+    }
+
     private void openGallery() {
+        refreshLocationContext();
         String permission = getGalleryPermission();
         if (permission == null || ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
             galleryPickerLauncher.launch("image/*");
@@ -138,6 +186,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void openCamera() {
+        refreshLocationContext();
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             launchCameraCapture();
@@ -179,6 +228,37 @@ public class HomeFragment extends Fragment {
                 SelectedImage.SOURCE_GALLERY,
                 resolveDisplayName(uri)
         ));
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void refreshLocationContext() {
+        locationPermissionGranted = hasLocationPermission();
+        if (!locationPermissionGranted) {
+            gpsAvailable = false;
+            lastKnownLatitude = null;
+            lastKnownLongitude = null;
+            return;
+        }
+
+        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+            if (location != null) {
+                gpsAvailable = true;
+                lastKnownLatitude = location.getLatitude();
+                lastKnownLongitude = location.getLongitude();
+            } else {
+                gpsAvailable = false;
+                lastKnownLatitude = null;
+                lastKnownLongitude = null;
+            }
+        }).addOnFailureListener(error -> {
+            gpsAvailable = false;
+            lastKnownLatitude = null;
+            lastKnownLongitude = null;
+        });
     }
 
     @NonNull

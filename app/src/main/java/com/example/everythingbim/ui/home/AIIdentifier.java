@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.home;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.transition.AutoTransition;
@@ -19,11 +20,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.ActivityAiidentifierBinding;
+import com.example.everythingbim.ui.main.MainActivity;
 
-public class AIIdentifier extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBottomSheet.NearbyActionsListener {
+    private static final double PARLIAMENT_LATITUDE = 13.0969861d;
+    private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
 
     private ActivityAiidentifierBinding binding;
     private AIIdentifierViewModel viewModel;
+    private NearbyLocationsAdapter nearbyLocationsAdapter;
+    private final ArrayList<NearbySavedLocation> currentNearbyLocations = new ArrayList<>();
+    private final LinkedHashMap<Long, NearbySavedLocation> selectedRouteLocations = new LinkedHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +62,13 @@ public class AIIdentifier extends AppCompatActivity {
     private void setupViews() {
         binding.returnBttn.setOnClickListener(v -> finish());
         binding.reuploadBttn.setOnClickListener(v -> finish());
+        binding.openNearbyBttn.setOnClickListener(v -> openNearbySheet());
+        binding.viewOnMapBttn.setOnClickListener(v -> openParliamentOnMap());
 
+        nearbyLocationsAdapter = new NearbyLocationsAdapter(location -> openNearbySheet());
         binding.nearbyAttractionsRv.setLayoutManager(
                 new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        binding.nearbyAttractionsRv.setAdapter(nearbyLocationsAdapter);
     }
 
     private void handleIntent() {
@@ -64,11 +79,19 @@ public class AIIdentifier extends AppCompatActivity {
         if (uriString != null && source != null) {
             Uri uri = Uri.parse(uriString);
             SelectedImage selectedImage = new SelectedImage(uri, source, displayName);
-            
+            boolean gpsAvailable = getIntent().getBooleanExtra("gps_available", false);
+            boolean gpsPermissionGranted = getIntent().getBooleanExtra("gps_permission_granted", false);
+            Double userLatitude = getIntent().hasExtra("user_latitude")
+                    ? getIntent().getDoubleExtra("user_latitude", 0d)
+                    : null;
+            Double userLongitude = getIntent().hasExtra("user_longitude")
+                    ? getIntent().getDoubleExtra("user_longitude", 0d)
+                    : null;
+
             updateUploadMethodUI(source);
             binding.identifierUploadedImage.setImageURI(uri);
-            
-            viewModel.initialize(selectedImage);
+
+            viewModel.initialize(selectedImage, gpsAvailable, gpsPermissionGranted, userLatitude, userLongitude);
         } else {
             finish();
         }
@@ -131,6 +154,10 @@ public class AIIdentifier extends AppCompatActivity {
                             state.getConfidenceText() != null ? state.getConfidenceText() : "--");
                     binding.identifierRelatedInfoTv.setText(
                             state.getDetail() != null ? state.getDetail() : state.getLandmark().getDescription());
+                    currentNearbyLocations.clear();
+                    currentNearbyLocations.addAll(state.getNearbyLocations());
+                    selectedRouteLocations.clear();
+                    nearbyLocationsAdapter.submitList(state.getNearbyLocations());
                     binding.positiveResultContainer.setVisibility(View.VISIBLE);
                     binding.negativeResultContainer.setVisibility(View.GONE);
                     binding.negativeConfidenceRow.setVisibility(View.GONE);
@@ -141,6 +168,7 @@ public class AIIdentifier extends AppCompatActivity {
                 binding.identifierConfidenceScoreTv.setText(
                         state.getConfidenceText() != null ? state.getConfidenceText() : "--");
                 applyUncertainCopy(state);
+                clearNearbyUi();
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceRow.setVisibility(View.VISIBLE);
@@ -151,6 +179,7 @@ public class AIIdentifier extends AppCompatActivity {
                 binding.identifierResultTv.setText("Unknown Location");
                 binding.identifierConfidenceScoreTv.setText("--");
                 applyUnknownCopy();
+                clearNearbyUi();
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceRow.setVisibility(View.GONE);
@@ -162,6 +191,7 @@ public class AIIdentifier extends AppCompatActivity {
                 binding.identifierRelatedInfoTv.setText(
                         state.getDetail() != null ? state.getDetail() : "Unable to run offline identification.");
                 applyUnknownCopy();
+                clearNearbyUi();
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceRow.setVisibility(View.GONE);
@@ -169,5 +199,82 @@ public class AIIdentifier extends AppCompatActivity {
             default:
                 break;
         }
+    }
+
+    private void clearNearbyUi() {
+        currentNearbyLocations.clear();
+        selectedRouteLocations.clear();
+        nearbyLocationsAdapter.submitList(java.util.Collections.emptyList());
+    }
+
+    private void openNearbySheet() {
+        if (currentNearbyLocations.isEmpty()) {
+            return;
+        }
+
+        NearbyLocationsBottomSheet bottomSheet = NearbyLocationsBottomSheet.newInstance(
+                new ArrayList<>(currentNearbyLocations),
+                new ArrayList<>(selectedRouteLocations.keySet())
+        );
+        bottomSheet.setActionsListener(this);
+        bottomSheet.show(getSupportFragmentManager(), "nearby_locations_sheet");
+    }
+
+    private void openParliamentOnMap() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, "Barbados Parliament Buildings");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
+        startActivity(intent);
+    }
+
+    @Override
+    public void onSelectionChanged(@NonNull List<NearbySavedLocation> selectedLocations) {
+        selectedRouteLocations.clear();
+        for (NearbySavedLocation location : selectedLocations) {
+            selectedRouteLocations.put(location.getLocationId(), location);
+        }
+    }
+
+    @Override
+    public void onCreateRouteRequested(@NonNull List<NearbySavedLocation> selectedLocations) {
+        if (selectedLocations.isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_ROUTE, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_ROUTE_LOCATIONS, new ArrayList<>(selectedLocations));
+        startActivity(intent);
+    }
+
+    @Override
+    public void onOpenRouteExternallyRequested(@NonNull List<NearbySavedLocation> selectedLocations) {
+        if (selectedLocations.isEmpty()) {
+            return;
+        }
+
+        StringBuilder url = new StringBuilder("https://www.google.com/maps/dir/?api=1")
+                .append("&origin=").append(PARLIAMENT_LATITUDE).append(",").append(PARLIAMENT_LONGITUDE)
+                .append("&travelmode=walking");
+
+        NearbySavedLocation destination = selectedLocations.get(selectedLocations.size() - 1);
+        url.append("&destination=").append(destination.getLatitude()).append(",").append(destination.getLongitude());
+
+        if (selectedLocations.size() > 1) {
+            StringBuilder waypoints = new StringBuilder();
+            for (int index = 0; index < selectedLocations.size() - 1; index++) {
+                NearbySavedLocation waypoint = selectedLocations.get(index);
+                if (waypoints.length() > 0) {
+                    waypoints.append("|");
+                }
+                waypoints.append(waypoint.getLatitude()).append(",").append(waypoint.getLongitude());
+            }
+            url.append("&waypoints=").append(Uri.encode(waypoints.toString()));
+        }
+
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString())));
     }
 }

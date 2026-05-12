@@ -114,21 +114,25 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="@color/persian_blue">
+                        android:layout_height="wrap_content">
 
-                        <ImageView
-                            android:id="@+id/icon_business"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_storefront"
-                            android:contentDescription="Business icon"
-                            app:tint="@color/white" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp"
+                            android:background="@color/persian_blue">
+
+                            <ImageView
+                                android:id="@+id/icon_business"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_storefront"
+                                android:contentDescription="Business icon"
+                                app:tint="@color/white" />
 
                         <TextView
                             android:id="@+id/title_business"
@@ -160,7 +164,19 @@
                             android:gravity="center"
                             android:layout_marginTop="5dp"/>
 
-                    </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Unread dot indicator -->
+                        <View
+                            android:id="@+id/dot_business"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_dot_red"
+                            android:visibility="visible" />
+
+                    </FrameLayout>
 
                 </androidx.cardview.widget.CardView>
 
@@ -177,21 +193,25 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="@color/periwinkle">
+                        android:layout_height="wrap_content">
 
-                        <ImageView
-                            android:id="@+id/icon_info"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_info"
-                            android:contentDescription="Info icon"
-                            app:tint="@color/black" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp"
+                            android:background="@color/periwinkle">
+
+                            <ImageView
+                                android:id="@+id/icon_info"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_info"
+                                android:contentDescription="Info icon"
+                                app:tint="@color/black" />
 
                         <TextView
                             android:id="@+id/title_info"
@@ -223,7 +243,19 @@
                             android:gravity="center"
                             android:layout_marginTop="5dp"/>
 
-                    </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Unread dot indicator -->
+                        <View
+                            android:id="@+id/dot_info"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_dot_red"
+                            android:visibility="visible" />
+
+                    </FrameLayout>
 
                 </androidx.cardview.widget.CardView>
 
@@ -240,21 +272,25 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="@color/periwinkle">
+                        android:layout_height="wrap_content">
 
-                        <ImageView
-                            android:id="@+id/icon_location"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_pin_area"
-                            android:contentDescription="Location icon"
-                            app:tint="@color/black" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp"
+                            android:background="@color/periwinkle">
+
+                            <ImageView
+                                android:id="@+id/icon_location"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_pin_area"
+                                android:contentDescription="Location icon"
+                                app:tint="@color/black" />
 
                         <TextView
                             android:id="@+id/title_location"
@@ -285,7 +321,19 @@
                             android:gravity="center"
                             android:layout_marginTop="5dp"/>
 
-                    </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Unread dot indicator -->
+                        <View
+                            android:id="@+id/dot_location"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_dot_red"
+                            android:visibility="visible" />
+
+                    </FrameLayout>
 
                 </androidx.cardview.widget.CardView>
 
@@ -302,21 +350,25 @@
                     android:clickable="true"
                     android:focusable="true">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:background="@color/bright_gold">
+                        android:layout_height="wrap_content">
 
-                        <ImageView
-                            android:id="@+id/icon_reports"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_flag_banner"
-                            android:contentDescription="Reports icon"
-                            app:tint="@color/black" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp"
+                            android:background="@color/bright_gold">
+
+                            <ImageView
+                                android:id="@+id/icon_reports"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_flag_banner"
+                                android:contentDescription="Reports icon"
+                                app:tint="@color/black" />
 
                         <TextView
                             android:id="@+id/title_reports"
@@ -348,7 +400,19 @@
                             android:gravity="center"
                             android:layout_marginTop="5dp"/>
 
-                    </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Unread dot indicator -->
+                        <View
+                            android:id="@+id/dot_reports"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="6dp"
+                            android:background="@drawable/bg_dot_red"
+                            android:visibility="visible" />
+
+                    </FrameLayout>
 
                 </androidx.cardview.widget.CardView>
 
@@ -684,80 +748,87 @@
                 android:layout_marginBottom="12dp"/>
 
             <!-- Activity Item 1 -->
-            <LinearLayout
-                android:id="@+id/activity_item_1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_border_rectangle_alice_blue"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:id="@+id/icon_activity_1"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_flag_banner"
-                    android:contentDescription="Report icon"
-                    app:tint="@color/bright_gold" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
+<LinearLayout
+                    android:id="@+id/activity_item_1"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="12dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_border_rectangle_alice_blue"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:id="@+id/tv_activity_title_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View Report"
-                        android:textColor="@color/prussian_blue"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                    <View
+                        android:id="@+id/dot_activity_1"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/bg_dot_red"
+                        android:layout_marginEnd="10dp" />
+
+                    <ImageView
+                        android:id="@+id/icon_activity_1"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_flag_banner"
+                        android:contentDescription="Report icon"
+                        app:tint="@color/bright_gold" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="12dp">
 
                         <TextView
-                            android:id="@+id/tv_activity_subtitle_1"
+                            android:id="@+id/tv_activity_title_1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Post-Spam"
-                            android:textColor="@color/dim_grey"
-                            android:textSize="12sp" />
+                            android:text="View Report"
+                            android:textColor="@color/prussian_blue"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
-                        <TextView
-                            android:id="@+id/tv_activity_time_1"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:paddingLeft="50dp"
-                            android:text=" • 2hr ago"
-                            android:textColor="@color/dim_grey"
-                            android:textSize="12sp" />
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_activity_subtitle_1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Post-Spam"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tv_activity_time_1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingLeft="50dp"
+                                android:text=" • 2hr ago"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/tv_activity_view_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="View"
+                        android:textColor="@color/dim_grey"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tv_activity_view_1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="View"
-                    android:textColor="@color/dim_grey"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Activity Item 2 -->
+                <!-- Activity Item 2 -->
             <LinearLayout
                 android:id="@+id/activity_item_2"
                 android:layout_width="match_parent"
@@ -769,6 +840,13 @@
                 android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
+
+                <View
+                    android:id="@+id/dot_activity_2"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/bg_dot_red"
+                    android:layout_marginEnd="10dp" />
 
                 <ImageView
                     android:id="@+id/icon_activity_2"
@@ -843,6 +921,13 @@
                 android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
+
+                <View
+                    android:id="@+id/dot_activity_3"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/bg_dot_red"
+                    android:layout_marginEnd="10dp" />
 
                 <ImageView
                     android:id="@+id/icon_activity_3"

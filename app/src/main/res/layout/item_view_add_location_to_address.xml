@@ -1,66 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:padding="4dp">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/viewcompletedlocreq_card"
+        android:id="@+id/addviewlocationreq_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/white"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="8dp">
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="12dp">
-            <!-- Request number + Status row -->
+
+            <!-- Request Number + Status Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginBottom="4dp"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
-
+                android:orientation="horizontal">
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
-                        android:id="@+id/request_no"
+                        android:id="@+id/business_request_no"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Request #3001"
+                        android:text="Request #518"
                         android:textColor="@color/black"
                         android:textSize="14sp"
                         android:textStyle="bold" />
+
                     <TextView
-                        android:id="@+id/submission_date"
+                        android:id="@+id/business_submission_date"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
                         android:text="Submitted: 2026/01/01"
                         android:textColor="@color/black"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp" />
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="end">
+                        android:gravity="end"
+                        android:orientation="vertical">
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -68,12 +72,13 @@
                             android:textColor="@color/grey"
                             android:textSize="12sp"
                             android:textStyle="bold" />
+
                         <TextView
                             android:id="@+id/status_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Accepted"
-                            android:textColor="@color/shamrock"
+                            android:text="In Review"
+                            android:textColor="@color/persian_blue"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -82,20 +87,20 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_marginStart="8dp"
-                        android:src="@drawable/ic_check_circle"
-                        app:tint="@color/shamrock"
-                        android:contentDescription="Status Icon" />
+                        android:contentDescription="Status Icon"
+                        android:src="@drawable/ic_view" />
 
                 </LinearLayout>
             </LinearLayout>
+
             <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="@color/black"
-                android:layout_marginBottom="10dp"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp" />
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="10dp"
+                android:background="@color/black" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -113,6 +118,7 @@
                     android:textStyle="bold"
                     android:gravity="center"
                     android:layout_marginBottom="4dp"/>
+
 
             </LinearLayout>
             <LinearLayout
@@ -161,7 +167,6 @@
                     android:background="@color/white"
                     android:elevation="4dp"
                     android:visibility="gone" />
-
 
             </LinearLayout>
 
@@ -270,11 +275,11 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginStart="10dp"
+                    android:tint="@color/white"
                     android:background="@drawable/bg_rounded_true_cobalt"
                     android:src="@drawable/ic_paperclip"
                     android:scaleType="centerInside"
                     android:padding="10dp"
-                    app:tint="@color/white"
                     tools:ignore="UseAppTint" />
 
             </LinearLayout>
@@ -334,6 +339,7 @@
                     style="@style/info_txt_style" />
             </LinearLayout>
         </LinearLayout>
+
 
     </androidx.cardview.widget.CardView>
 

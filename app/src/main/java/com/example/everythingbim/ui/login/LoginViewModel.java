@@ -1,8 +1,5 @@
 package com.example.everythingbim.ui.login;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,18 +11,16 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
-import com.example.everythingbim.AdminActivity;
+import com.example.everythingbim.ui.admin.AdminActivity;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.NavigationCommand;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
@@ -106,11 +101,22 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
-        // BYPASS Firebase Auth for testing - navigate directly based on user type selection
-        if (selectedUserType.getValue() == UserType.ADMIN) {
+        UserType userType = selectedUserType.getValue();
+        String userTypeStr = (userType == UserType.BUSINESS) ? "Business" : "General";
+
+        // Save userType to SharedPreferences (matching what UserFragment expects)
+        if (sharedPreferences != null) {
+            sharedPreferences.edit().putString("userType", userTypeStr).apply();
+            sharedPreferences.edit().putString("user_type", userTypeStr).apply();
+        }
+
+        if (userType == UserType.ADMIN) {
             navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
         } else {
-            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+            Bundle extras = new Bundle();
+            extras.putString("userType", userTypeStr);
+            extras.putString("user_type", userTypeStr);
+            navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
         }
     }
 

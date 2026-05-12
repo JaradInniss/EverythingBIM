@@ -56,13 +56,31 @@
         android:fillViewport="true"
         android:background="@color/light_grey">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/viewaccverreq_recycler"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:clipToPadding="false"
-            android:nestedScrollingEnabled="false" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/empty_state_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="40dp"
+                android:text="No pending verification requests.\nYour requests will appear here."
+                android:textColor="@color/dim_grey"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/viewaccverreq_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_rectangle_alice_blue"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Nearby Parliament Locations"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:fontFamily="@font/roboto_bold" />
+
+        <TextView
+            android:id="@+id/nearby_sheet_close_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_border_rectangle_gold"
+            android:gravity="center"
+            android:text="X"
+            android:textColor="@color/prussian_blue"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/nearby_sheet_selected_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Choose locations to build a route."
+        android:textColor="@color/black"
+        android:textSize="13sp"
+        android:fontFamily="@font/roboto_regular" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/nearby_sheet_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="420dp"
+        android:layout_marginTop="12dp" />
+
+    <TextView
+        android:id="@+id/nearby_sheet_route_button"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_rectangle_blue"
+        android:gravity="center"
+        android:text="Preview in App"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:fontFamily="@font/roboto_bold" />
+
+    <TextView
+        android:id="@+id/nearby_sheet_external_route_button"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_border_rectangle_gold"
+        android:gravity="center"
+        android:text="Open in Google Maps"
+        android:textColor="@color/prussian_blue"
+        android:textSize="14sp"
+        android:fontFamily="@font/roboto_bold" />
+
+</LinearLayout>

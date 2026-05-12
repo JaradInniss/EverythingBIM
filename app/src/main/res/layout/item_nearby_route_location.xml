@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/nearby_route_image"
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            android:background="@drawable/bg_rectangle_alice_blue"
+            android:padding="12dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_images" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/nearby_route_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:fontFamily="@font/roboto_bold" />
+
+            <TextView
+                android:id="@+id/nearby_route_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:maxLines="3"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_regular" />
+
+            <TextView
+                android:id="@+id/nearby_route_distance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/space_indigo"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="44dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/nearby_route_add_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_rectangle_blue"
+                android:gravity="center"
+                android:text="+"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:fontFamily="@font/roboto_bold" />
+
+            <TextView
+                android:id="@+id/nearby_route_remove_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_border_rectangle_gold"
+                android:gravity="center"
+                android:text="-"
+                android:textColor="@color/prussian_blue"
+                android:textSize="18sp"
+                android:fontFamily="@font/roboto_bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
