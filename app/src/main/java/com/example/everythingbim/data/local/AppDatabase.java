@@ -8,6 +8,7 @@ import android.content.Context;
 import com.example.everythingbim.data.local.dao.LocationDao;
 import com.example.everythingbim.data.local.dao.MarkerDao;
 import com.example.everythingbim.data.local.dao.PostDao;
+import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
@@ -22,12 +23,13 @@ import com.example.everythingbim.data.local.entities.LikeEntity;
         ReviewEntity.class,
         CommentEntity.class,
         LikeEntity.class
-}, version = 2)
+}, version = 3)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract MarkerDao markerDao();
     public abstract PostDao postDao();
     public abstract LocationDao locationDao();
+    public abstract CommentDao commentDao();
 
     // Singleton instance
     private static volatile AppDatabase INSTANCE;

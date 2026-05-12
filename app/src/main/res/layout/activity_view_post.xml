@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/view_posts"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_main"
+    tools:context=".ui.posts.ViewPost">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginVertical="20dp"
+        android:layout_marginHorizontal="10dp">
+
+        <!-- Return Button -->
+        <LinearLayout
+            android:id="@+id/return_bttn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_caret_left"
+                app:tint="@color/white"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="Return"
+                style="@style/subheading_txt_style"/>
+
+        </LinearLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- User Info -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="10dp">
+
+                    <!-- User Profile Picture  -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/profile_pic_card"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:padding="10dp"
+                        app:cardCornerRadius="360dp"
+                        android:background="@color/white">
+
+                        <ImageView
+                            android:id="@+id/viewpost_user_profile_pic"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/jampuff"/>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:id="@+id/viewpost_user_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toRightOf="@id/profile_pic_card"
+                        android:layout_marginLeft="10dp"
+                        android:layout_centerVertical="true"
+                        android:text="Username"
+                        android:textSize="12sp"
+                        style="@style/white_medium_txt_style"/>
+
+                    <!-- Report Post Button -->
+                    <ImageView
+                        android:id="@+id/report_post_bttn"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_flag_banner"
+                        app:tint="@color/pale_slate"/>
+
+                </RelativeLayout>
+
+                <!-- Location Tag -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/ic_pin_area"
+                        app:tint="@color/pale_slate"/>
+
+                    <TextView
+                        android:id="@+id/viewpost_location"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="Location"
+                        android:textColor="@color/pale_slate"
+                        style="@style/white_small_txt_style"/>
+
+                </LinearLayout>
+
+                <!-- Post Image -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:layout_marginTop="10dp"
+                    app:cardCornerRadius="5dp">
+
+                    <ImageView
+                        android:id="@+id/viewpost_image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"/>
+
+                </androidx.cardview.widget.CardView>
+
+                <!-- Like and Comment Buttons -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp">
+
+                    <ImageView
+                        android:id="@+id/likes_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_heart"
+                        app:tint="@color/pale_slate"/>
+
+                    <TextView
+                        android:id="@+id/viewpost_likes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toRightOf="@id/likes_icon"
+                        android:layout_marginLeft="4dp"
+                        android:layout_centerVertical="true"
+                        android:text="45"
+                        style="@style/white_small_txt_style"/>
+
+                    <ImageView
+                        android:id="@+id/comments_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_toRightOf="@id/viewpost_likes"
+                        android:layout_marginLeft="20dp"
+                        android:src="@drawable/ic_comment"
+                        app:tint="@color/pale_slate"/>
+
+                    <TextView
+                        android:id="@+id/viewpost_comments"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toRightOf="@id/comments_icon"
+                        android:layout_marginLeft="4dp"
+                        android:layout_centerVertical="true"
+                        android:text="45"
+                        style="@style/white_small_txt_style"/>
+
+                    <TextView
+                        android:id="@+id/viewpost_upload_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="2 Wks Ago"
+                        android:textColor="@color/pale_slate"
+                        style="@style/white_small_txt_style"/>
+
+                </RelativeLayout>
+
+                <TextView
+                    android:id="@+id/viewpost_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Lengthy caption I guess"
+                    style="@style/white_small_txt_style"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Comments"
+                    android:textSize="14sp"
+                    android:textColor="@color/pale_slate"
+                    style="@style/white_small_txt_style"/>
+
+                <!-- New Comment Container -->
+                <LinearLayout
+                    android:id="@+id/write_review_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="10dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_rectangle_white">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/replying_to_username"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Re: User"
+                            style="@style/black_small_txt_style"/>
+
+                        <!-- New Review Input -->
+                        <EditText
+                            android:id="@+id/new_comment_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine"
+                            style="@style/black_small_txt_style"
+                            android:background="@android:color/transparent"/>
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/submit_comment_bttn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:padding="10dp"
+                        android:text="Submit"
+                        android:textSize="14sp"
+                        style="@style/black_medium_txt_style"
+                        android:background="@drawable/bg_rectangle_gold"
+                        android:visibility="visible"/>
+
+                    <TextView
+                        android:id="@+id/submit_reply_bttn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:padding="10dp"
+                        android:text="Reply"
+                        android:textSize="14sp"
+                        style="@style/black_medium_txt_style"
+                        android:background="@drawable/bg_rectangle_gold"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+                <!-- New Comment Container [End] -->
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/viewpost_comments_rv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_post_comment"/>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+
+</LinearLayout>
