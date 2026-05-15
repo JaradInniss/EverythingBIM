@@ -1,0 +1,58 @@
+# Task 1: Validation Matrix - EverythingBIM Validation Tests
+
+## GeneralRegViewModel Validation Rules
+
+| Field | Method | Validation Rule | Error Message (R.id) | Edge Cases |
+|-------|--------|-----------------|---------------------|------------|
+| username | validateUsername | null/empty/whitespace trimmed | register_username_et | null, "", " ", "  ", "john" |
+| email | validateEmail | null/empty | register_email_et | null, "", no @, no domain |
+| password | validatePassword | null/empty/min 8 chars | register_password_et | null, "", 7 chars, 8 chars |
+| repassword | validateRePassword | null/empty/must match currPassword | register_repassword_et | null, "", mismatch, match |
+
+## BusinessRegViewModel Validation Rules
+
+| Field | Method | Validation Rule | Error Message (R.id) | Edge Cases |
+|-------|--------|-----------------|---------------------|------------|
+| username | validateUsername | null/empty/whitespace trimmed | business_register_username_et | null, "", " ", "  " |
+| email | validateEmail | null/empty | business_register_email_et | null, "" |
+| password | validatePassword | null/empty/min 8 chars | business_register_password_et | null, "", 7 chars, 8 chars |
+| repassword | validateRePassword | null/empty/must match currPassword | business_register_repassword_et | null, "", mismatch, match |
+| businessName | validateBusinessName | null/empty/whitespace trimmed | register_business_name_et | null, "", " ", "AB", "ABC" |
+| phoneNumber | validatePhoneNumber | null/empty/whitespace trimmed | register_contact_number_et | null, "", " ", "+1-246-555-1234" |
+| address | validateAddress | null/empty/whitespace trimmed | register_business_address_et | null, "", " ", "Oistins, Barbados" |
+| description | validateBusinessDescription | null/empty/whitespace trimmed | register_business_description_et | null, "", " ", "We serve fresh fish" |
+
+## LoginViewModel Validation Rules
+
+| Field | Method | Validation Rule | Error Message (R.id) | Edge Cases |
+|-------|--------|-----------------|---------------------|------------|
+| email | validateEmail | null/empty | login_email_et | null, "", no @ |
+| password | validatePassword | null/empty | login_password_et | null, "" |
+| errorFields | setErrorField | HashMap management | login_error | add, remove, empty becomes null |
+
+## CreatePostViewModel Validation Rules
+
+| Field | Method | Validation Rule | Precondition |
+|-------|--------|-----------------|--------------|
+| caption | setCaption | None (string storage) | - |
+| imageUri | setImageUri | None (Uri storage) | - |
+| locationId | setSelectedLocationId | None (Long storage) | - |
+| createPost | createPost | locationId != null && imageUri != null | Early return if null |
+
+## Existing Test Coverage vs Required
+
+| ViewModel | Tests Existing | Tests Needed | Coverage Gap |
+|-----------|---------------|--------------|--------------|
+| GeneralRegViewModel | 0 | 15+ | All validation methods untested |
+| BusinessRegViewModel | 0 | 20+ | All validation methods untested |
+| LoginViewModel | 0 | 10+ | All validation methods untested |
+| CreatePostViewModel | 0 | 10+ | All validation methods untested |
+| LocationEntity | 0 | 5+ | Constructor/field access untested |
+| PostEntity | 0 | 5+ | Constructor/field access untested |
+
+## Summary
+
+- **Total stub methods to replace**: 10 validation + 5 hotspot filter + 1 Hotspot class
+- **New test files to create**: 6 (GeneralReg, BusinessReg, Login, CreatePost, Entity, update ValidationUtils)
+- **Total test methods to implement**: ~75+
+- **Edge cases per field**: null, empty, whitespace, valid, invalid (boundary)
