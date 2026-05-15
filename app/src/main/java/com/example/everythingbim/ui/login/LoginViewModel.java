@@ -10,6 +10,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.FirebaseProvider;
+import com.example.everythingbim.data.RealFirebaseProvider;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.ui.admin.AdminActivity;
 import com.example.everythingbim.ui.main.MainActivity;
@@ -17,6 +19,7 @@ import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.NavigationCommand;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -25,8 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
 
-    private final FirebaseAuth auth = FirebaseAuth.getInstance();
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseAuth auth;
+    private final FirebaseFirestore db;
+    private final FirebaseProvider firebaseProvider;
 
     private SharedPreferences sharedPreferences; // may be null
     private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.ADMIN);
@@ -35,6 +39,23 @@ public class LoginViewModel extends ViewModel {
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
 
     private final SingleLiveEvent<String> toastMessage = new SingleLiveEvent<>();
+
+    /**
+     * Default constructor for production use.
+     * Uses RealFirebaseProvider to get actual Firebase instances.
+     */
+    public LoginViewModel() {
+        this(new RealFirebaseProvider());
+    }
+
+    /**
+     * Constructor for testing - allows injection of mock FirebaseProvider.
+     */
+    public LoginViewModel(FirebaseProvider provider) {
+        this.firebaseProvider = provider;
+        this.auth = provider.getAuth();
+        this.db = provider.getFirestore();
+    }
 
     // Getters
     public LiveData<UserType> getSelectedUserType() { return selectedUserType; }
@@ -95,6 +116,11 @@ public class LoginViewModel extends ViewModel {
         return errorFields.getValue() == null;
     }
 
+    /*
+     * ORIGINAL BROKEN CODE - Commented out because Firebase Auth was never called
+     * Users were never authenticated, causing "permission denied" on all Firestore writes
+     * because request.auth was always null.
+     *
     public void onLoginClicked(String email, String password) {
         Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
         if (!isFormValid(email, password)) {
@@ -118,6 +144,35 @@ public class LoginViewModel extends ViewModel {
             extras.putString("user_type", userTypeStr);
             navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
         }
+    }
+    */
+
+    public void onLoginClicked(String email, String password) {
+        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
+        if (!isFormValid(email, password)) {
+            return;
+        }
+
+        isLoading.setValue(true);
+
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    isLoading.setValue(false);
+
+                    if (task.isSuccessful()) {
+                        FirebaseUser firebaseUser = auth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            fetchUserTypeAndNavigate(firebaseUser.getUid());
+                        } else {
+                            setErrorField(R.id.login_error, "User not found");
+                        }
+                    } else {
+                        String errorMessage = task.getException() != null
+                                ? task.getException().getMessage()
+                                : "Login failed";
+                        setErrorField(R.id.login_error, errorMessage);
+                    }
+                });
     }
 
     private void fetchUserTypeAndNavigate(String userId) {
