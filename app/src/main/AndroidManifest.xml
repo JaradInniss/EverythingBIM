@@ -38,6 +38,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0" />
 
+        <meta-data
+            android:name="com.google.firebase.appcheck.debug.token"
+            android:value="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

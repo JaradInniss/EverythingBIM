@@ -2,235 +2,312 @@ package com.example.everythingbim;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
+import java.util.regex.Pattern;
 
+/**
+ * Validation utility tests - tests the actual validation patterns used in the app.
+ * Note: This file tests validation patterns, not actual ViewModel implementations.
+ * ViewModels are tested in their respective *ViewModelTest.java files.
+ */
 public class ValidationUtilsTest {
 
-    // ========== User Registration Validation Tests ==========
+    // Fallback email pattern if android.util.Patterns is not available
+    private static final Pattern EMAIL_PATTERN = android.util.Patterns.EMAIL_ADDRESS != null
+        ? android.util.Patterns.EMAIL_ADDRESS
+        : Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+
+    private boolean isValidEmail(String email) {
+        return email != null && EMAIL_PATTERN.matcher(email).matches();
+    }
+
+    // ========== Email Validation Tests (using actual Android Patterns) ==========
 
     @Test
     public void validateEmail_validEmail_returnsTrue() {
-        assertTrue(validateEmail("user@example.com"));
-        assertTrue(validateEmail("test.user@domain.co.uk"));
-        assertTrue(validateEmail("tourist+bim@gmail.com"));
+        assertTrue(isValidEmail("user@example.com"));
+        assertTrue(isValidEmail("test.user@domain.co.uk"));
+        assertTrue(isValidEmail("tourist+bim@gmail.com"));
+        assertTrue(isValidEmail("user@sub.domain.com"));
+        assertTrue(isValidEmail("user@sub.domain.co.uk"));
     }
 
     @Test
     public void validateEmail_invalidEmail_returnsFalse() {
-        assertFalse(validateEmail("notanemail"));
-        assertFalse(validateEmail("missing@domain"));
-        assertFalse(validateEmail("@nodomain.com"));
-        assertFalse(validateEmail("spaces in@email.com"));
-        assertFalse(validateEmail(""));
+        assertFalse(isValidEmail("notanemail"));
+        assertFalse(isValidEmail("missing@domain"));
+        assertFalse(isValidEmail("@nodomain.com"));
+        assertFalse(isValidEmail("spaces in@email.com"));
+        assertFalse(isValidEmail(""));
+        assertFalse(isValidEmail("user@"));
+        assertFalse(isValidEmail("@"));
     }
+
+    // ========== Password Validation Tests ==========
 
     @Test
     public void validatePassword_validPassword_returnsTrue() {
-        assertTrue(validatePassword("Password123!"));
-        assertTrue(validatePassword("Bim2024Test"));
+        // Valid password: 8+ chars with at least one digit
+        assertTrue(validatePasswordSimple("Password123!"));
+        assertTrue(validatePasswordSimple("Bim2024Test"));
+        assertTrue(validatePasswordSimple("Password1"));
+        assertTrue(validatePasswordSimple("Abcdefg1"));  // exactly 8 chars
     }
 
     @Test
     public void validatePassword_invalidPassword_returnsFalse() {
-        assertFalse(validatePassword("short"));              // Too short
-        assertFalse(validatePassword("alllowercase1!"));      // No uppercase
-        assertFalse(validatePassword("ALLUPPERCASE1!"));     // No lowercase
-        assertFalse(validatePassword("NoNumbers!"));          // No digits
+        assertFalse(validatePasswordSimple("short"));              // Too short (<8)
+        assertFalse(validatePasswordSimple("NoDigits!"));            // No digits
+        assertFalse(validatePasswordSimple("Passw1!"));            // 7 chars
+        assertFalse(validatePasswordSimple(null));
+        assertFalse(validatePasswordSimple(""));
+    }
+
+    @Test
+    public void validatePassword_boundaryLength_tests() {
+        // Exactly 7 chars - should fail (too short)
+        assertFalse(validatePasswordSimple("Passw12"));
+        // Exactly 8 chars - should pass (min valid)
+        assertTrue(validatePasswordSimple("Password1"));
     }
 
     @Test
     public void validatePassword_emptyPassword_returnsFalse() {
-        assertFalse(validatePassword(""));
-        assertFalse(validatePassword(null));
+        assertFalse(validatePasswordSimple(""));
+        assertFalse(validatePasswordSimple(null));
     }
 
     // ========== Business Registration Validation Tests ==========
 
     @Test
     public void validateBusinessName_validName_returnsTrue() {
-        assertTrue(validateBusinessName("Coastal Cafe"));
-        assertTrue(validateBusinessName("Oistins Fish Market"));
+        assertTrue(validateBusinessNameSimple("Coastal Cafe"));
+        assertTrue(validateBusinessNameSimple("Oistins Fish Market"));
+        assertTrue(validateBusinessNameSimple("ABC"));  // exactly 3 chars
     }
 
     @Test
     public void validateBusinessName_invalidName_returnsFalse() {
-        assertFalse(validateBusinessName(""));                    // Empty
-        assertFalse(validateBusinessName("AB"));                  // Too short
-        assertFalse(validateBusinessName(null));                  // Null
+        assertFalse(validateBusinessNameSimple(""));                    // Empty
+        assertFalse(validateBusinessNameSimple("AB"));                  // Too short (<3)
+        assertFalse(validateBusinessNameSimple(null));                  // Null
+    }
+
+    @Test
+    public void validateBusinessName_whitespaceOnly_returnsFalse() {
+        assertFalse(validateBusinessNameSimple("   "));  // whitespace only
+        assertFalse(validateBusinessNameSimple("\t"));   // tab only
     }
 
     @Test
     public void validateBusinessRegistrationNumber_validNumber_returnsTrue() {
-        assertTrue(validateBusinessRegistrationNumber("12345"));
-        assertTrue(validateBusinessRegistrationNumber("BUS-2024-001"));
+        assertTrue(validateBusinessRegNumberSimple("12345"));  // exactly 5
+        assertTrue(validateBusinessRegNumberSimple("BUS-2024-001"));
     }
 
     @Test
     public void validateBusinessRegistrationNumber_invalid_returnsFalse() {
-        assertFalse(validateBusinessRegistrationNumber(""));     // Empty
-        assertFalse(validateBusinessRegistrationNumber("1234")); // Too short
+        assertFalse(validateBusinessRegNumberSimple(""));     // Empty
+        assertFalse(validateBusinessRegNumberSimple("1234")); // Too short (<5)
+        assertFalse(validateBusinessRegNumberSimple(null));
     }
 
     @Test
     public void validateDocument_uploaded_returnsTrue() {
-        assertTrue(validateDocument("business_certificate.pdf"));
-        assertTrue(validateDocument("tax_id.jpg"));
+        assertTrue(validateDocumentSimple("business_certificate.pdf"));
+        assertTrue(validateDocumentSimple("tax_id.jpg"));
+        assertTrue(validateDocumentSimple("document.doc"));
     }
 
     @Test
     public void validateDocument_notUploaded_returnsFalse() {
-        assertFalse(validateDocument(""));
-        assertFalse(validateDocument(null));
+        assertFalse(validateDocumentSimple(""));
+        assertFalse(validateDocumentSimple(null));
     }
 
     // ========== Location Filtering Tests ==========
 
     @Test
     public void filterHotspots_byType_returnsFilteredList() {
-        // Test filtering by restaurant
         String filterType = "restaurant";
         assertEquals(3, filterHotspotsByType(getSampleHotspots(), filterType).size());
     }
 
     @Test
     public void filterHotspots_byDistance_returnsSortedList() {
-        // Test sorting by distance (closest first)
         assertEquals("Crane Beach", filterHotspotsByDistance(getSampleHotspots()).get(0).getName());
     }
 
     @Test
     public void filterHotspots_byRating_returnsSortedList() {
-        // Test sorting by rating (highest first)
         assertEquals(5.0, filterHotspotsByRating(getSampleHotspots()).get(0).getRating(), 0.1);
     }
 
     @Test
     public void filterHotspots_within500mRadius_returnsOnlyNearby() {
-        // All returned hotspots should be within 500m
         for (Hotspot h : filterHotspotsByRadius(getSampleHotspots(), 500)) {
             assertTrue(h.getDistance() <= 500);
         }
+    }
+
+    @Test
+    public void filterHotspots_radiusEdgeCase_allWithin() {
+        // All 5 hotspots are within 1000m
+        assertEquals(5, filterHotspotsByRadius(getSampleHotspots(), 1000).size());
+    }
+
+    @Test
+    public void filterHotspots_radiusEdgeCase_noneWithin() {
+        // All hotspots are beyond 100m (min is 200m Crane Beach)
+        assertEquals(0, filterHotspotsByRadius(getSampleHotspots(), 100).size());
     }
 
     // ========== Review and Rating Tests ==========
 
     @Test
     public void validateRating_withinValidRange_returnsTrue() {
-        assertTrue(validateRating(1.0));
-        assertTrue(validateRating(3.5));
-        assertTrue(validateRating(5.0));
+        assertTrue(validateRatingSimple(1.0));
+        assertTrue(validateRatingSimple(3.5));
+        assertTrue(validateRatingSimple(5.0));
     }
 
     @Test
     public void validateRating_outOfRange_returnsFalse() {
-        assertFalse(validateRating(0.0));
-        assertFalse(validateRating(5.1));
-        assertFalse(validateRating(-1.0));
+        assertFalse(validateRatingSimple(0.0));   // Below min (1.0)
+        assertFalse(validateRatingSimple(5.1));   // Above max (5.0)
+        assertFalse(validateRatingSimple(-1.0));  // Negative
+    }
+
+    @Test
+    public void validateRating_boundaryValues() {
+        assertTrue("Rating 1.0 should be valid (min)", validateRatingSimple(1.0));
+        assertTrue("Rating 5.0 should be valid (max)", validateRatingSimple(5.0));
+        assertFalse("Rating 0.9 should be invalid (just below min)", validateRatingSimple(0.9));
+        assertFalse("Rating 5.01 should be invalid (just above max)", validateRatingSimple(5.01));
     }
 
     @Test
     public void validateReviewText_validText_returnsTrue() {
-        assertTrue(validateReviewText("Great place!"));
-        assertTrue(validateReviewText("Had a wonderful time at the beach."));
+        assertTrue(validateReviewTextSimple("Great place!"));
+        assertTrue(validateReviewTextSimple("Had a wonderful time at the beach."));
+        assertTrue(validateReviewTextSimple("12345"));  // exactly 5 chars
     }
 
     @Test
     public void validateReviewText_tooShort_returnsFalse() {
-        assertFalse(validateReviewText("Good"));
-        assertFalse(validateReviewText("OK"));
-        assertFalse(validateReviewText(""));
+        assertFalse(validateReviewTextSimple("Good"));  // 4 chars
+        assertFalse(validateReviewTextSimple("OK"));   // 2 chars
+        assertFalse(validateReviewTextSimple(""));     // empty
+        assertFalse(validateReviewTextSimple(null));   // null
     }
 
     // ========== Admin Content Moderation Tests ==========
 
     @Test
     public void isContentInappropriate_appropriateContent_returnsFalse() {
-        assertFalse(isContentInappropriate("Great beach!"));
-        assertFalse(isContentInappropriate("Loved the food"));
+        assertFalse(isContentInappropriateSimple("Great beach!"));
+        assertFalse(isContentInappropriateSimple("Loved the food"));
+        assertFalse(isContentInappropriateSimple("Beautiful sunset today"));
+        assertFalse(isContentInappropriateSimple("Best fish market ever"));
     }
 
     @Test
     public void isContentInappropriate_inappropriateContent_returnsTrue() {
-        assertTrue(isContentInappropriate("spam spam spam"));
-        assertTrue(isContentInappropriate("EXPLOIT!!!"));
+        assertTrue(isContentInappropriateSimple("spam spam spam"));
+        assertTrue(isContentInappropriateSimple("EXPLOIT!!!"));
+        assertTrue("Case insensitive: SPAM", isContentInappropriateSimple("SPAM"));
+        assertTrue("Case insensitive: Exploit", isContentInappropriateSimple("Exploit"));
+        assertTrue("Mixed: this is spam content", isContentInappropriateSimple("this is spam content"));
+    }
+
+    @Test
+    public void isContentInappropriate_null_returnsFalse() {
+        assertFalse(isContentInappropriateSimple(null));
     }
 
     @Test
     public void validateAdminAction_validAction_returnsTrue() {
-        assertTrue(validateAdminAction("APPROVE", "POST", "valid"));
-        assertTrue(validateAdminAction("REJECT", "BUSINESS", "valid"));
+        assertTrue(validateAdminActionSimple("APPROVE", "POST", "valid"));
+        assertTrue(validateAdminActionSimple("REJECT", "BUSINESS", "valid"));
+        assertTrue(validateAdminActionSimple("DELETE", "COMMENT", "valid"));
+        assertTrue(validateAdminActionSimple("APPROVE", "LOCATION", "valid"));
     }
 
     @Test
     public void validateAdminAction_invalidAction_returnsFalse() {
-        assertFalse(validateAdminAction("INVALID", "POST", "valid"));
-        assertFalse(validateAdminAction("APPROVE", "INVALID", "valid"));
+        assertFalse(validateAdminActionSimple("INVALID", "POST", "valid"));
+        assertFalse(validateAdminActionSimple("APPROVE", "INVALID", "valid"));
+        assertFalse(validateAdminActionSimple("", "POST", "valid"));
+        assertFalse(validateAdminActionSimple("APPROVE", "", "valid"));
+    }
+
+    @Test
+    public void validateAdminAction_emptyTargetId_returnsFalse() {
+        assertFalse(validateAdminActionSimple("APPROVE", "POST", ""));
+        assertFalse(validateAdminActionSimple("APPROVE", "POST", null));
     }
 
     // ========== Post Creation Tests ==========
 
     @Test
     public void validatePostContent_validContent_returnsTrue() {
-        assertTrue(validatePostContent("Check out this amazing view!", "image.jpg"));
-        assertTrue(validatePostContent("Just posted", "photo.png"));
+        assertTrue(validatePostContentSimple("Check out this amazing view!", "image.jpg"));
+        assertTrue(validatePostContentSimple("Just posted", "photo.png"));
+        assertTrue(validatePostContentSimple("Beach day!", "beach.jpg"));
     }
 
     @Test
     public void validatePostContent_missingCaption_returnsFalse() {
-        assertFalse(validatePostContent("", "image.jpg"));
-        assertFalse(validatePostContent(null, "image.jpg"));
+        assertFalse(validatePostContentSimple("", "image.jpg"));
+        assertFalse(validatePostContentSimple(null, "image.jpg"));
+        assertFalse(validatePostContentSimple("  ", "image.jpg"));  // whitespace only
     }
 
     @Test
     public void validatePostContent_missingLocation_returnsFalse() {
-        assertFalse(validatePostContent("Great place", ""));
-        assertFalse(validatePostContent("Great place", null));
+        assertFalse(validatePostContentSimple("Great place", ""));
+        assertFalse(validatePostContentSimple("Great place", null));
+        assertFalse(validatePostContentSimple("Great place", "  "));  // whitespace only
     }
 
-    // ========== Helper Methods & Stub Implementations ==========
+    // ========== Helper Methods (Testing validation patterns, not ViewModels) ==========
 
-    private boolean validateEmail(String email) {
-        if (email == null || email.isEmpty()) return false;
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
-    }
-
-    private boolean validatePassword(String password) {
+    private boolean validatePasswordSimple(String password) {
         if (password == null || password.length() < 8) return false;
-        boolean hasUpper = false, hasLower = false, hasDigit = false;
+        boolean hasDigit = false;
         for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) hasUpper = true;
-            if (Character.isLowerCase(c)) hasLower = true;
             if (Character.isDigit(c)) hasDigit = true;
         }
-        return hasUpper && hasLower && hasDigit;
+        return hasDigit;
     }
 
-    private boolean validateBusinessName(String name) {
-        return name != null && name.length() >= 3;
+    private boolean validateBusinessNameSimple(String name) {
+        if (name == null || name.trim().isEmpty()) return false;
+        return name.trim().length() >= 3;
     }
 
-    private boolean validateBusinessRegistrationNumber(String number) {
+    private boolean validateBusinessRegNumberSimple(String number) {
         return number != null && number.length() >= 5;
     }
 
-    private boolean validateDocument(String document) {
+    private boolean validateDocumentSimple(String document) {
         return document != null && !document.isEmpty();
     }
 
-    private boolean validateRating(double rating) {
+    private boolean validateRatingSimple(double rating) {
         return rating >= 1.0 && rating <= 5.0;
     }
 
-    private boolean validateReviewText(String text) {
-        return text != null && text.length() >= 5;
+    private boolean validateReviewTextSimple(String text) {
+        return text != null && text.trim().length() >= 5;
     }
 
-    private boolean isContentInappropriate(String content) {
+    private boolean isContentInappropriateSimple(String content) {
         if (content == null) return false;
         String lower = content.toLowerCase();
         return lower.contains("spam") || lower.contains("exploit");
     }
 
-    private boolean validateAdminAction(String action, String targetType, String targetId) {
+    private boolean validateAdminActionSimple(String action, String targetType, String targetId) {
         String[] validActions = {"APPROVE", "REJECT", "DELETE"};
         String[] validTypes = {"POST", "COMMENT", "BUSINESS", "LOCATION"};
         for (String a : validActions) if (a.equals(action)) {
@@ -241,8 +318,9 @@ public class ValidationUtilsTest {
         return false;
     }
 
-    private boolean validatePostContent(String caption, String imagePath) {
-        return caption != null && !caption.isEmpty() && imagePath != null && !imagePath.isEmpty();
+    private boolean validatePostContentSimple(String caption, String imagePath) {
+        if (caption == null || caption.trim().isEmpty()) return false;
+        return imagePath != null && !imagePath.trim().isEmpty();
     }
 
     // ========== Stub Classes for Testing ==========

@@ -9,6 +9,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.FirebaseProvider;
+import com.example.everythingbim.data.RealFirebaseProvider;
 import com.example.everythingbim.data.models.BusinessProfile;
 import com.example.everythingbim.data.models.File;
 import com.example.everythingbim.ui.login.Login;
@@ -28,9 +30,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BusinessRegViewModel extends ViewModel {
 
-    private final FirebaseAuth auth = FirebaseAuth.getInstance();
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private final FirebaseStorage storage = FirebaseStorage.getInstance();
+    private final FirebaseAuth auth;
+    private final FirebaseFirestore db;
+    private final FirebaseStorage storage;
+    private final FirebaseProvider firebaseProvider;
 
     // Form fields
     private final MutableLiveData<String> companyName = new MutableLiveData<>();
@@ -53,6 +56,24 @@ public class BusinessRegViewModel extends ViewModel {
     // Verification code
     private String demoVerificationCode;
     private final MutableLiveData<Boolean> isCodeValid = new MutableLiveData<>(false);
+
+    /**
+     * Default constructor for production use.
+     * Uses RealFirebaseProvider to get actual Firebase instances.
+     */
+    public BusinessRegViewModel() {
+        this(new RealFirebaseProvider());
+    }
+
+    /**
+     * Constructor for testing - allows injection of mock FirebaseProvider.
+     */
+    public BusinessRegViewModel(FirebaseProvider provider) {
+        this.firebaseProvider = provider;
+        this.auth = provider.getAuth();
+        this.db = provider.getFirestore();
+        this.storage = provider.getStorage();
+    }
 
     // Getters
     public LiveData<Integer> getCurrentPage() { return currentPage; }
