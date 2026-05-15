@@ -1,0 +1,69 @@
+# Task 1: Dependencies Analysis
+
+## Current Test Dependencies (from libs.versions.toml)
+
+[versions]
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+## Current Test Dependencies (from app/build.gradle)
+
+testImplementation libs.junit           // JUnit 4.13.2
+androidTestImplementation libs.ext.junit  // AndroidJUnitRunner
+androidTestImplementation libs.espresso.core  // Espresso
+
+## Missing for Android ViewModel Testing
+
+| Dependency | Current | Needed | Purpose |
+|------------|---------|--------|---------|
+| Robolectric | ❌ | ✅ 4.14 | Android framework testing |
+| androidx.test:core | ❌ | ✅ 1.5.0 | Android test utilities |
+| androidx.fragment:fragment-testing | ❌ | ✅ 1.8.3 | Fragment testing |
+| Firebase Auth Testing | ❌ | ✅ 21.0.1 | Firebase Auth mocking |
+| Firebase Firestore Testing | ❌ | ✅ 24.0.1 | Firestore mocking |
+| Mockito Core | ❌ | ✅ 5.14.2 | Dependency mocking |
+| Mockito Android | ❌ | ✅ 5.14.2 | Android mocking |
+| ByteBuddy | ❌ | ✅ 1.17.2 | Mockito dependency |
+
+## Recommendations
+
+### New versions to add to libs.versions.toml:
+
+```toml
+[versions]
+# ... existing ...
+robolectric = "4.14"
+androidx-test-core = "1.5.0"
+androidx-fragment-testing = "1.8.3"
+firebase-auth-testing = "21.0.1"
+firebase-firestore-testing = "24.0.1"
+mockito = "5.14.2"
+bytebuddy = "1.17.2"
+```
+
+### New libraries to add:
+
+```toml
+[libraries]
+# ... existing ...
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidx-test-core" }
+androidx-fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "androidx-fragment-testing" }
+firebase-auth-testing = { module = "com.google.firebase:firebase-auth-testing", version.ref = "firebase-auth-testing" }
+firebase-firestore-testing = { module = "com.google.firebase:firebase-firestore-testing", version.ref = "firebase-firestore-testing" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-android = { group = "org.mockito", name = "mockito-android", version.ref = "mockito" }
+bytebuddy = { group = "net.bytebuddy", name = "byte-buddy", version.ref = "bytebuddy" }
+```
+
+## Changes Required
+
+1. **libs.versions.toml**: Add 8 new version entries and 8 new library entries
+2. **app/build.gradle**: Add testImplementation for all new dependencies
+3. **app/build.gradle**: Add testOptions for Robolectric

@@ -1,0 +1,58 @@
+# Task 1: Stub Analysis - ValidationUtilsTest.java
+
+## Stub Methods Identified (lines 191-299)
+
+### Validation Stub Methods
+
+| Method | Lines | Validates | Input Types Tested |
+|--------|-------|-----------|-------------------|
+| validateEmail | 191-194 | Email format | valid: 3, invalid: 5 |
+| validatePassword | 196-205 | Password >= 8, upper, lower, digit | valid: 2, invalid: 4 |
+| validateBusinessName | 207-209 | Name >= 3 chars | valid: 2, invalid: 3 |
+| validateBusinessRegistrationNumber | 211-213 | Number >= 5 chars | valid: 2, invalid: 2 |
+| validateDocument | 215-217 | Document not empty | valid: 2, invalid: 2 |
+| validateRating | 219-221 | Rating 1.0-5.0 | valid: 3, invalid: 3 |
+| validateReviewText | 223-225 | Text >= 5 chars | valid: 2, invalid: 3 |
+| isContentInappropriate | 227-231 | Contains spam/exploit | appropriate: 2, inappropriate: 2 |
+| validateAdminAction | 233-242 | Valid action+type+id | valid: 2, invalid: 2 |
+| validatePostContent | 244-246 | Caption + imagePath not empty | valid: 2, invalid: 4 |
+
+### Hotspot Stub Methods
+
+| Method | Lines | Purpose |
+|-------|-------|---------|
+| getSampleHotspots | 266-274 | Returns 5 sample locations |
+| filterHotspotsByType | 276-279 | Returns first 3 (hardcoded) |
+| filterHotspotsByDistance | 281-285 | Sorts by distance ascending |
+| filterHotspotsByRating | 287-291 | Sorts by rating descending |
+| filterHotspotsByRadius | 293-299 | Filters by max distance |
+
+### Stub Hotspot Class
+| Item | Lines |
+|------|-------|
+| Hotspot class | 250-264 |
+
+## Total: 10 validation stubs + 5 hotspot filter stubs + 1 helper class = 16 stub methods
+
+## Issues with Stub Implementations
+
+1. **Duplicate Logic**: Stubs reimplement validation logic instead of testing actual ViewModels
+2. **Incomplete Edge Cases**:
+   - validatePassword: Missing boundary (8 chars exactly), no special character check
+   - validateEmail: Missing subdomain variations
+   - validateBusinessName: Missing whitespace-only test
+3. **Not Testing Real Code**: ViewModels in `ui/registration/` and `ui/login/` are never instantiated
+
+## Mapping to Actual ViewModels
+
+| Stub Method | Maps To | Location |
+|-------------|---------|----------|
+| validateEmail | LoginViewModel.validateEmail | LoginViewModel.java:75-81 |
+| validatePassword | GeneralRegViewModel.validatePassword | GeneralRegViewModel.java:68-79 |
+| validateBusinessName | BusinessRegViewModel.validateBusinessName | BusinessRegViewModel.java:164-171 |
+| validateAdminAction | (Not implemented in ViewModels - admin fragments handle) | N/A |
+| validatePostContent | CreatePostViewModel.createPost | CreatePostViewModel.java:90-98 |
+
+## Recommended Test Coverage
+
+See task-1-validation-matrix.txt for full mapping of validation rules to ViewModels.
