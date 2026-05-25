@@ -54,7 +54,18 @@ public class PostRepository {
         executorService.execute(() -> {
             if (postDao.getPostCount() == 0) {
                 // Insert a sample location first
-                long locId = locationDao.insert(new LocationEntity("Harrison's Cave", 13.1724, -59.5755, 4.8f, true, "Admin"));
+                long locId = locationDao.insert(new LocationEntity(
+                        "Harrison's Cave",
+                        13.1724,
+                        -59.5755,
+                        4.8f,
+                        true,
+                        "Admin",
+                        "Popular Barbados cave attraction known for guided tram tours and underground formations.",
+                        "nature",
+                        "harrisons_cave",
+                        "Harrison's Cave, Allen View, St. Thomas, Barbados"
+                ));
                 
                 // Insert a sample post
                 long postId = postDao.insert(new PostEntity(locId, 101, "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM", "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg", System.currentTimeMillis() - 86400000));
@@ -75,7 +86,18 @@ public class PostRepository {
                 // but for seeding we can just add more top-level replies.
                 
                 // Another post for variety
-                long locId2 = locationDao.insert(new LocationEntity("Bathsheba Beach", 13.2101, -59.5218, 4.9f, true, "Admin"));
+                long locId2 = locationDao.insert(new LocationEntity(
+                        "Bathsheba Beach",
+                        13.2101,
+                        -59.5218,
+                        4.9f,
+                        true,
+                        "Admin",
+                        "Scenic east-coast beach famous for its rock formations and surf culture.",
+                        "beach",
+                        "bathsheba_beach",
+                        "Bathsheba, St. Joseph, Barbados"
+                ));
                 postDao.insert(new PostEntity(locId2, 102, "Sunset at Bathsheba. The rock formations are unlike anything else.", "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg", System.currentTimeMillis() - 172800000));
             }
         });

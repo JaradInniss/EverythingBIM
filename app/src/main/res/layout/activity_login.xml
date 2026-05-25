@@ -110,6 +110,17 @@
 
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/admin_access_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Admin Access"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <!-- Login Form -->
         <LinearLayout
             android:id="@+id/login_form"

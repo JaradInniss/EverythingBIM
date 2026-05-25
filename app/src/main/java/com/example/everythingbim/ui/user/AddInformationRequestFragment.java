@@ -1,7 +1,9 @@
 package com.example.everythingbim.ui.user;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -38,6 +40,9 @@ import androidx.fragment.app.Fragment;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.File;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.FileAdapter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -161,6 +166,11 @@ public class AddInformationRequestFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_add_information_request, container, false);
 
+        if (isGuestUser()) {
+            showAuthRequiredDialog();
+            return view;
+        }
+
         // Initialize Firebase
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
@@ -226,6 +236,33 @@ public class AddInformationRequestFragment extends Fragment {
         setupMap(view, savedInstanceState);
 
         return view;
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType);
+    }
+
+    private void showAuthRequiredDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Log in to submit a request")
+                .setMessage("Guests can explore the app, but you'll need an account before submitting an information request.")
+                .setPositiveButton("Log In", (dialog, which) -> {
+                    Intent intent = new Intent(requireContext(), Login.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_INFORMATION_REQUEST);
+                    startActivity(intent);
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .setNegativeButton("Create Account", (dialog, which) -> {
+                    Intent intent = new Intent(requireContext(), GeneralRegistration.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_INFORMATION_REQUEST);
+                    startActivity(intent);
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .setOnCancelListener(dialog -> requireActivity().getSupportFragmentManager().popBackStack())
+                .show();
     }
 
     // ────────────────────────────────────────────────────────

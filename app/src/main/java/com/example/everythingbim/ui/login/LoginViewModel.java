@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.login;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,7 +34,7 @@ public class LoginViewModel extends ViewModel {
     private final FirebaseProvider firebaseProvider;
 
     private SharedPreferences sharedPreferences; // may be null
-    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.ADMIN);
+    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.GENERAL);
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
@@ -127,22 +128,17 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
-        UserType userType = selectedUserType.getValue();
-        String userTypeStr = (userType == UserType.BUSINESS) ? "Business" : "General";
+        // BYPASS Firebase Auth for testing - persist the selected role and open the matching shell.
+        UserType selected = selectedUserType.getValue() != null
+                ? selectedUserType.getValue()
+                : UserType.GENERAL;
 
-        // Save userType to SharedPreferences (matching what UserFragment expects)
-        if (sharedPreferences != null) {
-            sharedPreferences.edit().putString("userType", userTypeStr).apply();
-            sharedPreferences.edit().putString("user_type", userTypeStr).apply();
-        }
-
-        if (userType == UserType.ADMIN) {
-            navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
+        if (selected == UserType.ADMIN) {
+            saveAndNavigate("admin", "");
+        } else if (selected == UserType.BUSINESS) {
+            saveAndNavigate(MainActivity.USER_TYPE_BUSINESS, "");
         } else {
-            Bundle extras = new Bundle();
-            extras.putString("userType", userTypeStr);
-            extras.putString("user_type", userTypeStr);
-            navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
+            saveAndNavigate(MainActivity.USER_TYPE_GENERAL, "");
         }
     }
     */

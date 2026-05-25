@@ -277,4 +277,16 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
 
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString())));
     }
+
+    @Override
+    public void onLocationDetailsRequested(@NonNull NearbySavedLocation location) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, location.getLocationId());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, location.getLatitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, location.getLongitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, location.getName());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, location.getAddress());
+        startActivity(intent);
+    }
 }
