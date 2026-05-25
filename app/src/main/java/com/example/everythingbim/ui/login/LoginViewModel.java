@@ -93,7 +93,7 @@ public class LoginViewModel extends ViewModel {
 
     // Validate fields and set error message if invalid
     public void validateEmail(String email) {
-        if (email.isEmpty()) {
+        if (email == null || email.isEmpty()) {
             setErrorField(R.id.login_email_et, "Email Field Cannot Be Empty");
             return;
         }
@@ -101,7 +101,7 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void validatePassword(String password) {
-        if (password.isEmpty()) {
+        if (password == null || password.isEmpty()) {
             setErrorField(R.id.login_password_et, "Password Field Cannot Be Empty");
             return;
         }
@@ -196,7 +196,6 @@ public class LoginViewModel extends ViewModel {
                     // If not found in 'users', try 'businesses'
                     db.collection("businesses").document(userId).get()
                             .addOnCompleteListener(task2 -> {
-                                isLoading.setValue(false);
                                 if (task2.isSuccessful()) {
                                     DocumentSnapshot doc = task2.getResult();
                                     if (doc.exists()) {
@@ -206,14 +205,31 @@ public class LoginViewModel extends ViewModel {
                                         } else {
                                             setErrorField(R.id.login_error, "User type not found");
                                         }
-                                    } else {
-                                        setErrorField(R.id.login_error, "User document not found");
+                                        return;
                                     }
-                                } else {
-                                    String error = task2.getException() != null ?
-                                            task2.getException().getMessage() : "Failed to fetch user data";
-                                    setErrorField(R.id.login_error, error);
                                 }
+                                // If not found in 'businesses', try 'admin'
+                                db.collection("admin").document(userId).get()
+                                        .addOnCompleteListener(task3 -> {
+                                            isLoading.setValue(false);
+                                            if (task3.isSuccessful()) {
+                                                DocumentSnapshot adminDoc = task3.getResult();
+                                                if (adminDoc.exists()) {
+                                                    String userType = adminDoc.getString("userType");
+                                                    if (userType != null) {
+                                                        saveAndNavigate(userType, userId);
+                                                    } else {
+                                                        setErrorField(R.id.login_error, "User type not found");
+                                                    }
+                                                } else {
+                                                    setErrorField(R.id.login_error, "User document not found");
+                                                }
+                                            } else {
+                                                String error = task3.getException() != null ?
+                                                        task3.getException().getMessage() : "Failed to fetch user data";
+                                                setErrorField(R.id.login_error, error);
+                                            }
+                                        });
                             });
                 });
     }

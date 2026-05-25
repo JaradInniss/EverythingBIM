@@ -28,7 +28,7 @@ import org.robolectric.shadows.ShadowLooper;
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(shadows = {ShadowLooper.class})
-public class MapViewModelTest {
+public class  MapViewModelTest {
 
     private MapViewModel viewModel;
 

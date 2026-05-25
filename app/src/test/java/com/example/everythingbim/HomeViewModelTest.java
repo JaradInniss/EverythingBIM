@@ -62,15 +62,6 @@ public class HomeViewModelTest {
         viewModel.onImageSelected(image1);
         viewModel.onImageSelected(image2);
 
-        // Should only deliver the first value (pending set to false after first delivery)
-        // Subsequent setValue calls reset pending, but observe only fires when pending was true
-        // After first observe, pending=false, second setValue sets pending=true, but then
-        // compareAndSet(true, false) returns true and fires... wait let me trace this
-
-        // Actually: setValue sets pending=true then calls super.setValue()
-        // The observer sees pending was true, so it fires and sets pending=false
-        // Second setValue sets pending=true again, observer fires again
-        // So it should fire for both
         assertEquals("Should have been called twice", 2, counter.callCount);
     }
 

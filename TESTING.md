@@ -173,7 +173,7 @@ public class LoginViewModel extends ViewModel {
 | `EntityValidationTest.java` | 17 | Room entity validation |
 | `ValidationUtilsTest.java` | 33 | Validation utility patterns |
 | `GeneralRegViewModelTest.java` | 36 | General registration ViewModel |
-| `BusinessRegViewModelTest.java` | 4 | Business registration ViewModel |
+| `BusinessRegViewModelTest.java` | 46 | Business registration ViewModel, validation, file management, navigation |
 | `LoginViewModelTest.java` | 8 | Login ViewModel |
 | `CreatePostViewModelTest.java` | 26 | Create post ViewModel |
 | `HomeViewModelTest.java` | 9 | Home ViewModel, SingleLiveEvent |
@@ -248,8 +248,8 @@ public class MyTest {
 
 | Metric | Count |
 |--------|-------|
-| Total Tests | 163 |
-| Passing | 163 |
+| Total Tests | 203 |
+| Passing | 203 |
 | Failing | 0 |
 | Errors | 0 |
 
@@ -257,9 +257,32 @@ public class MyTest {
 
 | Category | Tests |
 |----------|-------|
-| ViewModel Tests | 93 |
+| ViewModel Tests | 133 |
 | Validation Tests | 50 |
 | Model/Utility Tests | 20 |
+
+## Recent Changes
+
+### Login Admin Collection Support (2026-05-23)
+
+The `LoginViewModel.fetchUserTypeAndNavigate()` method now checks THREE collections in order:
+1. `users` - General user accounts
+2. `businesses` - Business user accounts
+3. `admin` - Admin user accounts
+
+This allows admin users to login and navigate to the AdminActivity screen.
+
+```java
+// Flow: users → businesses → admin
+db.collection("users").document(userId).get()
+    .addOnCompleteListener(task -> { ... });
+
+db.collection("businesses").document(userId).get()
+    .addOnCompleteListener(task2 -> { ... });
+
+db.collection("admin").document(userId).get()
+    .addOnCompleteListener(task3 -> { ... });
+```
 
 ## Notes
 
