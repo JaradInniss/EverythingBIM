@@ -1,5 +1,8 @@
 package com.example.everythingbim.ui.user;
 
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -9,6 +12,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.BusinessRegistration;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -60,7 +66,37 @@ public class AddBusinessLocationRequestFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_add_business_location_request, container, false);
+        View view = inflater.inflate(R.layout.fragment_add_business_location_request, container, false);
+        if (isGuestUser()) {
+            showAuthRequiredDialog();
+        }
+        return view;
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType);
+    }
+
+    private void showAuthRequiredDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Log in to submit a business request")
+                .setMessage("Guests can explore the app, but you'll need a business account before submitting this request.")
+                .setPositiveButton("Log In", (dialog, which) -> {
+                    Intent intent = new Intent(requireContext(), Login.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_BUSINESS_LOCATION_REQUEST);
+                    startActivity(intent);
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .setNegativeButton("Register Business", (dialog, which) -> {
+                    Intent intent = new Intent(requireContext(), BusinessRegistration.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_BUSINESS_LOCATION_REQUEST);
+                    startActivity(intent);
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .setOnCancelListener(dialog -> requireActivity().getSupportFragmentManager().popBackStack())
+                .show();
     }
 }

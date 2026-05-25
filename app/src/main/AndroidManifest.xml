@@ -26,6 +26,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
+            android:name=".ui.posts.ViewPost"
+            android:exported="false" />
+        <activity
             android:name=".ui.map.MapViewAllActivity"
             android:exported="false" />
         <activity

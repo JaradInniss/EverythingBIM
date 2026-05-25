@@ -1,5 +1,8 @@
 package com.example.everythingbim.ui.posts;
 
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -13,6 +16,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.databinding.ActivityCreatePostBinding;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
 
 public class CreatePostActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -33,6 +39,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        if (isGuestUser()) {
+            showAuthRequiredDialog();
+            return;
+        }
 
         setupViews();
         observeViewModel();
@@ -78,5 +89,40 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         // based on user selection before calling createPost().
         // For now, this just triggers the viewModel logic.
         viewModel.createPost();
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType);
+    }
+
+    private void showAuthRequiredDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Log in to create a post")
+                .setMessage("Guests can browse posts, but you'll need an account before sharing your own.")
+                .setPositiveButton("Log In", (dialog, which) -> {
+                    startActivity(buildLoginIntent());
+                    finish();
+                })
+                .setNegativeButton("Create Account", (dialog, which) -> {
+                    startActivity(buildGeneralRegistrationIntent());
+                    finish();
+                })
+                .setOnCancelListener(dialog -> finish())
+                .setNeutralButton("Not now", (dialog, which) -> finish())
+                .show();
+    }
+
+    private Intent buildLoginIntent() {
+        Intent intent = new Intent(this, Login.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
+    }
+
+    private Intent buildGeneralRegistrationIntent() {
+        Intent intent = new Intent(this, GeneralRegistration.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
     }
 }

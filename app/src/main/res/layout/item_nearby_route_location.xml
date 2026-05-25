@@ -19,6 +19,9 @@
             android:layout_width="84dp"
             android:layout_height="84dp"
             android:background="@drawable/bg_rectangle_alice_blue"
+            android:clickable="true"
+            android:contentDescription="Open location details"
+            android:focusable="true"
             android:padding="12dp"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_images" />

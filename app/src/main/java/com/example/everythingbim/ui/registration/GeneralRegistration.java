@@ -4,6 +4,7 @@ import com.example.everythingbim.databinding.ActivityGeneralRegistrationBinding;
 import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
 import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -159,6 +160,10 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
                 // For login, clear the back stack
                 if (destination.equals(Login.class)) {
                     Intent intent = new Intent(GeneralRegistration.this, destination);
+                    String pendingAction = getIntent().getStringExtra(MainActivity.EXTRA_PENDING_ACTION);
+                    if (pendingAction != null) {
+                        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, pendingAction);
+                    }
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();

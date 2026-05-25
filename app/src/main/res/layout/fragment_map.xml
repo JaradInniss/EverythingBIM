@@ -556,7 +556,6 @@
                         android:layout_height="80dp"
                         android:layout_weight="1"
                         android:layout_marginTop="5dp"
-                        android:editable="false"
                         android:gravity="top|start"
                         android:inputType="textMultiLine"
                         style="@style/black_small_txt_style"
