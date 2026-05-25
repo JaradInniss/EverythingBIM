@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.ImageButton;
 
 import androidx.annotation.NonNull;
@@ -19,6 +20,7 @@ import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 public class UserFragment extends Fragment {
 
@@ -111,13 +113,11 @@ public class UserFragment extends Fragment {
         view.findViewById(R.id.accver_view_btn_2).setOnClickListener(v ->
                 navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
 
-        view.findViewById(R.id.addloc_view_btn).setOnClickListener(v -> {
-            // TODO: navigate to View Add Location to Address screen
-        });
+        view.findViewById(R.id.addloc_view_btn).setOnClickListener(v ->
+                navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
 
-        view.findViewById(R.id.addloc_view_btn_2).setOnClickListener(v -> {
-            // TODO: navigate to View Completed Add Location to Address screen
-        });
+        view.findViewById(R.id.addloc_view_btn_2).setOnClickListener(v ->
+                navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
 
         view.findViewById(R.id.business_add_field_btn).setOnClickListener(v ->
                 navigateTo(new AddBusinessLocationRequestFragment()));
@@ -125,11 +125,13 @@ public class UserFragment extends Fragment {
         setupEditToggle(view, R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn);
         setupEditToggle(view, R.id.general_user_edit_email_et, R.id.general_user_edit_email_btn);
         setupEditToggle(view, R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn);
+        setupEditToggle(view, R.id.general_user_bio_et, R.id.general_user_edit_bio_btn);
 
         setupEditToggle(view, R.id.business_edit_email_et, R.id.business_edit_email_btn);
         setupEditToggle(view, R.id.business_edit_password_et, R.id.business_edit_password_btn);
         setupEditToggle(view, R.id.business_edit_address_et, R.id.business_edit_address_btn);
         setupEditToggle(view, R.id.business_edit_desc_et, R.id.business_edit_desc_btn);
+        setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
 
         return view;
     }
@@ -215,23 +217,40 @@ public class UserFragment extends Fragment {
     }
 
     private void toggleFieldEdit(TextInputEditText field, ImageButton button) {
+        // TextInputLayout is the direct parent of TextInputEditText
+        ViewParent parent = field.getParent();
+        TextInputLayout fieldLayout = (parent instanceof TextInputLayout) ? (TextInputLayout) parent : null;
         if (!field.isFocusable()) {
             field.setFocusable(true);
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
+            // Blue background, white icon
             button.setBackgroundResource(R.drawable.bg_rectangle_blue);
             button.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
             ));
+            // Blue outline on field
+            if (fieldLayout != null) {
+                fieldLayout.setBoxStrokeColor(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.persian_blue)
+                );
+            }
         } else {
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
-            button.setBackgroundResource(R.drawable.bg_rectangle_pale_slate);
+            // Grey background, black icon
+            button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
             button.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
             ));
+            // Reset field outline to grey
+            if (fieldLayout != null) {
+                fieldLayout.setBoxStrokeColor(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
+                );
+            }
 
             android.view.inputmethod.InputMethodManager imm =
                     (android.view.inputmethod.InputMethodManager)

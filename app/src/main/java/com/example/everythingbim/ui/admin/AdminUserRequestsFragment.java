@@ -1,5 +1,6 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,6 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+
+import com.example.everythingbim.R;
 
 public class AdminUserRequestsFragment extends Fragment {
 
@@ -219,6 +223,29 @@ public class AdminUserRequestsFragment extends Fragment {
         currentLoadId++;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reload read state from SharedPreferences in case it changed
+        applyFilters();
+    }
+
+    // Check if a request is locally marked as read
+    public boolean isRequestRead(String docId) {
+        return ReadStateManager.isRequestRead(requireContext(), docId);
+    }
+
+    // Mark a request as read and persist to SharedPreferences
+    public void markAsRead(String docId) {
+        ReadStateManager.markRequestRead(requireContext(), docId);
+        applyFilters();
+    }
+
+    // Effective read state = Firestore read OR locally tracked read
+    private boolean isEffectivelyRead(RequestItem item) {
+        return item.read || ReadStateManager.isRequestRead(requireContext(), item.docId);
+    }
+
     private void addPlaceholders() {
         if (requestType.equals("location")) {
             RequestItem item1 = new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"ph_loc_201");
@@ -290,9 +317,10 @@ public class AdminUserRequestsFragment extends Fragment {
         displayedItems.clear();
 
         for (RequestItem item : allItems) {
-            // Read filter
-            if (readFilter == ReadFilter.UNREAD && item.read) continue;
-            if (readFilter == ReadFilter.READ && !item.read) continue;
+            // Read filter - use effective read state (Firestore + local SharedPreferences)
+            boolean effectivelyRead = isEffectivelyRead(item);
+            if (readFilter == ReadFilter.UNREAD && effectivelyRead) continue;
+            if (readFilter == ReadFilter.READ && !effectivelyRead) continue;
 
             // Search filter
             if (!query.isEmpty()) {
@@ -368,15 +396,20 @@ public class AdminUserRequestsFragment extends Fragment {
             h.submittedBy.setText("Submitted By: " + item.submittedBy);
             h.date.setText(item.date);
 
-            h.dot.setBackgroundResource(item.read
+            // Dot - use effective read state (Firestore + local SharedPreferences)
+            boolean effectivelyRead = isEffectivelyRead(item);
+            h.dot.setBackgroundResource(effectivelyRead
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
 
-            h.viewBtn.setTextColor(item.read
+            h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
                     : android.graphics.Color.parseColor("#203088"));
 
             h.viewBtn.setOnClickListener(v -> {
+                // Mark as read in SharedPreferences when viewed
+                markAsRead(item.docId);
+
                 Fragment parentFrag = getParentFragment();
                 if (parentFrag instanceof AdminFragment) {
                     ((AdminFragment) parentFrag).navigateToRequestDetail(requestType, item.docId);

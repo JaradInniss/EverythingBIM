@@ -3,23 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:padding="4dp">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/viewlocreq_card"
+        android:id="@+id/viewcompletedlocreq_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/white"
         app:cardElevation="4dp"
-        app:cardCornerRadius="8dp"
-        app:cardBackgroundColor="@color/white">
+        app:cardCornerRadius="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="12dp">
-
             <!-- Request number + Status row -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -88,7 +88,6 @@
 
                 </LinearLayout>
             </LinearLayout>
-
             <!-- Divider -->
             <View
                 android:layout_width="match_parent"
@@ -98,12 +97,73 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp" />
 
-            <!-- Map -->
-            <com.google.android.gms.maps.MapView
-                android:id="@+id/viewlocreq_map"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:layout_marginBottom="14dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="12dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Complete The Form With The Required Information"
+                    android:textSize="13sp"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginBottom="4dp"/>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:id="@+id/search_bar"
+                    android:layout_width="280dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@drawable/bg_rectangle_alice_blue"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp">
+                    <EditText
+                        android:id="@+id/search_et"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:fontFamily="@font/roboto_medium"
+                        android:hint="Location"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        android:textSize="12sp"
+                        android:textColor="@color/black"
+                        android:imeOptions="actionSearch" />
+                    <ImageView
+                        android:id="@+id/search_bttn"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginRight="10dp"
+                        android:src="@drawable/ic_magnifying_glass"
+                        app:tint="@color/black" />
+                </LinearLayout>
+
+                <ListView
+                    android:id="@+id/search_results_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/white"
+                    android:elevation="4dp"
+                    android:visibility="gone" />
+
+
+            </LinearLayout>
 
             <!-- Location Name -->
             <TextView
@@ -113,118 +173,58 @@
                 android:textColor="@color/black"
                 android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
+
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_name_layout"
+                android:id="@+id/location_name_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
+                app:boxStrokeColor="@color/light_grey"
+                app:boxStrokeWidth="1dp"
+                app:boxStrokeWidthFocused="2dp"
+                android:background="@drawable/bg_rectangle_alice_blue"
+                android:layout_marginBottom="10dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_name_et"
+                    android:id="@+id/location_name_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:padding="10dp"
-                    android:focusable="false"
-                    android:clickable="false"
                     android:background="@android:color/transparent" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Location Description -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Location Description"
-                android:textColor="@color/black"
-                android:textSize="13sp"
-                android:layout_marginBottom="4dp" />
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_desc_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_desc_et"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textSize="13sp"
-                    android:padding="10dp"
-                    android:focusable="false"
-                    android:clickable="false"
-                    android:background="@android:color/transparent" />
-            </com.google.android.material.textfield.TextInputLayout>
-
             <!-- Place Type -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Place Type"
-                android:layout_marginBottom="4dp"
-                android:textColor="@color/black"
-                android:textSize="13sp"/>
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_place_type_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_place_type_et"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:clickable="false"
-                    android:focusable="false"
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Reason For Request -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Reason For Request"
                 android:textColor="@color/black"
                 android:textSize="13sp"
                 android:layout_marginBottom="4dp" />
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/viewlocreq_reason_layout"
+
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/viewlocreq_reason_et"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_rectangle_alice_blue"
+                android:layout_marginBottom="10dp">
+                <Spinner
+                    android:id="@+id/place_type_spinner"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textSize="13sp"
-                    android:padding="10dp"
-                    android:focusable="false"
-                    android:clickable="false"
-                    android:background="@android:color/transparent" />
-            </com.google.android.material.textfield.TextInputLayout>
-
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="36dp" />
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/icon_caret_down"
+                    android:contentDescription="@null"
+                    app:tint="@color/black" />
+            </RelativeLayout>
             <!-- Images of Location -->
             <TextView
                 android:layout_width="wrap_content"
@@ -232,81 +232,109 @@
                 android:text="Images of Location"
                 android:textColor="@color/black"
                 android:textSize="13sp"
-                android:layout_marginBottom="6dp" />
+                android:layout_marginBottom="4dp" />
 
-            <HorizontalScrollView
+            <!-- Image Upload Field + Button (horizontal row) -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="12dp">
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
                 <LinearLayout
-                    android:id="@+id/viewlocreq_image_container"
-                    android:layout_width="wrap_content"
-                    android:layout_height="80dp"
-                    android:orientation="horizontal"
-                    android:padding="4dp"
-                    android:gravity="center_vertical" />
-            </HorizontalScrollView>
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_rectangle_alice_blue"
+                    style="@style/file_upload_field_style">
 
-            <!-- Divider above status details -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/light_grey"
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:scrollbars="none">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/img_icon_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="4dp"/>
+
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/upload_img_bttn"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_rounded_true_cobalt"
+                    android:src="@drawable/ic_paperclip"
+                    android:scaleType="centerInside"
+                    android:padding="10dp"
+                    app:tint="@color/white"
+                    tools:ignore="UseAppTint" />
+
+            </LinearLayout>
+
+
+            <!-- Allowed types -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="14dp"
+                android:gravity="center_vertical">
 
-            <!-- Accepted details -->
-            <LinearLayout
-                android:id="@+id/viewlocreq_accepted_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="@color/dim_grey"/>
+
                 <TextView
-                    android:id="@+id/viewlocreq_accepted_date_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:textSize="13sp"
-                    android:layout_marginBottom="4dp" />
-                <TextView
-                    android:id="@+id/viewlocreq_accepted_by_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:textSize="13sp" />
+                    android:layout_marginStart="6dp"
+                    android:text="Allowed: jpeg, png"
+                    style="@style/info_txt_style" />
             </LinearLayout>
 
-            <!-- Rejected details -->
+            <!-- Submit -->
+            <Button
+                android:id="@+id/submit_bttn"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:text="SUBMIT"
+                style="@style/rectangle_bttn_gold"/>
+            <!-- Notice -->
             <LinearLayout
-                android:id="@+id/viewlocreq_rejected_container"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-                <TextView
-                    android:id="@+id/viewlocreq_rejected_date_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:textSize="13sp"
-                    android:layout_marginBottom="4dp" />
-                <TextView
-                    android:id="@+id/viewlocreq_rejected_by_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:textSize="13sp"
-                    android:layout_marginBottom="4dp" />
-                <TextView
-                    android:id="@+id/viewlocreq_rejection_reason_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/black"
-                    android:textSize="13sp" />
-            </LinearLayout>
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="14dp"
+                android:gravity="center_vertical">
 
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@drawable/ic_info"
+                    app:tint="@color/dim_grey"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="After submission,you should be notified within 1-3 days regarding submission results."
+                    style="@style/info_txt_style" />
+            </LinearLayout>
         </LinearLayout>
+
     </androidx.cardview.widget.CardView>
+
 </LinearLayout>

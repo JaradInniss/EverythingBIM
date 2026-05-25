@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,6 +9,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import com.example.everythingbim.R;
 
 public class AdminFragment extends Fragment {
 

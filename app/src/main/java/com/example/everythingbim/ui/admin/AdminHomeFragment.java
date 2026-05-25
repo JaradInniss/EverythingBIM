@@ -1,5 +1,6 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -22,6 +23,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import com.example.everythingbim.R;
+import com.example.everythingbim.ActivityLogger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -61,6 +65,21 @@ public class AdminHomeFragment extends Fragment {
 
     // Activity data storage
     private List<ActivityItem> recentActivities = new ArrayList<>();
+
+    // Guard flag to prevent double updateActivityUI() calls during back navigation
+    private boolean activityUIAlreadyBound = false;
+
+    // View dot indicators for 4 cards
+    private View dotBusiness, dotInfo, dotLocation, dotReports;
+
+    // View dot indicators for recent activity items
+    private View dotActivity1, dotActivity2, dotActivity3;
+
+    // Collection names
+    private static final String COLLECTION_BUSINESS = "add_business_requests";
+    private static final String COLLECTION_INFO = "add_info_requests";
+    private static final String COLLECTION_LOCATION = "add_location_requests";
+    private static final String COLLECTION_REPORTS = "add_reports";
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -143,11 +162,31 @@ public class AdminHomeFragment extends Fragment {
         tvActivityView2 = view.findViewById(R.id.tv_activity_view_2);
         tvActivityView3 = view.findViewById(R.id.tv_activity_view_3);
 
+        // Bind card dot indicators
+        dotBusiness = view.findViewById(R.id.dot_business);
+        dotInfo = view.findViewById(R.id.dot_info);
+        dotLocation = view.findViewById(R.id.dot_location);
+        dotReports = view.findViewById(R.id.dot_reports);
+
+        // Bind recent activity dot indicators
+        dotActivity1 = view.findViewById(R.id.dot_activity_1);
+        dotActivity2 = view.findViewById(R.id.dot_activity_2);
+        dotActivity3 = view.findViewById(R.id.dot_activity_3);
+
+        // Setup card click listeners (for timestamp tracking)
+        setupCardClickListeners();
+
         // Setup activity item click listeners
         setupActivityClickListeners();
 
         // Load data from Firestore
         loadDashboardData();
+
+        // Load recent activities from local store.
+        // Called here (not just in loadDashboardData) so that on back-navigation
+        // from detail screens, the activity list is repopulated when views are rebound.
+        activityUIAlreadyBound = false;
+        loadRecentActivities();
 
         // Start listening for new activities
         listenForNewActivities();
@@ -156,7 +195,12 @@ public class AdminHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadDashboardData();
+        // Only refresh dashboard data on resume — onViewCreated already loaded
+        // recent activities and bound all views. This refreshes Firestore listeners
+        // without reloading recent activities (which would call updateActivityUI again
+        // after the view is already stable).
+        loadUnreadCounts();
+        loadWeeklyVolumeData();
     }
 
     @Override
@@ -166,6 +210,8 @@ public class AdminHomeFragment extends Fragment {
             activityListenerRegistration.remove();
             activityListenerRegistration = null;
         }
+        // Reset guard flag so updateActivityUI runs fresh on next view creation
+        activityUIAlreadyBound = false;
     }
 
     /**
@@ -180,6 +226,10 @@ public class AdminHomeFragment extends Fragment {
 
             if (position >= 0 && position < recentActivities.size()) {
                 ActivityItem activity = recentActivities.get(position);
+                // Mark as read in SharedPreferences when viewed
+                if (activity.requestId != null) {
+                    ReadStateManager.markActivityRead(requireContext(), activity.requestId);
+                }
                 navigateToActivityDetail(activity);
             }
         };
@@ -190,6 +240,74 @@ public class AdminHomeFragment extends Fragment {
         if (tvActivityView1 != null) tvActivityView1.setOnClickListener(clickListener);
         if (tvActivityView2 != null) tvActivityView2.setOnClickListener(clickListener);
         if (tvActivityView3 != null) tvActivityView3.setOnClickListener(clickListener);
+    }
+
+    /**
+     * Sets up click listeners for the 4 request type cards.
+     * Clicking a card marks that section as read (sets lastReadTimestamp to now).
+     */
+    private void setupCardClickListeners() {
+        View cardBusiness = requireView().findViewById(R.id.card_business);
+        View cardInfo = requireView().findViewById(R.id.card_info);
+        View cardLocation = requireView().findViewById(R.id.card_location);
+        View cardReports = requireView().findViewById(R.id.card_reports);
+
+        if (cardBusiness != null) {
+            cardBusiness.setOnClickListener(v -> {
+                ReadStateManager.markBusinessSectionRead(requireContext());
+                navigateToRequestSection("business");
+            });
+        }
+        if (cardInfo != null) {
+            cardInfo.setOnClickListener(v -> {
+                ReadStateManager.markInfoSectionRead(requireContext());
+                navigateToRequestSection("info");
+            });
+        }
+        if (cardLocation != null) {
+            cardLocation.setOnClickListener(v -> {
+                ReadStateManager.markLocationSectionRead(requireContext());
+                navigateToRequestSection("location");
+            });
+        }
+        if (cardReports != null) {
+            cardReports.setOnClickListener(v -> {
+                ReadStateManager.markReportsSectionRead(requireContext());
+                navigateToReportsSection();
+            });
+        }
+    }
+
+    /**
+     * Navigates to the appropriate request list fragment based on type.
+     */
+    private void navigateToRequestSection(String type) {
+        Fragment fragment;
+        if ("business".equals(type)) {
+            // Business verification requests are shown in AdminUserFragment on BUSINESS tab
+            fragment = AdminUserFragment.newInstance(AdminUserFragment.TAB_BUSINESS);
+        } else {
+            // Location and Info requests use AdminUserRequestsFragment
+            fragment = AdminUserRequestsFragment.newInstance(type);
+        }
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    /**
+     * Navigates to the reports section.
+     */
+    private void navigateToReportsSection() {
+        Fragment fragment = new AdminReportsFragment();
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     /**
@@ -274,28 +392,25 @@ public class AdminHomeFragment extends Fragment {
     }
 
     /**
-     * Loads recent activities from Firestore.
+     * Loads recent activities from local SharedPreferences store.
+     * Falls back to empty list if no activities logged yet.
      */
     private void loadRecentActivities() {
-        db.collection("admin_activities")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(MAX_RECENT_ACTIVITIES)
-                .get()
-                .addOnSuccessListener(snapshots -> {
-                    recentActivities.clear();
-                    for (DocumentSnapshot doc : snapshots) {
-                        ActivityItem item = new ActivityItem();
-                        item.requestType = doc.getString("requestType");
-                        item.action = doc.getString("action");
-                        item.requestTitle = doc.getString("requestTitle");
-                        item.requestId = doc.getString("requestId");
-                        item.adminUsername = doc.getString("adminUsername");
-                        item.timestamp = doc.getTimestamp("timestamp");
-                        item.displayTime = doc.getString("displayTime");
-                        recentActivities.add(item);
-                    }
-                    updateActivityUI();
-                });
+        List<Map<String, Object>> localActivities = ActivityLogger.loadLocalActivities(requireContext());
+        recentActivities.clear();
+        for (Map<String, Object> act : localActivities) {
+            ActivityItem item = new ActivityItem();
+            item.requestType = (String) act.get("requestType");
+            item.action = (String) act.get("action");
+            item.requestTitle = (String) act.get("requestTitle");
+            item.requestId = (String) act.get("requestId");
+            item.adminUsername = (String) act.get("adminUsername");
+            item.timestamp = (com.google.firebase.Timestamp) act.get("timestamp");
+            item.displayTime = (String) act.get("displayTime");
+            recentActivities.add(item);
+            if (recentActivities.size() >= MAX_RECENT_ACTIVITIES) break;
+        }
+        updateActivityUI();
     }
 
     /**
@@ -303,6 +418,9 @@ public class AdminHomeFragment extends Fragment {
      */
     private void updateActivityUI() {
         if (getView() == null) return;
+
+        // Guard: prevent double execution during back navigation
+        if (activityUIAlreadyBound) return;
 
         // Reset all to invisible first
         if (activityItem1 != null) activityItem1.setVisibility(View.GONE);
@@ -315,21 +433,24 @@ public class AdminHomeFragment extends Fragment {
             switch (i) {
                 case 0:
                     updateActivityItem(activityItem1, iconActivity1, tvActivityTitle1,
-                            tvActivitySubtitle1, tvActivityTime1, activity);
+                            tvActivitySubtitle1, tvActivityTime1, dotActivity1, tvActivityView1, activity);
                     if (activityItem1 != null) activityItem1.setVisibility(View.VISIBLE);
                     break;
                 case 1:
                     updateActivityItem(activityItem2, iconActivity2, tvActivityTitle2,
-                            tvActivitySubtitle2, tvActivityTime2, activity);
+                            tvActivitySubtitle2, tvActivityTime2, dotActivity2, tvActivityView2, activity);
                     if (activityItem2 != null) activityItem2.setVisibility(View.VISIBLE);
                     break;
                 case 2:
                     updateActivityItem(activityItem3, iconActivity3, tvActivityTitle3,
-                            tvActivitySubtitle3, tvActivityTime3, activity);
+                            tvActivitySubtitle3, tvActivityTime3, dotActivity3, tvActivityView3, activity);
                     if (activityItem3 != null) activityItem3.setVisibility(View.VISIBLE);
                     break;
             }
         }
+
+        // Mark that views have been bound to prevent double execution
+        activityUIAlreadyBound = true;
     }
 
     /**
@@ -337,7 +458,8 @@ public class AdminHomeFragment extends Fragment {
      */
     private void updateActivityItem(LinearLayout itemView, ImageView iconView,
                                     TextView titleView, TextView subtitleView,
-                                    TextView timeView, ActivityItem activity) {
+                                    TextView timeView, View dotView,
+                                    TextView viewBtn, ActivityItem activity) {
         if (itemView == null) return;
 
         // Set icon based on request type
@@ -362,17 +484,15 @@ public class AdminHomeFragment extends Fragment {
             }
         }
 
-        // Set title: "View [RequestType]" e.g., "View Report"
+        // Set title: "[Action] [Type]" e.g., "Viewed Report", "Approved Business"
         if (titleView != null) {
-            titleView.setText("View " + activity.requestType);
+            String title = activity.action + " " + activity.requestType;
+            titleView.setText(title);
         }
 
-        // Set subtitle: "[Action] - [Title]" e.g., "Approved - Post-Spam"
+        // Set subtitle: "[RequestTitle]" e.g., "Post-Spam", "Jordan's Supermarket"
         if (subtitleView != null) {
-            String subtitle = activity.action;
-            if (activity.requestTitle != null && !activity.requestTitle.isEmpty()) {
-                subtitle += " - " + activity.requestTitle;
-            }
+            String subtitle = activity.requestTitle != null ? activity.requestTitle : "";
             subtitleView.setText(subtitle);
         }
 
@@ -381,35 +501,118 @@ public class AdminHomeFragment extends Fragment {
             String timeAgo = ActivityLogger.getTimeAgo(activity.timestamp);
             timeView.setText(" • " + timeAgo);
         }
+
+        // Dot and View button color based on effective read state
+        boolean isRead = activity.requestId != null && ReadStateManager.isActivityRead(requireContext(), activity.requestId);
+        if (dotView != null) {
+            dotView.setBackgroundResource(isRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+        }
+        if (viewBtn != null) {
+            viewBtn.setTextColor(isRead
+                    ? android.graphics.Color.parseColor("#9e9e9e")
+                    : android.graphics.Color.parseColor("#203088"));
+            // "Viewed" action → button says "View"; further actions (Approve/Reject/Complete) → "Done"
+            if (ActivityLogger.ACTION_VIEWED.equals(activity.action)) {
+                viewBtn.setText("View");
+            } else {
+                viewBtn.setText("Done");
+            }
+        }
     }
 
     /**
      * Loads unread request counts from each collection.
+     * Uses lastReadTimestamp per collection: items created after the timestamp are "new" (unread).
+     * Falls back to Firestore read=false field if no timestamp is set (first app open).
+     * Also updates the dot indicators for each card.
      */
     private void loadUnreadCounts() {
-        db.collection("add_business_requests")
-                .whereEqualTo("read", false)
-                .get()
-                .addOnSuccessListener(snapshot -> updateBusinessCount(snapshot.size(), 0))
-                .addOnFailureListener(e -> updateBusinessCount(0, 0));
+        Context ctx = requireContext();
+        long businessTs = ReadStateManager.getBusinessLastRead(ctx);
+        long infoTs = ReadStateManager.getInfoLastRead(ctx);
+        long locationTs = ReadStateManager.getLocationLastRead(ctx);
+        long reportsTs = ReadStateManager.getReportsLastRead(ctx);
 
-        db.collection("add_info_requests")
-                .whereEqualTo("read", false)
+        // Business requests
+        db.collection(COLLECTION_BUSINESS)
                 .get()
-                .addOnSuccessListener(snapshot -> updateInfoCount(snapshot.size(), 0))
-                .addOnFailureListener(e -> updateInfoCount(0, 0));
+                .addOnSuccessListener(snap -> {
+                    int count = countUnreadSince(snap, businessTs);
+                    updateBusinessCount(count, 0);
+                    updateDotVisibility(dotBusiness, count > 0);
+                })
+                .addOnFailureListener(e -> {
+                    updateBusinessCount(0, 0);
+                    updateDotVisibility(dotBusiness, false);
+                });
 
-        db.collection("add_location_requests")
-                .whereEqualTo("read", false)
+        // Info requests
+        db.collection(COLLECTION_INFO)
                 .get()
-                .addOnSuccessListener(snapshot -> updateLocationCount(snapshot.size(), 0))
-                .addOnFailureListener(e -> updateLocationCount(0, 0));
+                .addOnSuccessListener(snap -> {
+                    int count = countUnreadSince(snap, infoTs);
+                    updateInfoCount(count, 0);
+                    updateDotVisibility(dotInfo, count > 0);
+                })
+                .addOnFailureListener(e -> {
+                    updateInfoCount(0, 0);
+                    updateDotVisibility(dotInfo, false);
+                });
 
-        db.collection("add_reports")
-                .whereEqualTo("read", false)
+        // Location requests
+        db.collection(COLLECTION_LOCATION)
                 .get()
-                .addOnSuccessListener(snapshot -> updateReportsCount(snapshot.size(), 0))
-                .addOnFailureListener(e -> updateReportsCount(0, 0));
+                .addOnSuccessListener(snap -> {
+                    int count = countUnreadSince(snap, locationTs);
+                    updateLocationCount(count, 0);
+                    updateDotVisibility(dotLocation, count > 0);
+                })
+                .addOnFailureListener(e -> {
+                    updateLocationCount(0, 0);
+                    updateDotVisibility(dotLocation, false);
+                });
+
+        // Reports
+        db.collection(COLLECTION_REPORTS)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    int count = countUnreadSince(snap, reportsTs);
+                    updateReportsCount(count, 0);
+                    updateDotVisibility(dotReports, count > 0);
+                })
+                .addOnFailureListener(e -> {
+                    updateReportsCount(0, 0);
+                    updateDotVisibility(dotReports, false);
+                });
+    }
+
+    /**
+     * Counts items with read=false that were created at or after the given timestamp.
+     * If timestamp is 0 (first open), counts all items with read=false.
+     */
+    private int countUnreadSince(QuerySnapshot snap, long lastReadTs) {
+        int count = 0;
+        if (snap == null) return 0;
+        for (DocumentSnapshot doc : snap.getDocuments()) {
+            Boolean read = doc.getBoolean("read");
+            if (Boolean.TRUE.equals(read)) continue; // Already read in Firestore
+            if (lastReadTs > 0) {
+                // Only count items created at or after lastReadTimestamp
+                com.google.firebase.Timestamp createdAt = doc.getTimestamp("createdAt");
+                if (createdAt != null && createdAt.toDate().getTime() < lastReadTs) continue;
+            }
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * Updates dot visibility based on whether there are unread items.
+     */
+    private void updateDotVisibility(View dot, boolean hasUnread) {
+        if (dot == null) return;
+        dot.setVisibility(hasUnread ? View.VISIBLE : View.INVISIBLE);
+        dot.setBackgroundResource(hasUnread ? R.drawable.bg_dot_red : R.drawable.bg_dot_grey);
     }
 
     /**

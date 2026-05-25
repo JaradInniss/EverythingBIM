@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
 import static android.content.ContentValues.TAG;
 
@@ -29,6 +29,8 @@ import com.google.firebase.storage.FirebaseStorage;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+
+import com.example.everythingbim.ActivityLogger;
 
 public class AdminReportDetailFragment extends Fragment {
 
@@ -209,7 +211,7 @@ public class AdminReportDetailFragment extends Fragment {
 
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
-        activityLogger = new ActivityLogger();
+        activityLogger = new ActivityLogger(requireContext());
 
         if (getArguments() != null) {
             docId = getArguments().getString(ARG_DOC_ID, "");

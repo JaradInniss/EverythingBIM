@@ -8,26 +8,34 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.PostEntity;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Adapter for displaying a list of posts in a RecyclerView in a grid.
+ */
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
     private List<PostEntity> posts = new ArrayList<>();
     private OnPostClickListener listener;
 
+     // Interface for handling click events on individual posts.
     public interface OnPostClickListener {
         void onPostClick(PostEntity post);
     }
 
+     // Sets the listener for post click events.
     public void setOnPostClickListener(OnPostClickListener listener) {
         this.listener = listener;
     }
 
-    public void setPosts(List<PostEntity> posts) {
+
+     // Updates the data set and refreshes the RecyclerView.
+     public void setPosts(List<PostEntity> posts) {
         this.posts = posts;
         notifyDataSetChanged();
     }
@@ -35,6 +43,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     @NonNull
     @Override
     public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // Inflate the item_post layout for each item
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
         return new PostViewHolder(view);
     }
@@ -42,11 +51,15 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     @Override
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
         PostEntity post = posts.get(position);
-        // Assuming imageUrl is a local path or a URL. 
-        // In a real app, use Glide or Picasso here.
-        // For now, using a placeholder or just setting it if it were a resource.
-        // holder.imageView.setImageResource(R.drawable.some_default);
         
+        // Load the post image using Glide
+        Glide.with(holder.imageView.getContext())
+                .load(post.imageUrl)
+                .placeholder(R.drawable.bg_main)
+                .centerCrop()
+                .into(holder.imageView);
+        
+        // Set click listener for the entire item view
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onPostClick(post);
@@ -59,6 +72,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         return posts.size();
     }
 
+    /**
+     * ViewHolder for post items, holding references to the UI components.
+     */
     static class PostViewHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
 

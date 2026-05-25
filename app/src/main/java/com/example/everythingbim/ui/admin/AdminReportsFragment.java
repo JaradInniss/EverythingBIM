@@ -1,5 +1,6 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -51,6 +52,7 @@ public class AdminReportsFragment extends Fragment {
 
     // Firebase
     private FirebaseFirestore db;
+    // Local read state tracking (SharedPreferences-backed via ReadStateManager)
     private boolean isLoadingReports = false;
     private int currentLoadId = 0;
 
@@ -165,7 +167,7 @@ public class AdminReportsFragment extends Fragment {
 
             // Status filter (Read/Unread)
             if (activeStatus != null) {
-                boolean isRead = r.isRead();
+                boolean isRead = isEffectivelyRead(r);
                 if (activeStatus.equals("Read") && !isRead) continue;
                 if (activeStatus.equals("Unread") && isRead) continue;
             }
@@ -271,6 +273,29 @@ public class AdminReportsFragment extends Fragment {
         currentLoadId++; // Invalidate any pending callbacks
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reload read state from SharedPreferences in case it changed
+        applyFilters();
+    }
+
+    // Check if a report is locally marked as read
+    public boolean isReportRead(String docId) {
+        return ReadStateManager.isReportRead(requireContext(), docId);
+    }
+
+    // Mark a report as read and persist to SharedPreferences
+    public void markAsRead(String docId) {
+        ReadStateManager.markReportRead(requireContext(), docId);
+        applyFilters();
+    }
+
+    // Effective read state = Firestore read OR locally tracked read
+    private boolean isEffectivelyRead(Report r) {
+        return r.isRead() || ReadStateManager.isReportRead(requireContext(), r.getDocId());
+    }
+
     // Report data model
     public static class Report {
         private String id, title, type, severity, date, docId;
@@ -358,17 +383,21 @@ public class AdminReportsFragment extends Fragment {
                     break;
             }
 
-            // Dot
-            h.dot.setBackgroundResource(r.isRead()
+            // Dot - use effective read state (Firestore + local SharedPreferences)
+            boolean effectivelyRead = isEffectivelyRead(r);
+            h.dot.setBackgroundResource(effectivelyRead
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
 
-            // View button colour
-            h.viewBtn.setTextColor(r.isRead()
+            // View button colour - use effective read state
+            h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
                     : android.graphics.Color.parseColor("#203088"));
 
             h.viewBtn.setOnClickListener(v -> {
+                // Mark as read in SharedPreferences when viewed
+                markAsRead(r.getDocId());
+
                 if (getParentFragment() instanceof AdminFragment) {
                     ((AdminFragment) getParentFragment()).navigateToReportDetail(
                             r.getDocId(),

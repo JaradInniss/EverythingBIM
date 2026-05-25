@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
@@ -30,9 +30,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
+import com.example.everythingbim.R;
+
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
+
+import com.example.everythingbim.ActivityLogger;
 
 public class AdminLocationRequestDetailsFragment extends Fragment {
 
@@ -144,7 +148,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                 container, false);
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
-        activityLogger = new ActivityLogger();
+        activityLogger = new ActivityLogger(requireContext());
 
         // Extract Bundle data first
         if (getArguments() != null) {

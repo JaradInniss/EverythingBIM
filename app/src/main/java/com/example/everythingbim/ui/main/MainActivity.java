@@ -15,12 +15,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.everythingbim.AdminReportsFragment;
 import com.example.everythingbim.R;
-import com.example.everythingbim.ui.home.NearbySavedLocation;
 import com.example.everythingbim.ui.home.HomeFragment;
 import com.example.everythingbim.ui.map.MapFragment;
 import com.example.everythingbim.ui.onboarding.OnboardingOverlayView;
@@ -34,7 +31,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
     public static final String USER_TYPE_GUEST = "guest";
     public static final String USER_TYPE_GENERAL = "general";

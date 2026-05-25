@@ -1,4 +1,4 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
@@ -25,13 +25,17 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
+import com.example.everythingbim.R;
+
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
-public class AdminBizVerificationDetailFragment extends Fragment {
+import com.example.everythingbim.ActivityLogger;
 
-    private static final String TAG = "BizVerDetail";
+public class AdminInfoRequestDetailFragment extends Fragment {
+
+    private static final String TAG = "InfoReqDetail";
 
     // ─── Bundle arg keys ─────────────────────
     public static final String ARG_DOC_ID = "doc_id";
@@ -39,12 +43,12 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     public static final String ARG_STATUS = "status";
     public static final String ARG_DATE = "date";
     public static final String ARG_SUBMITTED_BY = "submittedBy";
-    public static final String ARG_NAME = "name";
-    public static final String ARG_PHONE = "phone";
-    public static final String ARG_EMAIL = "email";
-    public static final String ARG_ADDRESS = "address";
+    public static final String ARG_LOCATION_NAME = "locationName";
+    public static final String ARG_COORDINATES = "coordinates";
     public static final String ARG_DESCRIPTION = "description";
-    public static final String ARG_TYPE = "type";
+    public static final String ARG_PLACE_TYPE = "placeType";
+    public static final String ARG_LATITUDE = "latitude";
+    public static final String ARG_LONGITUDE = "longitude";
     public static final String ARG_RESOLVED_AT = "resolvedAt";
     public static final String ARG_RESOLVED_BY = "resolvedBy";
     public static final String ARG_REJECTION_REASON = "rejectionReason";
@@ -60,12 +64,12 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     private String cachedStatus = "";
     private String cachedDate = "";
     private String cachedSubmittedBy = "";
-    private String cachedName = "";
-    private String cachedPhone = "";
-    private String cachedEmail = "";
-    private String cachedAddress = "";
+    private String cachedLocationName = "";
+    private String cachedCoordinates = "";
     private String cachedDescription = "";
-    private String cachedType = "";
+    private String cachedPlaceType = "";
+    private double cachedLatitude = 0.0;
+    private double cachedLongitude = 0.0;
     private String cachedResolvedAt = "";
     private String cachedResolvedBy = "";
     private String cachedRejectionReason = "";
@@ -74,9 +78,8 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // ─── Views ───────────────────────────────
     private LinearLayout cardWrapper;
     private TextView numberTv, statusTv, dateTv, submittedByTv;
-    private TextView nameTv, phoneTv, emailTv, addressTv, descriptionTv, typeTv;
-    private LinearLayout imagesContainer, docsContainer;
-    private LinearLayout actionButtons;
+    private TextView locationNameTv, coordinatesTv, descriptionTv, placeTypeTv;
+    private LinearLayout imagesContainer, actionButtons;
     private Button acceptBtn, rejectBtn;
     private LinearLayout resolutionContainer;
     private TextView resolutionDateTv, resolutionByTv, resolutionReasonTv;
@@ -86,31 +89,31 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // FACTORY — Bundle approach for instant display
     // ────────────────────────────────────────────────────────
 
-    public static AdminBizVerificationDetailFragment newInstance(
+    public static AdminInfoRequestDetailFragment newInstance(
             String docId, String number, String status, String date,
-            String submittedBy, String name, String phone, String email,
-            String address, String description, String type) {
+            String submittedBy, String locationName, String coordinates,
+            String description, String placeType, double latitude, double longitude) {
 
-        AdminBizVerificationDetailFragment f = new AdminBizVerificationDetailFragment();
+        AdminInfoRequestDetailFragment f = new AdminInfoRequestDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOC_ID, docId);
         args.putString(ARG_NUMBER, number);
         args.putString(ARG_STATUS, status);
         args.putString(ARG_DATE, date);
         args.putString(ARG_SUBMITTED_BY, submittedBy);
-        args.putString(ARG_NAME, name);
-        args.putString(ARG_PHONE, phone);
-        args.putString(ARG_EMAIL, email);
-        args.putString(ARG_ADDRESS, address);
+        args.putString(ARG_LOCATION_NAME, locationName);
+        args.putString(ARG_COORDINATES, coordinates);
         args.putString(ARG_DESCRIPTION, description);
-        args.putString(ARG_TYPE, type);
+        args.putString(ARG_PLACE_TYPE, placeType);
+        args.putDouble(ARG_LATITUDE, latitude);
+        args.putDouble(ARG_LONGITUDE, longitude);
         f.setArguments(args);
         return f;
     }
 
     // Legacy factory for backward compatibility
-    public static AdminBizVerificationDetailFragment newInstance(String docId) {
-        AdminBizVerificationDetailFragment f = new AdminBizVerificationDetailFragment();
+    public static AdminInfoRequestDetailFragment newInstance(String docId) {
+        AdminInfoRequestDetailFragment f = new AdminInfoRequestDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOC_ID, docId);
         f.setArguments(args);
@@ -127,11 +130,10 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_admin_biz_verification_detail,
-                container, false);
+        View view = inflater.inflate(R.layout.fragment_admin_info_request_detail, container, false);
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
-        activityLogger = new ActivityLogger();
+        activityLogger = new ActivityLogger(requireContext());
 
         // Extract Bundle data first
         if (getArguments() != null) {
@@ -140,12 +142,12 @@ public class AdminBizVerificationDetailFragment extends Fragment {
             cachedStatus = getArguments().getString(ARG_STATUS, "In Review");
             cachedDate = getArguments().getString(ARG_DATE, "");
             cachedSubmittedBy = getArguments().getString(ARG_SUBMITTED_BY, "");
-            cachedName = getArguments().getString(ARG_NAME, "");
-            cachedPhone = getArguments().getString(ARG_PHONE, "");
-            cachedEmail = getArguments().getString(ARG_EMAIL, "");
-            cachedAddress = getArguments().getString(ARG_ADDRESS, "");
+            cachedLocationName = getArguments().getString(ARG_LOCATION_NAME, "");
+            cachedCoordinates = getArguments().getString(ARG_COORDINATES, "");
             cachedDescription = getArguments().getString(ARG_DESCRIPTION, "");
-            cachedType = getArguments().getString(ARG_TYPE, "");
+            cachedPlaceType = getArguments().getString(ARG_PLACE_TYPE, "");
+            cachedLatitude = getArguments().getDouble(ARG_LATITUDE, 0.0);
+            cachedLongitude = getArguments().getDouble(ARG_LONGITUDE, 0.0);
             cachedResolvedAt = getArguments().getString(ARG_RESOLVED_AT, "");
             cachedResolvedBy = getArguments().getString(ARG_RESOLVED_BY, "");
             cachedRejectionReason = getArguments().getString(ARG_REJECTION_REASON, "");
@@ -154,29 +156,26 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         }
 
         // Bind views
-        cardWrapper         = view.findViewById(R.id.biz_detail_card_wrapper);
-        numberTv            = view.findViewById(R.id.biz_detail_number);
-        statusTv            = view.findViewById(R.id.biz_detail_status);
-        dateTv              = view.findViewById(R.id.biz_detail_date);
-        submittedByTv       = view.findViewById(R.id.biz_detail_submitted_by);
-        nameTv              = view.findViewById(R.id.biz_detail_name);
-        phoneTv             = view.findViewById(R.id.biz_detail_phone);
-        emailTv             = view.findViewById(R.id.biz_detail_email);
-        addressTv           = view.findViewById(R.id.biz_detail_address);
-        descriptionTv       = view.findViewById(R.id.biz_detail_description);
-        typeTv              = view.findViewById(R.id.biz_detail_type);
-        imagesContainer     = view.findViewById(R.id.biz_detail_images_container);
-        docsContainer       = view.findViewById(R.id.biz_detail_docs_container);
-        actionButtons       = view.findViewById(R.id.biz_detail_action_buttons);
-        acceptBtn           = view.findViewById(R.id.biz_detail_accept_btn);
-        rejectBtn           = view.findViewById(R.id.biz_detail_reject_btn);
-        resolutionContainer = view.findViewById(R.id.biz_detail_resolution_container);
-        resolutionDateTv    = view.findViewById(R.id.biz_detail_resolution_date);
-        resolutionByTv      = view.findViewById(R.id.biz_detail_resolution_by);
-        resolutionReasonTv  = view.findViewById(R.id.biz_detail_rejection_reason);
-        resolutionReasonRow = view.findViewById(R.id.biz_detail_rejection_reason_row);
+        cardWrapper         = view.findViewById(R.id.info_detail_card_wrapper);
+        numberTv            = view.findViewById(R.id.info_detail_number);
+        statusTv            = view.findViewById(R.id.info_detail_status);
+        dateTv              = view.findViewById(R.id.info_detail_date);
+        submittedByTv       = view.findViewById(R.id.info_detail_submitted_by);
+        locationNameTv      = view.findViewById(R.id.info_detail_location_name);
+        coordinatesTv       = view.findViewById(R.id.info_detail_coordinates);
+        descriptionTv       = view.findViewById(R.id.info_detail_description);
+        placeTypeTv         = view.findViewById(R.id.info_detail_place_type);
+        imagesContainer     = view.findViewById(R.id.info_detail_images_container);
+        actionButtons       = view.findViewById(R.id.info_detail_action_buttons);
+        acceptBtn           = view.findViewById(R.id.info_detail_accept_btn);
+        rejectBtn           = view.findViewById(R.id.info_detail_reject_btn);
+        resolutionContainer = view.findViewById(R.id.info_detail_resolution_container);
+        resolutionDateTv    = view.findViewById(R.id.info_detail_resolution_date);
+        resolutionByTv      = view.findViewById(R.id.info_detail_resolution_by);
+        resolutionReasonTv  = view.findViewById(R.id.info_detail_rejection_reason);
+        resolutionReasonRow = view.findViewById(R.id.info_detail_rejection_reason_row);
 
-        view.findViewById(R.id.biz_detail_back_btn).setOnClickListener(v ->
+        view.findViewById(R.id.info_detail_back_btn).setOnClickListener(v ->
                 getParentFragmentManager().popBackStack());
 
         acceptBtn.setOnClickListener(v -> showAcceptDialog());
@@ -190,8 +189,8 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         // Always try to fetch fresh data from Firestore as fallback
         if (!docId.isEmpty()) {
             loadData();
-            // Log activity - admin viewed this business request
-            activityLogger.logView(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
+            // Log activity - admin viewed this info request
+            activityLogger.logView(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
         }
 
         return view;
@@ -207,18 +206,16 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         statusTv.setText("Status: " + cachedStatus);
         dateTv.setText("Submitted: " + cachedDate);
         submittedByTv.setText("Submitted By: " + cachedSubmittedBy);
-        nameTv.setText(cachedName);
-        phoneTv.setText(cachedPhone);
-        emailTv.setText(cachedEmail);
-        addressTv.setText(cachedAddress);
+        locationNameTv.setText(cachedLocationName);
+        coordinatesTv.setText(cachedCoordinates);
         descriptionTv.setText(cachedDescription);
-        typeTv.setText(cachedType);
+        placeTypeTv.setText(cachedPlaceType);
 
         applyStatusVisual(cachedStatus);
     }
 
     private void applyStatusVisual(String status) {
-        if ("Completed".equals(status) || "Approved".equals(status)) {
+        if ("Completed".equals(status)) {
             applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
         } else if ("Rejected".equals(status)) {
             applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
@@ -231,7 +228,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
 
     private void loadData() {
         Log.d(TAG, "Loading data from Firestore for docId: " + docId);
-        db.collection("businesses").document(docId)
+        db.collection("add_info_requests").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) {
@@ -241,12 +238,11 @@ public class AdminBizVerificationDetailFragment extends Fragment {
 
                     Log.d(TAG, "Document found, updating fields");
 
-                    long number = doc.contains("requestNumber")
-                            ? doc.getLong("requestNumber") : 0;
+                    long number = doc.contains("number") ? doc.getLong("number") : 0;
                     numberTv.setText("Request #" + number);
                     cachedNumber = String.valueOf(number);
 
-                    String status = doc.getString("verificationStatus");
+                    String status = doc.getString("status");
                     if (status == null) status = "In Review";
                     statusTv.setText("Status: " + status);
                     cachedStatus = status;
@@ -257,46 +253,49 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         cachedDate = fmt(ts);
                     }
 
-                    String submittedBy = doc.getString("username");
-                    submittedByTv.setText("Submitted By: BusinessUser "
-                            + (submittedBy != null ? submittedBy : ""));
-                    cachedSubmittedBy = submittedBy != null ? submittedBy : "";
+                    String sub = doc.getString("submittedByUsername");
+                    submittedByTv.setText("Submitted By: User "
+                            + (sub != null ? sub : ""));
+                    cachedSubmittedBy = sub != null ? sub : "";
 
-                    String businessName = nvl(doc.getString("BusinessName"));
-                    nameTv.setText(businessName);
-                    cachedName = businessName;
+                    String locationName = nvl(doc.getString("locationName"));
+                    locationNameTv.setText(locationName);
+                    cachedLocationName = locationName;
 
-                    cachedPhone = nvl(doc.getString("phone"));
-                    phoneTv.setText(cachedPhone);
+                    String description = nvl(doc.getString("description"));
+                    descriptionTv.setText(description);
+                    cachedDescription = description;
 
-                    cachedEmail = nvl(doc.getString("email"));
-                    emailTv.setText(cachedEmail);
+                    String placeType = nvl(doc.getString("placeType"));
+                    placeTypeTv.setText(placeType);
+                    cachedPlaceType = placeType;
 
-                    cachedAddress = nvl(doc.getString("address"));
-                    addressTv.setText(cachedAddress);
+                    Double lat = doc.getDouble("latitude");
+                    Double lng = doc.getDouble("longitude");
+                    if (lat != null && lng != null) {
+                        String coords = String.format(Locale.getDefault(),
+                                "%.5f, %.5f", lat, lng);
+                        coordinatesTv.setText(coords);
+                        cachedCoordinates = coords;
+                        cachedLatitude = lat;
+                        cachedLongitude = lng;
+                    }
 
-                    cachedDescription = nvl(doc.getString("description"));
-                    descriptionTv.setText(cachedDescription);
+                    List<String> urls = (List<String>) doc.get("imageUrls");
+                    if (urls != null) for (String url : urls) loadImage(url);
 
-                    cachedType = nvl(doc.getString("businessType"));
-                    typeTv.setText(cachedType);
-
-                    // Business images
-                    List<String> imgUrls = (List<String>) doc.get("imageUrls");
-                    if (imgUrls != null) for (String url : imgUrls) loadImage(url, imagesContainer);
-
-                    // Business documents/certificates
-                    List<String> docUrls = (List<String>) doc.get("fileUrls");
-                    if (docUrls != null) for (String url : docUrls) loadImage(url, docsContainer);
-
-                    // Restore resolved state
-                    if ("Completed".equals(status) || "Approved".equals(status)) {
-                        applyAcceptedState(fmt(doc.getTimestamp("resolvedAt")),
-                                nvl(doc.getString("resolvedBy")));
+                    if ("Completed".equals(status)) {
+                        String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
+                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")));
+                        cachedResolvedAt = resolvedAt;
+                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
                     } else if ("Rejected".equals(status)) {
-                        applyRejectedState(fmt(doc.getTimestamp("resolvedAt")),
-                                nvl(doc.getString("resolvedBy")),
-                                nvl(doc.getString("rejectionReason")));
+                        String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
+                        String rejectionReason = nvl(doc.getString("rejectionReason"));
+                        applyRejectedState(resolvedAt, nvl(doc.getString("resolvedBy")), rejectionReason);
+                        cachedResolvedAt = resolvedAt;
+                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
+                        cachedRejectionReason = rejectionReason;
                     }
 
                     doc.getReference().update("read", true);
@@ -309,7 +308,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     }
 
     // ────────────────────────────────────────────────────────
-    // ACCEPT DIALOG
+    // DIALOGS
     // ────────────────────────────────────────────────────────
 
     private void showAcceptDialog() {
@@ -320,16 +319,11 @@ public class AdminBizVerificationDetailFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         dialog.findViewById(R.id.dialog_accept_yes).setOnClickListener(v -> {
-            dialog.dismiss();
-            confirmAccept();
+            dialog.dismiss(); confirmAccept();
         });
         dialog.findViewById(R.id.dialog_accept_no).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
-
-    // ────────────────────────────────────────────────────────
-    // REJECT DIALOG
-    // ────────────────────────────────────────────────────────
 
     private void showRejectDialog() {
         Dialog dialog = new Dialog(requireContext());
@@ -339,69 +333,57 @@ public class AdminBizVerificationDetailFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         EditText reasonEt = dialog.findViewById(R.id.dialog_reject_reason_et);
-
         dialog.findViewById(R.id.dialog_reject_yes).setOnClickListener(v -> {
             String reason = reasonEt.getText().toString().trim();
             if (reason.isEmpty()) { reasonEt.setError("Please enter a reason"); return; }
-            dialog.dismiss();
-            confirmReject(reason);
+            dialog.dismiss(); confirmReject(reason);
         });
         dialog.findViewById(R.id.dialog_reject_no).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
 
     // ────────────────────────────────────────────────────────
-    // CONFIRM ACCEPT
+    // CONFIRM ACCEPT / REJECT
     // ────────────────────────────────────────────────────────
 
     private void confirmAccept() {
         if (docId.isEmpty()) return;
-        String adminId = getAdminId();
-        String today   = todayStr();
-
-        db.collection("businesses").document(docId)
-                .update("verificationStatus", "Completed",
-                        "verified",           true,
-                        "resolvedAt",         Timestamp.now(),
-                        "resolvedBy",         adminId)
+        db.collection("add_info_requests").document(docId)
+                .update("status", "Completed",
+                        "resolvedAt", Timestamp.now(),
+                        "resolvedBy", getAdminId())
                 .addOnSuccessListener(v -> {
                     // Log approval activity
-                    activityLogger.logApproval(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
+                    activityLogger.logApproval(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
                     Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
-                    applyAcceptedState(today, "Administrator");
+                    applyAcceptedState(todayStr(), "Administrator");
                 })
                 .addOnFailureListener(e -> Toast.makeText(getContext(),
                         "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
-
-    // ────────────────────────────────────────────────────────
-    // CONFIRM REJECT
-    // ────────────────────────────────────────────────────────
 
     private void confirmReject(String reason) {
         if (docId.isEmpty()) return;
-        String adminId = getAdminId();
-        String today   = todayStr();
-
-        db.collection("businesses").document(docId)
-                .update("verificationStatus", "Rejected",
-                        "verified",           false,
-                        "resolvedAt",         Timestamp.now(),
-                        "resolvedBy",         adminId,
-                        "rejectionReason",    reason)
+        db.collection("add_info_requests").document(docId)
+                .update("status", "Rejected",
+                        "resolvedAt", Timestamp.now(),
+                        "resolvedBy", getAdminId(),
+                        "rejectionReason", reason)
                 .addOnSuccessListener(v -> {
                     // Log rejection activity
-                    activityLogger.logRejection(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
+                    activityLogger.logRejection(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
                     Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
-                    applyRejectedState(today, "Administrator", reason);
+                    applyRejectedState(todayStr(), "Administrator", reason);
                 })
                 .addOnFailureListener(e -> Toast.makeText(getContext(),
                         "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     // ────────────────────────────────────────────────────────
-    // APPLY ACCEPTED STATE
-    // Sets green background on the WRAPPER (not CardView) — works reliably
+    // BORDER STATE
+    // Applied to wrapper LinearLayout — works reliably.
+    // CardView.setBackground() is ignored by the framework;
+    // using a plain LinearLayout wrapper with padding solves this.
     // ────────────────────────────────────────────────────────
 
     private void applyAcceptedState(String date, String by) {
@@ -411,17 +393,11 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         statusTv.setTextColor(android.graphics.Color.parseColor("#28965a"));
 
         actionButtons.setVisibility(View.GONE);
-
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.GONE);
         resolutionDateTv.setText("Accepted: " + date);
         resolutionByTv.setText("Accepted By: " + by);
     }
-
-    // ────────────────────────────────────────────────────────
-    // APPLY REJECTED STATE
-    // Sets red background on the WRAPPER — works reliably
-    // ────────────────────────────────────────────────────────
 
     private void applyRejectedState(String date, String by, String reason) {
         cardWrapper.setBackgroundResource(R.drawable.bg_card_rejected);
@@ -430,7 +406,6 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         statusTv.setTextColor(android.graphics.Color.parseColor("#c0392b"));
 
         actionButtons.setVisibility(View.GONE);
-
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.VISIBLE);
         resolutionDateTv.setText("Rejected: " + date);
@@ -442,38 +417,29 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // HELPERS
     // ────────────────────────────────────────────────────────
 
-    private void loadImage(String url, LinearLayout container) {
+    private void loadImage(String url) {
         try {
             storage.getReferenceFromUrl(url)
                     .getBytes(2 * 1024 * 1024)
                     .addOnSuccessListener(bytes -> {
                         Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         ImageView iv = new ImageView(requireContext());
-                        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(80, 60);
+                        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(100, 100);
                         p.setMarginEnd(8);
                         iv.setLayoutParams(p);
                         iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
                         iv.setImageBitmap(bmp);
-                        container.addView(iv);
+                        imagesContainer.addView(iv);
                     });
         } catch (Exception ignored) {}
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
-
-    private String fmt(Timestamp ts) {
-        return ts != null
-                ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
-                : todayStr();
-    }
-
-    private String todayStr() {
-        return new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-                .format(new java.util.Date());
-    }
-
-    private String getAdminId() {
-        return FirebaseAuth.getInstance().getCurrentUser() != null
-                ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "Admin";
-    }
+    private String fmt(Timestamp ts) { return ts != null
+            ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
+            : todayStr(); }
+    private String todayStr() { return new SimpleDateFormat("yyyy/MM/dd",
+            Locale.getDefault()).format(new java.util.Date()); }
+    private String getAdminId() { return FirebaseAuth.getInstance().getCurrentUser() != null
+            ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "Admin"; }
 }

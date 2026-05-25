@@ -1,8 +1,10 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import com.example.everythingbim.R;
 
 public class AdminViewModel extends ViewModel {
 

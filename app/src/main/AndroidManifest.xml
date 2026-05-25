@@ -18,12 +18,16 @@
         android:name=".EverythingBimApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        <activity
+            android:name=".ui.posts.ViewPost"
+            android:exported="false" />
         <activity
             android:name=".ui.map.MapViewAllActivity"
             android:exported="false" />
@@ -36,6 +40,10 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0" />
+
+        <meta-data
+            android:name="com.google.firebase.appcheck.debug.token"
+            android:value="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -61,7 +69,7 @@
             android:name=".ui.login.Login"
             android:exported="false" />
         <activity
-            android:name=".AdminActivity"
+            android:name=".ui.admin.AdminActivity"
             android:exported="false" />
         <activity
             android:name=".SplashActivity"

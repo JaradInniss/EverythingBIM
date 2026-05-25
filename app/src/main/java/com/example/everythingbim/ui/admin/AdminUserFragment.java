@@ -1,5 +1,6 @@
-package com.example.everythingbim;
+package com.example.everythingbim.ui.admin;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -28,10 +29,27 @@ import java.util.Locale;
 
 public class AdminUserFragment extends Fragment {
 
+    // ─── Bundle args ─────────────────────────
+    public static final String ARG_INITIAL_TAB = "initial_tab";
+    public static final String TAB_GENERAL = "general";
+    public static final String TAB_BUSINESS = "business";
+
     // ─── Tab state ───────────────────────────
     // NONE = default (blank), GENERAL, BUSINESS
     private enum Tab { NONE, GENERAL, BUSINESS }
     private Tab activeTab = Tab.NONE;
+
+    // ────────────────────────────────────────────────────────
+    // FACTORY
+    // ────────────────────────────────────────────────────────
+
+    public static AdminUserFragment newInstance(String initialTab) {
+        AdminUserFragment f = new AdminUserFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_INITIAL_TAB, initialTab);
+        f.setArguments(args);
+        return f;
+    }
 
     // ─── Search filter ────────────────────────
     // ID_NO or USERNAME
@@ -67,7 +85,7 @@ public class AdminUserFragment extends Fragment {
     private List<RequestItem> allInfoReqs     = new ArrayList<>();
     private List<RequestItem> allBizVerReqs   = new ArrayList<>();
     private List<UserItem>    allUsers        = new ArrayList<>();
-    private List<UserItem>    allBizUsers     = new ArrayList<>();
+    private List<UserItem>   allBizUsers     = new ArrayList<>();
 
     // ────────────────────────────────────────────────────────
     // LIFECYCLE
@@ -111,6 +129,18 @@ public class AdminUserFragment extends Fragment {
         // Default — both panels hidden until a tab is clicked
         setTabState(Tab.NONE);
 
+        // Check if an initial tab was passed (from home screen card click)
+        if (getArguments() != null) {
+            String initialTab = getArguments().getString(ARG_INITIAL_TAB, TAB_GENERAL);
+            if (TAB_BUSINESS.equals(initialTab)) {
+                setTabState(Tab.BUSINESS);
+                loadBusinessData();
+            } else if (TAB_GENERAL.equals(initialTab)) {
+                setTabState(Tab.GENERAL);
+                loadGeneralData();
+            }
+        }
+
         // ── Tab buttons ───────────────────────
         btnGeneral.setOnClickListener(v -> {
             setTabState(Tab.GENERAL);
@@ -123,19 +153,25 @@ public class AdminUserFragment extends Fragment {
         });
 
         // ── View All buttons ────────────────────
-        view.findViewById(R.id.general_locreq_view_all).setOnClickListener(v ->
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .add(R.id.admin_fragment_container,
-                                AdminUserRequestsFragment.newInstance("location"))
-                        .addToBackStack(null).commit());
+        view.findViewById(R.id.general_locreq_view_all).setOnClickListener(v -> {
+            // Mark location section as read (set lastReadTimestamp to now)
+            markSectionAsRead("location");
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container,
+                            AdminUserRequestsFragment.newInstance("location"))
+                    .addToBackStack(null).commit();
+        });
 
-        view.findViewById(R.id.general_inforeq_view_all).setOnClickListener(v ->
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .add(R.id.admin_fragment_container,
-                                AdminUserRequestsFragment.newInstance("info"))
-                        .addToBackStack(null).commit());
+        view.findViewById(R.id.general_inforeq_view_all).setOnClickListener(v -> {
+            // Mark info section as read (set lastReadTimestamp to now)
+            markSectionAsRead("info");
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container,
+                            AdminUserRequestsFragment.newInstance("info"))
+                    .addToBackStack(null).commit();
+        });
 
         // ── Search text watcher ───────────────
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -232,6 +268,55 @@ public class AdminUserFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Re-render current tab — data is already in memory, just refresh UI with latest read state
+        if (activeTab == Tab.GENERAL) {
+            renderGeneralLocReqs();
+            renderGeneralInfoReqs();
+        } else if (activeTab == Tab.BUSINESS) {
+            renderBusinessVerReqs();
+        }
+    }
+
+// ────────────────────────────────────────────────────────
+    // READ STATE HELPERS — Location / Info requests
+    // (delegated to ReadStateManager, shared with AdminUserRequestsFragment)
+    // ────────────────────────────────────────────────────────
+
+    private boolean isRequestEffectivelyRead(RequestItem item) {
+        if (item.docId == null || item.docId.isEmpty()) return item.read;
+        return item.read || ReadStateManager.isRequestRead(requireContext(), item.docId);
+    }
+
+    private void markRequestAsRead(RequestItem item) {
+        if (item.docId == null || item.docId.isEmpty()) return;
+        ReadStateManager.markRequestRead(requireContext(), item.docId);
+    }
+
+    // ────────────────────────────────────────────────────────
+    // READ STATE HELPERS — Business Verification requests
+    // ────────────────────────────────────────────────────────
+
+    private boolean isBizVerEffectivelyRead(RequestItem item) {
+        if (item == null || item.docId == null || item.docId.isEmpty()) return false;
+        return ReadStateManager.isBizVerRead(requireContext(), item.docId);
+    }
+
+    private void markBizVerAsRead(RequestItem item) {
+        if (item == null || item.docId == null || item.docId.isEmpty()) return;
+        ReadStateManager.markBizVerRead(requireContext(), item.docId);
+    }
+
+    private void markSectionAsRead(String sectionType) {
+        if ("location".equals(sectionType)) {
+            ReadStateManager.markLocationSectionRead(requireContext());
+        } else if ("info".equals(sectionType)) {
+            ReadStateManager.markInfoSectionRead(requireContext());
+        }
+    }
+
     // ────────────────────────────────────────────────────────
     // LOAD GENERAL DATA
     // Loads Location Requests and Info Requests for all users
@@ -305,15 +390,15 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void addLocReqPlaceholders() {
-        allLocReqs.add(new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,""));
-        allLocReqs.add(new RequestItem("#200","Marton Gardens",  "User","2026/02/01",false,""));
-        allLocReqs.add(new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true, ""));
+        allLocReqs.add(new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"ph_loc_201"));
+        allLocReqs.add(new RequestItem("#200","Marton Gardens",  "User","2026/02/01",false,"ph_loc_200"));
+        allLocReqs.add(new RequestItem("#199","Larton's Cemetery","User","2026/01/28",true, "ph_loc_199"));
     }
 
     private void addInfoReqPlaceholders() {
-        allInfoReqs.add(new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,""));
-        allInfoReqs.add(new RequestItem("#87","Marton Gardens",         "User","2026/02/01",true, ""));
-        allInfoReqs.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,""));
+        allInfoReqs.add(new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88"));
+        allInfoReqs.add(new RequestItem("#87","Marton Gardens",         "User","2026/02/01",true, "ph_info_87"));
+        allInfoReqs.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86"));
     }
 
     private void updateGeneralCounts(int locCount, int infoCount) {
@@ -386,18 +471,17 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void addBizVerReqPlaceholders() {
-        allBizVerReqs.add(new RequestItem("#523","Hackerton's Pub",      "User","2026/02/11",false,""));
-        allBizVerReqs.add(new RequestItem("#522","Jordan's Supermarket", "User","2026/02/01",true, ""));
-        allBizVerReqs.add(new RequestItem("#521","Grillz By Kriz",       "User","2026/01/28",false,""));
+        allBizVerReqs.add(new RequestItem("#523","Hackerton's Pub",      "User","2026/02/11",false,"ph_biz_523"));
+        allBizVerReqs.add(new RequestItem("#522","Jordan's Supermarket", "User","2026/02/01",true, "ph_biz_522"));
+        allBizVerReqs.add(new RequestItem("#521","Grillz By Kriz",       "User","2026/01/28",false,"ph_biz_521"));
     }
 
     // ────────────────────────────────────────────────────────
     // RENDER METHODS — inflate item rows into containers
     // ────────────────────────────────────────────────────────
-    // RENDER METHODS — inflate item rows into containers
-    // ────────────────────────────────────────────────────────
 
     private void renderGeneralLocReqs() {
+        if (generalLocReqContainer == null) return;
         generalLocReqContainer.removeAllViews();
         int count = 0;
         for (RequestItem item : allLocReqs) {
@@ -408,6 +492,7 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void renderGeneralInfoReqs() {
+        if (generalInfoReqContainer == null) return;
         generalInfoReqContainer.removeAllViews();
         int count = 0;
         for (RequestItem item : allInfoReqs) {
@@ -418,17 +503,22 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void renderBusinessVerReqs() {
+        if (businessVerReqContainer == null) {
+            android.util.Log.w("AdminUserFragment", "renderBusinessVerReqs: container is null");
+            return;
+        }
+        android.util.Log.d("AdminUserFragment", "renderBusinessVerReqs: allBizVerReqs size=" + allBizVerReqs.size());
         businessVerReqContainer.removeAllViews();
-        int displayedCount = 0;
         int renderedCount = 0;
         for (RequestItem item : allBizVerReqs) {
-            // Apply biz read filter
-            if (bizFilter == BizFilter.UNREAD && item.read) continue;
-            if (bizFilter == BizFilter.READ && !item.read) continue;
+            // Apply biz read filter using effective read state
+            boolean effectivelyRead = isBizVerEffectivelyRead(item);
+            if (bizFilter == BizFilter.UNREAD && effectivelyRead) continue;
+            if (bizFilter == BizFilter.READ && !effectivelyRead) continue;
             if (renderedCount >= 3) break; // Only show first 3
+            android.util.Log.d("AdminUserFragment", "renderBusinessVerReqs: adding item docId=" + item.docId + " effectivelyRead=" + effectivelyRead);
             businessVerReqContainer.addView(inflateRequestRow(item));
             renderedCount++;
-            displayedCount++;
         }
         updateBizVerReqCount(allBizVerReqs.size()); // Show total count
     }
@@ -453,17 +543,34 @@ public class AdminUserFragment extends Fragment {
                 .setText("Submitted By: " + item.submittedBy);
         ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
 
-        // Dot colour
+        // Dot colour — use effective read state (Firestore read OR local SharedPreferences)
+        boolean effectivelyRead = isRequestEffectivelyRead(item);
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
-                item.read ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+                effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
 
         // View button colour — cobalt if unread, grey if read
         TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
-        viewBtn.setTextColor(item.read
+        viewBtn.setTextColor(effectivelyRead
                 ? android.graphics.Color.parseColor("#9e9e9e")
                 : android.graphics.Color.parseColor("#203088"));
 
         viewBtn.setOnClickListener(v -> {
+            // Mark as read in SharedPreferences before navigating
+            markRequestAsRead(item);
+
+            // Immediately update this row's dot and button colour
+            View dot = row.findViewById(R.id.user_req_dot);
+            dot.setBackgroundResource(R.drawable.bg_dot_grey);
+            dot.invalidate();
+            viewBtn.setTextColor(android.graphics.Color.parseColor("#9e9e9e"));
+            viewBtn.invalidate();
+
+            // Re-render current tab so state is consistent across tab switches
+            if (activeTab == Tab.GENERAL) {
+                renderGeneralLocReqs();
+                renderGeneralInfoReqs();
+            }
+
             Fragment detail;
             if ("location".equals(requestType)) {
                 detail = AdminLocationRequestDetailsFragment.newInstance(
@@ -518,17 +625,33 @@ public class AdminUserFragment extends Fragment {
                 .setText("Submitted By: " + item.submittedBy);
         ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
 
-        // Dot colour
+        // Dot colour — use effective read state (SharedPreferences only)
+        boolean effectivelyRead = isBizVerEffectivelyRead(item);
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
-                item.read ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+                effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
 
         // View button colour — cobalt if unread, grey if read
         TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
-        viewBtn.setTextColor(item.read
+        viewBtn.setTextColor(effectivelyRead
                 ? android.graphics.Color.parseColor("#9e9e9e")
                 : android.graphics.Color.parseColor("#203088"));
 
         viewBtn.setOnClickListener(v -> {
+            // Mark as read in SharedPreferences before navigating
+            android.util.Log.d("AdminUserFragment", "View clicked docId=" + item.docId);
+            markBizVerAsRead(item);
+
+            // Immediately update THIS row's dot and button colour so it changes right now
+            View dot = row.findViewById(R.id.user_req_dot);
+            dot.setBackgroundResource(R.drawable.bg_dot_grey);
+            dot.invalidate();
+            viewBtn.setTextColor(android.graphics.Color.parseColor("#9e9e9e"));
+            viewBtn.invalidate();
+
+            // Also re-render all visible rows so that if the user switches filter
+            // tabs and comes back, state is consistent with SharedPreferences
+            renderBusinessVerReqs();
+
             Fragment detail = AdminBizVerificationDetailFragment.newInstance(
                     item.docId,
                     item.number,
@@ -543,6 +666,7 @@ public class AdminUserFragment extends Fragment {
                     item.businessType
             );
 
+            android.util.Log.d("AdminUserFragment", "Navigating to detail, current visible=" + this.isVisible() + " isResumed=" + this.isResumed());
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .add(R.id.admin_fragment_container, detail)

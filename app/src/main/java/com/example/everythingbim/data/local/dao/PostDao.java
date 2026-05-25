@@ -9,14 +9,47 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 
 import java.util.List;
 
+/**
+ * Data Access Object (DAO) for the posts table.
+ * Handles database operations for creating and retrieving social media style posts.
+ */
 @Dao
 public interface PostDao {
+    /**
+     * Retrieves all posts from the database.
+     * @return LiveData list of all PostEntity objects.
+     */
     @Query("SELECT * FROM posts")
     LiveData<List<PostEntity>> getAllPosts();
 
+    /**
+     * Inserts a new post into the database.
+     * @param post The PostEntity to insert.
+     * @return The row ID of the newly inserted post.
+     */
     @Insert
     long insert(PostEntity post);
 
+    /**
+     * Retrieves all posts in a random order. 
+     * Useful for providing a randomized "feed" experience for users.
+     * @return LiveData list of posts in random order.
+     */
     @Query("SELECT * FROM posts ORDER BY RANDOM()")
     LiveData<List<PostEntity>> getRandomizedPosts();
+
+    /**
+     * Retrieves a single post by its unique ID.
+     * @param postId The ID of the post to retrieve.
+     * @return LiveData containing the post if found.
+     */
+    @Query("SELECT * FROM posts WHERE postId = :postId LIMIT 1")
+    LiveData<PostEntity> getPostById(long postId);
+
+    /**
+     * Synchronously returns the total number of posts in the database.
+     * @return The count of posts.
+     */
+    @Query("SELECT COUNT(*) FROM posts")
+    int getPostCount();
 }

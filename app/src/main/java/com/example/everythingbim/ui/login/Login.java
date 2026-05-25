@@ -62,7 +62,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE);
         // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         viewModel.setSharedPreferences(sharedPreferences);
