@@ -1,7 +1,5 @@
 package com.example.everythingbim.ui.login;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -34,7 +32,7 @@ public class LoginViewModel extends ViewModel {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private SharedPreferences sharedPreferences; // may be null
-    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.ADMIN);
+    private final MutableLiveData<UserType> selectedUserType = new MutableLiveData<>(UserType.GENERAL);
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
@@ -106,11 +104,17 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
-        // BYPASS Firebase Auth for testing - navigate directly based on user type selection
-        if (selectedUserType.getValue() == UserType.ADMIN) {
-            navigationEvent.setValue(new NavigationCommand(AdminActivity.class));
+        // BYPASS Firebase Auth for testing - persist the selected role and open the matching shell.
+        UserType selected = selectedUserType.getValue() != null
+                ? selectedUserType.getValue()
+                : UserType.GENERAL;
+
+        if (selected == UserType.ADMIN) {
+            saveAndNavigate("admin", "");
+        } else if (selected == UserType.BUSINESS) {
+            saveAndNavigate(MainActivity.USER_TYPE_BUSINESS, "");
         } else {
-            navigationEvent.setValue(new NavigationCommand(MainActivity.class));
+            saveAndNavigate(MainActivity.USER_TYPE_GENERAL, "");
         }
     }
 

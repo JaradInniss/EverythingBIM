@@ -1,6 +1,8 @@
 package com.example.everythingbim.ui.posts;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -21,6 +23,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
 
 public class PostFragment extends Fragment {
 
@@ -88,6 +93,10 @@ public class PostFragment extends Fragment {
 
     private void setupListeners() {
         createPostButton.setOnClickListener(v -> {
+            if (isGuestUser()) {
+                showAuthRequiredDialog();
+                return;
+            }
             Intent intent = new Intent(getActivity(), CreatePostActivity.class);
             startActivity(intent);
         });
@@ -119,5 +128,36 @@ public class PostFragment extends Fragment {
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         }
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType);
+    }
+
+    private void showAuthRequiredDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Log in to create a post")
+                .setMessage("Guests can browse posts, but you'll need an account before sharing your own.")
+                .setPositiveButton("Log In", (dialog, which) ->
+                        startActivity(buildLoginIntent()))
+                .setNegativeButton("Create Account", (dialog, which) ->
+                        startActivity(buildGeneralRegistrationIntent()))
+                .setNeutralButton("Not now", null)
+                .show();
+    }
+
+    private Intent buildLoginIntent() {
+        Intent intent = new Intent(requireContext(), Login.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
+    }
+
+    private Intent buildGeneralRegistrationIntent() {
+        Intent intent = new Intent(requireContext(), GeneralRegistration.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
     }
 }

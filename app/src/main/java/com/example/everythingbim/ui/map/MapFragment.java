@@ -34,6 +34,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.BuildConfig;
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.AppDatabase;
+import com.example.everythingbim.data.local.entities.LocationEntity;
+import com.example.everythingbim.data.local.entities.LocationWithDetails;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
@@ -72,6 +75,7 @@ import java.util.concurrent.Executors;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback, View.OnClickListener {
     public static final String ARG_OPEN_FOCUS_LOCATION = "arg_open_focus_location";
+    public static final String ARG_FOCUS_LOCATION_ID = "arg_focus_location_id";
     public static final String ARG_FOCUS_LATITUDE = "arg_focus_latitude";
     public static final String ARG_FOCUS_LONGITUDE = "arg_focus_longitude";
     public static final String ARG_FOCUS_TITLE = "arg_focus_title";
@@ -127,6 +131,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private Marker searchMarker;
     private Place selectedPlace;
     private boolean suppressSearchTextChange;
+    private long focusedSavedLocationId = -1L;
+    private MarkerDetails focusedSavedMarkerDetails;
     private LatLng externalFocusLatLng;
     private String externalFocusTitle;
     private String externalFocusSubtitle;
@@ -157,6 +163,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         bindViews(view);
         setupSearchUi();
         setUpObservers();
+        observeFocusedSavedLocation();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
                 .findFragmentById(R.id.map);
@@ -349,7 +356,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             showRoutePreview();
         } else if (externalFocusLatLng != null) {
             mapViewModel.setFocusedLocation(externalFocusLatLng);
-            mapViewModel.setSelectedLocationMetadata(-1, externalFocusTitle != null ? externalFocusTitle : "Selected location");
+            mapViewModel.setSelectedLocationMetadata(
+                    focusedSavedMarkerDetails != null ? focusedSavedMarkerDetails.id : -1,
+                    externalFocusTitle != null ? externalFocusTitle : "Selected location"
+            );
             mapViewModel.setDetailsUIState(MapDetailsState.FULL);
             showExternalFocusedLocation();
         }
@@ -360,6 +370,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (args == null) {
             return;
         }
+
+        focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
 
         if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
             externalFocusLatLng = new LatLng(
@@ -391,6 +403,34 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             intent.putExtras(event.getExtras());
             startActivity(intent);
         });
+    }
+
+    private void observeFocusedSavedLocation() {
+        if (focusedSavedLocationId <= 0L) {
+            return;
+        }
+
+        AppDatabase.getInstance(requireContext())
+                .locationDao()
+                .getLocationWithDetailsById(focusedSavedLocationId)
+                .observe(getViewLifecycleOwner(), item -> {
+                    if (item == null || item.location == null) {
+                        return;
+                    }
+
+                    LocationEntity location = item.location;
+                    externalFocusLatLng = new LatLng(location.latitude, location.longitude);
+                    externalFocusTitle = location.name != null ? location.name : "Saved location";
+                    externalFocusSubtitle = location.address != null ? location.address : "";
+                    focusedSavedMarkerDetails = buildSavedLocationDetails(item);
+
+                    if (map != null) {
+                        mapViewModel.setFocusedLocation(externalFocusLatLng);
+                        mapViewModel.setSelectedLocationMetadata(location.locationId, externalFocusTitle);
+                        mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+                        showExternalFocusedLocation();
+                    }
+                });
     }
 
     private void updateUIState(MapDetailsState state) {
@@ -628,19 +668,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     .title(externalFocusTitle != null ? externalFocusTitle : "Selected location")
                     .snippet(externalFocusSubtitle != null ? externalFocusSubtitle : ""));
             if (searchMarker != null) {
-                searchMarker.setTag(new MarkerDetails(
-                        -1,
-                        externalFocusTitle != null ? externalFocusTitle : "Selected location",
-                        externalFocusSubtitle != null ? externalFocusSubtitle : "",
-                        "",
-                        "",
-                        0.0f,
-                        "",
-                        "",
-                        new ArrayList<String>(),
-                        new ArrayList<ReviewEntity>(),
-                        new ArrayList<PostEntity>()
-                ));
+                searchMarker.setTag(focusedSavedMarkerDetails != null
+                        ? focusedSavedMarkerDetails
+                        : new MarkerDetails(
+                                -1,
+                                externalFocusTitle != null ? externalFocusTitle : "Selected location",
+                                externalFocusSubtitle != null ? externalFocusSubtitle : "",
+                                "",
+                                "",
+                                0.0f,
+                                "",
+                                "",
+                                new ArrayList<String>(),
+                                new ArrayList<ReviewEntity>(),
+                                new ArrayList<PostEntity>()
+                        ));
             }
         }
 
@@ -1113,6 +1155,40 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     }
 
     @NonNull private String formatLatLng(double lat, double lng) { return String.format(java.util.Locale.US, "Lat: %.5f, Lng: %.5f", lat, lng); }
+
+    @NonNull
+    private MarkerDetails buildSavedLocationDetails(@NonNull LocationWithDetails item) {
+        LocationEntity location = item.location;
+        String title = location.name != null ? location.name : "Saved location";
+        String subtitle = location.address != null && !location.address.trim().isEmpty()
+                ? location.address
+                : formatLatLng(location.latitude, location.longitude);
+
+        StringBuilder metaBuilder = new StringBuilder();
+        if (location.category != null && !location.category.trim().isEmpty()) {
+            metaBuilder.append(location.category.trim());
+        }
+        if (location.isVerified) {
+            if (metaBuilder.length() > 0) {
+                metaBuilder.append(" | ");
+            }
+            metaBuilder.append("Verified");
+        }
+
+        return new MarkerDetails(
+                location.locationId,
+                title,
+                subtitle,
+                metaBuilder.toString(),
+                "",
+                location.rating,
+                location.description != null ? location.description : "",
+                location.category != null ? location.category : "",
+                new ArrayList<>(),
+                item.reviews != null ? item.reviews : new ArrayList<>(),
+                item.posts != null ? item.posts : new ArrayList<>()
+        );
+    }
 
     @NonNull
     private MarkerDetails buildMarkerDetails(@Nullable Place place) {

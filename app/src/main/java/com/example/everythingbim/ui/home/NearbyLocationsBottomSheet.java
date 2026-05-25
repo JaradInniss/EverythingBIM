@@ -21,7 +21,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implements NearbyRouteSelectionAdapter.OnSelectionChangedListener {
+public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implements
+        NearbyRouteSelectionAdapter.OnSelectionChangedListener,
+        NearbyRouteSelectionAdapter.OnLocationDetailsClickListener {
     private static final String ARG_LOCATIONS = "locations";
     private static final String ARG_SELECTED_IDS = "selected_ids";
 
@@ -76,7 +78,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
             }
         }
 
-        adapter = new NearbyRouteSelectionAdapter(this);
+        adapter = new NearbyRouteSelectionAdapter(this, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
         adapter.submitList(locations, selectedIds);
@@ -132,6 +134,13 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         notifySelectionChanged();
     }
 
+    @Override
+    public void onLocationDetailsClick(@NonNull NearbySavedLocation location) {
+        if (actionsListener != null) {
+            actionsListener.onLocationDetailsRequested(location);
+        }
+    }
+
     private void notifySelectionChanged() {
         updateSelectionSummary();
         if (actionsListener != null) {
@@ -165,5 +174,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         void onCreateRouteRequested(@NonNull List<NearbySavedLocation> selectedLocations);
 
         void onOpenRouteExternallyRequested(@NonNull List<NearbySavedLocation> selectedLocations);
+
+        void onLocationDetailsRequested(@NonNull NearbySavedLocation location);
     }
 }

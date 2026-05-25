@@ -8,4 +8,7 @@
     <string name="submit">Submit</string>
     <string name="registration_failed">Registration failed: %s</string>
     <string name="google_maps_key">AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_done">Start Exploring</string>
 </resources>

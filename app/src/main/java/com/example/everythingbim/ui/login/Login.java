@@ -26,6 +26,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.ActivityLoginBinding;
+import com.example.everythingbim.ui.main.MainActivity;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -45,7 +46,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private TextInputEditText emailEditText, passwordEditText;
     private ProgressBar progressBar;
     private TextView errorTextView;
+    private TextView adminAccessHint;
     private LinearLayout generalUserContainer, businessUserContainer;
+    private View userTypeSelection;
 
 
     // Variables
@@ -65,6 +68,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         viewModel.setSharedPreferences(sharedPreferences);
 
         initViews();
+        applyPreselectedUserType();
         setupObservers();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -82,6 +86,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         // Linear Layouts
         generalUserContainer = binding.generalUserContainer;
         businessUserContainer = binding.businessUserContainer;
+        userTypeSelection = binding.userTypeSelection;
         generalUserContainer.setOnClickListener(this);
         businessUserContainer.setOnClickListener(this);
 
@@ -89,6 +94,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         generalUserText = binding.generalUserTv;
         businessUserText = binding.businessUserTv;
         userTypeText = binding.userTypeText;
+        adminAccessHint = binding.adminAccessHint;
         errorTextView = binding.loginError;
         createAccountOption = binding.createAccountOpt;
         createAccountOption.setOnClickListener(this);
@@ -105,11 +111,26 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         progressBar = binding.loginProgressBar;
     }
 
+    private void applyPreselectedUserType() {
+        String preselectedUserType = getIntent().getStringExtra("preselectedUserType");
+        if (preselectedUserType == null) {
+            return;
+        }
+
+        try {
+            viewModel.setSelectedUserType(UserType.valueOf(preselectedUserType));
+        } catch (IllegalArgumentException ignored) {
+            // Ignore invalid preselection extras and use the default choice.
+        }
+    }
+
     private void setupObservers() {
 
         // Observe user type selection (icons, texts, and background)
         viewModel.getSelectedUserType().observe(this, userType -> {
             if (userType == UserType.GENERAL) {
+                userTypeSelection.setVisibility(View.VISIBLE);
+                adminAccessHint.setVisibility(View.GONE);
                 generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.white)));
                 businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
 
@@ -121,6 +142,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
                 userTypeText.setText("General User");
             } else if (userType == UserType.BUSINESS) {
+                userTypeSelection.setVisibility(View.VISIBLE);
+                adminAccessHint.setVisibility(View.GONE);
                 generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
                 businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.white)));
 
@@ -130,8 +153,14 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 generalUserContainer.setBackgroundResource(0);
                 businessUserContainer.setBackgroundResource(R.drawable.bg_rectangle_blue);
                 userTypeText.setText("Business User");
+            } else if (userType == UserType.ADMIN) {
+                userTypeSelection.setVisibility(View.GONE);
+                adminAccessHint.setVisibility(View.VISIBLE);
+                userTypeText.setText("Administrator");
             }
             else {
+                userTypeSelection.setVisibility(View.VISIBLE);
+                adminAccessHint.setVisibility(View.GONE);
                 generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
                 businessUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
 
@@ -215,6 +244,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 Intent intent = new Intent(Login.this, command.getDestination());
                 if (command.getExtras() != null) {
                     intent.putExtras(command.getExtras());
+                }
+                String pendingAction = getIntent().getStringExtra(MainActivity.EXTRA_PENDING_ACTION);
+                if (pendingAction != null && (MainActivity.class.equals(command.getDestination())
+                        || com.example.everythingbim.ui.registration.GeneralRegistration.class.equals(command.getDestination())
+                        || com.example.everythingbim.ui.registration.BusinessRegistration.class.equals(command.getDestination()))) {
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, pendingAction);
                 }
                 startActivity(intent);
                 finish(); // optional: remove login from back stack

@@ -19,7 +19,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapsSdkInitializedCallback;
 
@@ -53,9 +53,9 @@ public class SplashActivity extends AppCompatActivity implements OnMapsSdkInitia
             startPulseAnimation(splashLogo);
         }
 
-        // Redirect User to Login Screen after 5 seconds
+        // Redirect users into the main shell; authentication now happens on demand.
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(SplashActivity.this, Login.class);
+            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             finish();
