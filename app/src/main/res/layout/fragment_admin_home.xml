@@ -58,15 +58,41 @@
         </LinearLayout>
 
         <!-- Notification Button -->
-        <ImageButton
-            android:id="@+id/btn_notification"
+        <FrameLayout
             android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_border_rectangle_alice_blue"
-            android:src="@drawable/ic_bell"
-            android:contentDescription="Notifications"
-            android:padding="8dp"
-            app:tint="@color/space_indigo" />
+            android:layout_height="48dp">
+
+            <ImageButton
+                android:id="@+id/btn_notification"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_border_rectangle_alice_blue"
+                android:src="@drawable/ic_bell"
+                android:contentDescription="Notifications"
+                android:padding="8dp"
+                app:tint="@color/space_indigo" />
+
+            <TextView
+                android:id="@+id/tv_notification_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="2dp"
+                android:minWidth="18dp"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/bg_dot_red"
+                android:gravity="center"
+                android:text="0"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </LinearLayout>
 
@@ -417,6 +443,84 @@
                 </androidx.cardview.widget.CardView>
 
             </LinearLayout>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_dataset"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFFFFF"
+                android:clickable="true"
+                android:focusable="true">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="14dp"
+                        android:background="@color/alice_blue">
+
+                        <ImageView
+                            android:id="@+id/icon_dataset"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_images"
+                            android:contentDescription="Dataset submissions icon"
+                            app:tint="@color/prussian_blue" />
+
+                        <TextView
+                            android:id="@+id/title_dataset"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dataset Submissions"
+                            android:textColor="@color/prussian_blue"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:id="@+id/tv_dataset_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00"
+                            android:textColor="@color/prussian_blue"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:id="@+id/tv_dataset_count_incremental"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+0"
+                            android:textColor="@color/green"
+                            android:gravity="center"
+                            android:layout_marginTop="5dp"/>
+
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/dot_dataset"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_dot_red"
+                        android:visibility="visible" />
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
 
             <!-- Request Volume Card -->
             <androidx.cardview.widget.CardView

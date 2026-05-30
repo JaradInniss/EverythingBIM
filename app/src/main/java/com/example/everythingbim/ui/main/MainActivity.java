@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.home.AIIdentifier;
 import com.example.everythingbim.ui.home.HomeFragment;
 import com.example.everythingbim.ui.map.MapFragment;
 import com.example.everythingbim.ui.onboarding.OnboardingOverlayView;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACTION_ADD_LOCATION_REQUEST = "action_add_location_request";
     public static final String ACTION_ADD_INFORMATION_REQUEST = "action_add_information_request";
     public static final String ACTION_ADD_BUSINESS_LOCATION_REQUEST = "action_add_business_location_request";
+    public static final String ACTION_ADD_DATASET_SUBMISSION = "action_add_dataset_submission";
     public static final String EXTRA_OPEN_MAP_FOCUS = "open_map_focus";
     public static final String EXTRA_MAP_FOCUS_LOCATION_ID = "map_focus_location_id";
     public static final String EXTRA_MAP_FOCUS_LATITUDE = "map_focus_latitude";
@@ -277,6 +279,11 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 android.widget.Toast.makeText(this, "Business access is required for that action.", android.widget.Toast.LENGTH_SHORT).show();
             }
+            return;
+        }
+
+        if (ACTION_ADD_DATASET_SUBMISSION.equals(pendingAction)) {
+            openDatasetSubmissionResume();
         }
     }
 
@@ -287,6 +294,33 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit());
+    }
+
+    private void openDatasetSubmissionResume() {
+        Intent intent = new Intent(this, AIIdentifier.class);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_IMAGE_URI);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_IMAGE_SOURCE);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_DISPLAY_NAME);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_GPS_AVAILABLE);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_GPS_PERMISSION_GRANTED);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_USER_LATITUDE);
+        copyIfPresent(getIntent(), intent, AIIdentifier.EXTRA_USER_LONGITUDE);
+        intent.putExtra(AIIdentifier.EXTRA_AUTO_OPEN_DATASET_SUBMISSION, true);
+        startActivity(intent);
+    }
+
+    private void copyIfPresent(Intent source, Intent destination, String key) {
+        if (source == null || destination == null || !source.hasExtra(key)) {
+            return;
+        }
+        Object value = source.getExtras() != null ? source.getExtras().get(key) : null;
+        if (value instanceof String) {
+            destination.putExtra(key, (String) value);
+        } else if (value instanceof Boolean) {
+            destination.putExtra(key, (Boolean) value);
+        } else if (value instanceof Double) {
+            destination.putExtra(key, (Double) value);
+        }
     }
 
     private void maybeStartOnboarding() {

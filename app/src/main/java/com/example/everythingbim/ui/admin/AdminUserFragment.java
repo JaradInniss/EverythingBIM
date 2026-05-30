@@ -177,11 +177,14 @@ public class AdminUserFragment extends Fragment {
         });
 
         view.findViewById(R.id.general_datasetreq_view_all).setOnClickListener(v ->
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .add(R.id.admin_fragment_container,
-                                AdminUserRequestsFragment.newInstance("dataset"))
-                        .addToBackStack(null).commit());
+                {
+                    ReadStateManager.markDatasetSectionRead(requireContext());
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .add(R.id.admin_fragment_container,
+                                    AdminUserRequestsFragment.newInstance("dataset"))
+                            .addToBackStack(null).commit();
+                });
 
         // ── Search text watcher ───────────────
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -325,6 +328,8 @@ public class AdminUserFragment extends Fragment {
             ReadStateManager.markLocationSectionRead(requireContext());
         } else if ("info".equals(sectionType)) {
             ReadStateManager.markInfoSectionRead(requireContext());
+        } else if ("dataset".equals(sectionType)) {
+            ReadStateManager.markDatasetSectionRead(requireContext());
         }
     }
 

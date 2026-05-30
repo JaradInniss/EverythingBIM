@@ -48,6 +48,14 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private static final String TAG = "AIIdentifier";
     private static final String COLLECTION_DATASET_SUBMISSIONS = "dataset_image_submissions";
     private static final String STORAGE_DATASET_SUBMISSIONS = "dataset_submissions";
+    public static final String EXTRA_IMAGE_URI = "image_uri";
+    public static final String EXTRA_IMAGE_SOURCE = "image_source";
+    public static final String EXTRA_DISPLAY_NAME = "display_name";
+    public static final String EXTRA_GPS_AVAILABLE = "gps_available";
+    public static final String EXTRA_GPS_PERMISSION_GRANTED = "gps_permission_granted";
+    public static final String EXTRA_USER_LATITUDE = "user_latitude";
+    public static final String EXTRA_USER_LONGITUDE = "user_longitude";
+    public static final String EXTRA_AUTO_OPEN_DATASET_SUBMISSION = "auto_open_dataset_submission";
 
     private ActivityAiidentifierBinding binding;
     private AIIdentifierViewModel viewModel;
@@ -62,6 +70,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private Double userLatitude;
     private Double userLongitude;
     private boolean datasetSubmissionInProgress;
+    private boolean autoOpenDatasetSubmissionPending;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private FirebaseStorage storage;
@@ -107,20 +116,21 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     }
 
     private void handleIntent() {
-        String uriString = getIntent().getStringExtra("image_uri");
-        String source = getIntent().getStringExtra("image_source");
-        String displayName = getIntent().getStringExtra("display_name");
+        String uriString = getIntent().getStringExtra(EXTRA_IMAGE_URI);
+        String source = getIntent().getStringExtra(EXTRA_IMAGE_SOURCE);
+        String displayName = getIntent().getStringExtra(EXTRA_DISPLAY_NAME);
+        autoOpenDatasetSubmissionPending = getIntent().getBooleanExtra(EXTRA_AUTO_OPEN_DATASET_SUBMISSION, false);
 
         if (uriString != null && source != null) {
             Uri uri = Uri.parse(uriString);
             SelectedImage selectedImage = new SelectedImage(uri, source, displayName);
-            gpsAvailable = getIntent().getBooleanExtra("gps_available", false);
-            gpsPermissionGranted = getIntent().getBooleanExtra("gps_permission_granted", false);
-            userLatitude = getIntent().hasExtra("user_latitude")
-                    ? getIntent().getDoubleExtra("user_latitude", 0d)
+            gpsAvailable = getIntent().getBooleanExtra(EXTRA_GPS_AVAILABLE, false);
+            gpsPermissionGranted = getIntent().getBooleanExtra(EXTRA_GPS_PERMISSION_GRANTED, false);
+            userLatitude = getIntent().hasExtra(EXTRA_USER_LATITUDE)
+                    ? getIntent().getDoubleExtra(EXTRA_USER_LATITUDE, 0d)
                     : null;
-            userLongitude = getIntent().hasExtra("user_longitude")
-                    ? getIntent().getDoubleExtra("user_longitude", 0d)
+            userLongitude = getIntent().hasExtra(EXTRA_USER_LONGITUDE)
+                    ? getIntent().getDoubleExtra(EXTRA_USER_LONGITUDE, 0d)
                     : null;
             currentSelectedImage = selectedImage;
 
@@ -213,6 +223,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 binding.negativeConfidenceRow.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceScoreTv.setText(
                         state.getConfidenceText() != null ? state.getConfidenceText() : "--");
+                maybeAutoOpenDatasetSubmission();
                 break;
             case UNKNOWN:
                 currentLandmark = null;
@@ -223,6 +234,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceRow.setVisibility(View.GONE);
+                maybeAutoOpenDatasetSubmission();
                 break;
             case ERROR:
                 currentLandmark = null;
@@ -236,10 +248,19 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 binding.positiveResultContainer.setVisibility(View.GONE);
                 binding.negativeResultContainer.setVisibility(View.VISIBLE);
                 binding.negativeConfidenceRow.setVisibility(View.GONE);
+                maybeAutoOpenDatasetSubmission();
                 break;
             default:
                 break;
         }
+    }
+
+    private void maybeAutoOpenDatasetSubmission() {
+        if (!autoOpenDatasetSubmissionPending) {
+            return;
+        }
+        autoOpenDatasetSubmissionPending = false;
+        binding.addToDatasetBttn.post(this::promptDatasetSubmission);
     }
 
     private void clearNearbyUi() {
@@ -491,10 +512,14 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 .setMessage("We need an account before sending an image to the admin/development team. After you sign in, return here and send it again.")
                 .setPositiveButton("Log In", (dialog, which) -> {
                     Intent intent = new Intent(this, Login.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_DATASET_SUBMISSION);
+                    copyIdentifierContext(intent);
                     startActivity(intent);
                 })
                 .setNegativeButton("Create Account", (dialog, which) -> {
                     Intent intent = new Intent(this, GeneralRegistration.class);
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_ADD_DATASET_SUBMISSION);
+                    copyIdentifierContext(intent);
                     startActivity(intent);
                 })
                 .setNeutralButton("Cancel", null)
@@ -519,5 +544,23 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
             return "Authenticated User";
         }
         return email;
+    }
+
+    private void copyIdentifierContext(@NonNull Intent intent) {
+        if (currentSelectedImage == null) {
+            return;
+        }
+
+        intent.putExtra(EXTRA_IMAGE_URI, currentSelectedImage.getUri().toString());
+        intent.putExtra(EXTRA_IMAGE_SOURCE, currentSelectedImage.getSource());
+        intent.putExtra(EXTRA_DISPLAY_NAME, currentSelectedImage.getDisplayName());
+        intent.putExtra(EXTRA_GPS_AVAILABLE, gpsAvailable);
+        intent.putExtra(EXTRA_GPS_PERMISSION_GRANTED, gpsPermissionGranted);
+        if (userLatitude != null) {
+            intent.putExtra(EXTRA_USER_LATITUDE, userLatitude);
+        }
+        if (userLongitude != null) {
+            intent.putExtra(EXTRA_USER_LONGITUDE, userLongitude);
+        }
     }
 }
