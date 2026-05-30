@@ -101,22 +101,23 @@ public class EntityValidationTest {
     @Test
     public void commentEntity_constructor_setsAllFields() {
         long timestamp = System.currentTimeMillis();
-        CommentEntity comment = new CommentEntity("Great post!", "user123", "post456", "POST", timestamp);
+        CommentEntity comment = new CommentEntity(456L, 123L, "user123", "parentUser", "Great post!", timestamp);
 
         assertEquals("Body should be Great post!", "Great post!", comment.body);
-        assertEquals("AuthorId should be user123", "user123", comment.authorId);
-        assertEquals("TargetId should be post456", "post456", comment.targetId);
-        assertEquals("TargetType should be POST", "POST", comment.targetType);
-        assertEquals("CreatedAt should match timestamp", timestamp, comment.createdAt);
+        assertEquals("PostId should be 456", 456L, comment.postId);
+        assertEquals("ParentCommentId should be 123", Long.valueOf(123L), comment.parentCommentId);
+        assertEquals("AuthorName should be user123", "user123", comment.authorName);
+        assertEquals("ParentAuthorName should be parentUser", "parentUser", comment.parentAuthorName);
+        assertEquals("Timestamp should match", timestamp, comment.timestamp);
     }
 
     @Test
     public void commentEntity_canHandleNullFields() {
-        CommentEntity comment = new CommentEntity(null, null, null, null, 0L);
+        CommentEntity comment = new CommentEntity(0L, null, null, null, null, 0L);
         assertNull("Body should be null", comment.body);
-        assertNull("AuthorId should be null", comment.authorId);
-        assertNull("TargetId should be null", comment.targetId);
-        assertNull("TargetType should be null", comment.targetType);
+        assertNull("ParentCommentId should be null", comment.parentCommentId);
+        assertNull("AuthorName should be null", comment.authorName);
+        assertNull("ParentAuthorName should be null", comment.parentAuthorName);
     }
 
     // ========== LikeEntity Tests ==========
@@ -184,7 +185,7 @@ public class EntityValidationTest {
 
     @Test
     public void commentEntity_fieldsArePublic() {
-        CommentEntity comment = new CommentEntity("body", "author", "target", "POST", 0L);
+        CommentEntity comment = new CommentEntity(1L, null, "author", null, "body", 0L);
         assertEquals("commentId should be accessible", 0L, comment.commentId);
         comment.commentId = 777L;
         assertEquals("commentId should be settable", 777L, comment.commentId);
