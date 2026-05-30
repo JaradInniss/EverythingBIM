@@ -1,11 +1,18 @@
 package com.example.everythingbim.ui.home;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -20,14 +27,27 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.ActivityAiidentifierBinding;
+import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBottomSheet.NearbyActionsListener {
     private static final int NEARBY_PAGE_SIZE = 5;
+    private static final String TAG = "AIIdentifier";
+    private static final String COLLECTION_DATASET_SUBMISSIONS = "dataset_image_submissions";
+    private static final String STORAGE_DATASET_SUBMISSIONS = "dataset_submissions";
 
     private ActivityAiidentifierBinding binding;
     private AIIdentifierViewModel viewModel;
@@ -35,7 +55,16 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private final ArrayList<NearbySavedLocation> currentNearbyLocations = new ArrayList<>();
     private final LinkedHashMap<Long, NearbySavedLocation> selectedRouteLocations = new LinkedHashMap<>();
     private Landmark currentLandmark;
-    private int visibleNearbyCount = NEARBY_PAGE_SIZE;
+    private HomeUiState latestState = HomeUiState.idle();
+    private SelectedImage currentSelectedImage;
+    private boolean gpsPermissionGranted;
+    private boolean gpsAvailable;
+    private Double userLatitude;
+    private Double userLongitude;
+    private boolean datasetSubmissionInProgress;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+    private FirebaseStorage storage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +74,9 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         setContentView(binding.getRoot());
 
         viewModel = new ViewModelProvider(this).get(AIIdentifierViewModel.class);
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
         setupWindowInsets();
         setupViews();
@@ -65,6 +97,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         binding.reuploadBttn.setOnClickListener(v -> finish());
         binding.openNearbyBttn.setOnClickListener(v -> openNearbySheet());
         binding.viewOnMapBttn.setOnClickListener(v -> openParliamentOnMap());
+        binding.addToDatasetBttn.setOnClickListener(v -> promptDatasetSubmission());
 
         nearbyLocationsAdapter = new NearbyLocationsAdapter(location -> openNearbySheet());
         binding.nearbyAttractionsRv.setLayoutManager(
@@ -81,14 +114,15 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         if (uriString != null && source != null) {
             Uri uri = Uri.parse(uriString);
             SelectedImage selectedImage = new SelectedImage(uri, source, displayName);
-            boolean gpsAvailable = getIntent().getBooleanExtra("gps_available", false);
-            boolean gpsPermissionGranted = getIntent().getBooleanExtra("gps_permission_granted", false);
-            Double userLatitude = getIntent().hasExtra("user_latitude")
+            gpsAvailable = getIntent().getBooleanExtra("gps_available", false);
+            gpsPermissionGranted = getIntent().getBooleanExtra("gps_permission_granted", false);
+            userLatitude = getIntent().hasExtra("user_latitude")
                     ? getIntent().getDoubleExtra("user_latitude", 0d)
                     : null;
-            Double userLongitude = getIntent().hasExtra("user_longitude")
+            userLongitude = getIntent().hasExtra("user_longitude")
                     ? getIntent().getDoubleExtra("user_longitude", 0d)
                     : null;
+            currentSelectedImage = selectedImage;
 
             updateUploadMethodUI(source);
             binding.identifierUploadedImage.setImageURI(uri);
@@ -138,6 +172,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     }
 
     private void renderState(@NonNull HomeUiState state) {
+        latestState = state;
         TransitionManager.beginDelayedTransition(binding.analysisResponseContainer, new AutoTransition());
 
         switch (state.getStatus()) {
@@ -309,5 +344,180 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, location.getName());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, location.getAddress());
         startActivity(intent);
+    }
+
+    private void promptDatasetSubmission() {
+        if (datasetSubmissionInProgress) {
+            Toast.makeText(this, "Your submission is already being uploaded.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (currentSelectedImage == null || currentSelectedImage.getUri() == null) {
+            Toast.makeText(this, "There is no image available to submit.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (isGuestUser()) {
+            showDatasetAuthRequiredDialog();
+            return;
+        }
+
+        final EditText noteInput = new EditText(this);
+        noteInput.setHint("Tell the team what this image shows or why it matters");
+        noteInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        noteInput.setMinLines(3);
+        noteInput.setMaxLines(5);
+
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        int padding = Math.round(getResources().getDisplayMetrics().density * 20f);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(noteInput);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Send Image For Review")
+                .setMessage("We'll send this image and the current recognition details to the admin/development team for review.")
+                .setView(container)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Send", (dialog, which) ->
+                        submitDatasetImage(noteInput.getText() != null
+                                ? noteInput.getText().toString().trim()
+                                : ""))
+                .show();
+    }
+
+    private void submitDatasetImage(@NonNull String userNote) {
+        if (currentSelectedImage == null || currentSelectedImage.getUri() == null) {
+            Toast.makeText(this, "There is no image available to submit.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (auth.getCurrentUser() == null) {
+            showDatasetAuthRequiredDialog();
+            return;
+        }
+
+        datasetSubmissionInProgress = true;
+        binding.addToDatasetBttn.setEnabled(false);
+        binding.addToDatasetBttn.setText("Sending...");
+
+        String userId = auth.getCurrentUser().getUid();
+        String uploadId = UUID.randomUUID().toString();
+        StorageReference ref = storage.getReference()
+                .child(STORAGE_DATASET_SUBMISSIONS)
+                .child(userId)
+                .child(uploadId);
+
+        ref.putFile(currentSelectedImage.getUri())
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) {
+                        throw task.getException() != null
+                                ? task.getException()
+                                : new IllegalStateException("Image upload failed");
+                    }
+                    return ref.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> saveDatasetSubmission(downloadUri.toString(), userNote))
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Dataset image upload failed", e);
+                    finishDatasetSubmission(false, "Could not upload the image. Please try again.");
+                });
+    }
+
+    private void saveDatasetSubmission(@NonNull String imageUrl, @NonNull String userNote) {
+        if (auth.getCurrentUser() == null) {
+            finishDatasetSubmission(false, "You need to be logged in to send an image.");
+            return;
+        }
+
+        String email = auth.getCurrentUser().getEmail();
+        Map<String, Object> submission = new HashMap<>();
+        submission.put("userId", auth.getCurrentUser().getUid());
+        submission.put("submittedByUsername", deriveSubmitterLabel(email));
+        submission.put("email", email != null ? email : "");
+        submission.put("status", "Pending Review");
+        submission.put("read", false);
+        submission.put("createdAt", Timestamp.now());
+        submission.put("imageUrl", imageUrl);
+        submission.put("imageSource", currentSelectedImage.getSource());
+        submission.put("displayName", currentSelectedImage.getDisplayName() != null
+                ? currentSelectedImage.getDisplayName()
+                : "");
+        submission.put("title", buildSubmissionTitle());
+        submission.put("landmarkName", currentLandmark != null ? currentLandmark.getDisplayName() : "");
+        submission.put("analysisStatus", latestState.getStatus().name());
+        submission.put("confidenceText", latestState.getConfidenceText() != null ? latestState.getConfidenceText() : "");
+        submission.put("message", latestState.getMessage() != null ? latestState.getMessage() : "");
+        submission.put("description", latestState.getDetail() != null ? latestState.getDetail() : "");
+        submission.put("userNote", userNote);
+        submission.put("gpsAvailable", gpsAvailable);
+        submission.put("gpsPermissionGranted", gpsPermissionGranted);
+        submission.put("usedGps", latestState.isUsedGps());
+        submission.put("gpsSupportedResult", latestState.isGpsSupportedResult());
+        submission.put("imageOnlyResult", latestState.isImageOnlyResult());
+        submission.put("userDistanceToLandmarkMeters", latestState.getUserDistanceToLandmarkMeters());
+
+        if (userLatitude != null) {
+            submission.put("userLatitude", userLatitude);
+        }
+        if (userLongitude != null) {
+            submission.put("userLongitude", userLongitude);
+        }
+
+        db.collection(COLLECTION_DATASET_SUBMISSIONS)
+                .add(submission)
+                .addOnSuccessListener(documentReference ->
+                        finishDatasetSubmission(true, "Image sent for admin review. Thank you."))
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Dataset submission save failed", e);
+                    finishDatasetSubmission(false, "Could not save the submission. Please try again.");
+                });
+    }
+
+    private void finishDatasetSubmission(boolean success, @NonNull String message) {
+        datasetSubmissionInProgress = false;
+        binding.addToDatasetBttn.setEnabled(true);
+        binding.addToDatasetBttn.setText("Send Image");
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType) || auth.getCurrentUser() == null;
+    }
+
+    private void showDatasetAuthRequiredDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Log in to send an image")
+                .setMessage("We need an account before sending an image to the admin/development team. After you sign in, return here and send it again.")
+                .setPositiveButton("Log In", (dialog, which) -> {
+                    Intent intent = new Intent(this, Login.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Create Account", (dialog, which) -> {
+                    Intent intent = new Intent(this, GeneralRegistration.class);
+                    startActivity(intent);
+                })
+                .setNeutralButton("Cancel", null)
+                .show();
+    }
+
+    @NonNull
+    private String buildSubmissionTitle() {
+        if (currentLandmark != null) {
+            return currentLandmark.getDisplayName();
+        }
+        if (currentSelectedImage != null && currentSelectedImage.getDisplayName() != null
+                && !currentSelectedImage.getDisplayName().trim().isEmpty()) {
+            return currentSelectedImage.getDisplayName().trim();
+        }
+        return "CNN Dataset Submission";
+    }
+
+    @NonNull
+    private String deriveSubmitterLabel(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return "Authenticated User";
+        }
+        return email;
     }
 }

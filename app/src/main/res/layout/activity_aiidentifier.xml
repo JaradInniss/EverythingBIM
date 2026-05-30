@@ -366,7 +366,7 @@
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
                     android:gravity="center"
-                    android:text="Send Images(s)"
+                    android:text="Send Image"
                     android:textColor="@color/white"
                     android:textSize="12sp"
                     android:fontFamily="@font/roboto_medium"
