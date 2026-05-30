@@ -27,14 +27,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBottomSheet.NearbyActionsListener {
-    private static final double PARLIAMENT_LATITUDE = 13.0969861d;
-    private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
-
     private ActivityAiidentifierBinding binding;
     private AIIdentifierViewModel viewModel;
     private NearbyLocationsAdapter nearbyLocationsAdapter;
     private final ArrayList<NearbySavedLocation> currentNearbyLocations = new ArrayList<>();
     private final LinkedHashMap<Long, NearbySavedLocation> selectedRouteLocations = new LinkedHashMap<>();
+    private DemoLandmark currentLandmark;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,6 +147,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 break;
             case RESULT:
                 if (state.getLandmark() != null) {
+                    currentLandmark = state.getLandmark();
                     binding.identifierResultTv.setText(state.getLandmark().getDisplayName());
                     binding.identifierConfidenceScoreTv.setText(
                             state.getConfidenceText() != null ? state.getConfidenceText() : "--");
@@ -164,6 +163,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 }
                 break;
             case UNCERTAIN:
+                currentLandmark = null;
                 binding.identifierResultTv.setText("Uncertain Match");
                 binding.identifierConfidenceScoreTv.setText(
                         state.getConfidenceText() != null ? state.getConfidenceText() : "--");
@@ -176,6 +176,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                         state.getConfidenceText() != null ? state.getConfidenceText() : "--");
                 break;
             case UNKNOWN:
+                currentLandmark = null;
                 binding.identifierResultTv.setText("Unknown Location");
                 binding.identifierConfidenceScoreTv.setText("--");
                 applyUnknownCopy();
@@ -185,6 +186,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 binding.negativeConfidenceRow.setVisibility(View.GONE);
                 break;
             case ERROR:
+                currentLandmark = null;
                 String errorMessage = "Error: " + (state.getMessage() != null ? state.getMessage() : "Unknown");
                 binding.identifierResultTv.setText(errorMessage);
                 binding.identifierConfidenceScoreTv.setText("--");
@@ -202,6 +204,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     }
 
     private void clearNearbyUi() {
+        currentLandmark = null;
         currentNearbyLocations.clear();
         selectedRouteLocations.clear();
         nearbyLocationsAdapter.submitList(java.util.Collections.emptyList());
@@ -221,12 +224,15 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     }
 
     private void openParliamentOnMap() {
+        if (currentLandmark == null) {
+            return;
+        }
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, "Barbados Parliament Buildings");
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, currentLandmark.getLatitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, currentLandmark.getLongitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, currentLandmark.getDisplayName());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, currentLandmark.getDescription());
         startActivity(intent);
     }
 
@@ -255,9 +261,12 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         if (selectedLocations.isEmpty()) {
             return;
         }
+        if (currentLandmark == null) {
+            return;
+        }
 
         StringBuilder url = new StringBuilder("https://www.google.com/maps/dir/?api=1")
-                .append("&origin=").append(PARLIAMENT_LATITUDE).append(",").append(PARLIAMENT_LONGITUDE)
+                .append("&origin=").append(currentLandmark.getLatitude()).append(",").append(currentLandmark.getLongitude())
                 .append("&travelmode=walking");
 
         NearbySavedLocation destination = selectedLocations.get(selectedLocations.size() - 1);

@@ -19,9 +19,15 @@ public class ParliamentClassifier implements AutoCloseable {
     private static final int INPUT_SIZE = 224;
     private static final int CHANNEL_COUNT = 3;
     private static final float PARLIAMENT_THRESHOLD = 0.80f;
-    private static final float OTHER_THRESHOLD = 0.45f;
+    private static final float CONFIDENCE_THRESHOLD = 0.80f;
+    private static final float UNCERTAIN_THRESHOLD = 0.45f;
+    private static final int OUTPUT_CLASS_COUNT = 3;
+    private static final int INDEX_KENSINGTON_OVAL = 0;
+    private static final int INDEX_OTHER = 1;
+    private static final int INDEX_PARLIAMENT = 2;
 
     public static final String LABEL_PARLIAMENT = "parliament";
+    public static final String LABEL_KENSINGTON_OVAL = "kensington_oval";
     public static final String LABEL_OTHER = "other";
     public static final String LABEL_UNCERTAIN = "uncertain";
 
@@ -48,20 +54,27 @@ public class ParliamentClassifier implements AutoCloseable {
         }
         inputBuffer.rewind();
 
-        float[][] output = new float[1][1];
+        float[][] output = new float[1][OUTPUT_CLASS_COUNT];
         interpreter.run(inputBuffer, output);
 
-        float parliamentProbability = Math.max(0f, Math.min(1f, output[0][0]));
-        float otherProbability = 1f - parliamentProbability;
+        float kensingtonProbability = clampProbability(output[0][INDEX_KENSINGTON_OVAL]);
+        float otherProbability = clampProbability(output[0][INDEX_OTHER]);
+        float parliamentProbability = clampProbability(output[0][INDEX_PARLIAMENT]);
+        float topProbability = Math.max(parliamentProbability, Math.max(kensingtonProbability, otherProbability));
+
         String label;
         if (parliamentProbability >= PARLIAMENT_THRESHOLD) {
             label = LABEL_PARLIAMENT;
-        } else if (parliamentProbability <= OTHER_THRESHOLD) {
+        } else if (kensingtonProbability >= CONFIDENCE_THRESHOLD) {
+            label = LABEL_KENSINGTON_OVAL;
+        } else if (otherProbability >= CONFIDENCE_THRESHOLD) {
             label = LABEL_OTHER;
-        } else {
+        } else if (topProbability >= UNCERTAIN_THRESHOLD) {
             label = LABEL_UNCERTAIN;
+        } else {
+            label = LABEL_OTHER;
         }
-        return new Result(label, parliamentProbability, otherProbability);
+        return new Result(label, parliamentProbability, kensingtonProbability, otherProbability, topProbability);
     }
 
     @Override
@@ -82,15 +95,27 @@ public class ParliamentClassifier implements AutoCloseable {
         }
     }
 
+    private float clampProbability(float value) {
+        return Math.max(0f, Math.min(1f, value));
+    }
+
     public static class Result {
         private final String label;
         private final float parliamentProbability;
+        private final float kensingtonProbability;
         private final float otherProbability;
+        private final float topProbability;
 
-        public Result(@NonNull String label, float parliamentProbability, float otherProbability) {
+        public Result(@NonNull String label,
+                      float parliamentProbability,
+                      float kensingtonProbability,
+                      float otherProbability,
+                      float topProbability) {
             this.label = label;
             this.parliamentProbability = parliamentProbability;
+            this.kensingtonProbability = kensingtonProbability;
             this.otherProbability = otherProbability;
+            this.topProbability = topProbability;
         }
 
         @NonNull
@@ -102,8 +127,16 @@ public class ParliamentClassifier implements AutoCloseable {
             return parliamentProbability;
         }
 
+        public float getKensingtonProbability() {
+            return kensingtonProbability;
+        }
+
         public float getOtherProbability() {
             return otherProbability;
+        }
+
+        public float getTopProbability() {
+            return topProbability;
         }
     }
 }
