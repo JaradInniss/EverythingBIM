@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.everythingbim.ActivityLogger;
 import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.google.firebase.Timestamp;
@@ -28,6 +29,7 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
 
     private FirebaseFirestore db;
     private String docId;
+    private ActivityLogger activityLogger;
 
     private TextView titleTv;
     private TextView statusTv;
@@ -65,6 +67,7 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         db = FirebaseFirestore.getInstance();
+        activityLogger = new ActivityLogger(requireContext());
         docId = getArguments() != null ? getArguments().getString(ARG_DOC_ID) : null;
 
         titleTv = view.findViewById(R.id.dataset_detail_title);
@@ -102,7 +105,18 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
         db.collection(COLLECTION_DATASET_SUBMISSIONS)
                 .document(docId)
                 .get()
-                .addOnSuccessListener(this::bindSubmission)
+                .addOnSuccessListener(document -> {
+                    bindSubmission(document);
+                    if (document.exists()) {
+                        String title = firstNonEmpty(
+                                document.getString("title"),
+                                document.getString("landmarkName"),
+                                document.getString("displayName"),
+                                "Dataset Image Submission"
+                        );
+                        activityLogger.logView(ActivityLogger.TYPE_DATASET, title, docId);
+                    }
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(requireContext(), "Could not load submission.", Toast.LENGTH_SHORT).show());
     }
@@ -180,6 +194,17 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
                 .update("status", status, "read", true)
                 .addOnSuccessListener(unused -> {
                     statusTv.setText(status);
+                    String action = "Reviewed".equals(status)
+                            ? ActivityLogger.ACTION_VIEWED
+                            : ("Accepted".equals(status)
+                            ? ActivityLogger.ACTION_APPROVED
+                            : ActivityLogger.ACTION_REJECTED);
+                    activityLogger.logActivity(
+                            ActivityLogger.TYPE_DATASET,
+                            action,
+                            titleTv.getText().toString(),
+                            docId
+                    );
                     Toast.makeText(requireContext(), "Submission updated.", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e ->

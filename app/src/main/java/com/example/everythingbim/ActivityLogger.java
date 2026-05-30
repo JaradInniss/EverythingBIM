@@ -49,6 +49,7 @@ public class ActivityLogger {
     public static final String TYPE_BUSINESS = "Business";
     public static final String TYPE_LOCATION = "Location";
     public static final String TYPE_INFO = "Info";
+    public static final String TYPE_DATASET = "Dataset";
 
     // Action types
     public static final String ACTION_VIEWED = "Viewed";
