@@ -21,7 +21,7 @@ public class HomeUiState {
 
     private final Status status;
     private final SelectedImage selectedImage;
-    private final DemoLandmark landmark;
+    private final Landmark landmark;
     private final String confidenceText;
     private final String message;
     private final String detail;
@@ -36,7 +36,7 @@ public class HomeUiState {
 
     private HomeUiState(@NonNull Status status,
                         @Nullable SelectedImage selectedImage,
-                        @Nullable DemoLandmark landmark,
+                        @Nullable Landmark landmark,
                         @Nullable String confidenceText,
                         @Nullable String message,
                         @Nullable String detail,
@@ -81,7 +81,7 @@ public class HomeUiState {
 
     @NonNull
     public static HomeUiState result(@NonNull SelectedImage selectedImage,
-                                     @NonNull DemoLandmark landmark,
+                                     @NonNull Landmark landmark,
                                      @NonNull String confidenceText,
                                      @NonNull String detail,
                                      boolean gpsAvailable,
@@ -140,7 +140,7 @@ public class HomeUiState {
     }
 
     @Nullable
-    public DemoLandmark getLandmark() {
+    public Landmark getLandmark() {
         return landmark;
     }
 

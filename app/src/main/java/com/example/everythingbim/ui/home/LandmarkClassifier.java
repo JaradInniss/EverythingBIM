@@ -14,7 +14,7 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class ParliamentClassifier implements AutoCloseable {
+public class LandmarkClassifier implements AutoCloseable {
     private static final String MODEL_ASSET_NAME = "parliament_classifier.tflite";
     private static final int INPUT_SIZE = 224;
     private static final int CHANNEL_COUNT = 3;
@@ -33,7 +33,7 @@ public class ParliamentClassifier implements AutoCloseable {
 
     private final Interpreter interpreter;
 
-    public ParliamentClassifier(@NonNull Context context) throws IOException {
+    public LandmarkClassifier(@NonNull Context context) throws IOException {
         Interpreter.Options options = new Interpreter.Options();
         options.setNumThreads(4);
         interpreter = new Interpreter(loadModelFile(context), options);

@@ -19,9 +19,8 @@ import java.util.Map;
 
 public class NearbySavedLocationsRepository {
     private static final int DEFAULT_RADIUS_METERS = 1000;
-    private static final int DEFAULT_MAX_RESULTS = 5;
     private static final String SEEDED_BY = "seed_data";
-    private static final int EXPECTED_SEED_COUNT = 8;
+    private static final int EXPECTED_SEED_COUNT = 12;
 
     private final LocationDao locationDao;
 
@@ -30,7 +29,7 @@ public class NearbySavedLocationsRepository {
     }
 
     @NonNull
-    public NearbySavedLocationsResult getNearbySavedLocations(@NonNull DemoLandmark landmark,
+    public NearbySavedLocationsResult getNearbySavedLocations(@NonNull Landmark landmark,
                                                               @Nullable Double userLatitude,
                                                               @Nullable Double userLongitude) {
         ensureSeedLocations();
@@ -89,10 +88,6 @@ public class NearbySavedLocationsRepository {
 
         List<NearbySavedLocation> nearbyLocations = new ArrayList<>(nearbyLocationsByKey.values());
         nearbyLocations.sort(Comparator.comparingDouble(NearbySavedLocation::getDistanceFromParliamentMeters));
-        if (nearbyLocations.size() > DEFAULT_MAX_RESULTS) {
-            nearbyLocations = new ArrayList<>(nearbyLocations.subList(0, DEFAULT_MAX_RESULTS));
-        }
-
         return new NearbySavedLocationsResult(
                 landmark.getDisplayName(),
                 landmark.getLatitude(),

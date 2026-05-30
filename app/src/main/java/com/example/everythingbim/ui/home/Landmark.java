@@ -2,7 +2,7 @@ package com.example.everythingbim.ui.home;
 
 import androidx.annotation.NonNull;
 
-public class DemoLandmark {
+public class Landmark {
     private final String id;
     private final String token;
     private final String displayName;
@@ -11,13 +11,13 @@ public class DemoLandmark {
     private final double longitude;
     private final int nearbyRadiusMeters;
 
-    public DemoLandmark(@NonNull String id,
-                        @NonNull String token,
-                        @NonNull String displayName,
-                        @NonNull String description,
-                        double latitude,
-                        double longitude,
-                        int nearbyRadiusMeters) {
+    public Landmark(@NonNull String id,
+                    @NonNull String token,
+                    @NonNull String displayName,
+                    @NonNull String description,
+                    double latitude,
+                    double longitude,
+                    int nearbyRadiusMeters) {
         this.id = id;
         this.token = token;
         this.displayName = displayName;
