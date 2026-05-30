@@ -34,7 +34,7 @@ import com.example.everythingbim.R;
 public class AdminUserRequestsFragment extends Fragment {
 
     // ─── Bundle args ─────────────────────────
-    // Pass REQUEST_TYPE = "location" or "info"
+    // Pass REQUEST_TYPE = "location", "info", or "dataset"
     public static final String ARG_TYPE = "request_type";
 
     // ─── Read filter ─────────────────────────
@@ -58,7 +58,7 @@ public class AdminUserRequestsFragment extends Fragment {
     private int currentLoadId = 0;
 
     // ─── Request type ─────────────────────────
-    private String requestType = "info"; // "info" or "location"
+    private String requestType = "info"; // "info", "location", or "dataset"
 
     // ────────────────────────────────────────────────────────
     // FACTORY
@@ -98,9 +98,13 @@ public class AdminUserRequestsFragment extends Fragment {
 
         // Update header labels based on type
         TextView sectionTitle = view.findViewById(R.id.req_list_section_title);
-        sectionTitle.setText(requestType.equals("location")
-                ? "Add Location Requests"
-                : "Add Information Requests");
+        if (requestType.equals("location")) {
+            sectionTitle.setText("Add Location Requests");
+        } else if (requestType.equals("dataset")) {
+            sectionTitle.setText("Dataset Image Submissions");
+        } else {
+            sectionTitle.setText("Add Information Requests");
+        }
 
         // Back button
         view.findViewById(R.id.req_list_back_btn).setOnClickListener(v ->
@@ -144,9 +148,7 @@ public class AdminUserRequestsFragment extends Fragment {
             listenerRegistration.remove();
         }
 
-        String collection = requestType.equals("location")
-                ? "add_location_requests"
-                : "add_info_requests";
+        String collection = getCollectionName();
 
         listenerRegistration = db.collection(collection)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -184,6 +186,8 @@ public class AdminUserRequestsFragment extends Fragment {
                             item.description = doc.getString("description") != null ? doc.getString("description") : "";
                             item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
                             item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+                            item.imageUrl = doc.getString("imageUrl") != null ? doc.getString("imageUrl") : "";
+                            item.userNote = doc.getString("userNote") != null ? doc.getString("userNote") : "";
 
                             Double lat = doc.getDouble("latitude");
                             Double lng = doc.getDouble("longitude");
@@ -247,6 +251,7 @@ public class AdminUserRequestsFragment extends Fragment {
     }
 
     private void addPlaceholders() {
+        allItems.clear();
         if (requestType.equals("location")) {
             RequestItem item1 = new RequestItem("#201","Hackerton's Pub","User","2026/02/11",false,"ph_loc_201");
             item1.locationName = "Hackerton's Pub";
@@ -277,6 +282,18 @@ public class AdminUserRequestsFragment extends Fragment {
             item3.latitude = 13.15678;
             item3.longitude = -59.61234;
             allItems.add(item3);
+        } else if (requestType.equals("dataset")) {
+            RequestItem item1 = new RequestItem("#311","Unknown Waterfront Landmark","admin01@test.com","2026/05/31",false,"ph_dataset_311");
+            item1.status = "Pending Review";
+            item1.description = "Low-confidence CNN result submitted for dataset review.";
+            item1.reason = "User believes this landmark is not yet represented in the model.";
+            allItems.add(item1);
+
+            RequestItem item2 = new RequestItem("#310","Cricket Venue Detail Shot","admin01@test.com","2026/05/30",true,"ph_dataset_310");
+            item2.status = "Reviewed";
+            item2.description = "Close-up venue photo shared to improve false-negative handling.";
+            item2.reason = "Helpful candidate for future training data expansion.";
+            allItems.add(item2);
         } else {
             RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
             item1.locationName = "The Emancipation Statue";
@@ -306,6 +323,17 @@ public class AdminUserRequestsFragment extends Fragment {
             allItems.add(item3);
         }
         countTv.setText(String.valueOf(allItems.size()));
+    }
+
+    @NonNull
+    private String getCollectionName() {
+        if ("location".equals(requestType)) {
+            return "add_location_requests";
+        }
+        if ("dataset".equals(requestType)) {
+            return "dataset_image_submissions";
+        }
+        return "add_info_requests";
     }
 
     // ────────────────────────────────────────────────────────
@@ -444,6 +472,8 @@ public class AdminUserRequestsFragment extends Fragment {
                                 item.latitude,
                                 item.longitude
                         );
+                    } else if ("dataset".equals(requestType)) {
+                        detail = AdminDatasetSubmissionDetailFragment.newInstance(item.docId);
                     } else {
                         detail = AdminBizVerificationDetailFragment.newInstance(
                                 item.docId,
@@ -497,6 +527,7 @@ public class AdminUserRequestsFragment extends Fragment {
         // Location & Info request fields
         String locationName, description, placeType, reason, coordinates;
         double latitude, longitude;
+        String imageUrl, userNote;
 
         // Business verification fields
         String phone, email, address, businessType;
@@ -514,6 +545,8 @@ public class AdminUserRequestsFragment extends Fragment {
             this.coordinates = "";
             this.latitude = 0.0;
             this.longitude = 0.0;
+            this.imageUrl = "";
+            this.userNote = "";
             this.phone = "";
             this.email = "";
             this.address = "";

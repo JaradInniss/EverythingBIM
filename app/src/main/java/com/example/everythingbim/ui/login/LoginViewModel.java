@@ -25,6 +25,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
@@ -173,45 +174,73 @@ public class LoginViewModel extends ViewModel {
 
     private void fetchUserTypeAndNavigate(String userId) {
         isLoading.setValue(true);
-        // First, try to fetch from 'users' collection (general users)
-        db.collection("users").document(userId).get()
+        UserType selected = selectedUserType.getValue() != null
+                ? selectedUserType.getValue()
+                : UserType.GENERAL;
+
+        String[] collectionsToCheck = selected == UserType.ADMIN
+                ? new String[]{"admins", "users", "businesses"}
+                : new String[]{"users", "businesses", "admins"};
+
+        fetchUserTypeFromCollections(userId, collectionsToCheck, 0);
+    }
+
+    private void fetchUserTypeFromCollections(@NonNull String userId,
+                                              @NonNull String[] collectionsToCheck,
+                                              int index) {
+        if (index >= collectionsToCheck.length) {
+            isLoading.setValue(false);
+            setErrorField(R.id.login_error, "User document not found");
+            return;
+        }
+
+        String collectionName = collectionsToCheck[index];
+        db.collection(collectionName).document(userId).get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document.exists()) {
-                            // General user found
-                            String userType = document.getString("userType");
-                            if (userType != null) {
-                                saveAndNavigate(userType, userId);
-                            } else {
-                                setErrorField(R.id.login_error, "User type not found");
-                            }
-                            return; // success, no need to check businesses
-                        }
+                    if (!task.isSuccessful()) {
+                        isLoading.setValue(false);
+                        String error = task.getException() != null
+                                ? task.getException().getMessage()
+                                : "Failed to fetch user data";
+                        setErrorField(R.id.login_error, error);
+                        return;
                     }
-                    // If not found in 'users', try 'businesses'
-                    db.collection("businesses").document(userId).get()
-                            .addOnCompleteListener(task2 -> {
-                                isLoading.setValue(false);
-                                if (task2.isSuccessful()) {
-                                    DocumentSnapshot doc = task2.getResult();
-                                    if (doc.exists()) {
-                                        String userType = doc.getString("userType");
-                                        if (userType != null) {
-                                            saveAndNavigate(userType, userId);
-                                        } else {
-                                            setErrorField(R.id.login_error, "User type not found");
-                                        }
-                                    } else {
-                                        setErrorField(R.id.login_error, "User document not found");
-                                    }
-                                } else {
-                                    String error = task2.getException() != null ?
-                                            task2.getException().getMessage() : "Failed to fetch user data";
-                                    setErrorField(R.id.login_error, error);
-                                }
-                            });
+
+                    DocumentSnapshot document = task.getResult();
+                    if (document != null && document.exists()) {
+                        String resolvedUserType = normalizeResolvedUserType(
+                                document.getString("userType"),
+                                collectionName
+                        );
+                        if (resolvedUserType != null) {
+                            isLoading.setValue(false);
+                            saveAndNavigate(resolvedUserType, userId);
+                        } else {
+                            isLoading.setValue(false);
+                            setErrorField(R.id.login_error, "User type not found");
+                        }
+                        return;
+                    }
+
+                    fetchUserTypeFromCollections(userId, collectionsToCheck, index + 1);
                 });
+    }
+
+    private String normalizeResolvedUserType(String rawUserType, String sourceCollection) {
+        if ("admins".equals(sourceCollection)) {
+            return "admin";
+        }
+        if (rawUserType == null || rawUserType.trim().isEmpty()) {
+            return null;
+        }
+
+        String normalized = rawUserType.trim().toLowerCase(Locale.US);
+        if ("admin".equals(normalized)
+                || MainActivity.USER_TYPE_GENERAL.equals(normalized)
+                || MainActivity.USER_TYPE_BUSINESS.equals(normalized)) {
+            return normalized;
+        }
+        return null;
     }
 
     private void saveAndNavigate(String userType, String userId) {

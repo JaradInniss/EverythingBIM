@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String USER_TYPE_GUEST = "guest";
     public static final String USER_TYPE_GENERAL = "general";
     public static final String USER_TYPE_BUSINESS = "business";
+    public static final String USER_TYPE_ADMIN = "admin";
     public static final String EXTRA_PENDING_ACTION = "pending_action";
     public static final String ACTION_CREATE_POST = "action_create_post";
     public static final String ACTION_ADD_LOCATION_REQUEST = "action_add_location_request";
@@ -214,6 +215,9 @@ public class MainActivity extends AppCompatActivity {
         }
         if (USER_TYPE_GENERAL.equals(normalized)) {
             return USER_TYPE_GENERAL;
+        }
+        if (USER_TYPE_ADMIN.equals(normalized)) {
+            return USER_TYPE_ADMIN;
         }
         return USER_TYPE_GUEST;
     }
