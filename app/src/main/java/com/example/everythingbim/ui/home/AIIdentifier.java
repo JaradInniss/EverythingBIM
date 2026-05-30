@@ -27,12 +27,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBottomSheet.NearbyActionsListener {
+    private static final int NEARBY_PAGE_SIZE = 5;
+
     private ActivityAiidentifierBinding binding;
     private AIIdentifierViewModel viewModel;
     private NearbyLocationsAdapter nearbyLocationsAdapter;
     private final ArrayList<NearbySavedLocation> currentNearbyLocations = new ArrayList<>();
     private final LinkedHashMap<Long, NearbySavedLocation> selectedRouteLocations = new LinkedHashMap<>();
-    private DemoLandmark currentLandmark;
+    private Landmark currentLandmark;
+    private int visibleNearbyCount = NEARBY_PAGE_SIZE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +70,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         binding.nearbyAttractionsRv.setLayoutManager(
                 new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         binding.nearbyAttractionsRv.setAdapter(nearbyLocationsAdapter);
+        updateNearbyPreview();
     }
 
     private void handleIntent() {
@@ -156,7 +160,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                     currentNearbyLocations.clear();
                     currentNearbyLocations.addAll(state.getNearbyLocations());
                     selectedRouteLocations.clear();
-                    nearbyLocationsAdapter.submitList(state.getNearbyLocations());
+                    updateNearbyPreview();
                     binding.positiveResultContainer.setVisibility(View.VISIBLE);
                     binding.negativeResultContainer.setVisibility(View.GONE);
                     binding.negativeConfidenceRow.setVisibility(View.GONE);
@@ -207,7 +211,12 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         currentLandmark = null;
         currentNearbyLocations.clear();
         selectedRouteLocations.clear();
-        nearbyLocationsAdapter.submitList(java.util.Collections.emptyList());
+        updateNearbyPreview();
+    }
+
+    private void updateNearbyPreview() {
+        int previewCount = Math.min(currentNearbyLocations.size(), NEARBY_PAGE_SIZE);
+        nearbyLocationsAdapter.submitList(new ArrayList<>(currentNearbyLocations.subList(0, previewCount)));
     }
 
     private void openNearbySheet() {
@@ -217,7 +226,10 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
 
         NearbyLocationsBottomSheet bottomSheet = NearbyLocationsBottomSheet.newInstance(
                 new ArrayList<>(currentNearbyLocations),
-                new ArrayList<>(selectedRouteLocations.keySet())
+                new ArrayList<>(selectedRouteLocations.keySet()),
+                currentLandmark != null ? currentLandmark.getDisplayName() : null,
+                currentLandmark != null ? currentLandmark.getLatitude() : 0d,
+                currentLandmark != null ? currentLandmark.getLongitude() : 0d
         );
         bottomSheet.setActionsListener(this);
         bottomSheet.show(getSupportFragmentManager(), "nearby_locations_sheet");

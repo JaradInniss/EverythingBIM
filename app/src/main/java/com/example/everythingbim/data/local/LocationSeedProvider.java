@@ -120,6 +120,58 @@ public final class LocationSeedProvider {
                 "Fairchild Street, Bridgetown, Barbados"
         ));
 
+        locations.add(new LocationEntity(
+                "Brandons Beach",
+                13.1028d,
+                -59.6246d,
+                DEFAULT_RATING,
+                VERIFIED,
+                ADDED_BY,
+                "Popular west-coast beach close to Bridgetown and a relaxed stop to pair with a Kensington Oval route.",
+                "beach",
+                "brandons_beach",
+                "Brandons Beach, St. Michael, Barbados"
+        ));
+
+        locations.add(new LocationEntity(
+                "The Careenage",
+                13.0967d,
+                -59.6146d,
+                DEFAULT_RATING,
+                VERIFIED,
+                ADDED_BY,
+                "Scenic waterfront stretch in central Bridgetown known for boardwalk views, moored boats, and easy access to nearby heritage sites.",
+                "waterfront",
+                "the_careenage",
+                "The Careenage, Bridgetown, Barbados"
+        ));
+
+        locations.add(new LocationEntity(
+                "Cheapside Market",
+                13.1012d,
+                -59.6188d,
+                DEFAULT_RATING,
+                VERIFIED,
+                ADDED_BY,
+                "Bustling Bridgetown market area that adds everyday local culture and food-shopping energy to nearby walking routes.",
+                "market",
+                "cheapside_market",
+                "Cheapside, Bridgetown, Barbados"
+        ));
+
+        locations.add(new LocationEntity(
+                "Independence Square",
+                13.0965d,
+                -59.6129d,
+                DEFAULT_RATING,
+                VERIFIED,
+                ADDED_BY,
+                "Central public square near the waterfront that works well as a civic stop on Bridgetown routes anchored around Kensington Oval.",
+                "civic",
+                "independence_square",
+                "Independence Square, Bridgetown, Barbados"
+        ));
+
         return locations;
     }
 }
