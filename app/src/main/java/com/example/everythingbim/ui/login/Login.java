@@ -250,6 +250,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                         || com.example.everythingbim.ui.registration.GeneralRegistration.class.equals(command.getDestination())
                         || com.example.everythingbim.ui.registration.BusinessRegistration.class.equals(command.getDestination()))) {
                     intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, pendingAction);
+                    copyDatasetResumeExtras(getIntent(), intent);
                 }
                 startActivity(intent);
                 finish(); // optional: remove login from back stack
@@ -271,6 +272,35 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             viewModel.setSelectedUserType(UserType.BUSINESS);
         } else if (id == R.id.create_account_opt) {
             viewModel.onCreateAccountClicked();
+        }
+    }
+
+    private void copyDatasetResumeExtras(Intent source, Intent destination) {
+        if (source == null || destination == null) {
+            return;
+        }
+
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_IMAGE_URI);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_IMAGE_SOURCE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_DISPLAY_NAME);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_GPS_AVAILABLE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_GPS_PERMISSION_GRANTED);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_USER_LATITUDE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_USER_LONGITUDE);
+    }
+
+    private void copyExtraIfPresent(Intent source, Intent destination, String key) {
+        if (!source.hasExtra(key) || source.getExtras() == null) {
+            return;
+        }
+
+        Object value = source.getExtras().get(key);
+        if (value instanceof String) {
+            destination.putExtra(key, (String) value);
+        } else if (value instanceof Boolean) {
+            destination.putExtra(key, (Boolean) value);
+        } else if (value instanceof Double) {
+            destination.putExtra(key, (Double) value);
         }
     }
 }

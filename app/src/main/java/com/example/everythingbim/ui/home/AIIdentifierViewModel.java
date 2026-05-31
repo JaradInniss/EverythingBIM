@@ -21,16 +21,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AIIdentifierViewModel extends AndroidViewModel {
-    private static final float PARLIAMENT_CONFIRMATION_THRESHOLD = 0.80f;
     private static final float PARLIAMENT_UNCERTAIN_THRESHOLD = 0.45f;
     private static final float GPS_SUPPORT_DISTANCE_METERS = 3000f;
 
     private final MutableLiveData<HomeUiState> uiState = new MutableLiveData<>(HomeUiState.idle());
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final DemoLandmarkRepository landmarkRepository = new DemoLandmarkRepository();
+    private final LandmarkRepository landmarkRepository = new LandmarkRepository();
     private final NearbySavedLocationsRepository nearbySavedLocationsRepository;
 
-    private ParliamentClassifier classifier;
+    private LandmarkClassifier classifier;
     private SelectedImage selectedImage;
     private boolean gpsAvailable;
     private boolean locationPermissionGranted;
@@ -85,7 +84,7 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         executorService.execute(() -> {
             try {
                 Bitmap bitmap = readBitmap(selectedImage.getUri());
-                ParliamentClassifier.Result prediction = getClassifier().predict(bitmap);
+                LandmarkClassifier.Result prediction = getClassifier().predict(bitmap);
                 handlePrediction(prediction);
             } catch (Exception exception) {
                 uiState.postValue(HomeUiState.error(
@@ -96,79 +95,85 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         });
     }
 
-    private void handlePrediction(@NonNull ParliamentClassifier.Result prediction) {
+    private void handlePrediction(@NonNull LandmarkClassifier.Result prediction) {
         if (selectedImage == null) {
             return;
         }
 
-        DemoLandmark landmark = landmarkRepository.findByIdOrToken("parliament");
-        if (landmark == null) {
-            uiState.postValue(HomeUiState.error(selectedImage, "Parliament metadata is unavailable."));
-            return;
-        }
-
         float parliamentProbability = prediction.getParliamentProbability();
-        double userDistanceToParliament = computeDistanceToLandmark(landmark);
+        float kensingtonProbability = prediction.getKensingtonProbability();
+        float topProbability = prediction.getTopProbability();
         boolean canUseGps = gpsAvailable && userLatitude != null && userLongitude != null;
         boolean isGalleryImage = SelectedImage.SOURCE_GALLERY.equalsIgnoreCase(selectedImage.getSource());
+        Landmark predictedLandmark = resolveLandmark(prediction);
 
-        if (ParliamentClassifier.LABEL_PARLIAMENT.equalsIgnoreCase(prediction.getLabel())
-                || parliamentProbability >= PARLIAMENT_CONFIRMATION_THRESHOLD) {
-            if (canUseGps && !isGalleryImage && userDistanceToParliament > GPS_SUPPORT_DISTANCE_METERS) {
+        if (predictedLandmark != null && isConfirmedPrediction(prediction)) {
+            double userDistanceToLandmark = computeDistanceToLandmark(predictedLandmark);
+
+            if (isParliament(predictedLandmark)
+                    && canUseGps
+                    && !isGalleryImage
+                    && userDistanceToLandmark > GPS_SUPPORT_DISTANCE_METERS) {
                 uiState.postValue(HomeUiState.uncertain(
                         selectedImage,
                         formatConfidence(parliamentProbability),
                         "Possible Parliament match",
                         "The image looks like Parliament, but your current GPS is far from Bridgetown. Because this was a camera image, the app is treating it as uncertain instead of confirmed."
-                                + "\nCurrent distance from Parliament: " + formatDistance((float) userDistanceToParliament),
+                                + "\nCurrent distance from Parliament: " + formatDistance((float) userDistanceToLandmark),
                         true,
                         true,
-                        userDistanceToParliament
+                        userDistanceToLandmark
                 ));
                 return;
             }
 
             NearbySavedLocationsResult nearbyResult = nearbySavedLocationsRepository.getNearbySavedLocations(
-                    landmark,
+                    predictedLandmark,
                     canUseGps ? userLatitude : null,
                     canUseGps ? userLongitude : null
             );
 
             String detail = buildConfirmedDetail(
-                    landmark,
+                    predictedLandmark,
                     canUseGps,
                     isGalleryImage,
-                    userDistanceToParliament,
+                    userDistanceToLandmark,
                     nearbyResult.getNearbyLocations().size()
             );
 
             uiState.postValue(HomeUiState.result(
                     selectedImage,
-                    landmark,
-                    formatConfidence(parliamentProbability),
+                    predictedLandmark,
+                    formatConfidence(getDisplayProbability(prediction, predictedLandmark)),
                     detail,
                     gpsAvailable,
                     canUseGps && !isGalleryImage,
-                    canUseGps && userDistanceToParliament <= GPS_SUPPORT_DISTANCE_METERS,
+                    !isParliament(predictedLandmark)
+                            || (canUseGps && userDistanceToLandmark <= GPS_SUPPORT_DISTANCE_METERS),
                     !canUseGps || isGalleryImage,
-                    canUseGps ? userDistanceToParliament : null,
+                    canUseGps ? userDistanceToLandmark : null,
                     nearbyResult.getNearbyLocations()
             ));
             return;
         }
 
-        if (ParliamentClassifier.LABEL_UNCERTAIN.equalsIgnoreCase(prediction.getLabel())
-                || parliamentProbability >= PARLIAMENT_UNCERTAIN_THRESHOLD) {
+        if (predictedLandmark != null
+                && (LandmarkClassifier.LABEL_UNCERTAIN.equalsIgnoreCase(prediction.getLabel())
+                || topProbability >= PARLIAMENT_UNCERTAIN_THRESHOLD
+                || parliamentProbability >= PARLIAMENT_UNCERTAIN_THRESHOLD
+                || kensingtonProbability >= PARLIAMENT_UNCERTAIN_THRESHOLD)) {
+            double userDistanceToLandmark = computeDistanceToLandmark(predictedLandmark);
+            String possibleName = predictedLandmark.getDisplayName();
             uiState.postValue(HomeUiState.uncertain(
                     selectedImage,
-                    formatConfidence(parliamentProbability),
-                    "Possible Parliament match",
-                    "The model sees some Parliament-like features, but this image is still too close to call confidently."
+                    formatConfidence(getDisplayProbability(prediction, predictedLandmark)),
+                    "Possible " + possibleName + " match",
+                    "The model sees some " + possibleName + "-like features, but this image is still too close to call confidently."
                             + "\nTry a clearer, front-facing photo with better lighting."
-                            + buildUncertainGpsHint(canUseGps, isGalleryImage, userDistanceToParliament),
+                            + buildUncertainGpsHint(predictedLandmark, canUseGps, isGalleryImage, userDistanceToLandmark),
                     gpsAvailable,
                     canUseGps && !isGalleryImage,
-                    canUseGps ? userDistanceToParliament : null
+                    canUseGps ? userDistanceToLandmark : null
             ));
             return;
         }
@@ -179,7 +184,7 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         ));
     }
 
-    private double computeDistanceToLandmark(@NonNull DemoLandmark landmark) {
+    private double computeDistanceToLandmark(@NonNull Landmark landmark) {
         if (userLatitude == null || userLongitude == null) {
             return Double.NaN;
         }
@@ -196,21 +201,30 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     }
 
     @NonNull
-    private String buildConfirmedDetail(@NonNull DemoLandmark landmark,
+    private String buildConfirmedDetail(@NonNull Landmark landmark,
                                         boolean canUseGps,
                                         boolean isGalleryImage,
-                                        double userDistanceToParliament,
+                                        double userDistanceToLandmark,
                                         int nearbyCount) {
         StringBuilder detail = new StringBuilder(landmark.getDescription());
+        String shortName = landmark.getDisplayName();
 
         if (!canUseGps) {
             detail.append("\nConfirmed by image only because current GPS was unavailable.");
         } else if (isGalleryImage) {
             detail.append("\nConfirmed by image. Current GPS was ignored because this is a gallery photo.");
-        } else if (userDistanceToParliament <= GPS_SUPPORT_DISTANCE_METERS) {
+        } else if (!isParliament(landmark) || userDistanceToLandmark <= GPS_SUPPORT_DISTANCE_METERS) {
             detail.append("\nLocation context available. You appear to be ")
-                    .append(formatDistance((float) userDistanceToParliament))
-                    .append(" from Parliament.");
+                    .append(formatDistance((float) userDistanceToLandmark))
+                    .append(" from ")
+                    .append(shortName)
+                    .append(".");
+        } else {
+            detail.append("\nImage match is strong, but current GPS is ")
+                    .append(formatDistance((float) userDistanceToLandmark))
+                    .append(" from ")
+                    .append(shortName)
+                    .append(".");
         }
 
         if (nearbyCount > 0) {
@@ -222,14 +236,57 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     }
 
     @NonNull
-    private String buildUncertainGpsHint(boolean canUseGps, boolean isGalleryImage, double userDistanceToParliament) {
+    private String buildUncertainGpsHint(@NonNull Landmark landmark,
+                                         boolean canUseGps,
+                                         boolean isGalleryImage,
+                                         double userDistanceToLandmark) {
         if (!canUseGps) {
             return "\nGPS was unavailable, so this result is based on the image only.";
         }
         if (isGalleryImage) {
             return "\nCurrent GPS was ignored because gallery images may have been taken earlier in a different place.";
         }
-        return "\nCurrent GPS is about " + formatDistance((float) userDistanceToParliament) + " from Parliament.";
+        return "\nCurrent GPS is about " + formatDistance((float) userDistanceToLandmark)
+                + " from " + landmark.getDisplayName() + ".";
+    }
+
+    @Nullable
+    private Landmark resolveLandmark(@NonNull LandmarkClassifier.Result prediction) {
+        if (LandmarkClassifier.LABEL_PARLIAMENT.equalsIgnoreCase(prediction.getLabel())) {
+            return landmarkRepository.findByIdOrToken("parliament");
+        }
+        if (LandmarkClassifier.LABEL_KENSINGTON_OVAL.equalsIgnoreCase(prediction.getLabel())) {
+            return landmarkRepository.findByIdOrToken("kensington");
+        }
+        if (prediction.getParliamentProbability() >= prediction.getKensingtonProbability()
+                && prediction.getParliamentProbability() >= prediction.getOtherProbability()) {
+            return landmarkRepository.findByIdOrToken("parliament");
+        }
+        if (prediction.getKensingtonProbability() > prediction.getParliamentProbability()
+                && prediction.getKensingtonProbability() >= prediction.getOtherProbability()) {
+            return landmarkRepository.findByIdOrToken("kensington");
+        }
+        return null;
+    }
+
+    private boolean isConfirmedPrediction(@NonNull LandmarkClassifier.Result prediction) {
+        return LandmarkClassifier.LABEL_PARLIAMENT.equalsIgnoreCase(prediction.getLabel())
+                || LandmarkClassifier.LABEL_KENSINGTON_OVAL.equalsIgnoreCase(prediction.getLabel());
+    }
+
+    private boolean isParliament(@NonNull Landmark landmark) {
+        return "parliament".equalsIgnoreCase(landmark.getId());
+    }
+
+    private float getDisplayProbability(@NonNull LandmarkClassifier.Result prediction,
+                                        @NonNull Landmark landmark) {
+        if (isParliament(landmark)) {
+            return prediction.getParliamentProbability();
+        }
+        if ("kensington".equalsIgnoreCase(landmark.getId())) {
+            return prediction.getKensingtonProbability();
+        }
+        return prediction.getTopProbability();
     }
 
     @NonNull
@@ -247,9 +304,9 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     }
 
     @NonNull
-    private ParliamentClassifier getClassifier() throws IOException {
+    private LandmarkClassifier getClassifier() throws IOException {
         if (classifier == null) {
-            classifier = new ParliamentClassifier(getApplication());
+            classifier = new LandmarkClassifier(getApplication());
         }
         return classifier;
     }

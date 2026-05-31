@@ -62,6 +62,15 @@ public class AdminFragment extends Fragment {
                 .commit();
     }
 
+    public void navigateToDatasetSubmissionDetail(String docId) {
+        AdminDatasetSubmissionDetailFragment detailFragment = AdminDatasetSubmissionDetailFragment.newInstance(docId);
+        getChildFragmentManager()
+                .beginTransaction()
+                .add(R.id.admin_fragment_container, detailFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     public void navigateToBizVerificationDetail(String docId) {
         AdminBizVerificationDetailFragment detailFragment = AdminBizVerificationDetailFragment.newInstance(docId);
         getChildFragmentManager()
@@ -77,6 +86,8 @@ public class AdminFragment extends Fragment {
             navigateToLocationRequestDetail(docId);
         } else if ("info".equals(requestType)) {
             navigateToInfoRequestDetail(docId);
+        } else if ("dataset".equals(requestType)) {
+            navigateToDatasetSubmissionDetail(docId);
         } else if ("business_verification".equals(requestType)) {
             navigateToBizVerificationDetail(docId);
         }

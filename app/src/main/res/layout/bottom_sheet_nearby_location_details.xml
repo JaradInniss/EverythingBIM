@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_rectangle_alice_blue"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Location Details"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:fontFamily="@font/roboto_bold" />
+
+        <TextView
+            android:id="@+id/nearby_detail_close_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_border_rectangle_gold"
+            android:gravity="center"
+            android:text="X"
+            android:textColor="@color/prussian_blue"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/nearby_detail_image"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:layout_marginTop="14dp"
+        android:background="@android:color/white"
+        android:padding="12dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_images" />
+
+    <TextView
+        android:id="@+id/nearby_detail_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:fontFamily="@font/roboto_bold" />
+
+    <TextView
+        android:id="@+id/nearby_detail_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="@color/space_indigo"
+        android:textSize="13sp"
+        android:fontFamily="@font/roboto_medium" />
+
+    <TextView
+        android:id="@+id/nearby_detail_distance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/space_indigo"
+        android:textSize="13sp"
+        android:fontFamily="@font/roboto_medium" />
+
+    <TextView
+        android:id="@+id/nearby_detail_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/black"
+        android:textSize="13sp"
+        android:fontFamily="@font/roboto_regular" />
+
+    <TextView
+        android:id="@+id/nearby_detail_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:fontFamily="@font/roboto_regular" />
+
+</LinearLayout>

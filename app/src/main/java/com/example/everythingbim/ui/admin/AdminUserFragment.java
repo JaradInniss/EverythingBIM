@@ -72,6 +72,7 @@ public class AdminUserFragment extends Fragment {
     // General lists
     private LinearLayout generalLocReqContainer;
     private LinearLayout generalInfoReqContainer;
+    private LinearLayout generalDatasetReqContainer;
 
     // Business lists
     private LinearLayout businessVerReqContainer;
@@ -83,6 +84,7 @@ public class AdminUserFragment extends Fragment {
     // ─── Data ────────────────────────────────
     private List<RequestItem> allLocReqs      = new ArrayList<>();
     private List<RequestItem> allInfoReqs     = new ArrayList<>();
+    private List<RequestItem> allDatasetReqs  = new ArrayList<>();
     private List<RequestItem> allBizVerReqs   = new ArrayList<>();
     private List<UserItem>    allUsers        = new ArrayList<>();
     private List<UserItem>   allBizUsers     = new ArrayList<>();
@@ -119,6 +121,7 @@ public class AdminUserFragment extends Fragment {
         // Bind general list containers
         generalLocReqContainer  = view.findViewById(R.id.general_locreq_container);
         generalInfoReqContainer = view.findViewById(R.id.general_inforeq_container);
+        generalDatasetReqContainer = view.findViewById(R.id.general_datasetreq_container);
 
         // Bind business containers
         businessVerReqContainer = view.findViewById(R.id.business_verreq_container);
@@ -172,6 +175,16 @@ public class AdminUserFragment extends Fragment {
                             AdminUserRequestsFragment.newInstance("info"))
                     .addToBackStack(null).commit();
         });
+
+        view.findViewById(R.id.general_datasetreq_view_all).setOnClickListener(v ->
+                {
+                    ReadStateManager.markDatasetSectionRead(requireContext());
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .add(R.id.admin_fragment_container,
+                                    AdminUserRequestsFragment.newInstance("dataset"))
+                            .addToBackStack(null).commit();
+                });
 
         // ── Search text watcher ───────────────
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -275,6 +288,7 @@ public class AdminUserFragment extends Fragment {
         if (activeTab == Tab.GENERAL) {
             renderGeneralLocReqs();
             renderGeneralInfoReqs();
+            renderGeneralDatasetReqs();
         } else if (activeTab == Tab.BUSINESS) {
             renderBusinessVerReqs();
         }
@@ -314,6 +328,8 @@ public class AdminUserFragment extends Fragment {
             ReadStateManager.markLocationSectionRead(requireContext());
         } else if ("info".equals(sectionType)) {
             ReadStateManager.markInfoSectionRead(requireContext());
+        } else if ("dataset".equals(sectionType)) {
+            ReadStateManager.markDatasetSectionRead(requireContext());
         }
     }
 
@@ -329,6 +345,7 @@ public class AdminUserFragment extends Fragment {
         allUsers.clear();
         allLocReqs.clear();
         allInfoReqs.clear();
+        allDatasetReqs.clear();
 
         // Load all users (for search)
         db.collection("users")
@@ -347,6 +364,7 @@ public class AdminUserFragment extends Fragment {
 
         final int[] locCount = {-1};
         final int[] infoCount = {-1};
+        final int[] datasetCount = {-1};
 
         // Location Requests — ordered by createdAt desc, fetch ALL for accurate count
         db.collection("add_location_requests")
@@ -359,13 +377,17 @@ public class AdminUserFragment extends Fragment {
                     locCount[0] = snap.size();
                     if (allLocReqs.isEmpty()) addLocReqPlaceholders();
                     renderGeneralLocReqs();
-                    if (infoCount[0] >= 0) updateGeneralCounts(locCount[0], infoCount[0]);
+                    if (infoCount[0] >= 0 && datasetCount[0] >= 0) {
+                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     addLocReqPlaceholders();
                     renderGeneralLocReqs();
                     locCount[0] = 0;
-                    if (infoCount[0] >= 0) updateGeneralCounts(0, infoCount[0]);
+                    if (infoCount[0] >= 0 && datasetCount[0] >= 0) {
+                        updateGeneralCounts(0, infoCount[0], datasetCount[0]);
+                    }
                 });
 
         // Information Requests — ordered by createdAt desc, fetch ALL for accurate count
@@ -379,13 +401,38 @@ public class AdminUserFragment extends Fragment {
                     infoCount[0] = snap.size();
                     if (allInfoReqs.isEmpty()) addInfoReqPlaceholders();
                     renderGeneralInfoReqs();
-                    if (locCount[0] >= 0) updateGeneralCounts(locCount[0], infoCount[0]);
+                    if (locCount[0] >= 0 && datasetCount[0] >= 0) {
+                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     addInfoReqPlaceholders();
                     renderGeneralInfoReqs();
                     infoCount[0] = 0;
-                    if (locCount[0] >= 0) updateGeneralCounts(locCount[0], 0);
+                    if (locCount[0] >= 0 && datasetCount[0] >= 0) {
+                        updateGeneralCounts(locCount[0], 0, datasetCount[0]);
+                    }
+                });
+
+        db.collection("dataset_image_submissions")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        allDatasetReqs.add(buildRequestItem(doc));
+                    }
+                    datasetCount[0] = snap.size();
+                    renderGeneralDatasetReqs();
+                    if (locCount[0] >= 0 && infoCount[0] >= 0) {
+                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    datasetCount[0] = 0;
+                    renderGeneralDatasetReqs();
+                    if (locCount[0] >= 0 && infoCount[0] >= 0) {
+                        updateGeneralCounts(locCount[0], infoCount[0], 0);
+                    }
                 });
     }
 
@@ -401,7 +448,7 @@ public class AdminUserFragment extends Fragment {
         allInfoReqs.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86"));
     }
 
-    private void updateGeneralCounts(int locCount, int infoCount) {
+    private void updateGeneralCounts(int locCount, int infoCount, int datasetCount) {
         if (!isAdded()) return;
         View view = getView();
         if (view == null) return;
@@ -413,6 +460,10 @@ public class AdminUserFragment extends Fragment {
         if (infoCount >= 0) {
             TextView tv = view.findViewById(R.id.general_inforeq_count);
             if (tv != null) tv.setText(String.valueOf(infoCount));
+        }
+        if (datasetCount >= 0) {
+            TextView tv = view.findViewById(R.id.general_datasetreq_count);
+            if (tv != null) tv.setText(String.valueOf(datasetCount));
         }
     }
 
@@ -502,6 +553,17 @@ public class AdminUserFragment extends Fragment {
         }
     }
 
+    private void renderGeneralDatasetReqs() {
+        if (generalDatasetReqContainer == null) return;
+        generalDatasetReqContainer.removeAllViews();
+        int count = 0;
+        for (RequestItem item : allDatasetReqs) {
+            if (count >= 3) break;
+            generalDatasetReqContainer.addView(inflateGeneralRequestRow(item, "dataset"));
+            count++;
+        }
+    }
+
     private void renderBusinessVerReqs() {
         if (businessVerReqContainer == null) {
             android.util.Log.w("AdminUserFragment", "renderBusinessVerReqs: container is null");
@@ -569,6 +631,7 @@ public class AdminUserFragment extends Fragment {
             if (activeTab == Tab.GENERAL) {
                 renderGeneralLocReqs();
                 renderGeneralInfoReqs();
+                renderGeneralDatasetReqs();
             }
 
             Fragment detail;
@@ -582,14 +645,16 @@ public class AdminUserFragment extends Fragment {
                         item.locationName,
                         item.coordinates,
                         item.description,
-                        item.placeType,
-                        item.reason,
-                        item.latitude,
-                        item.longitude
-                );
-            } else {
-                detail = AdminInfoRequestDetailFragment.newInstance(
-                        item.docId,
+                          item.placeType,
+                          item.reason,
+                          item.latitude,
+                          item.longitude
+                  );
+              } else if ("dataset".equals(requestType)) {
+                  detail = AdminDatasetSubmissionDetailFragment.newInstance(item.docId);
+              } else {
+                  detail = AdminInfoRequestDetailFragment.newInstance(
+                          item.docId,
                         item.number,
                         item.status,
                         item.date,
@@ -792,6 +857,8 @@ public class AdminUserFragment extends Fragment {
         item.description = doc.getString("description") != null ? doc.getString("description") : "";
         item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
         item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+        item.imageUrl = doc.getString("imageUrl") != null ? doc.getString("imageUrl") : "";
+        item.userNote = doc.getString("userNote") != null ? doc.getString("userNote") : "";
 
         Double lat = doc.getDouble("latitude");
         Double lng = doc.getDouble("longitude");
@@ -799,6 +866,16 @@ public class AdminUserFragment extends Fragment {
             item.latitude = lat;
             item.longitude = lng;
             item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+        }
+
+        if (item.coordinates.isEmpty()) {
+            Double userLat = doc.getDouble("userLatitude");
+            Double userLng = doc.getDouble("userLongitude");
+            if (userLat != null && userLng != null) {
+                item.latitude = userLat;
+                item.longitude = userLng;
+                item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", userLat, userLng);
+            }
         }
 
         item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
@@ -818,6 +895,7 @@ public class AdminUserFragment extends Fragment {
         boolean read;
         String locationName, description, placeType, reason, coordinates;
         double latitude, longitude;
+        String imageUrl, userNote;
         String phone, email, address, businessType;
 
         RequestItem(String number, String title, String submittedBy,
@@ -830,6 +908,7 @@ public class AdminUserFragment extends Fragment {
             this.placeType = ""; this.reason = "";
             this.coordinates = "";
             this.latitude = 0.0; this.longitude = 0.0;
+            this.imageUrl = ""; this.userNote = "";
             this.phone = ""; this.email = "";
             this.address = ""; this.businessType = "";
         }
