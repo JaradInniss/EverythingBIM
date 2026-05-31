@@ -10,6 +10,8 @@ import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.data.local.entities.ReportEntity;
+import com.example.everythingbim.data.models.RequestReportStatus;
 import com.example.everythingbim.data.repository.PostRepository;
 
 import java.util.ArrayList;
@@ -114,4 +116,10 @@ public class PostViewModel extends AndroidViewModel {
         );
         repository.insertComment(comment);
     }
+
+    public void reportPost(long postId, long reporterId, String reason, String description) {
+        ReportEntity report = new ReportEntity(postId, reporterId, reason, description, RequestReportStatus.PENDING, System.currentTimeMillis());
+        repository.insertReport(report);
+    }
+
 }

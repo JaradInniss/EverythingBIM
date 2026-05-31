@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/alice_blue"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Address -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_pin_area"
+                app:tint="@color/dim_grey" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Address: "
+                android:layout_marginStart="8dp"
+                style="@style/black_medium_txt_style" />
+
+            <TextView
+                android:id="@+id/biz_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Marvin Complex, St. Michael, Barbados"
+                style="@style/black_medium_txt_style"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Phone -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_user_circle"
+                app:tint="@color/dim_grey" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Phone: "
+                android:layout_marginStart="8dp"
+                style="@style/black_medium_txt_style" />
+
+            <TextView
+                android:id="@+id/biz_phone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="+1(246) 123-4567"
+                style="@style/black_medium_txt_style"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Email -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_search"
+                app:tint="@color/dim_grey" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Email: "
+                android:layout_marginStart="8dp"
+                style="@style/black_medium_txt_style" />
+
+            <TextView
+                android:id="@+id/biz_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="chefette@gmail.com"
+                style="@style/black_medium_txt_style"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Description -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_calendar"
+                app:tint="@color/dim_grey" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Description: "
+                android:layout_marginStart="8dp"
+                style="@style/black_medium_txt_style" />
+
+            <TextView
+                android:id="@+id/biz_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="The Best Product in the 246"
+                style="@style/black_medium_txt_style"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Images Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Images:"
+            style="@style/black_medium_txt_style"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/biz_images_rv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
