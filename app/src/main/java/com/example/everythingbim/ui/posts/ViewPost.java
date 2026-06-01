@@ -174,8 +174,33 @@ public class ViewPost extends AppCompatActivity {
                 .load(post.imageUrl)
                 .placeholder(R.drawable.butterfly)
                 .into(postImage);
-        
-        location.setText("Location ID: " + post.locationId);
+
+        setupLocationTag(post.locationId);
+    }
+
+    private void setupLocationTag(long locationId) {
+        // Prevent multiple observers if the post data updates but location remains same
+        if (locationId == lastObservedLocationId) return;
+        lastObservedLocationId = locationId;
+
+        viewModel.getLocationById(locationId).observe(this, loc -> {
+            if (loc != null) {
+                binding.viewpostLocation.setText(loc.getName());
+
+                binding.viewpostLocationTag.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, loc.getLocationId());
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, loc.getLatitude());
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, loc.getLongitude());
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, loc.getName());
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, loc.getAddress());
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                });
+            }
+        });
     }
 
     // Sets up click listeners for the return button and comment submission buttons

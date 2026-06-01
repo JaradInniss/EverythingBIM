@@ -365,30 +365,198 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         }
     }
 
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        map = googleMap;
+
+        // 1. Basic Setup
+        map.getUiSettings().setZoomControlsEnabled(false);
+        map.getUiSettings().setMyLocationButtonEnabled(false);
+        map.setLatLngBoundsForCameraTarget(MapViewModel.BARBADOS_BOUNDS);
+        map.setMinZoomPreference(MapViewModel.MIN_ZOOM);
+
+        // 2. Click Listeners (Consolidated)
+        map.setOnMapClickListener(latLng -> {
+            MapDetailsState currentState = mapViewModel.getDetailsUIState().getValue();
+            mapViewModel.setDetailsUIState(currentState == MapDetailsState.FULL ? MapDetailsState.PEEK : MapDetailsState.HIDDEN);
+        });
+
+        map.setOnPoiClickListener(this::handlePointOfInterestClick);
+
+        map.setOnMarkerClickListener(marker -> {
+            MarkerDetails details = getMarkerDetails(marker);
+            showPlaceDetails(details);
+            mapViewModel.setFocusedLocation(marker.getPosition());
+            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            return true;
+        });
+
+        // 3. Permissions
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation();
+        } else {
+            requestLocationPermissions();
+        }
+
+        // 4. Marker Observer & Focus Logic
+        mapViewModel.getAllMarkers().observe(getViewLifecycleOwner(), markers -> {
+            storedMarkers.clear();
+            if (markers != null) storedMarkers.addAll(markers);
+            renderMarkers();
+
+            // Check for focus AFTER markers are rendered
+            if (externalFocusLatLng != null && routePreviewLocations.isEmpty()) {
+                processExternalFocus();
+            }
+        });
+
+        // 5. Initial Camera Position
+        if (!routePreviewLocations.isEmpty()) {
+            showRoutePreview();
+        } else if (externalFocusLatLng == null) {
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(mapViewModel.getBarbadosCenter(), MapViewModel.INITIAL_ZOOM));
+        }
+
+        zoomInButton.setOnClickListener(this);
+        zoomOutButton.setOnClickListener(this);
+        fixLocationButton.setOnClickListener(this);
+    }
+
+    private void processExternalFocus() {
+        if (map == null || externalFocusLatLng == null) return;
+
+        // Capture values into local variables so we can clear the class members immediately
+        final LatLng targetCoords = externalFocusLatLng;
+        final String targetTitle = externalFocusTitle;
+
+        if (focusedSavedLocationId > 0L) {
+            return;
+        }
+
+        long foundId = -1;
+        for (MarkerEntity entity : storedMarkers) {
+            if (Math.abs(entity.latitude - targetCoords.latitude) < 0.0001 &&
+                    Math.abs(entity.longitude - targetCoords.longitude) < 0.0001) {
+                foundId = entity.id;
+                break;
+            }
+        }
+
+        if (foundId != -1) {
+            mapViewModel.setFocusedLocation(targetCoords);
+            mapViewModel.setSelectedLocationMetadata(foundId, targetTitle);
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(targetCoords, 15f));
+        } else {
+            // Pass the captured local variables
+            searchPlacesByName(targetTitle, targetCoords);
+        }
+    }
+
+    private void searchPlacesByName(String name, LatLng latLng) {
+        if (placesClient == null) return;
+
+        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                .setQuery(name)
+                .setSessionToken(AutocompleteSessionToken.newInstance())
+                .setCountries("BB")
+                .build();
+
+        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
+            if (!response.getAutocompletePredictions().isEmpty()) {
+                // Get first result's Place ID
+                String placeId = response.getAutocompletePredictions().get(0).getPlaceId();
+
+                FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build();
+                placesClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener(fetchResponse -> {
+                    Place place = fetchResponse.getPlace();
+                    handlePlaceSelection(place);
+                    mapViewModel.setDetailsUIState(MapDetailsState.PEEK);
+                });
+            }
+            else {
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f));
+                Toast.makeText(getContext(), "Location details unavailable", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void handlePlaceSelection(Place place) {
+        if (place == null || place.getLatLng() == null) return;
+
+        selectedPlace = place;
+
+        // Clear previous search marker
+        if (searchMarker != null) searchMarker.remove();
+
+        // Create a new marker for this place
+        searchMarker = map.addMarker(new MarkerOptions()
+                .position(place.getLatLng())
+                .title(place.getName())
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+        // Update ViewModel
+        mapViewModel.setFocusedLocation(place.getLatLng());
+        mapViewModel.setSelectedLocationMetadata(-1, place.getName());
+
+        // Populate the UI fields (Name, Address, etc.)
+        placeName.setText(place.getName());
+        placeAddress.setText(place.getAddress());
+
+        if (place.getRating() != null) {
+            placeRating.setText(String.format(Locale.getDefault(), "%.1f", place.getRating()));
+        } else {
+            placeRating.setText("N/A");
+        }
+
+        // Zoom into the new location
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15f));
+    }
+
     private void readFocusArguments() {
         Bundle args = getArguments();
         if (args == null) {
             return;
         }
 
-        focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
+        if (args != null) {
+            focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
 
-        if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
-            externalFocusLatLng = new LatLng(
-                    args.getDouble(ARG_FOCUS_LATITUDE, 0d),
-                    args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
-            );
-            externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
-            externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
+            if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
+                externalFocusLatLng = new LatLng(
+                        args.getDouble(ARG_FOCUS_LATITUDE, 0d),
+                        args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
+                );
+                externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+                externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
+            }
+
+            if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
+                routePreviewLocations.clear();
+                Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
+                if (value instanceof ArrayList) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
+                    routePreviewLocations.addAll(restored);
+                }
+            }
+
+            return;
         }
 
-        if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
-            routePreviewLocations.clear();
-            Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
-            if (value instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
-                routePreviewLocations.addAll(restored);
+        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
+            focusedSavedLocationId = intent.getLongExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, -1L);
+
+            double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
+            double lng = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0d);
+
+            externalFocusLatLng = new LatLng(lat, lng);
+            externalFocusTitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_NAME);
+            externalFocusSubtitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE);
+
+            if (externalFocusTitle == null) {
+                externalFocusTitle = "Selected location";
             }
         }
     }
@@ -427,8 +595,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     if (map != null) {
                         mapViewModel.setFocusedLocation(externalFocusLatLng);
                         mapViewModel.setSelectedLocationMetadata(location.locationId, externalFocusTitle);
-                        mapViewModel.setDetailsUIState(MapDetailsState.FULL);
                         showExternalFocusedLocation();
+                        mapViewModel.setDetailsUIState(MapDetailsState.PEEK);
                     }
                 });
     }
@@ -563,9 +731,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private void initializePlacesClient() {
         String apiKey = getMapsApiKey();
         if (apiKey == null || apiKey.isEmpty()) return;
+
         if (!Places.isInitialized()) {
-            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(), apiKey);
+            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(),apiKey);
         }
+
         placesClient = Places.createClient(requireContext());
     }
 

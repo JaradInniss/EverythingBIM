@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Random;
 
 public class LandmarkRepository {
-    private static final double PARLIAMENT_LATITUDE = 13.0969861d;
-    private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
+    public static final double PARLIAMENT_LATITUDE = 13.0969861d;
+    public static final double PARLIAMENT_LONGITUDE = -59.6139194d;
     private static final int PARLIAMENT_NEARBY_RADIUS_METERS = 1000;
     private static final int KENSINGTON_NEARBY_RADIUS_METERS = PARLIAMENT_NEARBY_RADIUS_METERS;
 
