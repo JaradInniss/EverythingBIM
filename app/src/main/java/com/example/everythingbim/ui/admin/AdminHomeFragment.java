@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Admin Home Fragment displaying dashboard with request statistics and weekly chart.
@@ -85,7 +86,7 @@ public class AdminHomeFragment extends Fragment {
 
     // Collection names
     private static final String COLLECTION_BUSINESS = "add_business_requests";
-    private static final String COLLECTION_INFO = "add_info_requests";
+    private static final String COLLECTION_INFO = "add_information_requests";
     private static final String COLLECTION_LOCATION = "add_location_requests";
     private static final String COLLECTION_DATASET = "dataset_image_submissions";
     private static final String COLLECTION_REPORTS = "add_reports";
@@ -268,31 +269,31 @@ public class AdminHomeFragment extends Fragment {
 
         if (cardBusiness != null) {
             cardBusiness.setOnClickListener(v -> {
-                ReadStateManager.markBusinessSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("business");
             });
         }
         if (cardInfo != null) {
             cardInfo.setOnClickListener(v -> {
-                ReadStateManager.markInfoSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("info");
             });
         }
         if (cardLocation != null) {
             cardLocation.setOnClickListener(v -> {
-                ReadStateManager.markLocationSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("location");
             });
         }
         if (cardDataset != null) {
             cardDataset.setOnClickListener(v -> {
-                ReadStateManager.markDatasetSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("dataset");
             });
         }
         if (cardReports != null) {
             cardReports.setOnClickListener(v -> {
-                ReadStateManager.markReportsSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToReportsSection();
             });
         }
@@ -565,7 +566,7 @@ public class AdminHomeFragment extends Fragment {
         db.collection(COLLECTION_BUSINESS)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, businessTs);
+                    int count = countUnreadSince(snap, businessTs, ReadStateManager.KEY_LAST_READ_BUSINESS);
                     unreadBusinessCount = count;
                     updateBusinessCount(count, 0);
                     updateDotVisibility(dotBusiness, count > 0);
@@ -582,7 +583,7 @@ public class AdminHomeFragment extends Fragment {
         db.collection(COLLECTION_INFO)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, infoTs);
+                    int count = countUnreadSince(snap, infoTs, ReadStateManager.KEY_LAST_READ_INFO);
                     unreadInfoCount = count;
                     updateInfoCount(count, 0);
                     updateDotVisibility(dotInfo, count > 0);
@@ -599,7 +600,7 @@ public class AdminHomeFragment extends Fragment {
         db.collection(COLLECTION_LOCATION)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, locationTs);
+                    int count = countUnreadSince(snap, locationTs, ReadStateManager.KEY_LAST_READ_LOCATION);
                     unreadLocationCount = count;
                     updateLocationCount(count, 0);
                     updateDotVisibility(dotLocation, count > 0);
@@ -615,7 +616,7 @@ public class AdminHomeFragment extends Fragment {
         db.collection(COLLECTION_DATASET)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, datasetTs);
+                    int count = countUnreadSince(snap, datasetTs, ReadStateManager.KEY_LAST_READ_DATASET);
                     unreadDatasetCount = count;
                     updateDatasetCount(count, 0);
                     updateDotVisibility(dotDataset, count > 0);
@@ -632,7 +633,7 @@ public class AdminHomeFragment extends Fragment {
         db.collection(COLLECTION_REPORTS)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, reportsTs);
+                    int count = countUnreadSince(snap, reportsTs, ReadStateManager.KEY_LAST_READ_REPORTS);
                     unreadReportsCount = count;
                     updateReportsCount(count, 0);
                     updateDotVisibility(dotReports, count > 0);
@@ -649,15 +650,25 @@ public class AdminHomeFragment extends Fragment {
     /**
      * Counts items with read=false that were created at or after the given timestamp.
      * If timestamp is 0 (first open), counts all items with read=false.
+     * Also checks local SharedPreferences for individually read request IDs.
      */
-    private int countUnreadSince(QuerySnapshot snap, long lastReadTs) {
+    private int countUnreadSince(QuerySnapshot snap, long lastReadTs, String sectionKey) {
         int count = 0;
         if (snap == null) return 0;
+        Context ctx = getContext();
+        if (ctx == null) return 0; // Fragment detached, don't update count
+        Set<String> localReadIds = ReadStateManager.getReadRequestIds(ctx);
+        
         for (DocumentSnapshot doc : snap.getDocuments()) {
+            // Skip if individually marked as read in SharedPreferences
+            if (localReadIds.contains(doc.getId())) continue;
+            
+            // Skip if already read in Firestore
             Boolean read = doc.getBoolean("read");
-            if (Boolean.TRUE.equals(read)) continue; // Already read in Firestore
+            if (Boolean.TRUE.equals(read)) continue;
+            
+            // Only count items created at or after lastReadTimestamp (if timestamp > 0)
             if (lastReadTs > 0) {
-                // Only count items created at or after lastReadTimestamp
                 com.google.firebase.Timestamp createdAt = doc.getTimestamp("createdAt");
                 if (createdAt != null && createdAt.toDate().getTime() < lastReadTs) continue;
             }
@@ -710,7 +721,7 @@ public class AdminHomeFragment extends Fragment {
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
-        Task<QuerySnapshot> infoTask = db.collection("add_info_requests")
+        Task<QuerySnapshot> infoTask = db.collection(COLLECTION_INFO)
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 

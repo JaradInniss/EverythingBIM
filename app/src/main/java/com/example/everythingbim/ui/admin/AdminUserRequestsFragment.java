@@ -333,7 +333,7 @@ public class AdminUserRequestsFragment extends Fragment {
         if ("dataset".equals(requestType)) {
             return "dataset_image_submissions";
         }
-        return "add_info_requests";
+        return "add_information_requests";
     }
 
     // ────────────────────────────────────────────────────────

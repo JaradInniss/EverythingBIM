@@ -391,7 +391,7 @@ public class AdminUserFragment extends Fragment {
                 });
 
         // Information Requests — ordered by createdAt desc, fetch ALL for accurate count
-        db.collection("add_info_requests")
+        db.collection("add_information_requests")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snap -> {

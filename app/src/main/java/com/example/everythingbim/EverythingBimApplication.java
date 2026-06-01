@@ -6,7 +6,6 @@ import android.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 
 public class EverythingBimApplication extends Application {
 
@@ -18,17 +17,12 @@ public class EverythingBimApplication extends Application {
 
         FirebaseApp.initializeApp(this);
 
-        FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
-        if (BuildConfig.DEBUG) {
-            firebaseAppCheck.installAppCheckProviderFactory(
-                    DebugAppCheckProviderFactory.getInstance()
-            );
-            Log.d(TAG, "App Check initialized with Debug provider");
-        } else {
-            firebaseAppCheck.installAppCheckProviderFactory(
-                    PlayIntegrityAppCheckProviderFactory.getInstance()
-            );
-            Log.d(TAG, "App Check initialized with Play Integrity provider");
-        }
+        // Install App Check debug provider for development builds
+        // This automatically generates a debug token that allows Firebase Auth to work
+        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
+                DebugAppCheckProviderFactory.getInstance()
+        );
+
+        Log.d(TAG, "Firebase initialized with App Check debug provider");
     }
 }

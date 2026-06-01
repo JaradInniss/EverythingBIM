@@ -26,6 +26,8 @@ public class AdminViewModelTest {
     private static final int REPORTS_ID = com.example.everythingbim.R.id.admin_navbar_reports;
     private static final int SETTINGS_ID = com.example.everythingbim.R.id.admin_navbar_settings;
 
+    private static final int USER_ID = R.id.admin_navbar_user;
+
     @Before
     public void setUp() {
         viewModel = new AdminViewModel();
@@ -75,6 +77,14 @@ public class AdminViewModelTest {
             viewModel.getNavbarItemId().getValue());
     }
 
+    @Test
+    public void setNavbarItemId_toUSER_updatesValue() {
+        viewModel.setNavbarItemId(USER_ID);
+        assertEquals("Navbar item should be user",
+                Integer.valueOf(USER_ID),
+                viewModel.getNavbarItemId().getValue());
+    }
+
     // ========== Idempotency Tests ==========
 
     @Test
@@ -105,6 +115,11 @@ public class AdminViewModelTest {
         assertEquals("Should be settings",
             Integer.valueOf(SETTINGS_ID),
             viewModel.getNavbarItemId().getValue());
+
+        viewModel.setNavbarItemId(USER_ID);
+        assertEquals("Should be user",
+                Integer.valueOf(USER_ID),
+                viewModel.getNavbarItemId().getValue());
     }
 
     // ========== Null Safety Tests ==========
