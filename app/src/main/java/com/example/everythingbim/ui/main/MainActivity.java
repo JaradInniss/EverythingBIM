@@ -1,6 +1,5 @@
 package com.example.everythingbim.ui.main;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.Intent;
 import android.os.Bundle;
@@ -70,6 +69,17 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+//        // Check if the fragment has already been added
+//        if (savedInstanceState == null) {
+//            // Start a FragmentTransaction
+//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+//            // Replace the container with your new fragment
+//            transaction.replace(R.id.fragment_container_view, AdminReportsFragment.class, null);
+//            // Commit the transaction
+//            transaction.commit();
+//        }
+
+
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
         onboardingPreferences = new OnboardingPreferences(this);
@@ -83,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
             userType = normalizeUserType(sharedPreferences.getString("userType", USER_TYPE_GUEST));
         }
 
-        pendingMapFocus = getIntent().getBooleanExtra(EXTRA_OPEN_MAP, false)
+        pendingMapFocus = getIntent().getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
                 || getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
 
         bottomNavigationView = findViewById(R.id.navigation_bar);
@@ -100,6 +110,8 @@ public class MainActivity extends AppCompatActivity {
         maybeStartOnboarding();
 
         WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        // Set to 'false' to make status bar icons light (white)
+        // Set to 'true' if your background was light and you needed dark icons
         windowInsetsController.setAppearanceLightStatusBars(false);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -109,28 +121,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-
-        pendingMapFocus = intent.getBooleanExtra(EXTRA_OPEN_MAP, false)
-                || intent.getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
-
-        if (pendingMapFocus) {
-            // Force selection of Map tab in ViewModel
-            viewModel.setNavbarItemId(R.id.navbar_map);
-            
-            // If we are already on the map tab, the LiveData observer in setupObservers 
-            // might not trigger because the value is the same. In that case, we force 
-            // the fragment to reload with the new intent's arguments.
-            if (bottomNavigationView.getSelectedItemId() == R.id.navbar_map) {
-                loadFragment(createMapFragment());
-            }
-        }
-    }
-
     private void configureBottomNavigation() {
+        // Hide or show certain menu items based on user type
         MenuItem mapItem = bottomNavigationView.getMenu().findItem(R.id.navbar_map);
         MenuItem postItem = bottomNavigationView.getMenu().findItem(R.id.navbar_post);
 
@@ -139,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
             mapItem.setVisible(false);
             postItem.setVisible(true);
         } else {
+            // General users: show all or hide some
             mapItem.setVisible(true);
             postItem.setVisible(true);
         }
@@ -171,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
                 loadFragment(fragment);
             }
 
+            // Ensure bottom navigation selection matches (avoid loop)
             if (bottomNavigationView.getSelectedItemId() != id) {
                 bottomNavigationView.setSelectedItemId(id);
             }
@@ -195,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
         args.putLong(MapFragment.ARG_FOCUS_LOCATION_ID, getIntent().getLongExtra(EXTRA_MAP_FOCUS_LOCATION_ID, -1L));
         args.putDouble(MapFragment.ARG_FOCUS_LATITUDE, getIntent().getDoubleExtra(EXTRA_MAP_FOCUS_LATITUDE, 0d));
         args.putDouble(MapFragment.ARG_FOCUS_LONGITUDE, getIntent().getDoubleExtra(EXTRA_MAP_FOCUS_LONGITUDE, 0d));
-        args.putString(MapFragment.ARG_FOCUS_TITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_NAME));
+        args.putString(MapFragment.ARG_FOCUS_TITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_TITLE));
         args.putString(MapFragment.ARG_FOCUS_SUBTITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_SUBTITLE));
 
         args.putBoolean(MapFragment.ARG_OPEN_ROUTE_PREVIEW, getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false));
@@ -205,12 +199,12 @@ public class MainActivity extends AppCompatActivity {
         pendingMapFocus = false;
         // Clean up intent so these aren't re-processed on rotation
         getIntent().removeExtra(EXTRA_OPEN_MAP);
-        getIntent().removeExtra(EXTRA_OPEN_MAP);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LATITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LONGITUDE);
-        getIntent().removeExtra(EXTRA_MAP_FOCUS_NAME);
+        getIntent().removeExtra(EXTRA_MAP_FOCUS_TITLE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_SUBTITLE);
+
         getIntent().removeExtra(EXTRA_OPEN_MAP_ROUTE);
         getIntent().removeExtra(EXTRA_MAP_ROUTE_LOCATIONS);
         return fragment;
