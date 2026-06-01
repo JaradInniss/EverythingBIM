@@ -1,5 +1,11 @@
 package com.example.everythingbim.ui.posts;
 
+import android.Manifest;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;

@@ -1,5 +1,8 @@
 package com.example.everythingbim.ui.home;
 
+import static com.example.everythingbim.ui.home.LandmarkRepository.PARLIAMENT_LATITUDE;
+import static com.example.everythingbim.ui.home.LandmarkRepository.PARLIAMENT_LONGITUDE;
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -301,11 +304,6 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
-//         intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
-//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, currentLandmark.getLatitude());
-//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, currentLandmark.getLongitude());
-//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, currentLandmark.getDisplayName());
-//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, currentLandmark.getDescription());
         startActivity(intent);
     }
 
@@ -363,11 +361,11 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     @Override
     public void onLocationDetailsRequested(@NonNull NearbySavedLocation location) {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, location.getLocationId());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, location.getLatitude());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, location.getLongitude());
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, location.getName());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, location.getName());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, location.getAddress());
         startActivity(intent);
     }

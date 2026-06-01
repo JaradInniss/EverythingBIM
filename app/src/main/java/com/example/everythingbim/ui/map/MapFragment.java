@@ -400,9 +400,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         final LatLng targetCoords = externalFocusLatLng;
         final String targetTitle = externalFocusTitle;
 
-        // Clear class members immediately so this logic doesn't trigger again on the next DB update
-        externalFocusLatLng = null;
-        externalFocusTitle = null;
+        if (focusedSavedLocationId > 0L) {
+            return;
+        }
 
         long foundId = -1;
         for (MarkerEntity entity : storedMarkers) {
@@ -488,35 +488,43 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         Bundle args = getArguments();
         Intent intent = requireActivity().getIntent();
 
-        focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
+        if (args != null) {
+            focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
 
-        if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
-            externalFocusLatLng = new LatLng(
-                    args.getDouble(ARG_FOCUS_LATITUDE, 0d),
-                    args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
-            );
-            externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+            if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
+                externalFocusLatLng = new LatLng(
+                        args.getDouble(ARG_FOCUS_LATITUDE, 0d),
+                        args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
+                );
+                externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+                externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
+            }
+
+            if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
+                routePreviewLocations.clear();
+                Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
+                if (value instanceof ArrayList) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
+                    routePreviewLocations.addAll(restored);
+                }
+            }
+
+            return;
         }
-        // 2. Fallback to Activity Intent if Fragment arguments aren't set
-        else if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
-            double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0);
-            double lng = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0);
+
+        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
+            focusedSavedLocationId = intent.getLongExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, -1L);
+
+            double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
+            double lng = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0d);
+
             externalFocusLatLng = new LatLng(lat, lng);
-
-            // This was likely returning null because of the key mismatch discussed earlier
             externalFocusTitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_NAME);
+            externalFocusSubtitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE);
 
-            if (externalFocusTitle == null) externalFocusTitle = "Selected Location";
-        }
-
-
-        if (args != null && args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
-            routePreviewLocations.clear();
-            Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
-            if (value instanceof ArrayList) {
-                @SuppressWarnings("unchecked")
-                ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
-                routePreviewLocations.addAll(restored);
+            if (externalFocusTitle == null) {
+                externalFocusTitle = "Selected location";
             }
         }
     }
@@ -555,8 +563,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     if (map != null) {
                         mapViewModel.setFocusedLocation(externalFocusLatLng);
                         mapViewModel.setSelectedLocationMetadata(location.locationId, externalFocusTitle);
-                        mapViewModel.setDetailsUIState(MapDetailsState.FULL);
                         showExternalFocusedLocation();
+                        mapViewModel.setDetailsUIState(MapDetailsState.PEEK);
                     }
                 });
     }
@@ -691,14 +699,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private void initializePlacesClient() {
         String apiKey = getMapsApiKey();
         if (apiKey == null || apiKey.isEmpty()) return;
-        if (Places.isInitialized()) {
-            if (placesClient == null) {
-                placesClient = Places.createClient(requireContext());
-            }
+
+        if (!Places.isInitialized()) {
+            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(),apiKey);
         }
-        else {
-            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(), apiKey);
-        }
+
+        placesClient = Places.createClient(requireContext());
     }
 
     @Nullable
