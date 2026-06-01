@@ -9,45 +9,32 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.entities.CommentEntity;
-import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
-import com.example.everythingbim.data.local.entities.ReportEntity;
-import com.example.everythingbim.data.local.entities.UserWithProfile;
-import com.example.everythingbim.data.models.RequestReportStatus;
 import com.example.everythingbim.data.repository.PostRepository;
-import com.example.everythingbim.data.repository.UserRepository;
-import com.example.everythingbim.ui.utils.NavigationCommand;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ViewModel for managing post-related data and logic.
  * Handles fetching posts, filtering, and building the comment hierarchy.
  */
-public class ViewPostViewModel extends AndroidViewModel {
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+public class PostViewModel extends AndroidViewModel {
+    private final PostRepository repository;
     private final LiveData<List<PostEntity>> posts;
-    private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
     private final MutableLiveData<String> filterType = new MutableLiveData<>("account");
 
-    public ViewPostViewModel(@NonNull Application application) {
+    public PostViewModel(@NonNull Application application) {
         super(application);
-        postRepository = new PostRepository(application);
-        userRepository = new UserRepository(application);
-        posts = postRepository.getRandomizedPosts();
+        repository = new PostRepository(application);
+        posts = repository.getRandomizedPosts();
         
-        // Seed placeholder data if database is empty
-        userRepository.seedUsersIfEmpty();
-        postRepository.seedDataIfEmpty();
-        
-        // Repair any posts that still use temporary content URIs
-        postRepository.repairLegacyPosts();
+        // Seed placeholder data if database is empty to ensure UI is populated during testing
+        repository.seedDataIfEmpty();
     }
+
 
      // Returns an observable list of randomized posts.
     public LiveData<List<PostEntity>> getPosts() {
@@ -56,7 +43,7 @@ public class ViewPostViewModel extends AndroidViewModel {
 
     // Fetches a specific post by its ID.
     public LiveData<PostEntity> getPostById(long postId) {
-        return postRepository.getPostById(postId);
+        return repository.getPostById(postId);
     }
 
     // Returns the current search filter type (e.g., "account" or "location").
@@ -64,20 +51,9 @@ public class ViewPostViewModel extends AndroidViewModel {
         return filterType;
     }
 
-    public SingleLiveEvent<NavigationCommand> getNavigationEvent() { return navigationEvent; }
-
     // Updates the active search filter type.
     public void setFilterType(String type) {
         filterType.setValue(type);
-    }
-
-    // Search for Users
-    public LiveData<List<UserWithProfile>> searchUsers(String query) {
-        return userRepository.searchUsers(query);
-    }
-
-    public LiveData<LocationEntity> getLocationById(long locationId) {
-        return postRepository.getLocationById(locationId);
     }
 
     /**
@@ -89,7 +65,7 @@ public class ViewPostViewModel extends AndroidViewModel {
      * @return A LiveData list of top-level CommentUIModels, each containing its nested replies.
      */
     public LiveData<List<CommentUIModel>> getCommentsForPost(long postId) {
-        return Transformations.map(postRepository.getCommentsForPost(postId), comments -> {
+        return Transformations.map(repository.getCommentsForPost(postId), comments -> {
             if (comments == null) return new ArrayList<>();
             
             Map<Long, CommentUIModel> lookup = new HashMap<>();
@@ -136,35 +112,6 @@ public class ViewPostViewModel extends AndroidViewModel {
                 body,
                 System.currentTimeMillis()
         );
-        postRepository.insertComment(comment);
-    }
-
-    public void reportPost(long postId, long reporterId, String reason, String description) {
-        ReportEntity report = new ReportEntity(postId, reporterId, reason, description, RequestReportStatus.PENDING, System.currentTimeMillis());
-        postRepository.insertReport(report);
-    }
-
-
-    /**
-     * SingleLiveEvent - ensures the event is delivered only once.
-     */
-    public static class SingleLiveEvent<T> extends MutableLiveData<T> {
-        private final AtomicBoolean pending = new AtomicBoolean(false);
-
-        @Override
-        public void setValue(T value) {
-            pending.set(true);
-            super.setValue(value);
-        }
-
-        @Override
-        public void observe(@NonNull androidx.lifecycle.LifecycleOwner owner,
-                            @NonNull androidx.lifecycle.Observer<? super T> observer) {
-            super.observe(owner, t -> {
-                if (pending.compareAndSet(true, false)) {
-                    observer.onChanged(t);
-                }
-            });
-        }
+        repository.insertComment(comment);
     }
 }
