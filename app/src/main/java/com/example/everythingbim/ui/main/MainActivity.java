@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 public class MainActivity extends AppCompatActivity {
-    public static final String EXTRA_OPEN_MAP = "open_map_focus";
+
     public static final String USER_TYPE_GUEST = "guest";
     public static final String USER_TYPE_GENERAL = "general";
     public static final String USER_TYPE_BUSINESS = "business";
@@ -45,11 +45,11 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACTION_ADD_INFORMATION_REQUEST = "action_add_information_request";
     public static final String ACTION_ADD_BUSINESS_LOCATION_REQUEST = "action_add_business_location_request";
     public static final String ACTION_ADD_DATASET_SUBMISSION = "action_add_dataset_submission";
-//     public static final String EXTRA_OPEN_MAP_FOCUS = "open_map_focus";
-//     public static final String EXTRA_MAP_FOCUS_LOCATION_ID = "map_focus_location_id";
+    public static final String EXTRA_OPEN_MAP = "open_map_focus";
+    public static final String EXTRA_MAP_FOCUS_LOCATION_ID = "map_focus_location_id";
     public static final String EXTRA_MAP_FOCUS_LATITUDE = "map_focus_latitude";
     public static final String EXTRA_MAP_FOCUS_LONGITUDE = "map_focus_longitude";
-    public static final String EXTRA_MAP_FOCUS_NAME = "map_focus_title";
+    public static final String EXTRA_MAP_FOCUS_NAME = "map_focus_name";
     public static final String EXTRA_MAP_FOCUS_SUBTITLE = "map_focus_subtitle";
     public static final String EXTRA_OPEN_MAP_ROUTE = "open_map_route";
     public static final String EXTRA_MAP_ROUTE_LOCATIONS = "map_route_locations";
@@ -197,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
         args.putDouble(MapFragment.ARG_FOCUS_LONGITUDE, getIntent().getDoubleExtra(EXTRA_MAP_FOCUS_LONGITUDE, 0d));
         args.putString(MapFragment.ARG_FOCUS_TITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_NAME));
         args.putString(MapFragment.ARG_FOCUS_SUBTITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_SUBTITLE));
+
         args.putBoolean(MapFragment.ARG_OPEN_ROUTE_PREVIEW, getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false));
         args.putSerializable(MapFragment.ARG_ROUTE_LOCATIONS, getIntent().getSerializableExtra(EXTRA_MAP_ROUTE_LOCATIONS));
         fragment.setArguments(args);
@@ -204,8 +205,8 @@ public class MainActivity extends AppCompatActivity {
         pendingMapFocus = false;
         // Clean up intent so these aren't re-processed on rotation
         getIntent().removeExtra(EXTRA_OPEN_MAP);
-//         getIntent().removeExtra(EXTRA_OPEN_MAP_FOCUS);
-//         getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
+        getIntent().removeExtra(EXTRA_OPEN_MAP);
+        getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LATITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LONGITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_NAME);
@@ -243,11 +244,11 @@ public class MainActivity extends AppCompatActivity {
         pendingMapFocus = false;
 
         getIntent().removeExtra("userType");
-        getIntent().removeExtra(EXTRA_OPEN_MAP_FOCUS);
+        getIntent().removeExtra(EXTRA_OPEN_MAP);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LATITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LONGITUDE);
-        getIntent().removeExtra(EXTRA_MAP_FOCUS_TITLE);
+        getIntent().removeExtra(EXTRA_MAP_FOCUS_NAME);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_SUBTITLE);
         getIntent().removeExtra(EXTRA_OPEN_MAP_ROUTE);
         getIntent().removeExtra(EXTRA_MAP_ROUTE_LOCATIONS);
