@@ -12,22 +12,28 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.entities.UserWithProfile;
 
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
 public class PostFragment extends Fragment {
 
-    private PostViewModel viewModel;
+    private ViewPostViewModel viewModel;
     private PostAdapter adapter;
+    private UserSearchAdapter searchAdapter;
+    private ListView searchResultsList;
     private RecyclerView recyclerView;
     private LinearLayout createPostButton;
     private LinearLayout searchBar;
@@ -52,7 +58,7 @@ public class PostFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Initialize ViewModel
-        viewModel = new ViewModelProvider(this).get(PostViewModel.class);
+        viewModel = new ViewModelProvider(this).get(ViewPostViewModel.class);
 
         // Find views by ID
         recyclerView = view.findViewById(R.id.posts_rv);
@@ -60,6 +66,7 @@ public class PostFragment extends Fragment {
         searchBar = view.findViewById(R.id.posts_search_bar);
         searchEditText = view.findViewById(R.id.posts_search_et);
         searchResultsCard = view.findViewById(R.id.posts_search_results_card);
+        searchResultsList = view.findViewById(R.id.posts_search_results_list);
         filterAccount = view.findViewById(R.id.posts_search_filter_account);
         filterLocation = view.findViewById(R.id.posts_search_filter_location);
 
@@ -99,6 +106,28 @@ public class PostFragment extends Fragment {
         viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
             updateFilterUI(type);
         });
+
+        // Observe search input
+        searchEditText.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                String query = charSequence.toString();
+                if ("account".equals(viewModel.getFilterType().getValue())) {
+                    performUserSearch(query);
+                }
+            }
+        });
     }
 
     /**
@@ -109,6 +138,20 @@ public class PostFragment extends Fragment {
         createPostButton.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), CreatePostActivity.class);
             startActivity(intent);
+        });
+
+        // Handle account selection from search
+        searchResultsList.setOnItemClickListener((parent, view, position, id) -> {
+            if ("account".equals(viewModel.getFilterType().getValue())) {
+                UserWithProfile selected = (UserWithProfile) parent.getItemAtPosition(position);
+                Intent intent = new Intent(getActivity(), ViewUserProfileActivity.class);
+                intent.putExtra("USER_ID", selected.user.userId);
+                startActivity(intent);
+
+                // Cleanup UI
+                searchEditText.clearFocus();
+                searchResultsCard.setVisibility(View.GONE);
+            }
         });
 
         // Show search results when search bar gains focus
@@ -144,5 +187,19 @@ public class PostFragment extends Fragment {
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         }
+    }
+
+    /**
+     * Performs a search for users based on the provided query.
+     * @param query The search query.
+     */
+    private void performUserSearch(String query) {
+        viewModel.searchUsers(query).observe(getViewLifecycleOwner(), users -> {
+           if (users != null && "account".equals(viewModel.getFilterType().getValue())) {
+               searchAdapter = new UserSearchAdapter(getContext(), users);
+               searchResultsList.setAdapter(searchAdapter);
+               searchResultsCard.setVisibility(users.isEmpty() ? View.GONE : View.VISIBLE);
+           }
+        });
     }
 }

@@ -46,6 +46,8 @@ public class UserSearchAdapter extends ArrayAdapter<UserWithProfile> {
             String photoUrl = null;
             if (userWithProfile.generalUser != null) {
                 photoUrl = userWithProfile.generalUser.profilePictureUrl;
+            } else if (userWithProfile.businessUser != null) {
+                photoUrl = userWithProfile.businessUser.profilePictureUrl;
             }
 
             Glide.with(getContext())

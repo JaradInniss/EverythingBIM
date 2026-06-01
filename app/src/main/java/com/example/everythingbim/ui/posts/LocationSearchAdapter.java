@@ -15,9 +15,9 @@ import com.example.everythingbim.data.local.entities.LocationEntity;
 
 import java.util.List;
 
-public class LocationSearchAdapter extends ArrayAdapter<LocationEntity> {
+public class LocationSearchAdapter extends ArrayAdapter<String> {
 
-    public LocationSearchAdapter(@NonNull Context context, @NonNull List<LocationEntity> locations) {
+    public LocationSearchAdapter(@NonNull Context context, @NonNull List<String> locations) {
         super(context, android.R.layout.simple_list_item_1, locations);
     }
 
@@ -28,11 +28,11 @@ public class LocationSearchAdapter extends ArrayAdapter<LocationEntity> {
             convertView = LayoutInflater.from(getContext()).inflate(android.R.layout.simple_list_item_1, parent, false);
         }
 
-        LocationEntity location = getItem(position);
+        String location = getItem(position);
         TextView textView = convertView.findViewById(android.R.id.text1);
 
         if (location != null) {
-            textView.setText(location.getName());
+            textView.setText(location.trim().toString());
             textView.setTextColor(getContext().getResources().getColor(R.color.black));
             textView.setTextSize(14);
         }

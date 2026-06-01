@@ -222,10 +222,10 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
 
     private void openParliamentOnMap() {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, "Barbados Parliament Buildings");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
         startActivity(intent);
     }

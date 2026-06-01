@@ -8,6 +8,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MapViewAllViewModel extends ViewModel {
@@ -42,11 +43,14 @@ public class MapViewAllViewModel extends ViewModel {
         List<PostEntity> placeholderList = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             placeholderList.add(new PostEntity(
-                    locationId, 
-                    101, 
-                    "Sample post caption for post #" + (i + 1), 
-                    "https://picsum.photos/seed/" + (locationId + i) + "/400", 
-                    System.currentTimeMillis()
+                    locationId,
+                    "Sample Location",
+                    101,
+                    "Sample Author",
+                    "Sample post caption for post #" + (i + 1),
+                    "https://picsum.photos/seed/" + (locationId + i) + "/400",
+                    System.currentTimeMillis(),
+                    Collections.emptyList()
             ));
         }
         posts.setValue(placeholderList);

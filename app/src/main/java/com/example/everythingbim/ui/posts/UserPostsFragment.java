@@ -13,13 +13,15 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.repository.PostRepository;
 
 public class UserPostsFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
     private long userId;
     private PostAdapter adapter;
-    private ViewPostViewModel viewModel;
+    private ViewUserProfileViewModel viewModel;
+
 
     public static UserPostsFragment newInstance(long userId) {
         UserPostsFragment fragment = new UserPostsFragment();
@@ -52,15 +54,12 @@ public class UserPostsFragment extends Fragment {
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
 
-        viewModel = new ViewModelProvider(this).get(ViewPostViewModel.class);
-        
-        // Use the existing getPostsByUserId in ViewModel/Repository if it exists
-        // For now, assuming ViewModel can filter or we add a specific method
-        viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
+        viewModel = new ViewModelProvider(requireActivity()).get(ViewUserProfileViewModel.class);
+
+        // Observe posts for the user and update the adapter
+        viewModel.getUserPosts().observe(getViewLifecycleOwner(), posts -> {
             if (posts != null) {
-                // Filter posts by userId locally if repository doesn't have a specific method yet
-                // In a real scenario, the repository should handle this.
-                adapter.setPosts(posts); // Placeholder: replace with filtered list
+                adapter.setPosts(posts);
             }
         });
     }

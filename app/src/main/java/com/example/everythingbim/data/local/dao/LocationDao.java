@@ -47,6 +47,9 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id")
     LiveData<LocationWithDetails> getLocationWithDetailsById(long id);
 
+    @Query("SELECT * FROM locations WHERE locationId = :id")
+    LiveData<LocationEntity> getLocationById(long id);
+
     /**
      * Retrieves all locations stored in the database, including their associated details.
      * 
@@ -55,6 +58,9 @@ public interface LocationDao {
     @Transaction
     @Query("SELECT * FROM locations")
     LiveData<List<LocationWithDetails>> getAllLocationsWithDetails();
+
+    @Query("SELECT * FROM locations WHERE name LIKE '%' || :query || '%'")
+    LiveData<List<LocationEntity>> searchLocations(String query);
 
     /**
      * Inserts a new location or replaces an existing one if there's a conflict.

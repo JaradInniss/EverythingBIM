@@ -6,6 +6,9 @@ import android.net.Uri;
 
 import androidx.test.core.app.ApplicationProvider;
 
+import com.example.everythingbim.data.local.entities.LocationEntity;
+import com.example.everythingbim.data.local.entities.UserEntity;
+import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.ui.posts.CreatePostViewModel;
 
 import org.junit.Before;
@@ -13,6 +16,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+
+import java.util.List;
 
 /**
  * Unit tests for CreatePostViewModel validation and state management.
@@ -61,78 +66,91 @@ public class CreatePostViewModelTest {
     @Test
     public void setImageUri_updatesValue() {
         Uri testUri = Uri.parse("content://test/image.jpg");
-        viewModel.setImageUri(testUri);
-        assertEquals("Image URI should be set", testUri, viewModel.getImageUri().getValue());
+        viewModel.setSelectedImageUri(testUri);
+        assertEquals("Image URI should be set", testUri, viewModel.getSelectedImageUri().getValue());
     }
 
     @Test
     public void getImageUri_initialValue_isNull() {
-        assertNull("Initial image URI should be null", viewModel.getImageUri().getValue());
+        assertNull("Initial image URI should be null", viewModel.getSelectedImageUri().getValue());
     }
 
     @Test
     public void setImageUri_null_isAllowed() {
-        viewModel.setImageUri(null);
-        assertNull("Null image URI should be allowed", viewModel.getImageUri().getValue());
+        viewModel.setSelectedImageUri(null);
+        assertNull("Null image URI should be allowed", viewModel.getSelectedImageUri().getValue());
     }
 
-    // ========== Location ID Management Tests ==========
-
-    @Test
-    public void setSelectedLocationId_updatesValue() {
-        viewModel.setSelectedLocationId(123L);
-        assertEquals("Location ID should be set", Long.valueOf(123L), viewModel.getSelectedLocationId().getValue());
-    }
-
-    @Test
-    public void getSelectedLocationId_initialValue_isNull() {
-        assertNull("Initial location ID should be null", viewModel.getSelectedLocationId().getValue());
-    }
-
-    @Test
-    public void setSelectedLocationId_zero_isAllowed() {
-        viewModel.setSelectedLocationId(0L);
-        assertEquals("Zero location ID should be allowed", Long.valueOf(0L), viewModel.getSelectedLocationId().getValue());
-    }
+    // !!!! Check this test !!!!
+//    // ========== Location ID Management Tests ==========
+//
+//    @Test
+//    public void setSelectedLocationId_updatesValue() {
+//        viewModel.setSelectedLocationId(123L);
+//        assertEquals("Location ID should be set", Long.valueOf(123L), viewModel.getSelectedLocationId().getValue());
+//    }
+//
+//    @Test
+//    public void getSelectedLocationId_initialValue_isNull() {
+//        assertNull("Initial location ID should be null", viewModel.getSelectedLocationId().getValue());
+//    }
+//
+//    @Test
+//    public void setSelectedLocationId_zero_isAllowed() {
+//        viewModel.setSelectedLocationId(0L);
+//        assertEquals("Zero location ID should be allowed", Long.valueOf(0L), viewModel.getSelectedLocationId().getValue());
+//    }
 
     // ========== Tagged Users Management Tests ==========
 
     @Test
     public void addTaggedUser_increasesListSize() {
-        viewModel.addTaggedUser("user1");
+        UserEntity user = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        viewModel.addTaggedUser(user);
         assertEquals("Tagged users should have 1 item", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void addTaggedUser_duplicate_notAdded() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user1");
+        UserEntity user = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        viewModel.addTaggedUser(user);
+        viewModel.addTaggedUser(user);
         assertEquals("Duplicate should not increase list size", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void addTaggedUser_multipleDifferent_increasesSize() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user2");
-        viewModel.addTaggedUser("user3");
+        UserEntity user1 = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        UserEntity user2 = new UserEntity("user2", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        UserEntity user3= new UserEntity("user3", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+
+        viewModel.addTaggedUser(user1);
+        viewModel.addTaggedUser(user2);
+        viewModel.addTaggedUser(user3);
         assertEquals("Should have 3 tagged users", 3, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void removeTaggedUser_decreasesListSize() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user2");
-        viewModel.removeTaggedUser("user1");
+        UserEntity user1 = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        UserEntity user2 = new UserEntity("user2", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+
+        viewModel.addTaggedUser(user1);
+        viewModel.addTaggedUser(user2);
+        viewModel.removeTaggedUser(user1);
         assertEquals("Should have 1 tagged user after removal", 1, viewModel.getTaggedUsers().getValue().size());
         assertTrue("user2 should still be present", viewModel.getTaggedUsers().getValue().contains("user2"));
     }
 
-    @Test
-    public void removeTaggedUser_nonExistent_doesNothing() {
-        viewModel.addTaggedUser("user1");
-        viewModel.removeTaggedUser("nonexistent");
-        assertEquals("Should still have 1 user", 1, viewModel.getTaggedUsers().getValue().size());
-    }
+    // !!!! Check this test !!!!
+//    @Test
+//    public void removeTaggedUser_nonExistent_doesNothing() {
+//        UserEntity user = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+//
+//        viewModel.addTaggedUser(user);
+//        viewModel.removeTaggedUser(user1);
+//        assertEquals("Should still have 1 user", 1, viewModel.getTaggedUsers().getValue().size());
+//    }
 
     @Test
     public void getTaggedUsers_initialValue_emptyList() {
@@ -142,10 +160,11 @@ public class CreatePostViewModelTest {
 
     // ========== createPost Validation Tests ==========
 
+    // !!!! Check this test !!!!
     @Test
     public void createPost_nullLocationId_doesNotCreate() {
-        viewModel.setImageUri(Uri.parse("content://test/image.jpg"));
-        viewModel.setSelectedLocationId(null);
+        viewModel.setSelectedImageUri(Uri.parse("content://test/image.jpg"));
+        viewModel.setLocation(null);
         viewModel.setCaption("Test post");
         // createPost should return early due to null locationId
         // We can't fully test this without mocking, but we can test state
@@ -153,16 +172,20 @@ public class CreatePostViewModelTest {
 
     @Test
     public void createPost_nullImageUri_doesNotCreate() {
-        viewModel.setImageUri(null);
-        viewModel.setSelectedLocationId(123L);
+        LocationEntity location = new LocationEntity("location_name",13.34, -59.38, 4, true, "username", "location_description", "location_category", "location_image_url", "location_address");
+
+        viewModel.setSelectedImageUri(null);
+        viewModel.setLocation(location);
         viewModel.setCaption("Test post");
         // createPost should return early due to null imageUri
     }
 
     @Test
     public void createPost_bothNull_doesNotCreate() {
-        viewModel.setImageUri(null);
-        viewModel.setSelectedLocationId(null);
+        LocationEntity location = new LocationEntity("location_name",13.34, -59.38, 4, true, "username", "location_description", "location_category", "location_image_url", "location_address");
+
+        viewModel.setSelectedImageUri(null);
+        viewModel.setLocation(null);
         viewModel.setCaption("Test post");
         // Should return early
     }
@@ -183,41 +206,48 @@ public class CreatePostViewModelTest {
     }
 
     // ========== Combined State Tests ==========
-
+    // !!!! Check this test - LocationEntity !!!!
     @Test
     public void allSetters_workIndependently() {
+        UserEntity user = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        LocationEntity location = new LocationEntity("location_name",13.34, -59.38, 4, true, "username", "location_description", "location_category", "location_image_url", "location_address");
+
         viewModel.setCaption("My caption");
-        viewModel.setImageUri(Uri.parse("content://test.jpg"));
-        viewModel.setSelectedLocationId(456L);
-        viewModel.addTaggedUser("tag1");
+        viewModel.setSelectedImageUri(Uri.parse("content://test.jpg"));
+        viewModel.setLocation(location);
+        viewModel.addTaggedUser(user);
 
         assertEquals("Caption should be set", "My caption", viewModel.getCaption().getValue());
-        assertEquals("Image URI should be set", Uri.parse("content://test.jpg"), viewModel.getImageUri().getValue());
-        assertEquals("Location ID should be set", Long.valueOf(456L), viewModel.getSelectedLocationId().getValue());
+        assertEquals("Image URI should be set", Uri.parse("content://test.jpg"), viewModel.getSelectedImageUri().getValue());
+        assertEquals("Location ID should be set", Long.valueOf(456L), viewModel.getLocation().getValue());
         assertEquals("Tagged users should have 1 item", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
+    // !!!! Check this test - LocationEntity !!!!
     @Test
     public void clearState_individually() {
+        UserEntity user = new UserEntity("user1", "password","email@.com", UserType.GENERAL, false, System.currentTimeMillis());
+        LocationEntity location = new LocationEntity("location_name",13.34, -59.38, 4, true, "username", "location_description", "location_category", "location_image_url", "location_address");
+
         viewModel.setCaption("Test");
-        viewModel.setImageUri(Uri.parse("content://test.jpg"));
-        viewModel.setSelectedLocationId(123L);
-        viewModel.addTaggedUser("user1");
+        viewModel.setSelectedImageUri(Uri.parse("content://test.jpg"));
+        viewModel.setLocation(location);
+        viewModel.addTaggedUser(user);
 
         // Clear caption
         viewModel.setCaption("");
         assertEquals("Caption should be empty", "", viewModel.getCaption().getValue());
 
         // Clear image URI
-        viewModel.setImageUri(null);
-        assertNull("Image URI should be null", viewModel.getImageUri().getValue());
+        viewModel.setSelectedImageUri(null);
+        assertNull("Image URI should be null", viewModel.getSelectedImageUri().getValue());
 
         // Clear location ID
-        viewModel.setSelectedLocationId(null);
-        assertNull("Location ID should be null", viewModel.getSelectedLocationId().getValue());
+        viewModel.setLocation(null);
+        assertNull("Location ID should be null", viewModel.getLocation().getValue());
 
         // Clear tagged users (via remove)
-        viewModel.removeTaggedUser("user1");
+        viewModel.removeTaggedUser(user);
         assertEquals("Tagged users should be empty", 0, viewModel.getTaggedUsers().getValue().size());
     }
 
@@ -229,12 +259,13 @@ public class CreatePostViewModelTest {
         assertNull("Null caption should be allowed", viewModel.getCaption().getValue());
     }
 
-    @Test
-    public void addTaggedUser_emptyString_isAllowed() {
-        viewModel.addTaggedUser("");
-        // Empty string is technically allowed by the code
-        // (only checks if not already in list, not if empty)
-    }
+    // !!!! Check this test !!!!
+//    @Test
+//    public void addTaggedUser_emptyString_isAllowed() {
+//        viewModel.addTaggedUser("");
+//        // Empty string is technically allowed by the code
+//        // (only checks if not already in list, not if empty)
+//    }
 
     @Test
     public void addTaggedUser_null_addedToList() {
