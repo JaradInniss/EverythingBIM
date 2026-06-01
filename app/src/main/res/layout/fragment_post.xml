@@ -114,76 +114,82 @@
                     app:cardBackgroundColor="@color/white"
                     app:cardCornerRadius="10dp">
 
-                    <!-- Search Results Header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="5dp"
-                        android:paddingHorizontal="10dp"
-                        android:layout_marginBottom="8dp">
+                        android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Search Results Header -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:text="Search Results"
-                            android:textSize="13sp"
-                            style="@style/black_medium_txt_style"/>
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="5dp"
+                            android:paddingHorizontal="10dp">
 
-                        <!-- Filter icon -->
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_funnel"
-                            android:contentDescription="Filter"
-                            app:tint="@color/black" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:text="Search Results"
+                                android:textSize="13sp"
+                                style="@style/black_medium_txt_style"/>
 
-                        <View
-                            android:layout_width="2dp"
-                            android:layout_height="20dp"
-                            android:layout_marginHorizontal="15dp"
-                            android:background="@drawable/bg_rectangle_pale_slate"/>
+                            <!-- Filter icon -->
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_funnel"
+                                android:contentDescription="Filter"
+                                app:tint="@color/black" />
 
-                        <!-- Account Filter Option -->
-                        <TextView
-                            android:id="@+id/posts_search_filter_account"
-                            android:layout_width="wrap_content"
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="20dp"
+                                android:layout_marginHorizontal="15dp"
+                                android:background="@drawable/bg_rectangle_pale_slate"/>
+
+                            <!-- Account Filter Option -->
+                            <TextView
+                                android:id="@+id/posts_search_filter_account"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingVertical="4dp"
+                                android:paddingHorizontal="10dp"
+                                android:layout_marginEnd="10dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:background="@drawable/bg_search_filter_inactive"
+                                android:text="Account"
+                                style="@style/black_small_txt_style"/>
+
+                            <!-- Location Filter Option -->
+                            <TextView
+                                android:id="@+id/posts_search_filter_location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingVertical="4dp"
+                                android:paddingHorizontal="10dp"
+                                android:layout_marginEnd="6dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:background="@drawable/bg_search_filter_inactive"
+                                android:text="Location"
+                                style="@style/black_small_txt_style"/>
+
+                        </LinearLayout>
+
+                        <ListView
+                            android:id="@+id/posts_search_results_list"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:paddingVertical="4dp"
-                            android:paddingHorizontal="10dp"
-                            android:layout_marginEnd="10dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:background="@drawable/bg_search_filter_inactive"
-                            android:text="Account"
-                            style="@style/black_small_txt_style"/>
-
-                        <!-- Location Filter Option -->
-                        <TextView
-                            android:id="@+id/posts_search_filter_location"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingVertical="4dp"
-                            android:paddingHorizontal="10dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:background="@drawable/bg_search_filter_inactive"
-                            android:text="Location"
-                            style="@style/black_small_txt_style"/>
+                            android:divider="@color/dim_grey"
+                            android:dividerHeight="0.5dp"
+                            android:layout_marginVertical="4dp"
+                            style="@style/white_small_txt_style"/>
 
                     </LinearLayout>
-
-                    <ListView
-                        android:id="@+id/posts_search_results_list"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:divider="@color/dim_grey"
-                        android:dividerHeight="0.5dp"
-                        android:layout_marginVertical="4dp"
-                        style="@style/white_small_txt_style"/>
 
                 </androidx.cardview.widget.CardView>
 

@@ -284,7 +284,7 @@
                     android:layout_height="40dp"
                     android:layout_marginStart="10dp"
                     android:tint="@color/white"
-                    android:background="@drawable/bg_rounded_true_cobalt"
+                    android:background="@drawable/bg_rectangle_blue"
                     android:src="@drawable/ic_paperclip"
                     android:scaleType="centerInside"
                     android:padding="10dp"

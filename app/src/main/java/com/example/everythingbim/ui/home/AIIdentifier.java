@@ -296,11 +296,16 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
             return;
         }
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, currentLandmark.getLatitude());
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, currentLandmark.getLongitude());
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, currentLandmark.getDisplayName());
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, currentLandmark.getDescription());
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
+//         intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, currentLandmark.getLatitude());
+//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, currentLandmark.getLongitude());
+//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_TITLE, currentLandmark.getDisplayName());
+//         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, currentLandmark.getDescription());
         startActivity(intent);
     }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.example.everythingbim.data.local.entities.PostEntity;
 
@@ -23,12 +24,25 @@ public interface PostDao {
     LiveData<List<PostEntity>> getAllPosts();
 
     /**
+     * Synchronously retrieves all posts from the database.
+     */
+    @Query("SELECT * FROM posts")
+    List<PostEntity> getAllPostsSync();
+
+    /**
      * Inserts a new post into the database.
      * @param post The PostEntity to insert.
      * @return The row ID of the newly inserted post.
      */
     @Insert
     long insert(PostEntity post);
+
+    /**
+     * Updates an existing post in the database.
+     * @param post The PostEntity to update.
+     */
+    @Update
+    void update(PostEntity post);
 
     /**
      * Retrieves all posts in a random order. 
@@ -52,4 +66,7 @@ public interface PostDao {
      */
     @Query("SELECT COUNT(*) FROM posts")
     int getPostCount();
+
+    @Query("SELECT * FROM posts WHERE authorId = :authorId")
+    LiveData<List<PostEntity>> getPostsByUserId(long authorId);
 }
