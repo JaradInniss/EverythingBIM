@@ -6,7 +6,7 @@ import androidx.room.Relation;
 import java.util.List;
 
 /**
- * Plain Old Java Object to represent a Location along with its associated Posts and Reviews.
+ * Plain Oold Java Object to represent a Location along with its associated Posts and Reviews.
  * This is used by Room to perform an automated "join" query.
  */
 public class LocationWithDetails {

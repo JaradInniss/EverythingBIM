@@ -26,9 +26,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
-            android:name=".ui.posts.ViewUserProfileActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.posts.ViewPost"
             android:exported="false" />
         <activity
@@ -43,6 +40,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0" />
+
         <meta-data
             android:name="com.google.firebase.appcheck.debug.token"
             android:value="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" />

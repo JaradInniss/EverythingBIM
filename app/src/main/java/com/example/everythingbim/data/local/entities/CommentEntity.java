@@ -34,11 +34,25 @@ public class CommentEntity {
     public long commentId;
 
     public long postId;
-    public Long parentCommentId; // ID of the comment being replied to. Null for top-level comments.
+    
+    /**
+     * ID of the comment being replied to. Null for top-level comments.
+     */
+    public Long parentCommentId;
+
     public String authorName;
-    public String parentAuthorName; // Name of the author of the parent comment (e.g., for "Re: @username").
+    
+    /**
+     * Name of the author of the parent comment (e.g., for "Re: @username").
+     */
+    public String parentAuthorName;
+    
     public String body;
-    public long timestamp; // Creation timestamp of the comment.
+    
+    /**
+     * Creation timestamp of the comment.
+     */
+    public long timestamp;
 
     public CommentEntity(long postId, Long parentCommentId, String authorName, String parentAuthorName, String body, long timestamp) {
         this.postId = postId;
