@@ -228,7 +228,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
     private void loadData() {
         Log.d(TAG, "Loading data from Firestore for docId: " + docId);
-        db.collection("add_info_requests").document(docId)
+        db.collection("add_information_requests").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) {
@@ -238,9 +238,17 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
                     Log.d(TAG, "Document found, updating fields");
 
+                    // Use 'number' field if present, otherwise use first 6 chars of document ID
                     long number = doc.contains("number") ? doc.getLong("number") : 0;
-                    numberTv.setText("Request #" + number);
-                    cachedNumber = String.valueOf(number);
+                    if (number == 0 && !doc.getId().isEmpty()) {
+                        // Fallback to doc ID when number field is missing
+                        String docIdPrefix = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                        numberTv.setText("Request #" + docIdPrefix);
+                        cachedNumber = docIdPrefix;
+                    } else {
+                        numberTv.setText("Request #" + number);
+                        cachedNumber = String.valueOf(number);
+                    }
 
                     String status = doc.getString("status");
                     if (status == null) status = "In Review";
@@ -348,7 +356,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
     private void confirmAccept() {
         if (docId.isEmpty()) return;
-        db.collection("add_info_requests").document(docId)
+        db.collection("add_information_requests").document(docId)
                 .update("status", "Completed",
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId())
@@ -364,7 +372,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
     private void confirmReject(String reason) {
         if (docId.isEmpty()) return;
-        db.collection("add_info_requests").document(docId)
+        db.collection("add_information_requests").document(docId)
                 .update("status", "Rejected",
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId(),
