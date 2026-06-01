@@ -1,11 +1,8 @@
 package com.example.everythingbim.ui.posts;
 
-import android.Manifest;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -59,6 +56,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
 
 public class CreatePostActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -106,6 +106,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        if (isGuestUser()) {
+            showAuthRequiredDialog();
+            return;
+        }
 
         setupViews();
         setupAdapters();
@@ -522,5 +527,40 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
         return File.createTempFile("bim_" + timeStamp + "_", ".jpg", this.getCacheDir());
+    }
+
+    private boolean isGuestUser() {
+        SharedPreferences preferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String userType = preferences.getString("userType", MainActivity.USER_TYPE_GUEST);
+        return MainActivity.USER_TYPE_GUEST.equals(userType);
+    }
+
+    private void showAuthRequiredDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Log in to create a post")
+                .setMessage("Guests can browse posts, but you'll need an account before sharing your own.")
+                .setPositiveButton("Log In", (dialog, which) -> {
+                    startActivity(buildLoginIntent());
+                    finish();
+                })
+                .setNegativeButton("Create Account", (dialog, which) -> {
+                    startActivity(buildGeneralRegistrationIntent());
+                    finish();
+                })
+                .setOnCancelListener(dialog -> finish())
+                .setNeutralButton("Not now", (dialog, which) -> finish())
+                .show();
+    }
+
+    private Intent buildLoginIntent() {
+        Intent intent = new Intent(this, Login.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
+    }
+
+    private Intent buildGeneralRegistrationIntent() {
+        Intent intent = new Intent(this, GeneralRegistration.class);
+        intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_CREATE_POST);
+        return intent;
     }
 }

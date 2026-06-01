@@ -4,6 +4,7 @@ import com.example.everythingbim.databinding.ActivityGeneralRegistrationBinding;
 import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
 import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -155,14 +156,19 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
         // Observe navigation events (one‑time)
         viewModel.getNavigationEvent().observe(this, destination -> {
-            if (destination != null) {
-                // For login, clear the back stack
-                if (destination.equals(Login.class)) {
-                    Intent intent = new Intent(GeneralRegistration.this, destination);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                } else {
+                if (destination != null) {
+                    // For login, clear the back stack
+                    if (destination.equals(Login.class)) {
+                        Intent intent = new Intent(GeneralRegistration.this, destination);
+                        String pendingAction = getIntent().getStringExtra(MainActivity.EXTRA_PENDING_ACTION);
+                        if (pendingAction != null) {
+                            intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, pendingAction);
+                            copyDatasetResumeExtras(getIntent(), intent);
+                        }
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    } else {
                     startActivity(new Intent(GeneralRegistration.this, destination));
                 }
             }
@@ -267,6 +273,35 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
         // Show/hide previous button
         prevBttn.setVisibility(currentPage == 0 ? View.GONE : View.VISIBLE);
+    }
+
+    private void copyDatasetResumeExtras(Intent source, Intent destination) {
+        if (source == null || destination == null) {
+            return;
+        }
+
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_IMAGE_URI);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_IMAGE_SOURCE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_DISPLAY_NAME);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_GPS_AVAILABLE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_GPS_PERMISSION_GRANTED);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_USER_LATITUDE);
+        copyExtraIfPresent(source, destination, com.example.everythingbim.ui.home.AIIdentifier.EXTRA_USER_LONGITUDE);
+    }
+
+    private void copyExtraIfPresent(Intent source, Intent destination, String key) {
+        if (!source.hasExtra(key) || source.getExtras() == null) {
+            return;
+        }
+
+        Object value = source.getExtras().get(key);
+        if (value instanceof String) {
+            destination.putExtra(key, (String) value);
+        } else if (value instanceof Boolean) {
+            destination.putExtra(key, (Boolean) value);
+        } else if (value instanceof Double) {
+            destination.putExtra(key, (Double) value);
+        }
     }
 
 

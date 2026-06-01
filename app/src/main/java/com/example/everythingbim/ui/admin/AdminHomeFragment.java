@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Admin Home Fragment displaying dashboard with request statistics and weekly chart.
@@ -48,11 +49,13 @@ public class AdminHomeFragment extends Fragment {
     private View barMon, barTue, barWed, barThu, barFri, barSat, barSun;
     private TextView tvMonValue, tvTueValue, tvWedValue, tvThuValue, tvFriValue, tvSatValue, tvSunValue;
     private TextView tvRequestVolumeTotal, tvRequestVolumeIncremental;
+    private TextView tvNotificationBadge;
 
     // View references for 4 request type cards
     private TextView tvBusinessCount, tvBusinessIncremental;
     private TextView tvInfoCount, tvInfoIncremental;
     private TextView tvLocationCount, tvLocationIncremental;
+    private TextView tvDatasetCount, tvDatasetIncremental;
     private TextView tvReportsCount, tvReportsIncremental;
 
     // View references for recent activity items
@@ -71,14 +74,21 @@ public class AdminHomeFragment extends Fragment {
 
     // View dot indicators for 4 cards
     private View dotBusiness, dotInfo, dotLocation, dotReports;
+    private View dotDataset;
 
     // View dot indicators for recent activity items
     private View dotActivity1, dotActivity2, dotActivity3;
+    private int unreadBusinessCount;
+    private int unreadInfoCount;
+    private int unreadLocationCount;
+    private int unreadDatasetCount;
+    private int unreadReportsCount;
 
     // Collection names
     private static final String COLLECTION_BUSINESS = "add_business_requests";
-    private static final String COLLECTION_INFO = "add_info_requests";
+    private static final String COLLECTION_INFO = "add_information_requests";
     private static final String COLLECTION_LOCATION = "add_location_requests";
+    private static final String COLLECTION_DATASET = "dataset_image_submissions";
     private static final String COLLECTION_REPORTS = "add_reports";
 
     public AdminHomeFragment() {
@@ -131,6 +141,7 @@ public class AdminHomeFragment extends Fragment {
         // Initialize total and incremental text views
         tvRequestVolumeTotal = view.findViewById(R.id.tv_request_volume_total);
         tvRequestVolumeIncremental = view.findViewById(R.id.tv_request_volume_incremental);
+        tvNotificationBadge = view.findViewById(R.id.tv_notification_badge);
 
         // Initialize request type card views
         tvBusinessCount = view.findViewById(R.id.tv_business_count);
@@ -139,6 +150,8 @@ public class AdminHomeFragment extends Fragment {
         tvInfoIncremental = view.findViewById(R.id.tv_info_count_incremental);
         tvLocationCount = view.findViewById(R.id.tv_location_count);
         tvLocationIncremental = view.findViewById(R.id.tv_location_count_incremental);
+        tvDatasetCount = view.findViewById(R.id.tv_dataset_count);
+        tvDatasetIncremental = view.findViewById(R.id.tv_dataset_count_incremental);
         tvReportsCount = view.findViewById(R.id.tv_reports_count);
         tvReportsIncremental = view.findViewById(R.id.tv_reports_count_incremental);
 
@@ -166,6 +179,7 @@ public class AdminHomeFragment extends Fragment {
         dotBusiness = view.findViewById(R.id.dot_business);
         dotInfo = view.findViewById(R.id.dot_info);
         dotLocation = view.findViewById(R.id.dot_location);
+        dotDataset = view.findViewById(R.id.dot_dataset);
         dotReports = view.findViewById(R.id.dot_reports);
 
         // Bind recent activity dot indicators
@@ -250,29 +264,36 @@ public class AdminHomeFragment extends Fragment {
         View cardBusiness = requireView().findViewById(R.id.card_business);
         View cardInfo = requireView().findViewById(R.id.card_info);
         View cardLocation = requireView().findViewById(R.id.card_location);
+        View cardDataset = requireView().findViewById(R.id.card_dataset);
         View cardReports = requireView().findViewById(R.id.card_reports);
 
         if (cardBusiness != null) {
             cardBusiness.setOnClickListener(v -> {
-                ReadStateManager.markBusinessSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("business");
             });
         }
         if (cardInfo != null) {
             cardInfo.setOnClickListener(v -> {
-                ReadStateManager.markInfoSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("info");
             });
         }
         if (cardLocation != null) {
             cardLocation.setOnClickListener(v -> {
-                ReadStateManager.markLocationSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToRequestSection("location");
+            });
+        }
+        if (cardDataset != null) {
+            cardDataset.setOnClickListener(v -> {
+                // Don't mark as read here - only when admin clicks "View" on individual requests
+                navigateToRequestSection("dataset");
             });
         }
         if (cardReports != null) {
             cardReports.setOnClickListener(v -> {
-                ReadStateManager.markReportsSectionRead(requireContext());
+                // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToReportsSection();
             });
         }
@@ -335,6 +356,9 @@ public class AdminHomeFragment extends Fragment {
                 break;
             case ActivityLogger.TYPE_INFO:
                 fragment = new AdminInfoRequestDetailFragment();
+                break;
+            case ActivityLogger.TYPE_DATASET:
+                fragment = AdminDatasetSubmissionDetailFragment.newInstance(activity.requestId);
                 break;
         }
 
@@ -481,6 +505,10 @@ public class AdminHomeFragment extends Fragment {
                     iconView.setImageResource(R.drawable.ic_info);
                     iconView.setColorFilter(requireContext().getResources().getColor(R.color.prussian_blue, null));
                     break;
+                case ActivityLogger.TYPE_DATASET:
+                    iconView.setImageResource(R.drawable.ic_images);
+                    iconView.setColorFilter(requireContext().getResources().getColor(R.color.prussian_blue, null));
+                    break;
             }
         }
 
@@ -531,73 +559,116 @@ public class AdminHomeFragment extends Fragment {
         long businessTs = ReadStateManager.getBusinessLastRead(ctx);
         long infoTs = ReadStateManager.getInfoLastRead(ctx);
         long locationTs = ReadStateManager.getLocationLastRead(ctx);
+        long datasetTs = ReadStateManager.getDatasetLastRead(ctx);
         long reportsTs = ReadStateManager.getReportsLastRead(ctx);
 
         // Business requests
         db.collection(COLLECTION_BUSINESS)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, businessTs);
+                    int count = countUnreadSince(snap, businessTs, ReadStateManager.KEY_LAST_READ_BUSINESS);
+                    unreadBusinessCount = count;
                     updateBusinessCount(count, 0);
                     updateDotVisibility(dotBusiness, count > 0);
+                    updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
+                    unreadBusinessCount = 0;
                     updateBusinessCount(0, 0);
                     updateDotVisibility(dotBusiness, false);
+                    updateNotificationBadge();
                 });
 
         // Info requests
         db.collection(COLLECTION_INFO)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, infoTs);
+                    int count = countUnreadSince(snap, infoTs, ReadStateManager.KEY_LAST_READ_INFO);
+                    unreadInfoCount = count;
                     updateInfoCount(count, 0);
                     updateDotVisibility(dotInfo, count > 0);
+                    updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
+                    unreadInfoCount = 0;
                     updateInfoCount(0, 0);
                     updateDotVisibility(dotInfo, false);
+                    updateNotificationBadge();
                 });
 
         // Location requests
         db.collection(COLLECTION_LOCATION)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, locationTs);
+                    int count = countUnreadSince(snap, locationTs, ReadStateManager.KEY_LAST_READ_LOCATION);
+                    unreadLocationCount = count;
                     updateLocationCount(count, 0);
                     updateDotVisibility(dotLocation, count > 0);
+                    updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
+                    unreadLocationCount = 0;
                     updateLocationCount(0, 0);
                     updateDotVisibility(dotLocation, false);
+                    updateNotificationBadge();
+                });
+
+        db.collection(COLLECTION_DATASET)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    int count = countUnreadSince(snap, datasetTs, ReadStateManager.KEY_LAST_READ_DATASET);
+                    unreadDatasetCount = count;
+                    updateDatasetCount(count, 0);
+                    updateDotVisibility(dotDataset, count > 0);
+                    updateNotificationBadge();
+                })
+                .addOnFailureListener(e -> {
+                    unreadDatasetCount = 0;
+                    updateDatasetCount(0, 0);
+                    updateDotVisibility(dotDataset, false);
+                    updateNotificationBadge();
                 });
 
         // Reports
         db.collection(COLLECTION_REPORTS)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, reportsTs);
+                    int count = countUnreadSince(snap, reportsTs, ReadStateManager.KEY_LAST_READ_REPORTS);
+                    unreadReportsCount = count;
                     updateReportsCount(count, 0);
                     updateDotVisibility(dotReports, count > 0);
+                    updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
+                    unreadReportsCount = 0;
                     updateReportsCount(0, 0);
                     updateDotVisibility(dotReports, false);
+                    updateNotificationBadge();
                 });
     }
 
     /**
      * Counts items with read=false that were created at or after the given timestamp.
      * If timestamp is 0 (first open), counts all items with read=false.
+     * Also checks local SharedPreferences for individually read request IDs.
      */
-    private int countUnreadSince(QuerySnapshot snap, long lastReadTs) {
+    private int countUnreadSince(QuerySnapshot snap, long lastReadTs, String sectionKey) {
         int count = 0;
         if (snap == null) return 0;
+        Context ctx = getContext();
+        if (ctx == null) return 0; // Fragment detached, don't update count
+        Set<String> localReadIds = ReadStateManager.getReadRequestIds(ctx);
+        
         for (DocumentSnapshot doc : snap.getDocuments()) {
+            // Skip if individually marked as read in SharedPreferences
+            if (localReadIds.contains(doc.getId())) continue;
+            
+            // Skip if already read in Firestore
             Boolean read = doc.getBoolean("read");
-            if (Boolean.TRUE.equals(read)) continue; // Already read in Firestore
+            if (Boolean.TRUE.equals(read)) continue;
+            
+            // Only count items created at or after lastReadTimestamp (if timestamp > 0)
             if (lastReadTs > 0) {
-                // Only count items created at or after lastReadTimestamp
                 com.google.firebase.Timestamp createdAt = doc.getTimestamp("createdAt");
                 if (createdAt != null && createdAt.toDate().getTime() < lastReadTs) continue;
             }
@@ -615,6 +686,26 @@ public class AdminHomeFragment extends Fragment {
         dot.setBackgroundResource(hasUnread ? R.drawable.bg_dot_red : R.drawable.bg_dot_grey);
     }
 
+    private void updateNotificationBadge() {
+        if (tvNotificationBadge == null) {
+            return;
+        }
+
+        int totalUnread = unreadBusinessCount
+                + unreadInfoCount
+                + unreadLocationCount
+                + unreadDatasetCount
+                + unreadReportsCount;
+
+        if (totalUnread <= 0) {
+            tvNotificationBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        tvNotificationBadge.setVisibility(View.VISIBLE);
+        tvNotificationBadge.setText(totalUnread > 99 ? "99+" : String.valueOf(totalUnread));
+    }
+
     /**
      * Loads weekly volume data for the bar chart.
      */
@@ -630,7 +721,7 @@ public class AdminHomeFragment extends Fragment {
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
-        Task<QuerySnapshot> infoTask = db.collection("add_info_requests")
+        Task<QuerySnapshot> infoTask = db.collection(COLLECTION_INFO)
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
@@ -638,11 +729,15 @@ public class AdminHomeFragment extends Fragment {
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
+        Task<QuerySnapshot> datasetTask = db.collection(COLLECTION_DATASET)
+                .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
+                .get();
+
         Task<QuerySnapshot> reportsTask = db.collection("add_reports")
                 .whereGreaterThanOrEqualTo("createdAt", new com.google.firebase.Timestamp(calendar.getTime()))
                 .get();
 
-        Tasks.whenAllSuccess(businessTask, infoTask, locationTask, reportsTask)
+        Tasks.whenAllSuccess(businessTask, infoTask, locationTask, datasetTask, reportsTask)
                 .addOnSuccessListener(results -> {
                     Map<String, Integer> weeklyData = new LinkedHashMap<>();
                     int totalThisWeek = 0;
@@ -723,6 +818,14 @@ public class AdminHomeFragment extends Fragment {
         if (tvLocationIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvLocationIncremental.setText(text);
+        }
+    }
+
+    private void updateDatasetCount(int count, int incremental) {
+        if (tvDatasetCount != null) tvDatasetCount.setText(String.format("%02d", count));
+        if (tvDatasetIncremental != null) {
+            String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
+            tvDatasetIncremental.setText(text);
         }
     }
 

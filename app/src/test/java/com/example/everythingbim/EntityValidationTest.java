@@ -14,41 +14,41 @@ import org.junit.Test;
  * Unit tests for Room entity classes.
  * Tests entity construction using actual constructors.
  */
-public class EntityValidationTest {
+public class   EntityValidationTest {
 
     // ========== LocationEntity Tests ==========
 
     @Test
     public void locationEntity_constructor_setsAllFields() {
         LocationEntity location = new LocationEntity(
-            "Crane Beach",
-            13.0879,
-            -59.4832,
-            4.8f,
+            "Test Location",
+            13.0,
+            -59.5,
+            4.0f,
             true,
-            "user123",
-            "Beautiful beach with white sand",
-            "beach",
+            "testUser",
+            "Test description",
+            "testCategory",
             "https://example.com/image.jpg",
-            "Christ Church, Barbados"
+            "Test Address"
         );
 
-        assertEquals("Name should be Crane Beach", "Crane Beach", location.name);
-        assertEquals("Latitude should be 13.0879", 13.0879, location.latitude, 0.0001);
-        assertEquals("Longitude should be -59.4832", -59.4832, location.longitude, 0.0001);
-        assertEquals("Rating should be 4.8", 4.8f, location.rating, 0.0f);
+        assertEquals("Name should be Test Location", "Test Location", location.name);
+        assertEquals("Latitude should be 13.0", 13.0, location.latitude, 0.0001);
+        assertEquals("Longitude should be -59.5", -59.5, location.longitude, 0.0001);
+        assertEquals("Rating should be 4.0", 4.0f, location.rating, 0.0f);
         assertTrue("isVerified should be true", location.isVerified);
-        assertEquals("addedBy should be user123", "user123", location.addedBy);
-        assertEquals("description should match", "Beautiful beach with white sand", location.description);
-        assertEquals("category should be beach", "beach", location.category);
+        assertEquals("addedBy should be testUser", "testUser", location.addedBy);
+        assertEquals("description should match", "Test description", location.description);
+        assertEquals("category should be testCategory", "testCategory", location.category);
         assertEquals("imageUrl should match", "https://example.com/image.jpg", location.imageUrl);
-        assertEquals("address should match", "Christ Church, Barbados", location.address);
+        assertEquals("address should match", "Test Address", location.address);
     }
 
     @Test
     public void locationEntity_ratingCanBeMaxValue() {
         LocationEntity location = new LocationEntity(
-            "Test Beach",
+            "Test Location",
             0, 0, 5.0f, false, "user", "desc", "cat", "url", "addr"
         );
         assertEquals("Rating of 5.0 should be allowed", 5.0f, location.rating, 0.0f);
@@ -57,7 +57,7 @@ public class EntityValidationTest {
     @Test
     public void locationEntity_ratingCanBeZero() {
         LocationEntity location = new LocationEntity(
-            "Test Beach", 0, 0, 0.0f, false, "user", "desc", "cat", "url", "addr"
+            "Test Location", 0, 0, 0.0f, false, "user", "desc", "cat", "url", "addr"
         );
         assertEquals("Rating of 0.0 should be allowed", 0.0f, location.rating, 0.0f);
     }
@@ -101,22 +101,23 @@ public class EntityValidationTest {
     @Test
     public void commentEntity_constructor_setsAllFields() {
         long timestamp = System.currentTimeMillis();
-        CommentEntity comment = new CommentEntity("Great post!", "user123", "post456", "POST", timestamp);
+        CommentEntity comment = new CommentEntity(456L, 123L, "user123", "parentUser", "Great post!", timestamp);
 
         assertEquals("Body should be Great post!", "Great post!", comment.body);
-        assertEquals("AuthorId should be user123", "user123", comment.authorId);
-        assertEquals("TargetId should be post456", "post456", comment.targetId);
-        assertEquals("TargetType should be POST", "POST", comment.targetType);
-        assertEquals("CreatedAt should match timestamp", timestamp, comment.createdAt);
+        assertEquals("PostId should be 456", 456L, comment.postId);
+        assertEquals("ParentCommentId should be 123", Long.valueOf(123L), comment.parentCommentId);
+        assertEquals("AuthorName should be user123", "user123", comment.authorName);
+        assertEquals("ParentAuthorName should be parentUser", "parentUser", comment.parentAuthorName);
+        assertEquals("Timestamp should match", timestamp, comment.timestamp);
     }
 
     @Test
     public void commentEntity_canHandleNullFields() {
-        CommentEntity comment = new CommentEntity(null, null, null, null, 0L);
+        CommentEntity comment = new CommentEntity(0L, null, null, null, null, 0L);
         assertNull("Body should be null", comment.body);
-        assertNull("AuthorId should be null", comment.authorId);
-        assertNull("TargetId should be null", comment.targetId);
-        assertNull("TargetType should be null", comment.targetType);
+        assertNull("ParentCommentId should be null", comment.parentCommentId);
+        assertNull("AuthorName should be null", comment.authorName);
+        assertNull("ParentAuthorName should be null", comment.parentAuthorName);
     }
 
     // ========== LikeEntity Tests ==========
@@ -184,7 +185,7 @@ public class EntityValidationTest {
 
     @Test
     public void commentEntity_fieldsArePublic() {
-        CommentEntity comment = new CommentEntity("body", "author", "target", "POST", 0L);
+        CommentEntity comment = new CommentEntity(1L, null, "author", null, "body", 0L);
         assertEquals("commentId should be accessible", 0L, comment.commentId);
         comment.commentId = 777L;
         assertEquals("commentId should be settable", 777L, comment.commentId);

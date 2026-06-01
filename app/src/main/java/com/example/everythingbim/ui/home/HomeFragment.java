@@ -163,14 +163,14 @@ public class HomeFragment extends Fragment {
 
     private void launchIdentifier(@NonNull SelectedImage selectedImage) {
         Intent intent = new Intent(requireContext(), AIIdentifier.class);
-        intent.putExtra("image_uri", selectedImage.getUri().toString());
-        intent.putExtra("image_source", selectedImage.getSource());
-        intent.putExtra("display_name", selectedImage.getDisplayName());
-        intent.putExtra("gps_available", gpsAvailable);
-        intent.putExtra("gps_permission_granted", locationPermissionGranted);
+        intent.putExtra(AIIdentifier.EXTRA_IMAGE_URI, selectedImage.getUri().toString());
+        intent.putExtra(AIIdentifier.EXTRA_IMAGE_SOURCE, selectedImage.getSource());
+        intent.putExtra(AIIdentifier.EXTRA_DISPLAY_NAME, selectedImage.getDisplayName());
+        intent.putExtra(AIIdentifier.EXTRA_GPS_AVAILABLE, gpsAvailable);
+        intent.putExtra(AIIdentifier.EXTRA_GPS_PERMISSION_GRANTED, locationPermissionGranted);
         if (lastKnownLatitude != null && lastKnownLongitude != null) {
-            intent.putExtra("user_latitude", lastKnownLatitude);
-            intent.putExtra("user_longitude", lastKnownLongitude);
+            intent.putExtra(AIIdentifier.EXTRA_USER_LATITUDE, lastKnownLatitude);
+            intent.putExtra(AIIdentifier.EXTRA_USER_LONGITUDE, lastKnownLongitude);
         }
         startActivity(intent);
     }

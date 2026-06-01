@@ -45,6 +45,7 @@ import com.example.everythingbim.databinding.BusinessRegisForm2Binding;
 import com.example.everythingbim.databinding.BusinessRegisForm3Binding;
 import com.example.everythingbim.databinding.BusinessRegisForm4Binding;
 import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.utils.FileAdapter;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -309,7 +310,12 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         // Navigation
         viewModel.getNavigationEvent().observe(this, destination -> {
             if (destination != null) {
-                startActivity(new Intent(BusinessRegistration.this, destination));
+                Intent intent = new Intent(BusinessRegistration.this, destination);
+                String pendingAction = getIntent().getStringExtra(MainActivity.EXTRA_PENDING_ACTION);
+                if (pendingAction != null && destination.equals(Login.class)) {
+                    intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, pendingAction);
+                }
+                startActivity(intent);
                 finish();
             }
         });

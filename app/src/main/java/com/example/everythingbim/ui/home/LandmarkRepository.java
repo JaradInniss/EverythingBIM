@@ -5,24 +5,24 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-public class DemoLandmarkRepository {
+public class LandmarkRepository {
     private static final double PARLIAMENT_LATITUDE = 13.0969861d;
     private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
     private static final int PARLIAMENT_NEARBY_RADIUS_METERS = 1000;
+    private static final int KENSINGTON_NEARBY_RADIUS_METERS = PARLIAMENT_NEARBY_RADIUS_METERS;
 
-    private final List<DemoLandmark> landmarks = new ArrayList<>();
+    private final List<Landmark> landmarks = new ArrayList<>();
     private final Map<String, String> aliasToLandmarkId = new HashMap<>();
     private final Random random = new Random();
 
-    public DemoLandmarkRepository() {
-        DemoLandmark parliament = new DemoLandmark(
+    public LandmarkRepository() {
+        Landmark parliament = new Landmark(
                 "parliament",
                 "parliament",
                 "Barbados Parliament Buildings",
@@ -31,16 +31,16 @@ public class DemoLandmarkRepository {
                 PARLIAMENT_LONGITUDE,
                 PARLIAMENT_NEARBY_RADIUS_METERS
         );
-        DemoLandmark kensington = new DemoLandmark(
+        Landmark kensington = new Landmark(
                 "kensington",
                 "kensington",
                 "Kensington Oval",
                 "A famous Bridgetown cricket ground and one of Barbados' best-known sporting venues.",
                 13.1000d,
                 -59.6160d,
-                0
+                KENSINGTON_NEARBY_RADIUS_METERS
         );
-        DemoLandmark cathedral = new DemoLandmark(
+        Landmark cathedral = new Landmark(
                 "cathedral",
                 "cathedral",
                 "St. Michael's Cathedral",
@@ -60,18 +60,18 @@ public class DemoLandmarkRepository {
     }
 
     @Nullable
-    public DemoLandmark findByIdOrToken(@Nullable String value) {
+    public Landmark findByIdOrToken(@Nullable String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
 
         String normalized = value.toLowerCase(Locale.US);
-        DemoLandmark byId = findById(normalized);
+        Landmark byId = findById(normalized);
         if (byId != null) {
             return byId;
         }
 
-        for (DemoLandmark landmark : landmarks) {
+        for (Landmark landmark : landmarks) {
             if (landmark.getToken().toLowerCase(Locale.US).equals(normalized)) {
                 return landmark;
             }
@@ -82,7 +82,7 @@ public class DemoLandmarkRepository {
     }
 
     @Nullable
-    public DemoLandmark findByFileName(@Nullable String fileName) {
+    public Landmark findByFileName(@Nullable String fileName) {
         if (fileName == null || fileName.trim().isEmpty()) {
             return null;
         }
@@ -94,7 +94,7 @@ public class DemoLandmarkRepository {
             }
         }
 
-        for (DemoLandmark landmark : landmarks) {
+        for (Landmark landmark : landmarks) {
             if (normalizedName.contains(landmark.getToken().toLowerCase(Locale.US))) {
                 return landmark;
             }
@@ -103,19 +103,19 @@ public class DemoLandmarkRepository {
     }
 
     @NonNull
-    public DemoLandmark getRandomLandmark() {
+    public Landmark getRandomLandmark() {
         return landmarks.get(random.nextInt(landmarks.size()));
     }
 
-    private void registerAliases(@NonNull DemoLandmark landmark, @NonNull List<String> aliases) {
+    private void registerAliases(@NonNull Landmark landmark, @NonNull List<String> aliases) {
         for (String alias : aliases) {
             aliasToLandmarkId.put(alias.toLowerCase(Locale.US), landmark.getId());
         }
     }
 
     @Nullable
-    private DemoLandmark findById(@NonNull String landmarkId) {
-        for (DemoLandmark landmark : landmarks) {
+    private Landmark findById(@NonNull String landmarkId) {
+        for (Landmark landmark : landmarks) {
             if (landmark.getId().equals(landmarkId)) {
                 return landmark;
             }

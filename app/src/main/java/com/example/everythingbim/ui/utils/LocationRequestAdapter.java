@@ -139,6 +139,11 @@ public class LocationRequestAdapter
             holder.locationReason.setText(doc.getString("reason"));
         }
 
+        // ── Place Type ───────────────────────────
+        if (holder.placeType != null) {
+            holder.placeType.setText(doc.getString("placeType"));
+        }
+
         // ── Images — loaded from Firebase Storage URLs ──
         if (holder.imageContainer != null) {
             holder.imageContainer.removeAllViews(); // clear before rebinding
@@ -214,7 +219,7 @@ public class LocationRequestAdapter
     // ─── ViewHolder ──────────────────────────────
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView requestNo, submissionDate, statusValue;
-        TextView locationName, locationDesc, locationReason;
+        TextView locationName, locationDesc, locationReason, placeType;
         MapView mapView;
         LinearLayout imageContainer;
         LinearLayout acceptedContainer, rejectedContainer;
@@ -230,6 +235,7 @@ public class LocationRequestAdapter
             locationName      = itemView.findViewById(R.id.viewlocreq_name_et);
             locationDesc      = itemView.findViewById(R.id.viewlocreq_desc_et);
             locationReason    = itemView.findViewById(R.id.viewlocreq_reason_et);
+            placeType         = itemView.findViewById(R.id.viewlocreq_place_type_et);
             mapView           = itemView.findViewById(R.id.viewlocreq_map);
             imageContainer    = itemView.findViewById(R.id.viewlocreq_image_container);
             acceptedContainer = itemView.findViewById(R.id.viewlocreq_accepted_container);

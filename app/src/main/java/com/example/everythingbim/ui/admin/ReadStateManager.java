@@ -30,6 +30,7 @@ public class ReadStateManager {
     public static final String KEY_LAST_READ_BUSINESS = "last_read_business";
     public static final String KEY_LAST_READ_INFO = "last_read_info";
     public static final String KEY_LAST_READ_LOCATION = "last_read_location";
+    public static final String KEY_LAST_READ_DATASET = "last_read_dataset";
     public static final String KEY_LAST_READ_REPORTS = "last_read_reports";
 
     // ─────────────────────────────────────────────────────────────
@@ -111,6 +112,13 @@ public class ReadStateManager {
     }
 
     /**
+     * Convenience method to mark dataset section as read.
+     */
+    public static void markDatasetSectionRead(Context context) {
+        markSectionRead(context, KEY_LAST_READ_DATASET);
+    }
+
+    /**
      * Convenience method to mark reports section as read.
      */
     public static void markReportsSectionRead(Context context) {
@@ -143,6 +151,13 @@ public class ReadStateManager {
      */
     public static long getLocationLastRead(Context context) {
         return getSectionLastRead(context, KEY_LAST_READ_LOCATION);
+    }
+
+    /**
+     * Convenience method to get dataset section last-read timestamp.
+     */
+    public static long getDatasetLastRead(Context context) {
+        return getSectionLastRead(context, KEY_LAST_READ_DATASET);
     }
 
     /**

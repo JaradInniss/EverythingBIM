@@ -1,11 +1,13 @@
 package com.example.everythingbim.ui.home;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,24 +23,43 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implements NearbyRouteSelectionAdapter.OnSelectionChangedListener {
+public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implements
+        NearbyRouteSelectionAdapter.OnSelectionChangedListener,
+        NearbyRouteSelectionAdapter.OnLocationDetailsClickListener {
+    private static final int PAGE_SIZE = 5;
     private static final String ARG_LOCATIONS = "locations";
     private static final String ARG_SELECTED_IDS = "selected_ids";
+    private static final String ARG_ANCHOR_NAME = "anchor_name";
+    private static final String ARG_ANCHOR_LATITUDE = "anchor_latitude";
+    private static final String ARG_ANCHOR_LONGITUDE = "anchor_longitude";
 
     private final LinkedHashSet<Long> selectedIds = new LinkedHashSet<>();
     private final LinkedHashSet<NearbySavedLocation> selectedLocations = new LinkedHashSet<>();
+    private final ArrayList<NearbySavedLocation> allLocations = new ArrayList<>();
     private NearbyActionsListener actionsListener;
     private NearbyRouteSelectionAdapter adapter;
+    private TextView titleView;
+    private TextView seeMoreButton;
     private TextView routeButton;
     private TextView externalRouteButton;
     private TextView selectedCountView;
+    private int visibleLocationCount = PAGE_SIZE;
+    private String anchorName = "anchor";
+    private double anchorLatitude;
+    private double anchorLongitude;
 
     public static NearbyLocationsBottomSheet newInstance(@NonNull ArrayList<NearbySavedLocation> locations,
-                                                         @NonNull ArrayList<Long> selectedIds) {
+                                                         @NonNull ArrayList<Long> selectedIds,
+                                                         @Nullable String anchorName,
+                                                         double anchorLatitude,
+                                                         double anchorLongitude) {
         NearbyLocationsBottomSheet sheet = new NearbyLocationsBottomSheet();
         Bundle args = new Bundle();
         args.putSerializable(ARG_LOCATIONS, locations);
         args.putSerializable(ARG_SELECTED_IDS, selectedIds);
+        args.putString(ARG_ANCHOR_NAME, anchorName);
+        args.putDouble(ARG_ANCHOR_LATITUDE, anchorLatitude);
+        args.putDouble(ARG_ANCHOR_LONGITUDE, anchorLongitude);
         sheet.setArguments(args);
         return sheet;
     }
@@ -58,7 +79,9 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         super.onViewCreated(view, savedInstanceState);
 
         TextView closeButton = view.findViewById(R.id.nearby_sheet_close_button);
+        titleView = view.findViewById(R.id.nearby_sheet_title);
         selectedCountView = view.findViewById(R.id.nearby_sheet_selected_count);
+        seeMoreButton = view.findViewById(R.id.nearby_sheet_see_more_button);
         routeButton = view.findViewById(R.id.nearby_sheet_route_button);
         externalRouteButton = view.findViewById(R.id.nearby_sheet_external_route_button);
         RecyclerView recyclerView = view.findViewById(R.id.nearby_sheet_recycler);
@@ -66,6 +89,10 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         closeButton.setOnClickListener(v -> dismiss());
 
         ArrayList<NearbySavedLocation> locations = readLocationsFromArguments();
+        readAnchorFromArguments();
+        allLocations.clear();
+        allLocations.addAll(locations);
+        visibleLocationCount = Math.min(PAGE_SIZE, allLocations.size());
         ArrayList<Long> restoredSelectedIds = readSelectedIdsFromArguments();
         selectedIds.clear();
         selectedIds.addAll(restoredSelectedIds);
@@ -76,10 +103,15 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
             }
         }
 
-        adapter = new NearbyRouteSelectionAdapter(this);
+        adapter = new NearbyRouteSelectionAdapter(this, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
-        adapter.submitList(locations, selectedIds);
+        titleView.setText(allLocations.isEmpty()
+                ? "Nearby " + anchorName + " Locations"
+                : "Nearby " + anchorName + " Locations (" + allLocations.size() + ")");
+        seeMoreButton.setOnClickListener(v -> showMoreLocations());
+        updateVisibleLocations();
+        Toast.makeText(requireContext(), "Tip: tap a location image for more options.", Toast.LENGTH_SHORT).show();
 
         routeButton.setOnClickListener(v -> {
             if (actionsListener != null && !selectedLocations.isEmpty()) {
@@ -118,6 +150,19 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         return new ArrayList<>();
     }
 
+    private void readAnchorFromArguments() {
+        Bundle args = getArguments();
+        if (args == null) {
+            return;
+        }
+        String restoredAnchorName = args.getString(ARG_ANCHOR_NAME);
+        if (restoredAnchorName != null && !restoredAnchorName.trim().isEmpty()) {
+            anchorName = restoredAnchorName.trim();
+        }
+        anchorLatitude = args.getDouble(ARG_ANCHOR_LATITUDE, 0d);
+        anchorLongitude = args.getDouble(ARG_ANCHOR_LONGITUDE, 0d);
+    }
+
     @Override
     public void onLocationAdded(@NonNull NearbySavedLocation location) {
         selectedIds.add(location.getLocationId());
@@ -132,6 +177,23 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         notifySelectionChanged();
     }
 
+    @Override
+    public void onLocationDetailsClick(@NonNull NearbySavedLocation location) {
+        CharSequence[] options = new CharSequence[]{"View more information", "View on map"};
+        new AlertDialog.Builder(requireContext())
+                .setTitle(location.getName())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        NearbyLocationDetailsBottomSheet.newInstance(location)
+                                .show(getParentFragmentManager(), "nearby_location_details_sheet");
+                    } else if (which == 1 && actionsListener != null) {
+                        actionsListener.onLocationDetailsRequested(location);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void notifySelectionChanged() {
         updateSelectionSummary();
         if (actionsListener != null) {
@@ -139,11 +201,43 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         }
     }
 
+    private void showMoreLocations() {
+        if (visibleLocationCount >= allLocations.size()) {
+            return;
+        }
+        visibleLocationCount = Math.min(allLocations.size(), visibleLocationCount + PAGE_SIZE);
+        updateVisibleLocations();
+    }
+
+    private void updateVisibleLocations() {
+        adapter.submitList(new ArrayList<>(allLocations.subList(0, visibleLocationCount)), selectedIds);
+
+        boolean hasMore = visibleLocationCount < allLocations.size();
+        seeMoreButton.setVisibility(hasMore ? View.VISIBLE : View.GONE);
+        if (hasMore) {
+            int nextBatch = Math.min(PAGE_SIZE, allLocations.size() - visibleLocationCount);
+            seeMoreButton.setText("See " + nextBatch + " more");
+        }
+    }
+
     private void updateSelectionSummary() {
         int count = selectedLocations.size();
-        selectedCountView.setText(count == 0
-                ? "Choose locations to build a route."
-                : count + " location" + (count == 1 ? "" : "s") + " selected");
+        if (count == 0) {
+            selectedCountView.setText("Choose locations to build a route.");
+        } else {
+            ArrayList<NearbySavedLocation> orderedSelection = new ArrayList<>(selectedLocations);
+            float estimatedDistance = RouteEstimateHelper.calculateRouteDistanceMeters(
+                    anchorLatitude,
+                    anchorLongitude,
+                    orderedSelection
+            );
+            int estimatedMinutes = RouteEstimateHelper.estimateWalkingMinutes(estimatedDistance);
+            String summary = count + " location" + (count == 1 ? "" : "s") + " selected";
+            if (estimatedMinutes > 0) {
+                summary += " | Est. " + estimatedMinutes + " min walk";
+            }
+            selectedCountView.setText(summary);
+        }
         routeButton.setEnabled(count > 0);
         routeButton.setAlpha(count > 0 ? 1f : 0.45f);
         routeButton.setText(count == 0 ? "Preview in App" : "Preview in App (" + count + ")");
@@ -165,5 +259,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         void onCreateRouteRequested(@NonNull List<NearbySavedLocation> selectedLocations);
 
         void onOpenRouteExternallyRequested(@NonNull List<NearbySavedLocation> selectedLocations);
+
+        void onLocationDetailsRequested(@NonNull NearbySavedLocation location);
     }
 }

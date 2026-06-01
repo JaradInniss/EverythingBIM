@@ -22,9 +22,12 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
     private final List<NearbySavedLocation> items = new ArrayList<>();
     private final Set<Long> selectedIds = new LinkedHashSet<>();
     private final OnSelectionChangedListener selectionChangedListener;
+    private final OnLocationDetailsClickListener detailsClickListener;
 
-    public NearbyRouteSelectionAdapter(@NonNull OnSelectionChangedListener selectionChangedListener) {
+    public NearbyRouteSelectionAdapter(@NonNull OnSelectionChangedListener selectionChangedListener,
+                                       @NonNull OnLocationDetailsClickListener detailsClickListener) {
         this.selectionChangedListener = selectionChangedListener;
+        this.detailsClickListener = detailsClickListener;
     }
 
     public void submitList(@NonNull List<NearbySavedLocation> locations, @NonNull Set<Long> currentSelection) {
@@ -44,7 +47,11 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
 
     @Override
     public void onBindViewHolder(@NonNull RouteLocationViewHolder holder, int position) {
-        holder.bind(items.get(position), selectedIds.contains(items.get(position).getLocationId()));
+        holder.bind(
+                items.get(position),
+                selectedIds.contains(items.get(position).getLocationId()),
+                detailsClickListener
+        );
     }
 
     @Override
@@ -70,7 +77,9 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
             removeButton = itemView.findViewById(R.id.nearby_route_remove_button);
         }
 
-        void bind(@NonNull NearbySavedLocation location, boolean isSelected) {
+        void bind(@NonNull NearbySavedLocation location,
+                  boolean isSelected,
+                  @NonNull OnLocationDetailsClickListener detailsClickListener) {
             nameView.setText(location.getName());
             descriptionView.setText(location.getDescriptionOrFallback());
             distanceView.setText(location.getDistanceLabel());
@@ -113,6 +122,8 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
                 notifyItemChanged(getAdapterPosition());
                 selectionChangedListener.onLocationRemoved(location);
             });
+
+            imageView.setOnClickListener(v -> detailsClickListener.onLocationDetailsClick(location));
         }
     }
 
@@ -120,5 +131,9 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
         void onLocationAdded(@NonNull NearbySavedLocation location);
 
         void onLocationRemoved(@NonNull NearbySavedLocation location);
+    }
+
+    public interface OnLocationDetailsClickListener {
+        void onLocationDetailsClick(@NonNull NearbySavedLocation location);
     }
 }

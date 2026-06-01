@@ -273,9 +273,17 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
 
                     Log.d(TAG, "Document found, updating fields");
 
+                    // Use 'number' field if present, otherwise use first 6 chars of document ID
                     long number = doc.contains("number") ? doc.getLong("number") : 0;
-                    numberTv.setText("Request #" + number);
-                    cachedNumber = String.valueOf(number);
+                    if (number == 0 && !doc.getId().isEmpty()) {
+                        // Fallback to doc ID when number field is missing
+                        String docIdPrefix = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                        numberTv.setText("Request #" + docIdPrefix);
+                        cachedNumber = docIdPrefix;
+                    } else {
+                        numberTv.setText("Request #" + number);
+                        cachedNumber = String.valueOf(number);
+                    }
 
                     String status = doc.getString("status");
                     if (status == null) status = "In Review";

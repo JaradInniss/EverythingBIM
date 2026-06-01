@@ -115,7 +115,7 @@ public class NearbySavedLocation implements Serializable {
 
     @NonNull
     public String getDistanceLabel() {
-        return formatDistance(distanceFromParliamentMeters) + " from Parliament";
+        return formatDistance(distanceFromParliamentMeters) + " from anchor";
     }
 
     @NonNull
@@ -130,10 +130,36 @@ public class NearbySavedLocation implements Serializable {
     }
 
     @NonNull
+    public String getAddressOrFallback() {
+        if (address != null && !address.trim().isEmpty()) {
+            return address.trim();
+        }
+        return formatLatLng(latitude, longitude);
+    }
+
+    @NonNull
+    public String getCategoryLabel() {
+        if (category != null && !category.trim().isEmpty()) {
+            String normalized = category.trim().replace('_', ' ');
+            if (normalized.length() == 1) {
+                return normalized.toUpperCase(Locale.US);
+            }
+            return normalized.substring(0, 1).toUpperCase(Locale.US)
+                    + normalized.substring(1);
+        }
+        return "Nearby location";
+    }
+
+    @NonNull
     private String formatDistance(float meters) {
         if (meters >= 1000f) {
             return String.format(Locale.US, "%.1f km", meters / 1000f);
         }
         return String.format(Locale.US, "%.0f m", meters);
+    }
+
+    @NonNull
+    private String formatLatLng(double lat, double lng) {
+        return String.format(Locale.US, "Lat: %.5f, Lng: %.5f", lat, lng);
     }
 }
