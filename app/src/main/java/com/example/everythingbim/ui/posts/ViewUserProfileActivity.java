@@ -26,6 +26,9 @@ import com.example.everythingbim.data.models.UserType;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+
+// Activity for Viewing A User's Profile Information
+
 public class ViewUserProfileActivity extends AppCompatActivity implements View.OnClickListener {
 
     private ViewUserProfileViewModel viewModel;

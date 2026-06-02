@@ -12,6 +12,8 @@ import com.example.everythingbim.data.local.entities.GeneralUserEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.data.local.entities.UserWithProfile;
 
+// User DAO
+
 @Dao
 public interface UserDao {
 

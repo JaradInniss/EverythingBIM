@@ -205,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
         pendingMapFocus = false;
         // Clean up intent so these aren't re-processed on rotation
         getIntent().removeExtra(EXTRA_OPEN_MAP);
-        getIntent().removeExtra(EXTRA_OPEN_MAP);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LATITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LONGITUDE);

@@ -15,6 +15,8 @@ import com.example.everythingbim.data.local.entities.LocationEntity;
 
 import java.util.List;
 
+// Location Search Adapter
+
 public class LocationSearchAdapter extends ArrayAdapter<String> {
 
     public LocationSearchAdapter(@NonNull Context context, @NonNull List<String> locations) {

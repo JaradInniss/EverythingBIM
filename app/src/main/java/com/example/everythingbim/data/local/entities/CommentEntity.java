@@ -6,7 +6,7 @@ import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 /**
- * Entity representing a comment in the database.
+ * Comment Entity representing a comment in the database.
  * Supports a hierarchical structure by referencing a parent comment ID.
  */
 @Entity(

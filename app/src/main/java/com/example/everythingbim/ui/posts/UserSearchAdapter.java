@@ -18,7 +18,7 @@ import com.example.everythingbim.data.local.entities.UserWithProfile;
 import java.util.List;
 
 /**
- * Adapter for displaying user search results in a ListView.
+ * User Search Adapter - Adapter for displaying user search results in a ListView.
  */
 public class UserSearchAdapter extends ArrayAdapter<UserWithProfile> {
 

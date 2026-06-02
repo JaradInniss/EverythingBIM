@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_main"
             android:gravity="center_vertical"
-            android:padding="10dp">
+            android:padding="8dp">
 
             <!-- Return Button -->
             <ImageView

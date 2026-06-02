@@ -204,13 +204,13 @@
                     android:id="@+id/report_description_et"
                     style="@style/black_small_txt_style"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
+                    android:layout_height="60dp"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_rectangle_white"
                     android:gravity="top|start"
                     android:inputType="textMultiLine"
-                    android:padding="8dp" />
+                    android:padding="10dp" />
 
                 <!-- Submit Report Button -->
                 <LinearLayout

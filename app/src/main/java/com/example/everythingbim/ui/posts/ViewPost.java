@@ -36,6 +36,8 @@ import java.util.Locale;
  * Activity for viewing a single post in detail, including its comments and replies.
  * Handles adding new comments and replies with a nested UI.
  */
+
+
 public class ViewPost extends AppCompatActivity {
 
     ActivityViewPostBinding binding;

@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
+// UserRepository for User Entity
+
 public class UserRepository {
 
     private final UserDao userDao;

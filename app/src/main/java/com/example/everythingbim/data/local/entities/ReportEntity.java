@@ -8,6 +8,9 @@ import androidx.room.PrimaryKey;
 
 import com.example.everythingbim.data.models.RequestReportStatus;
 
+
+// Report Entity
+
 @Entity(
         tableName = "reports",
         foreignKeys = {

@@ -10,6 +10,8 @@ import com.example.everythingbim.data.local.entities.MarkerEntity;
 
 import java.util.List;
 
+// Marker DAO
+
 @Dao
 public interface MarkerDao {
 
