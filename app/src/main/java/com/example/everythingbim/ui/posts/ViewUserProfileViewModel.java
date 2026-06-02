@@ -17,6 +17,9 @@ import com.example.everythingbim.data.repository.UserRepository;
 
 import java.util.List;
 
+
+// ViewModel for Viewing A User's Profile Information
+
 public class ViewUserProfileViewModel extends AndroidViewModel {
 
     private final UserRepository userRepository;

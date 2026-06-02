@@ -5,6 +5,9 @@ import androidx.room.PrimaryKey;
 
 import com.example.everythingbim.data.models.UserType;
 
+
+// User Entity
+
 @Entity( tableName = "users" )
 public class UserEntity {
     @PrimaryKey( autoGenerate = true )

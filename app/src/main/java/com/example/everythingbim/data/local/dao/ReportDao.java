@@ -9,6 +9,7 @@ import java.util.List;
 import com.example.everythingbim.data.local.entities.ReportEntity;
 import com.example.everythingbim.data.models.RequestReportStatus;
 
+// Report Dao
 
 @Dao
 public interface ReportDao {

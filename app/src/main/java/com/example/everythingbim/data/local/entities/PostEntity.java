@@ -7,6 +7,8 @@ import androidx.room.Index;
 
 import java.util.List;
 
+// Post Entity
+
 @Entity(
         tableName = "posts",
         foreignKeys = @ForeignKey(

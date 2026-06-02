@@ -36,6 +36,8 @@ import java.util.Locale;
  * Activity for viewing a single post in detail, including its comments and replies.
  * Handles adding new comments and replies with a nested UI.
  */
+
+
 public class ViewPost extends AppCompatActivity {
 
     ActivityViewPostBinding binding;
@@ -200,9 +202,13 @@ public class ViewPost extends AppCompatActivity {
                 binding.viewpostLocationTag.setOnClickListener(v -> {
                     Intent intent = new Intent(this, MainActivity.class);
                     intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, loc.getLocationId());
                     intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, loc.getLatitude());
                     intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, loc.getLongitude());
                     intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, loc.getName());
+                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, loc.getAddress());
+
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intent);
                 });

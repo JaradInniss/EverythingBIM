@@ -33,6 +33,7 @@ import com.example.everythingbim.ui.registration.GeneralRegistration;
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
+
 public class PostFragment extends Fragment {
 
     private ViewPostViewModel viewModel;
@@ -204,12 +205,14 @@ public class PostFragment extends Fragment {
      */
     private void performUserSearch(String query) {
         viewModel.searchUsers(query).observe(getViewLifecycleOwner(), users -> {
-           if (users != null && "account".equals(viewModel.getFilterType().getValue())) {
-               searchAdapter = new UserSearchAdapter(getContext(), users);
-               searchResultsList.setAdapter(searchAdapter);
-               searchResultsCard.setVisibility(users.isEmpty() ? View.GONE : View.VISIBLE);
-           }
+            if (users != null && "account".equals(viewModel.getFilterType().getValue())) {
+                searchAdapter = new UserSearchAdapter(getContext(), users);
+                searchResultsList.setAdapter(searchAdapter);
+                searchResultsCard.setVisibility(users.isEmpty() ? View.GONE : View.VISIBLE);
+            }
         });
+    }
+
     private boolean isGuestUser() {
         SharedPreferences preferences = requireActivity()
                 .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);

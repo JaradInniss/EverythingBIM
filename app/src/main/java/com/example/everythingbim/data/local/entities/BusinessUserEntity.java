@@ -9,6 +9,7 @@ import com.example.everythingbim.data.models.RequestReportStatus;
 
 import java.util.List;
 
+// Business User Entity
 @Entity(
         tableName = "business_users",
         foreignKeys = @ForeignKey(

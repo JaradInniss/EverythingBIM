@@ -36,6 +36,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+// ViewModel for CreatePost Activity
+
 public class CreatePostViewModel extends AndroidViewModel {
 
     private final PostDao postDao;

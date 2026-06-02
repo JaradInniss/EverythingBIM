@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.repository.PostRepository;
 
+
+// Fragment for User Posts Info in TabLayout in ViewUserProfile
+
 public class UserPostsFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";

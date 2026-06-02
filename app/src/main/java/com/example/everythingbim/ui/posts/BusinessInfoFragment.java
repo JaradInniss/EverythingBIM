@@ -14,6 +14,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.BusinessUserEntity;
 
+// Fragment for Business Info in TabLayout ViewUserProfile
+
 public class BusinessInfoFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";

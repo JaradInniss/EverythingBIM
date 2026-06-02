@@ -9,10 +9,13 @@ import com.example.everythingbim.data.local.entities.CommentEntity;
 
 import java.util.List;
 
+
+
 /**
- * Data Access Object (DAO) for the comments table.
+ * Comment Data Access Object (DAO) for the comments table.
  * Provides methods for inserting and retrieving comments from the local Room database.
  */
+
 @Dao
 public interface CommentDao {
     /**

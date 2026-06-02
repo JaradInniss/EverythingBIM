@@ -3,6 +3,8 @@ package com.example.everythingbim.data.local.entities;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
+// UserWithProfile Entity
+
 public class UserWithProfile {
 
     @Embedded

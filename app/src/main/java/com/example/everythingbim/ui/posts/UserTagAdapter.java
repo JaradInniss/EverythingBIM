@@ -15,6 +15,9 @@ import com.example.everythingbim.data.local.entities.UserEntity;
 import java.util.ArrayList;
 import java.util.List;
 
+
+// Adapter for showing tagged users in Create Post
+
 public class UserTagAdapter extends RecyclerView.Adapter<UserTagAdapter.UserTagViewHolder> {
 
     private List<UserEntity> taggedUsers = new ArrayList<>();

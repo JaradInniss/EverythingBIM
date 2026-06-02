@@ -167,7 +167,6 @@
                 android:layout_below="@id/images_icon"
                 android:layout_marginTop="5dp"
                 android:padding="5dp"
-                android:scrollbars="none"
                 android:background="@drawable/bg_rectangle_alice_blue">
 
                 <androidx.recyclerview.widget.RecyclerView
