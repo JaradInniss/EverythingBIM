@@ -133,6 +133,10 @@ public class HomeFragment extends Fragment {
     private void setupActions() {
         binding.galleryOptBttn.setOnClickListener(v -> openGallery());
         binding.cameraOptBttn.setOnClickListener(v -> openCamera());
+
+        binding.notificationBttn.setOnClickListener(v -> {
+            // Place code to navigate to NotificationsActivity
+        });
     }
 
     private void observeViewModel() {
