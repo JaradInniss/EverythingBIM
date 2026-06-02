@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:padding="6dp"
+    android:layout_marginVertical="5dp">
+
+    <ImageView
+        android:id="@+id/plus_icon"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginRight="10dp"
+        android:src="@drawable/ic_plus"
+        app:tint="@color/black" />
+
+    <TextView
+        android:id="@+id/tagged_user_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/plus_icon"
+        android:text="Username"
+        style="@style/black_small_txt_style"/>
+
+    <ImageView
+        android:id="@+id/remove_tagged_user_bttn"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/ic_close"
+        app:tint="@color/black" />
+
+</RelativeLayout>

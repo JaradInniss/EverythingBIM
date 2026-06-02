@@ -29,6 +29,7 @@ import com.example.everythingbim.ui.registration.GeneralRegistration;
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
+
 public class PostFragment extends Fragment {
 
     private PostViewModel viewModel;

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="@drawable/bg_border_rectangle_space_indigo">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="5dp">
+
+        <TextView
+            style="@style/white_medium_txt_style"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="Submit Report"
+            android:textSize="14sp" />
+
+        <ImageView
+            android:id="@+id/close_report_bttn"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_close"
+            app:tint="@color/white" />
+
+    </RelativeLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="@color/pale_slate" />
+
+            <RadioGroup
+                android:id="@+id/report_post_reason_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/white_medium_txt_style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Report Post:"
+                    android:textSize="14sp" />
+
+                <RadioButton
+                    android:id="@+id/report_post_spam"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Spam or fake engagement - bots, repetitive posting" />
+
+                <RadioButton
+                    android:id="@+id/report_post_hate_speech"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Hate Speech - targeting race, religion, gender, sexuality, disability, etc." />
+
+                <RadioButton
+                    android:id="@+id/report_post_nudity"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Nudity or sexual content" />
+
+                <RadioButton
+                    android:id="@+id/report_post_graphic_violence"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Graphic violence, Gore" />
+
+                <RadioButton
+                    android:id="@+id/report_post_illegal_activity"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Dangerous or illegal activity - drugs, weapons, self-harm" />
+
+                <RadioButton
+                    android:id="@+id/report_post_intellectual_property"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Intellectual property violation" />
+
+                <RadioButton
+                    android:id="@+id/report_post_impersonation"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Impersonation - pretending to be someone else" />
+
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="@color/pale_slate" />
+
+            <RadioGroup
+                android:id="@+id/report_account_reason_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/white_medium_txt_style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Report Account:"
+                    android:textSize="14sp" />
+
+                <RadioButton
+                    android:id="@+id/report_account_hacked_account"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Hacked account - reporting on behalf of someone else" />
+
+                <RadioButton
+                    android:id="@+id/report_account_fake_account"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Fake account or bot" />
+
+                <RadioButton
+                    android:id="@+id/report_account_impersonation"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Impersonating a real person or brand" />
+
+                <RadioButton
+                    android:id="@+id/report_account_deceased_person"
+                    style="@style/white_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/pale_slate"
+                    android:paddingVertical="4dp"
+                    android:text="Deceased person's account" />
+
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="@color/pale_slate" />
+
+            <TextView
+                style="@style/white_medium_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="Report Description (Optional)"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/report_description_et"
+                    style="@style/black_small_txt_style"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_rectangle_white"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:padding="10dp" />
+
+                <!-- Submit Report Button -->
+                <LinearLayout
+                    android:id="@+id/submit_report_bttn"
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:background="@drawable/bg_rectangle_gold">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SUBMIT"
+                        style="@style/black_medium_txt_style"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
