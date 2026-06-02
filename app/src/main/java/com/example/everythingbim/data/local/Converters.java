@@ -1,6 +1,7 @@
 package com.example.everythingbim.data.local;
 
 import androidx.room.TypeConverter;
+
 import com.example.everythingbim.data.models.RequestReportStatus;
 
 import java.util.Arrays;

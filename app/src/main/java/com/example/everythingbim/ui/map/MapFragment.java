@@ -43,7 +43,6 @@ import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.data.models.MarkerDetails;
 import com.example.everythingbim.ui.home.NearbySavedLocation;
-import com.example.everythingbim.ui.main.MainActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -83,11 +82,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     public static final String ARG_FOCUS_SUBTITLE = "arg_focus_subtitle";
     public static final String ARG_OPEN_ROUTE_PREVIEW = "arg_open_route_preview";
     public static final String ARG_ROUTE_LOCATIONS = "arg_route_locations";
-    public static final String EXTRA_OPEN_MAP = "EXTRA_OPEN_MAP";
-    public static final String EXTRA_LATITUDE = "EXTRA_LATITUDE";
-    public static final String EXTRA_LONGITUDE = "EXTRA_LONGITUDE";
-    public static final String EXTRA_LOCATION_NAME = "EXTRA_LOCATION_NAME";
-
 
     private static final double PARLIAMENT_LATITUDE = 13.0969861d;
     private static final double PARLIAMENT_LONGITUDE = -59.6139194d;
@@ -248,9 +242,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         fixLocationButton = null;
         returnButton = null;
         selectedPlace = null;
-
-        placesClient = null;
-
         routeExecutor.shutdownNow();
         super.onDestroyView();
     }
@@ -273,65 +264,30 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     }
                 });
             } else {
-                ActivityCompat.requestPermissions(requireActivity(),
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        LOCATION_PERMISSION_REQUEST_CODE);
-            }
-        } else if (bttnId == R.id.map_zoom_in_bttn) {
-            if (map != null) map.animateCamera(CameraUpdateFactory.zoomIn());
-        } else if (bttnId == R.id.map_zoom_out_bttn) {
-            if (map != null) map.animateCamera(CameraUpdateFactory.zoomOut());
-        } else if (bttnId == R.id.map_return_bttn) {
-            if (detailsContainer != null) {
-                detailsContainer.setVisibility(View.GONE);
+                requestLocationPermissions();
             }
         }
-
-        map.setOnPoiClickListener(this::handlePointOfInterestClick);
-
-        map.setOnMarkerClickListener(marker -> {
-            LatLng position = marker.getPosition();
-            MarkerDetails details = getMarkerDetails(marker);
-            showPlaceDetails(details);
-            marker.showInfoWindow();
-
-            mapViewModel.setFocusedLocation(position);
-
-            // Set metadata for navigation
-            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
-
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            return true;
-        });
-
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            enableMyLocation();
-        } else {
-            requestLocationPermissions();
+        else if (bttnId == R.id.map_zoom_in_bttn) {
+            map.animateCamera(CameraUpdateFactory.zoomIn());
         }
-
-        mapViewModel.getAllMarkers().observe(getViewLifecycleOwner(), markers -> {
-            storedMarkers.clear();
-            if (markers != null) {
-                storedMarkers.addAll(markers);
-            }
-            renderMarkers();
-        });
-
-        if (!routePreviewLocations.isEmpty()) {
-            mapViewModel.setFocusedLocation(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
-            mapViewModel.setSelectedLocationMetadata(-1, "Parliament route preview");
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showRoutePreview();
-        } else if (externalFocusLatLng != null) {
-            mapViewModel.setFocusedLocation(externalFocusLatLng);
-            mapViewModel.setSelectedLocationMetadata(
-                    focusedSavedMarkerDetails != null ? focusedSavedMarkerDetails.id : -1,
-                    externalFocusTitle != null ? externalFocusTitle : "Selected location"
-            );
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showExternalFocusedLocation();
+        else if (bttnId == R.id.map_zoom_out_bttn) {
+            map.animateCamera(CameraUpdateFactory.zoomOut());
+        }
+        else if (bttnId == R.id.map_return_bttn) {
+            mapViewModel.setDetailsUIState(MapDetailsState.HIDDEN);
+        }
+        else if (bttnId == R.id.location_images_view_all_bttn)
+        {
+            mapViewModel.onViewAllClicked("IMAGES");
+        }
+        else if (bttnId == R.id.location_reviews_view_all_bttn) {
+            mapViewModel.onViewAllClicked("REVIEWS");
+        }
+        else if (bttnId == R.id.location_posts_view_all_bttn) {
+            mapViewModel.onViewAllClicked("POSTS");
+        }
+        else if (bttnId == R.id.directions_bttn) {
+            openDirectionsSheet();
         }
     }
 
@@ -400,7 +356,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         final LatLng targetCoords = externalFocusLatLng;
         final String targetTitle = externalFocusTitle;
 
-        // Clear class members immediately so this logic doesn't trigger again on the next DB update
         if (focusedSavedLocationId > 0L) {
             return;
         }
@@ -487,45 +442,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     private void readFocusArguments() {
         Bundle args = getArguments();
-        Intent intent = requireActivity().getIntent();
-
-        if (args != null) {
-            focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
-
-            if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
-                externalFocusLatLng = new LatLng(
-                        args.getDouble(ARG_FOCUS_LATITUDE, 0d),
-                        args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
-                );
-                externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
-                externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
-            }
-
-            if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
-                routePreviewLocations.clear();
-                Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
-                if (value instanceof ArrayList) {
-                    @SuppressWarnings("unchecked")
-                    ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
-                    routePreviewLocations.addAll(restored);
-                }
-            }
-
+        if (args == null) {
             return;
         }
 
-        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
-            focusedSavedLocationId = intent.getLongExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, -1L);
+        focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
 
-            double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
-            double lng = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0d);
+        if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
+            externalFocusLatLng = new LatLng(
+                    args.getDouble(ARG_FOCUS_LATITUDE, 0d),
+                    args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
+            );
+            externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+            externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
+        }
 
-            externalFocusLatLng = new LatLng(lat, lng);
-            externalFocusTitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_NAME);
-            externalFocusSubtitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE);
-
-            if (externalFocusTitle == null) {
-                externalFocusTitle = "Selected location";
+        if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
+            routePreviewLocations.clear();
+            Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
+            if (value instanceof ArrayList) {
+                @SuppressWarnings("unchecked")
+                ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
+                routePreviewLocations.addAll(restored);
             }
         }
     }
@@ -579,7 +517,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 getResources().getDisplayMetrics().widthPixels, View.MeasureSpec.AT_MOST);
         int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
         detailsHeader.measure(widthMeasureSpec, heightMeasureSpec);
-
+        
         int headerHeightPx = detailsHeader.getMeasuredHeight() + 15;
         int fullHeightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 350, getResources().getDisplayMetrics());
 
@@ -603,7 +541,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             // Move DOWN by (FullHeight - HeaderHeight) so only the header is visible
             float translationY = fullHeightPx - headerHeightPx;
             detailsContainer.animate().translationY(translationY).setDuration(300).start();
-
+            
             // Buttons sit exactly on top of the peeked header
             animateButtons(-headerHeightPx);
 
@@ -702,10 +640,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (apiKey == null || apiKey.isEmpty()) return;
 
         if (!Places.isInitialized()) {
-            Places.initializeWithNewPlacesApiEnabled(
-                    requireContext().getApplicationContext(),
-                    apiKey
-            );
+            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(),apiKey);
         }
 
         placesClient = Places.createClient(requireContext());
@@ -758,10 +693,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (selectedPlace != null && selectedPlace.getLatLng() != null) {
                 renderMarkers();
                 mapViewModel.setFocusedLocation(selectedPlace.getLatLng());
-
+                
                 // Set metadata for navigation
                 mapViewModel.setSelectedLocationMetadata(-1, selectedPlace.getName());
-
+                
                 mapViewModel.setDetailsUIState(MapDetailsState.FULL);
                 showPlaceDetails(buildMarkerDetails(selectedPlace));
             }
@@ -1263,10 +1198,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         }
         showPlaceDetails(details);
         mapViewModel.setFocusedLocation(poi.latLng);
-
+        
         // Set metadata for navigation
         mapViewModel.setSelectedLocationMetadata(-1, details.title);
-
+        
         mapViewModel.setDetailsUIState(MapDetailsState.FULL);
 
         if (placesClient != null && poi.placeId != null) {
@@ -1285,10 +1220,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 searchMarker.setTag(details);
                 showPlaceDetails(details);
             }
-
+            
             // Update metadata once details are fetched
             mapViewModel.setSelectedLocationMetadata(-1, details.title);
-
+            
             showSearchLoading(false);
         }).addOnFailureListener(error -> {
             showSearchLoading(false);
@@ -1369,6 +1304,4 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             enableMyLocation();
         }
     }
-
-
 }

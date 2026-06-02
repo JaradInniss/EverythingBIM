@@ -37,7 +37,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
         PostEntity post = postList.get(position);
 
-        holder.usernameTv.setText("User " + post.authorId);
+        holder.usernameTv.setText(resolveAuthorLabel(post));
         holder.captionTv.setText(post.caption);
         holder.likesCountTv.setText("0"); // Placeholder
         holder.commentsCountTv.setText("0"); // Placeholder
@@ -48,6 +48,13 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
                 .placeholder(R.color.dim_grey)
                 .centerCrop()
                 .into(holder.postImageView);
+    }
+
+    private String resolveAuthorLabel(PostEntity post) {
+        if (post.authorName != null && !post.authorName.trim().isEmpty()) {
+            return post.authorName.trim();
+        }
+        return "User " + post.authorId;
     }
 
     @Override

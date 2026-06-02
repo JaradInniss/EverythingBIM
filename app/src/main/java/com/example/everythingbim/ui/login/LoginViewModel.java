@@ -39,6 +39,7 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
+
     private final SingleLiveEvent<String> toastMessage = new SingleLiveEvent<>();
 
     /**
@@ -121,7 +122,7 @@ public class LoginViewModel extends ViewModel {
      * ORIGINAL BROKEN CODE - Commented out because Firebase Auth was never called
      * Users were never authenticated, causing "permission denied" on all Firestore writes
      * because request.auth was always null.
-     */
+     *
     public void onLoginClicked(String email, String password) {
         Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
         if (!isFormValid(email, password)) {
@@ -141,35 +142,35 @@ public class LoginViewModel extends ViewModel {
             saveAndNavigate(MainActivity.USER_TYPE_GENERAL, "");
         }
     }
+    */
 
+    public void onLoginClicked(String email, String password) {
+        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
+        if (!isFormValid(email, password)) {
+            return;
+        }
 
-//    public void onLoginClicked(String email, String password) {
-//        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
-//        if (!isFormValid(email, password)) {
-//            return;
-//        }
-//
-//        isLoading.setValue(true);
-//
-//        auth.signInWithEmailAndPassword(email, password)
-//                .addOnCompleteListener(task -> {
-//                    isLoading.setValue(false);
-//
-//                    if (task.isSuccessful()) {
-//                        FirebaseUser firebaseUser = auth.getCurrentUser();
-//                        if (firebaseUser != null) {
-//                            fetchUserTypeAndNavigate(firebaseUser.getUid());
-//                        } else {
-//                            setErrorField(R.id.login_error, "User not found");
-//                        }
-//                    } else {
-//                        String errorMessage = task.getException() != null
-//                                ? task.getException().getMessage()
-//                                : "Login failed";
-//                        setErrorField(R.id.login_error, errorMessage);
-//                    }
-//                });
-//    }
+        isLoading.setValue(true);
+
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    isLoading.setValue(false);
+
+                    if (task.isSuccessful()) {
+                        FirebaseUser firebaseUser = auth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            fetchUserTypeAndNavigate(firebaseUser.getUid());
+                        } else {
+                            setErrorField(R.id.login_error, "User not found");
+                        }
+                    } else {
+                        String errorMessage = task.getException() != null
+                                ? task.getException().getMessage()
+                                : "Login failed";
+                        setErrorField(R.id.login_error, errorMessage);
+                    }
+                });
+    }
 
     private void fetchUserTypeAndNavigate(String userId) {
         isLoading.setValue(true);

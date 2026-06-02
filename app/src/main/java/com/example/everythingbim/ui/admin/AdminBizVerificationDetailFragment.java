@@ -238,6 +238,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         db.collection("businesses").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
                     if (!doc.exists()) {
                         Log.e(TAG, "Document does not exist: " + docId);
                         return;
@@ -306,9 +307,9 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     doc.getReference().update("read", true);
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
                     Log.e(TAG, "Failed to load document: " + e.getMessage(), e);
-                    Toast.makeText(getContext(),
-                            "Failed to load request details", Toast.LENGTH_SHORT).show();
+                    showToast("Failed to load request details");
                 });
     }
 
@@ -369,13 +370,16 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         "resolvedAt",         Timestamp.now(),
                         "resolvedBy",         adminId)
                 .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
                     // Log approval activity
                     activityLogger.logApproval(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
-                    Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+                    showToast("Request Accepted");
                     applyAcceptedState(today, "Administrator");
                 })
-                .addOnFailureListener(e -> Toast.makeText(getContext(),
-                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Failed: " + e.getMessage());
+                });
     }
 
     // ────────────────────────────────────────────────────────
@@ -394,13 +398,16 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         "resolvedBy",         adminId,
                         "rejectionReason",    reason)
                 .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
                     // Log rejection activity
                     activityLogger.logRejection(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
-                    Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
+                    showToast("Request Rejected");
                     applyRejectedState(today, "Administrator", reason);
                 })
-                .addOnFailureListener(e -> Toast.makeText(getContext(),
-                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Failed: " + e.getMessage());
+                });
     }
 
     // ────────────────────────────────────────────────────────
@@ -451,6 +458,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
             storage.getReferenceFromUrl(url)
                     .getBytes(2 * 1024 * 1024)
                     .addOnSuccessListener(bytes -> {
+                        if (!isUiActive()) return;
                         Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         ImageView iv = new ImageView(requireContext());
                         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(80, 60);
@@ -461,6 +469,15 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         container.addView(iv);
                     });
         } catch (Exception ignored) {}
+    }
+
+    private boolean isUiActive() {
+        return isAdded() && getView() != null;
+    }
+
+    private void showToast(String message) {
+        if (!isAdded()) return;
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
