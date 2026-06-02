@@ -8,9 +8,11 @@ import com.example.everythingbim.data.local.AppDatabase;
 import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.dao.LocationDao;
 import com.example.everythingbim.data.local.dao.PostDao;
+import com.example.everythingbim.data.local.dao.ReportDao;
 import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.data.local.entities.ReportEntity;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -20,6 +22,7 @@ public class PostRepository {
     private final PostDao postDao;
     private final CommentDao commentDao;
     private final LocationDao locationDao;
+    private final ReportDao reportDao;
     private final ExecutorService executorService;
 
     public PostRepository(Application application) {
@@ -27,6 +30,7 @@ public class PostRepository {
         postDao = db.postDao();
         commentDao = db.commentDao();
         locationDao = db.locationDao();
+        reportDao = db.reportDao();
         executorService = Executors.newFixedThreadPool(2);
     }
 
@@ -42,12 +46,28 @@ public class PostRepository {
         return postDao.getPostById(postId);
     }
 
+    public LiveData<LocationEntity> getLocationById(long locationId) {
+        return locationDao.getLocationById(locationId);
+    }
+
+    public LiveData<List<LocationEntity>> getAllLocations() {
+        return locationDao.getAllLocations();
+    }
+
+    public LiveData<List<PostEntity>> getPostsByUserId(long userId) {
+        return postDao.getPostsByUserId(userId);
+    }
+
     public LiveData<List<CommentEntity>> getCommentsForPost(long postId) {
         return commentDao.getCommentsForPost(postId);
     }
 
     public void insertComment(CommentEntity comment) {
         executorService.execute(() -> commentDao.insert(comment));
+    }
+
+    public void insertReport(ReportEntity report) {
+        executorService.execute(() -> reportDao.insert(report));
     }
 
     public void seedDataIfEmpty() {
@@ -68,7 +88,7 @@ public class PostRepository {
                 ));
                 
                 // Insert a sample post
-                long postId = postDao.insert(new PostEntity(locId, 101, "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM", "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg", System.currentTimeMillis() - 86400000));
+                long postId = postDao.insert(new PostEntity(locId, 101, "TravelAddict", "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM", "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg", System.currentTimeMillis() - 86400000));
                 
                 // Top-level comments
                 long c1 = commentDao.insert(new CommentEntity(postId, null, "TravelAddict", null, "This place looks incredible! Is it easy to get there?", System.currentTimeMillis() - 70000000));
@@ -98,7 +118,7 @@ public class PostRepository {
                         "bathsheba_beach",
                         "Bathsheba, St. Joseph, Barbados"
                 ));
-                postDao.insert(new PostEntity(locId2, 102, "Sunset at Bathsheba. The rock formations are unlike anything else.", "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg", System.currentTimeMillis() - 172800000));
+                postDao.insert(new PostEntity(locId2, 102, "IslandExplorer", "Sunset at Bathsheba. The rock formations are unlike anything else.", "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg", System.currentTimeMillis() - 172800000));
             }
         });
     }

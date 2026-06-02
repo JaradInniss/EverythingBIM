@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,14 +19,25 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.entities.LocationEntity;
+import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
@@ -38,9 +51,15 @@ public class PostFragment extends Fragment {
     private LinearLayout createPostButton;
     private LinearLayout searchBar;
     private EditText searchEditText;
+    private ImageView searchButton;
     private CardView searchResultsCard;
+    private ListView searchResultsList;
     private TextView filterAccount;
     private TextView filterLocation;
+    private ArrayAdapter<String> searchResultsAdapter;
+    private final List<String> activeSearchResults = new ArrayList<>();
+    private final List<PostEntity> allPosts = new ArrayList<>();
+    private final List<LocationEntity> allLocations = new ArrayList<>();
 
     public PostFragment() {
         // Required empty public constructor
@@ -65,9 +84,14 @@ public class PostFragment extends Fragment {
         createPostButton = view.findViewById(R.id.prev_bttn2);
         searchBar = view.findViewById(R.id.posts_search_bar);
         searchEditText = view.findViewById(R.id.posts_search_et);
+        searchButton = view.findViewById(R.id.posts_search_bttn);
         searchResultsCard = view.findViewById(R.id.posts_search_results_card);
+        searchResultsList = view.findViewById(R.id.posts_search_results_list);
         filterAccount = view.findViewById(R.id.posts_search_filter_account);
         filterLocation = view.findViewById(R.id.posts_search_filter_location);
+
+        searchResultsAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, activeSearchResults);
+        searchResultsList.setAdapter(searchResultsAdapter);
 
         setupRecyclerView();
         setupObservers();
@@ -97,13 +121,24 @@ public class PostFragment extends Fragment {
         // Observe the list of posts
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
             if (posts != null) {
-                adapter.setPosts(posts);
+                allPosts.clear();
+                allPosts.addAll(posts);
             }
+            applySearchAndSuggestions();
+        });
+
+        viewModel.getLocations().observe(getViewLifecycleOwner(), locations -> {
+            allLocations.clear();
+            if (locations != null) {
+                allLocations.addAll(locations);
+            }
+            applySearchAndSuggestions();
         });
 
         // Observe the current filter type (Account vs Location)
         viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
             updateFilterUI(type);
+            applySearchAndSuggestions();
         });
     }
 
@@ -124,16 +159,45 @@ public class PostFragment extends Fragment {
         // Show search results when search bar gains focus
         searchEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
-                searchResultsCard.setVisibility(View.VISIBLE);
+                applySearchAndSuggestions();
             }
         });
 
         // Show search results on click
-        searchEditText.setOnClickListener(v -> searchResultsCard.setVisibility(View.VISIBLE));
+        searchEditText.setOnClickListener(v -> applySearchAndSuggestions());
+
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                applySearchAndSuggestions();
+            }
+        });
 
         // Handle filter type selection
         filterAccount.setOnClickListener(v -> viewModel.setFilterType("account"));
         filterLocation.setOnClickListener(v -> viewModel.setFilterType("location"));
+
+        searchButton.setOnClickListener(v -> {
+            applySearchAndSuggestions();
+            searchResultsCard.setVisibility(View.GONE);
+        });
+
+        searchResultsList.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = activeSearchResults.get(position);
+            searchEditText.setText(selected);
+            searchEditText.setSelection(selected.length());
+            applySearchAndSuggestions();
+            searchResultsCard.setVisibility(View.GONE);
+            searchEditText.clearFocus();
+        });
     }
 
     /**
@@ -161,13 +225,93 @@ public class PostFragment extends Fragment {
      * @param query The search query.
      */
     private void performUserSearch(String query) {
-        viewModel.searchUsers(query).observe(getViewLifecycleOwner(), users -> {
-            if (users != null && "account".equals(viewModel.getFilterType().getValue())) {
-                searchAdapter = new UserSearchAdapter(getContext(), users);
-                searchResultsList.setAdapter(searchAdapter);
-                searchResultsCard.setVisibility(users.isEmpty() ? View.GONE : View.VISIBLE);
+        searchEditText.setText(query);
+        searchEditText.setSelection(query.length());
+        applySearchAndSuggestions();
+    }
+
+    private void applySearchAndSuggestions() {
+        String query = searchEditText.getText() == null
+                ? ""
+                : searchEditText.getText().toString().trim();
+        boolean accountMode = "account".equals(viewModel.getFilterType().getValue());
+
+        adapter.setPosts(filterPosts(query, accountMode));
+        updateSuggestions(query, accountMode);
+    }
+
+    private List<PostEntity> filterPosts(String query, boolean accountMode) {
+        if (query.isEmpty()) {
+            return new ArrayList<>(allPosts);
+        }
+
+        String normalizedQuery = query.toLowerCase(Locale.US);
+        List<PostEntity> filtered = new ArrayList<>();
+        for (PostEntity post : allPosts) {
+            if (accountMode) {
+                String authorLabel = buildAuthorLabel(post.authorId);
+                if (authorLabel.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                    filtered.add(post);
+                }
+            } else {
+                String locationName = getLocationName(post.locationId);
+                if (locationName.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                    filtered.add(post);
+                }
             }
-        });
+        }
+        return filtered;
+    }
+
+    private void updateSuggestions(String query, boolean accountMode) {
+        activeSearchResults.clear();
+
+        if (!query.isEmpty()) {
+            String normalizedQuery = query.toLowerCase(Locale.US);
+            Set<String> uniqueSuggestions = new LinkedHashSet<>();
+
+            if (accountMode) {
+                for (PostEntity post : allPosts) {
+                    String authorLabel = buildAuthorLabel(post.authorId);
+                    if (authorLabel.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                        uniqueSuggestions.add(authorLabel);
+                    }
+                }
+            } else {
+                for (LocationEntity location : allLocations) {
+                    if (location == null || location.name == null) {
+                        continue;
+                    }
+                    if (location.name.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                        uniqueSuggestions.add(location.name);
+                    }
+                }
+            }
+
+            activeSearchResults.addAll(uniqueSuggestions);
+        }
+
+        searchResultsAdapter.notifyDataSetChanged();
+        boolean shouldShow = searchEditText.hasFocus();
+        searchResultsCard.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+    }
+
+    private String buildAuthorLabel(long authorId) {
+        for (PostEntity post : allPosts) {
+            if (post.authorId == authorId && post.authorName != null && !post.authorName.trim().isEmpty()) {
+                return post.authorName.trim();
+            }
+        }
+        return "User " + authorId;
+    }
+
+    private String getLocationName(long locationId) {
+        for (LocationEntity location : allLocations) {
+            if (location != null && location.locationId == locationId) {
+                return location.name != null ? location.name : "Unknown location";
+            }
+        }
+        return "Unknown location";
     }
 
     private boolean isGuestUser() {

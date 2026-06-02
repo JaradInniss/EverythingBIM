@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.repository.PostRepository;
 
@@ -24,12 +25,14 @@ import java.util.Map;
 public class PostViewModel extends AndroidViewModel {
     private final PostRepository repository;
     private final LiveData<List<PostEntity>> posts;
+    private final LiveData<List<LocationEntity>> locations;
     private final MutableLiveData<String> filterType = new MutableLiveData<>("account");
 
     public PostViewModel(@NonNull Application application) {
         super(application);
         repository = new PostRepository(application);
         posts = repository.getRandomizedPosts();
+        locations = repository.getAllLocations();
         
         // Seed placeholder data if database is empty to ensure UI is populated during testing
         repository.seedDataIfEmpty();
@@ -44,6 +47,14 @@ public class PostViewModel extends AndroidViewModel {
     // Fetches a specific post by its ID.
     public LiveData<PostEntity> getPostById(long postId) {
         return repository.getPostById(postId);
+    }
+
+    public LiveData<LocationEntity> getLocationById(long locationId) {
+        return repository.getLocationById(locationId);
+    }
+
+    public LiveData<List<LocationEntity>> getLocations() {
+        return locations;
     }
 
     // Returns the current search filter type (e.g., "account" or "location").
@@ -114,4 +125,5 @@ public class PostViewModel extends AndroidViewModel {
         );
         repository.insertComment(comment);
     }
+
 }

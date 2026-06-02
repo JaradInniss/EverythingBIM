@@ -295,80 +295,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     public void onMapReady(@NonNull GoogleMap googleMap) {
         map = googleMap;
 
-        // --- Restrict Map to Barbados (MVVM) ---
-        map.getUiSettings().setZoomControlsEnabled(false);
-        map.getUiSettings().setMyLocationButtonEnabled(false);
-
-        map.setLatLngBoundsForCameraTarget(MapViewModel.BARBADOS_BOUNDS);
-        map.setMinZoomPreference(MapViewModel.MIN_ZOOM);
-
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mapViewModel.getBarbadosCenter(), MapViewModel.INITIAL_ZOOM));
-
-        zoomInButton.setOnClickListener(this);
-        zoomOutButton.setOnClickListener(this);
-        fixLocationButton.setOnClickListener(this);
-
-        map.setOnMapClickListener(latLng -> {
-            MapDetailsState currentState = mapViewModel.getDetailsUIState().getValue();
-            if (currentState == MapDetailsState.FULL) {
-                mapViewModel.setDetailsUIState(MapDetailsState.PEEK);
-            } else {
-                mapViewModel.setDetailsUIState(MapDetailsState.HIDDEN);
-            }
-        });
-
-        map.setOnPoiClickListener(this::handlePointOfInterestClick);
-
-        map.setOnMarkerClickListener(marker -> {
-            LatLng position = marker.getPosition();
-            MarkerDetails details = getMarkerDetails(marker);
-            showPlaceDetails(details);
-            marker.showInfoWindow();
-
-            mapViewModel.setFocusedLocation(position);
-            
-            // Set metadata for navigation
-            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
-            
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            return true;
-        });
-
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            enableMyLocation();
-        } else {
-            requestLocationPermissions();
-        }
-
-        mapViewModel.getAllMarkers().observe(getViewLifecycleOwner(), markers -> {
-            storedMarkers.clear();
-            if (markers != null) {
-                storedMarkers.addAll(markers);
-            }
-            renderMarkers();
-        });
-
-        if (!routePreviewLocations.isEmpty()) {
-            mapViewModel.setFocusedLocation(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
-            mapViewModel.setSelectedLocationMetadata(-1, "Parliament route preview");
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showRoutePreview();
-        } else if (externalFocusLatLng != null) {
-            mapViewModel.setFocusedLocation(externalFocusLatLng);
-            mapViewModel.setSelectedLocationMetadata(
-                    focusedSavedMarkerDetails != null ? focusedSavedMarkerDetails.id : -1,
-                    externalFocusTitle != null ? externalFocusTitle : "Selected location"
-            );
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showExternalFocusedLocation();
-        }
-    }
-
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        map = googleMap;
-
         // 1. Basic Setup
         map.getUiSettings().setZoomControlsEnabled(false);
         map.getUiSettings().setMyLocationButtonEnabled(false);
@@ -520,43 +446,24 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             return;
         }
 
-        if (args != null) {
-            focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
+        focusedSavedLocationId = args.getLong(ARG_FOCUS_LOCATION_ID, -1L);
 
-            if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
-                externalFocusLatLng = new LatLng(
-                        args.getDouble(ARG_FOCUS_LATITUDE, 0d),
-                        args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
-                );
-                externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
-                externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
-            }
-
-            if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
-                routePreviewLocations.clear();
-                Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
-                if (value instanceof ArrayList) {
-                    @SuppressWarnings("unchecked")
-                    ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
-                    routePreviewLocations.addAll(restored);
-                }
-            }
-
-            return;
+        if (args.getBoolean(ARG_OPEN_FOCUS_LOCATION, false)) {
+            externalFocusLatLng = new LatLng(
+                    args.getDouble(ARG_FOCUS_LATITUDE, 0d),
+                    args.getDouble(ARG_FOCUS_LONGITUDE, 0d)
+            );
+            externalFocusTitle = args.getString(ARG_FOCUS_TITLE, "Selected location");
+            externalFocusSubtitle = args.getString(ARG_FOCUS_SUBTITLE, "");
         }
 
-        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
-            focusedSavedLocationId = intent.getLongExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, -1L);
-
-            double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
-            double lng = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0d);
-
-            externalFocusLatLng = new LatLng(lat, lng);
-            externalFocusTitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_NAME);
-            externalFocusSubtitle = intent.getStringExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE);
-
-            if (externalFocusTitle == null) {
-                externalFocusTitle = "Selected location";
+        if (args.getBoolean(ARG_OPEN_ROUTE_PREVIEW, false)) {
+            routePreviewLocations.clear();
+            Serializable value = args.getSerializable(ARG_ROUTE_LOCATIONS);
+            if (value instanceof ArrayList) {
+                @SuppressWarnings("unchecked")
+                ArrayList<NearbySavedLocation> restored = (ArrayList<NearbySavedLocation>) value;
+                routePreviewLocations.addAll(restored);
             }
         }
     }
