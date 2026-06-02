@@ -15,9 +15,13 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 /**
- * Adapter for displaying a list of posts in a RecyclerView in a grid.
+ * Post Adapter - Adapter for displaying a list of posts in a RecyclerView in a grid.
  */
+
+
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
     private List<PostEntity> posts = new ArrayList<>();

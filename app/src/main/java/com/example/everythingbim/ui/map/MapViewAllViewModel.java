@@ -44,6 +44,7 @@ public class MapViewAllViewModel extends ViewModel {
             placeholderList.add(new PostEntity(
                     locationId, 
                     101, 
+                    "TravelAddict",
                     "Sample post caption for post #" + (i + 1), 
                     "https://picsum.photos/seed/" + (locationId + i) + "/400", 
                     System.currentTimeMillis()

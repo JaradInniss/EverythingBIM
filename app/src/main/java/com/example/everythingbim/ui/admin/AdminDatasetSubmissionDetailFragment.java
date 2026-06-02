@@ -93,8 +93,10 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
         rejectBtn.setOnClickListener(v -> updateStatus("Rejected"));
 
         if (TextUtils.isEmpty(docId)) {
-            Toast.makeText(requireContext(), "Submission not found.", Toast.LENGTH_SHORT).show();
-            requireActivity().getSupportFragmentManager().popBackStack();
+            showToast("Submission not found.");
+            if (isAdded()) {
+                requireActivity().getSupportFragmentManager().popBackStack();
+            }
             return;
         }
 
@@ -106,6 +108,7 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
                 .document(docId)
                 .get()
                 .addOnSuccessListener(document -> {
+                    if (!isUiActive()) return;
                     bindSubmission(document);
                     if (document.exists()) {
                         String title = firstNonEmpty(
@@ -117,13 +120,16 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
                         activityLogger.logView(ActivityLogger.TYPE_DATASET, title, docId);
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Could not load submission.", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Could not load submission.");
+                });
     }
 
     private void bindSubmission(@NonNull DocumentSnapshot document) {
+        if (!isUiActive()) return;
         if (!document.exists()) {
-            Toast.makeText(requireContext(), "Submission not found.", Toast.LENGTH_SHORT).show();
+            showToast("Submission not found.");
             return;
         }
 
@@ -193,6 +199,7 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
                 .document(docId)
                 .update("status", status, "read", true)
                 .addOnSuccessListener(unused -> {
+                    if (!isUiActive()) return;
                     statusTv.setText(status);
                     String action = "Reviewed".equals(status)
                             ? ActivityLogger.ACTION_VIEWED
@@ -205,10 +212,21 @@ public class AdminDatasetSubmissionDetailFragment extends Fragment {
                             titleTv.getText().toString(),
                             docId
                     );
-                    Toast.makeText(requireContext(), "Submission updated.", Toast.LENGTH_SHORT).show();
+                    showToast("Submission updated.");
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Could not update submission.", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Could not update submission.");
+                });
+    }
+
+    private boolean isUiActive() {
+        return isAdded() && getView() != null;
+    }
+
+    private void showToast(String message) {
+        if (!isAdded()) return;
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     @NonNull

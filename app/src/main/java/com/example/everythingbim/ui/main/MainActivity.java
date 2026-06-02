@@ -122,6 +122,32 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) {
+            return;
+        }
+
+        setIntent(intent);
+
+        if (intent.hasExtra("userType")) {
+            userType = normalizeUserType(intent.getStringExtra("userType"));
+            sharedPreferences.edit().putString("userType", userType).apply();
+        }
+
+        pendingMapFocus = intent.getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
+                || intent.getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
+
+        if (pendingMapFocus) {
+            configureBottomNavigation();
+            viewModel.setNavbarItemId(R.id.navbar_map);
+            return;
+        }
+
+        resumePendingActionIfNeeded();
+    }
+
     private void configureBottomNavigation() {
         // Hide or show certain menu items based on user type
         MenuItem mapItem = bottomNavigationView.getMenu().findItem(R.id.navbar_map);
@@ -190,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
         args.putLong(MapFragment.ARG_FOCUS_LOCATION_ID, getIntent().getLongExtra(EXTRA_MAP_FOCUS_LOCATION_ID, -1L));
         args.putDouble(MapFragment.ARG_FOCUS_LATITUDE, getIntent().getDoubleExtra(EXTRA_MAP_FOCUS_LATITUDE, 0d));
         args.putDouble(MapFragment.ARG_FOCUS_LONGITUDE, getIntent().getDoubleExtra(EXTRA_MAP_FOCUS_LONGITUDE, 0d));
-        args.putString(MapFragment.ARG_FOCUS_TITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_TITLE));
+        args.putString(MapFragment.ARG_FOCUS_TITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_NAME));
         args.putString(MapFragment.ARG_FOCUS_SUBTITLE, getIntent().getStringExtra(EXTRA_MAP_FOCUS_SUBTITLE));
 
         args.putBoolean(MapFragment.ARG_OPEN_ROUTE_PREVIEW, getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false));
@@ -199,11 +225,11 @@ public class MainActivity extends AppCompatActivity {
 
         pendingMapFocus = false;
         // Clean up intent so these aren't re-processed on rotation
-        getIntent().removeExtra(EXTRA_OPEN_MAP);
+        getIntent().removeExtra(EXTRA_OPEN_MAP_FOCUS);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LOCATION_ID);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LATITUDE);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_LONGITUDE);
-        getIntent().removeExtra(EXTRA_MAP_FOCUS_TITLE);
+        getIntent().removeExtra(EXTRA_MAP_FOCUS_NAME);
         getIntent().removeExtra(EXTRA_MAP_FOCUS_SUBTITLE);
 
         getIntent().removeExtra(EXTRA_OPEN_MAP_ROUTE);

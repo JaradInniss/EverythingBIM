@@ -23,13 +23,15 @@ public class PostEntity {
     public long locationId;
 
     public long authorId;
+    public String authorName;
     public String caption;
     public String imageUrl;
     public long createdAt;
 
-    public PostEntity(long locationId, long authorId, String caption, String imageUrl, long createdAt) {
+    public PostEntity(long locationId, long authorId, String authorName, String caption, String imageUrl, long createdAt) {
         this.locationId = locationId;
         this.authorId = authorId;
+        this.authorName = authorName;
         this.caption = caption;
         this.imageUrl = imageUrl;
         this.createdAt = createdAt;

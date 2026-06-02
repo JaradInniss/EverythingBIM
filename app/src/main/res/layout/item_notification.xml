@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_border_rectangle_periwinkle"
+    android:gravity="center_vertical"
+    android:layout_marginVertical="10dp"
+    android:paddingVertical="16dp"
+    android:paddingHorizontal="10dp">
+
+    <ImageView
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginRight="10dp"
+        android:src="@drawable/ic_storefront"
+        app:tint="@color/space_indigo"/>
+    
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_toLeftOf="@id/navigate_to_content_bttn"
+            android:layout_marginRight="10dp">
+            
+            <TextView
+                android:id="@+id/notification_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="Request Results"
+                style="@style/black_medium_txt_style"
+                android:textColor="@color/space_indigo"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/notification_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="The request you submitted has been reviewed"
+                style="@style/black_small_txt_style"
+                android:textColor="@color/space_indigo"/>
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/navigate_to_content_bttn"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_caret_right"
+            app:tint="@color/space_indigo"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

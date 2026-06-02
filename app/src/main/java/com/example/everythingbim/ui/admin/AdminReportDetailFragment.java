@@ -304,6 +304,7 @@ public class AdminReportDetailFragment extends Fragment {
         db.collection("reports").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
                     if (doc.exists()) {
                         String id = doc.getId().substring(0, 3).toUpperCase();
                         String number = doc.contains("number")
@@ -343,6 +344,7 @@ public class AdminReportDetailFragment extends Fragment {
                     }
                 })
                 .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
                     issueTv.setText("Error loading report");
                 });
     }
@@ -388,6 +390,7 @@ public class AdminReportDetailFragment extends Fragment {
             storage.getReferenceFromUrl(url)
                     .getBytes(2 * 1024 * 1024)
                     .addOnSuccessListener(bytes -> {
+                        if (!isUiActive()) return;
                         Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         postImage.setImageBitmap(bmp);
                     })
@@ -461,8 +464,7 @@ public class AdminReportDetailFragment extends Fragment {
 
     private void submitAction() {
         if (selectedAction.isEmpty()) {
-            Toast.makeText(getContext(),
-                    "Please select an action", Toast.LENGTH_SHORT).show();
+            showToast("Please select an action");
             return;
         }
         if (docId.isEmpty()) return;
@@ -482,19 +484,26 @@ public class AdminReportDetailFragment extends Fragment {
                         "resolvedAt", com.google.firebase.Timestamp.now()
                 )
                 .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
                     // Log the completion activity
                     activityLogger.logCompletion(ActivityLogger.TYPE_REPORT, cachedTitle, docId);
-                    Toast.makeText(getContext(),
-                            "Action submitted: " + selectedAction,
-                            Toast.LENGTH_SHORT).show();
+                    showToast("Action submitted: " + selectedAction);
                     requireActivity().getSupportFragmentManager().popBackStack();
                 })
                 .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
                     submitBtn.setEnabled(true);
                     submitBtn.setText("SUBMIT");
-                    Toast.makeText(getContext(),
-                            "Failed: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    showToast("Failed: " + e.getMessage());
                 });
+    }
+
+    private boolean isUiActive() {
+        return isAdded() && getView() != null;
+    }
+
+    private void showToast(String message) {
+        if (!isAdded()) return;
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

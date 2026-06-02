@@ -157,6 +157,7 @@
 
                 <!-- Camera Option -->
                 <LinearLayout
+                    android:id="@+id/camera_opt_bttn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -203,6 +204,7 @@
 
                 <!-- Gallery Option -->
                 <LinearLayout
+                    android:id="@+id/gallery_opt_bttn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -246,6 +248,31 @@
                 </LinearLayout>
 
             </LinearLayout>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/selected_image_card"
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp">
+
+                <ImageView
+                    android:id="@+id/selected_image_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/butterfly" />
+
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:id="@+id/selected_image_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Choose an image from the camera or gallery."
+                style="@style/white_small_txt_style" />
         </LinearLayout>
 
 

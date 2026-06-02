@@ -299,7 +299,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
             return;
         }
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
@@ -361,7 +361,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     @Override
     public void onLocationDetailsRequested(@NonNull NearbySavedLocation location) {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, location.getLocationId());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, location.getLatitude());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, location.getLongitude());

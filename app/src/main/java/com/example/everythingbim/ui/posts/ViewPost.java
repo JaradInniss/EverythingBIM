@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.posts;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -20,9 +21,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
-import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
+import com.example.everythingbim.ui.main.MainActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,6 +41,7 @@ public class ViewPost extends AppCompatActivity {
     private PostViewModel viewModel;
     private CommentAdapter commentAdapter;
     private long postId;
+    private long lastObservedLocationId = -1L;
 
     // State for managing replies
     private Long currentParentCommentId = null;
@@ -163,7 +166,7 @@ public class ViewPost extends AppCompatActivity {
 
     // Populates the post UI elements with data from a PostEntity.
     private void populatePostDetails(PostEntity post) {
-        username.setText("User " + post.authorId); 
+        username.setText(resolveAuthorLabel(post));
         caption.setText(post.caption);
         
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
@@ -178,29 +181,49 @@ public class ViewPost extends AppCompatActivity {
         setupLocationTag(post.locationId);
     }
 
+    private String resolveAuthorLabel(PostEntity post) {
+        if (post.authorName != null && !post.authorName.trim().isEmpty()) {
+            return post.authorName.trim();
+        }
+        return "User " + post.authorId;
+    }
+
     private void setupLocationTag(long locationId) {
-        // Prevent multiple observers if the post data updates but location remains same
-        if (locationId == lastObservedLocationId) return;
+        if (locationId == lastObservedLocationId) {
+            return;
+        }
         lastObservedLocationId = locationId;
 
-        viewModel.getLocationById(locationId).observe(this, loc -> {
-            if (loc != null) {
-                binding.viewpostLocation.setText(loc.getName());
+        if (locationId <= 0L) {
+            binding.viewpostLocation.setText("Unknown location");
+            binding.viewpostLocation.setOnClickListener(null);
+            return;
+        }
 
-                binding.viewpostLocationTag.setOnClickListener(v -> {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        viewModel.getLocationById(locationId).observe(this, this::bindLocationTag);
+    }
 
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, loc.getLocationId());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, loc.getLatitude());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, loc.getLongitude());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, loc.getName());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, loc.getAddress());
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                });
-            }
-        });
+    private void bindLocationTag(LocationEntity locationEntity) {
+        if (locationEntity == null) {
+            binding.viewpostLocation.setText("Unknown location");
+            binding.viewpostLocation.setOnClickListener(null);
+            return;
+        }
+
+        binding.viewpostLocation.setText(locationEntity.name);
+        binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
+    }
+
+    private void openLocationOnMap(LocationEntity locationEntity) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, locationEntity.locationId);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, locationEntity.latitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, locationEntity.longitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, locationEntity.name);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, locationEntity.address);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
     }
 
     // Sets up click listeners for the return button and comment submission buttons
