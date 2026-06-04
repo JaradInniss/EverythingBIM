@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (USER_TYPE_BUSINESS.equals(userType)) {
             // For business users, hide map? Or show different set? Adjust as needed.
-            mapItem.setVisible(false);
+            mapItem.setVisible(true);
             postItem.setVisible(true);
         } else {
             mapItem.setVisible(true);
@@ -146,11 +146,11 @@ public class MainActivity extends AppCompatActivity {
         // Optionally set the default selection
         if (USER_TYPE_BUSINESS.equals(userType)) {
             // Possibly start with a different default fragment
-            viewModel.setNavbarItemId(R.id.navbar_post);
+            viewModel.setNavbarItemId(R.id.navbar_home);
         } else if (pendingMapFocus) {
             viewModel.setNavbarItemId(R.id.navbar_map);
         } else {
-            viewModel.setNavbarItemId(R.id.navbar_home);
+            viewModel.setNavbarItemId(R.id.navbar_post);
         }
     }
 
