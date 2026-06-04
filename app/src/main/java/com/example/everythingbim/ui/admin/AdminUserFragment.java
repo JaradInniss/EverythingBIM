@@ -60,6 +60,10 @@ public class AdminUserFragment extends Fragment {
     private enum BizFilter { ALL, UNREAD, READ }
     private BizFilter bizFilter = BizFilter.ALL;
 
+    // ─── Business Location read filter ─────────────────
+    private enum BizLocFilter { ALL, UNREAD, READ }
+    private BizLocFilter bizLocFilter = BizLocFilter.ALL;
+
     // ─── Views ───────────────────────────────
     private LinearLayout btnGeneral, btnBusiness;
     private EditText searchEt;
@@ -78,6 +82,10 @@ public class AdminUserFragment extends Fragment {
     private LinearLayout businessVerReqContainer;
     private TextView bizFilterAll, bizFilterUnread, bizFilterRead;
 
+    // Business Location lists
+    private LinearLayout businessLocVerReqContainer;
+    private TextView bizLocFilterAll, bizLocFilterUnread, bizLocFilterRead;
+
     // ─── Firebase ────────────────────────────
     private FirebaseFirestore db;
 
@@ -86,6 +94,7 @@ public class AdminUserFragment extends Fragment {
     private List<RequestItem> allInfoReqs     = new ArrayList<>();
     private List<RequestItem> allDatasetReqs  = new ArrayList<>();
     private List<RequestItem> allBizVerReqs   = new ArrayList<>();
+    private List<RequestItem> allBizLocVerReqs = new ArrayList<>();
     private List<UserItem>    allUsers        = new ArrayList<>();
     private List<UserItem>   allBizUsers     = new ArrayList<>();
 
@@ -128,6 +137,12 @@ public class AdminUserFragment extends Fragment {
         bizFilterAll    = view.findViewById(R.id.biz_filter_all);
         bizFilterUnread = view.findViewById(R.id.biz_filter_unread);
         bizFilterRead   = view.findViewById(R.id.biz_filter_read);
+
+        // Bind business location containers
+        businessLocVerReqContainer = view.findViewById(R.id.business_locverreq_container);
+        bizLocFilterAll = view.findViewById(R.id.biz_loc_filter_all);
+        bizLocFilterUnread = view.findViewById(R.id.biz_loc_filter_unread);
+        bizLocFilterRead = view.findViewById(R.id.biz_loc_filter_read);
 
         // Default — both panels hidden until a tab is clicked
         setTabState(Tab.NONE);
@@ -242,6 +257,33 @@ public class AdminUserFragment extends Fragment {
             renderBusinessVerReqs();
         });
 
+        // Business location filter pills
+        bizLocFilterAll.setOnClickListener(v -> {
+            bizLocFilter = BizLocFilter.ALL;
+            updateBizLocFilterPills();
+            renderBusinessLocVerReqs();
+        });
+        bizLocFilterUnread.setOnClickListener(v -> {
+            bizLocFilter = BizLocFilter.UNREAD;
+            updateBizLocFilterPills();
+            renderBusinessLocVerReqs();
+        });
+        bizLocFilterRead.setOnClickListener(v -> {
+            bizLocFilter = BizLocFilter.READ;
+            updateBizLocFilterPills();
+            renderBusinessLocVerReqs();
+        });
+
+        // View All for business location requests
+        view.findViewById(R.id.business_locverreq_view_all).setOnClickListener(v -> {
+            ReadStateManager.markBizLocVerSectionRead(requireContext());
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container,
+                            AdminUserRequestsFragment.newInstance("business_location"))
+                    .addToBackStack(null).commit();
+        });
+
         return view;
     }
 
@@ -291,6 +333,7 @@ public class AdminUserFragment extends Fragment {
             renderGeneralDatasetReqs();
         } else if (activeTab == Tab.BUSINESS) {
             renderBusinessVerReqs();
+            renderBusinessLocVerReqs();
         }
     }
 
@@ -321,6 +364,16 @@ public class AdminUserFragment extends Fragment {
     private void markBizVerAsRead(RequestItem item) {
         if (item == null || item.docId == null || item.docId.isEmpty()) return;
         ReadStateManager.markBizVerRead(requireContext(), item.docId);
+    }
+
+    private void markBizLocVerAsRead(RequestItem item) {
+        if (item == null || item.docId == null || item.docId.isEmpty()) return;
+        ReadStateManager.markBizLocVerRead(requireContext(), item.docId);
+    }
+
+    private boolean isBizLocVerEffectivelyRead(RequestItem item) {
+        if (item == null || item.docId == null || item.docId.isEmpty()) return false;
+        return ReadStateManager.isBizLocVerRead(requireContext(), item.docId);
     }
 
     private void markSectionAsRead(String sectionType) {
@@ -482,8 +535,14 @@ public class AdminUserFragment extends Fragment {
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
                         boolean verified = Boolean.TRUE.equals(doc.getBoolean("verified"));
-                        String name = doc.getString("BusinessName") != null
-                                ? doc.getString("BusinessName") : "Business";
+                        // Get business name - registration stores as 'companyName'
+                        String name = doc.getString("companyName");
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("BusinessName");
+                        }
+                        if (name == null || name.isEmpty()) {
+                            name = "Business";
+                        }
                         allBizUsers.add(new UserItem(doc.getId(), name, verified));
                     }
                 });
@@ -493,43 +552,121 @@ public class AdminUserFragment extends Fragment {
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snap -> {
+                    android.util.Log.d("AdminUserFragment", "loadBusinessData: snapshot size=" + snap.size());
                     for (QueryDocumentSnapshot doc : snap) {
                         boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
-                        String name = doc.getString("BusinessName") != null
-                                ? doc.getString("BusinessName") : "Business";
+                        // Get business name - check multiple possible field names
+                        // Registration stores as 'companyName', but older code may use 'BusinessName'
+                        String name = doc.getString("companyName");
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("BusinessName"); // Older field name
+                        }
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("name");
+                        }
+                        if (name == null || name.isEmpty()) {
+                            name = "Business";
+                        }
+                        // Get username for display
+                        String submittedBy = doc.getString("username");
+                        if (submittedBy == null || submittedBy.isEmpty()) {
+                            submittedBy = "User";
+                        }
+                        // Get additional business details
+                        String phone = doc.getString("phone");
+                        if (phone == null) phone = "";
+                        String email = doc.getString("businessEmail"); // Business email field
+                        if (email == null) email = "";
+                        String address = doc.getString("address");
+                        if (address == null) address = "";
+                        String description = doc.getString("description");
+                        if (description == null) description = "";
+                        String businessType = doc.getString("businessType");
+                        if (businessType == null) businessType = "";
                         Timestamp ts = doc.getTimestamp("createdAt");
                         String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
                                 Locale.getDefault()).format(ts.toDate()) : "";
-                        allBizVerReqs.add(new RequestItem(
-                                "#" + (allBizVerReqs.size() + 521), name,
-                                "User", date, read, doc.getId()));
+                        // Get request number from doc ID (first 6 chars uppercased) to match detail screen
+                        String requestNum = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                        RequestItem item = new RequestItem(
+                                "#" + requestNum, name,
+                                submittedBy, date, read, doc.getId());
+                        item.phone = phone;
+                        item.email = email;
+                        item.address = address;
+                        item.description = description;
+                        item.businessType = businessType;
+                        allBizVerReqs.add(item);
                     }
                     if (allBizVerReqs.isEmpty()) addBizVerReqPlaceholders();
                     renderBusinessVerReqs();
                     updateBizVerReqCount(snap.size());
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("AdminUserFragment", "loadBusinessData: failed=" + e.getMessage());
                     addBizVerReqPlaceholders();
                     renderBusinessVerReqs();
                 });
+
+        // Business Location Verification Requests
+        db.collection("add_business_location_requests")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    allBizLocVerReqs.clear();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
+                        String locationName = doc.getString("locationName");
+                        if (locationName == null || locationName.isEmpty()) {
+                            locationName = "Business Location";
+                        }
+                        String submittedBy = doc.getString("userId");
+                        if (submittedBy == null || submittedBy.isEmpty()) {
+                            submittedBy = "User";
+                        }
+                        Timestamp ts = doc.getTimestamp("createdAt");
+                        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate()) : "";
+                        String requestNum = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                        String placeType = doc.getString("placeType");
+                        if (placeType == null) placeType = "";
+                        RequestItem item = new RequestItem("#" + requestNum, locationName, submittedBy, date, read, doc.getId());
+                        item.placeType = placeType;
+                        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+                        Double lat = doc.getDouble("latitude");
+                        Double lng = doc.getDouble("longitude");
+                        if (lat != null && lng != null) {
+                            item.latitude = lat;
+                            item.longitude = lng;
+                            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+                        }
+                        allBizLocVerReqs.add(item);
+                    }
+                    if (allBizLocVerReqs.isEmpty()) addBizLocVerReqPlaceholders();
+                    renderBusinessLocVerReqs();
+                    updateBizLocVerReqCount(snap.size());
+                })
+                .addOnFailureListener(e -> {
+                    addBizLocVerReqPlaceholders();
+                    renderBusinessLocVerReqs();
+                });
     }
 
-    // Navigate to AdminUserRequestsFragment showing all requests of given type
-    private void navigateToAllRequests(String requestType) {
-        if (getParentFragment() instanceof AdminFragment) {
-            ((AdminFragment) getParentFragment()).navigateToUserRequests(requestType);
-        }
+    private void addBizLocVerReqPlaceholders() {
+        allBizLocVerReqs.add(new RequestItem("#101", "Chefette Restaurant", "User", "2026/02/11", false, "ph_bizloc_101"));
+        allBizLocVerReqs.add(new RequestItem("#100", "KFC Wildey", "User", "2026/02/01", true, "ph_bizloc_100"));
+        allBizLocVerReqs.add(new RequestItem("#99", "Lighthouse Restaurant", "User", "2026/01/28", false, "ph_bizloc_99"));
+        allBizLocVerReqs.get(0).placeType = "Restaurant";
+        allBizLocVerReqs.get(1).placeType = "Restaurant";
+        allBizLocVerReqs.get(2).placeType = "Restaurant";
     }
 
-    private void addBizVerReqPlaceholders() {
-        allBizVerReqs.add(new RequestItem("#523","Hackerton's Pub",      "User","2026/02/11",false,"ph_biz_523"));
-        allBizVerReqs.add(new RequestItem("#522","Jordan's Supermarket", "User","2026/02/01",true, "ph_biz_522"));
-        allBizVerReqs.add(new RequestItem("#521","Grillz By Kriz",       "User","2026/01/28",false,"ph_biz_521"));
+    private void updateBizLocVerReqCount(int count) {
+        if (!isAdded()) return;
+        View view = getView();
+        if (view == null) return;
+        TextView tv = view.findViewById(R.id.business_locverreq_count);
+        if (tv != null) tv.setText(String.valueOf(count));
     }
-
-    // ────────────────────────────────────────────────────────
-    // RENDER METHODS — inflate item rows into containers
-    // ────────────────────────────────────────────────────────
 
     private void renderGeneralLocReqs() {
         if (generalLocReqContainer == null) return;
@@ -570,19 +707,101 @@ public class AdminUserFragment extends Fragment {
             return;
         }
         android.util.Log.d("AdminUserFragment", "renderBusinessVerReqs: allBizVerReqs size=" + allBizVerReqs.size());
+        android.util.Log.d("AdminUserFragment", "businessContent visibility=" + businessContent.getVisibility() + " businessVerReqContainer=" + businessVerReqContainer.getVisibility());
+        android.util.Log.d("AdminUserFragment", "bizFilter=" + bizFilter + " allBizVerReqs[3] effectivelyRead=" + (allBizVerReqs.size() > 3 ? isBizVerEffectivelyRead(allBizVerReqs.get(3)) : "N/A"));
         businessVerReqContainer.removeAllViews();
         int renderedCount = 0;
         for (RequestItem item : allBizVerReqs) {
-            // Apply biz read filter using effective read state
             boolean effectivelyRead = isBizVerEffectivelyRead(item);
             if (bizFilter == BizFilter.UNREAD && effectivelyRead) continue;
             if (bizFilter == BizFilter.READ && !effectivelyRead) continue;
-            if (renderedCount >= 3) break; // Only show first 3
-            android.util.Log.d("AdminUserFragment", "renderBusinessVerReqs: adding item docId=" + item.docId + " effectivelyRead=" + effectivelyRead);
             businessVerReqContainer.addView(inflateRequestRow(item));
             renderedCount++;
+            if (renderedCount >= 3) break;
         }
-        updateBizVerReqCount(allBizVerReqs.size()); // Show total count
+        updateBizVerReqCount(allBizVerReqs.size());
+    }
+
+    private void renderBusinessLocVerReqs() {
+        if (businessLocVerReqContainer == null) return;
+        businessLocVerReqContainer.removeAllViews();
+        int renderedCount = 0;
+        for (RequestItem item : allBizLocVerReqs) {
+            boolean effectivelyRead = isBizLocVerEffectivelyRead(item);
+            if (bizLocFilter == BizLocFilter.UNREAD && effectivelyRead) continue;
+            if (bizLocFilter == BizLocFilter.READ && !effectivelyRead) continue;
+            businessLocVerReqContainer.addView(inflateBizLocVerRequestRow(item));
+            renderedCount++;
+            if (renderedCount >= 3) break;
+        }
+        updateBizLocVerReqCount(allBizLocVerReqs.size());
+    }
+
+    // Inflates item_admin_user_request.xml for BUSINESS LOCATION requests
+    private View inflateBizLocVerRequestRow(RequestItem item) {
+        View row = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_admin_user_request,
+                        businessLocVerReqContainer, false);
+
+        TextView numTv = row.findViewById(R.id.user_req_number);
+        TextView titleTv = row.findViewById(R.id.user_req_title);
+        TextView byTv = row.findViewById(R.id.user_req_submitted_by);
+        TextView dateTv = row.findViewById(R.id.user_req_date);
+        if (numTv != null) numTv.setText(item.number);
+        if (titleTv != null) titleTv.setText(item.title);
+        if (byTv != null) byTv.setText("Submitted By: " + item.submittedBy);
+        if (dateTv != null) dateTv.setText(item.date);
+
+        boolean effectivelyRead = isBizLocVerEffectivelyRead(item);
+        row.findViewById(R.id.user_req_dot).setBackgroundResource(
+                effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+
+        TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
+        viewBtn.setTextColor(effectivelyRead
+                ? android.graphics.Color.parseColor("#9e9e9e")
+                : android.graphics.Color.parseColor("#203088"));
+
+        viewBtn.setOnClickListener(v -> {
+            markBizLocVerAsRead(item);
+
+            View dot = row.findViewById(R.id.user_req_dot);
+            dot.setBackgroundResource(R.drawable.bg_dot_grey);
+            dot.invalidate();
+            viewBtn.setTextColor(android.graphics.Color.parseColor("#9e9e9e"));
+            viewBtn.invalidate();
+
+            renderBusinessLocVerReqs();
+
+            Fragment detail = AdminBizLocationDetailFragment.newInstance(
+                    item.docId,
+                    item.number,
+                    item.status,
+                    item.date,
+                    item.submittedBy,
+                    item.title,
+                    item.placeType,
+                    item.coordinates,
+                    item.latitude,
+                    item.longitude
+            );
+
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.admin_fragment_container, detail)
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        return row;
+    }
+
+    private void addBizVerReqPlaceholders() {
+        allBizVerReqs.add(new RequestItem("#523","Hackerton's Pub",      "User","2026/02/11",false,"ph_biz_523"));
+        allBizVerReqs.add(new RequestItem("#522","Jordan's Supermarket", "User","2026/02/01",true, "ph_biz_522"));
+        allBizVerReqs.add(new RequestItem("#521","Grillz By Kriz",       "User","2026/01/28",false,"ph_biz_521"));
+        allBizVerReqs.get(0).businessType = "Restaurant";
+        allBizVerReqs.get(1).businessType = "Retail";
+        allBizVerReqs.get(2).businessType = "Food";
     }
 
     private void updateBizVerReqCount(int count) {
@@ -593,17 +812,20 @@ public class AdminUserFragment extends Fragment {
         if (tv != null) tv.setText(String.valueOf(count));
     }
 
-    // Inflates item_admin_user_request.xml for GENERAL requests
+// Inflates item_admin_user_request.xml for GENERAL requests
     private View inflateGeneralRequestRow(RequestItem item, String requestType) {
         View row = LayoutInflater.from(requireContext())
                 .inflate(R.layout.item_admin_user_request,
                         generalLocReqContainer, false);
 
-        ((TextView) row.findViewById(R.id.user_req_number)).setText(item.number);
-        ((TextView) row.findViewById(R.id.user_req_title)).setText(item.title);
-        ((TextView) row.findViewById(R.id.user_req_submitted_by))
-                .setText("Submitted By: " + item.submittedBy);
-        ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
+        TextView numTv = row.findViewById(R.id.user_req_number);
+        TextView titleTv = row.findViewById(R.id.user_req_title);
+        TextView byTv = row.findViewById(R.id.user_req_submitted_by);
+        TextView dateTv = row.findViewById(R.id.user_req_date);
+        if (numTv != null) numTv.setText(item.number);
+        if (titleTv != null) titleTv.setText(item.title);
+        if (byTv != null) byTv.setText("Submitted By: " + item.submittedBy);
+        if (dateTv != null) dateTv.setText(item.date);
 
         // Dot colour — use effective read state (Firestore read OR local SharedPreferences)
         boolean effectivelyRead = isRequestEffectivelyRead(item);
@@ -680,15 +902,19 @@ public class AdminUserFragment extends Fragment {
 
     // Inflates item_admin_user_request.xml for BUSINESS requests
     private View inflateRequestRow(RequestItem item) {
+        android.util.Log.d("AdminUserFragment", "inflateRequestRow: called for docId=" + item.docId);
         View row = LayoutInflater.from(requireContext())
                 .inflate(R.layout.item_admin_user_request,
                         businessVerReqContainer, false);
 
-        ((TextView) row.findViewById(R.id.user_req_number)).setText(item.number);
-        ((TextView) row.findViewById(R.id.user_req_title)).setText(item.title);
-        ((TextView) row.findViewById(R.id.user_req_submitted_by))
-                .setText("Submitted By: " + item.submittedBy);
-        ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
+        TextView numTv = row.findViewById(R.id.user_req_number);
+        TextView titleTv = row.findViewById(R.id.user_req_title);
+        TextView byTv = row.findViewById(R.id.user_req_submitted_by);
+        TextView dateTv = row.findViewById(R.id.user_req_date);
+        if (numTv != null) numTv.setText(item.number);
+        if (titleTv != null) titleTv.setText(item.title);
+        if (byTv != null) byTv.setText("Submitted By: " + item.submittedBy);
+        if (dateTv != null) dateTv.setText(item.date);
 
         // Dot colour — use effective read state (SharedPreferences only)
         boolean effectivelyRead = isBizVerEffectivelyRead(item);
@@ -778,18 +1004,20 @@ public class AdminUserFragment extends Fragment {
         searchResultsCard.setVisibility(View.VISIBLE);
     }
 
-    // Inflates item_admin_user_search_result.xml and binds data
+// Inflates item_admin_user_search_result.xml and binds data
     private View inflateUserSearchRow(UserItem user) {
         View row = LayoutInflater.from(requireContext())
                 .inflate(R.layout.item_admin_user_search_result,
                         searchResultsContainer, false);
 
-        ((TextView) row.findViewById(R.id.search_result_username))
-                .setText(user.username);
+        TextView usernameTv = row.findViewById(R.id.search_result_username);
+        if (usernameTv != null) usernameTv.setText(user.username);
 
         // Show verified badge for business users
         ImageView verifiedBadge = row.findViewById(R.id.search_result_verified);
-        verifiedBadge.setVisibility(user.verified ? View.VISIBLE : View.GONE);
+        if (verifiedBadge != null) {
+            verifiedBadge.setVisibility(user.verified ? View.VISIBLE : View.GONE);
+        }
 
         row.findViewById(R.id.search_result_view_btn).setOnClickListener(v -> {
             // TODO: navigate to user detail
@@ -827,6 +1055,34 @@ public class AdminUserFragment extends Fragment {
             case READ:
                 bizFilterRead.setBackgroundResource(R.drawable.bg_search_filter_active);
                 bizFilterRead.setTextColor(white);
+                break;
+        }
+    }
+
+    private void updateBizLocFilterPills() {
+        bizLocFilterAll.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        bizLocFilterUnread.setBackgroundResource(R.drawable.bg_biz_unread_pill);
+        bizLocFilterRead.setBackgroundResource(R.drawable.bg_biz_read_pill);
+
+        int white  = android.graphics.Color.WHITE;
+        int dark   = getResources().getColor(R.color.black, null);
+
+        bizLocFilterAll.setTextColor(dark);
+        bizLocFilterUnread.setTextColor(dark);
+        bizLocFilterRead.setTextColor(dark);
+
+        switch (bizLocFilter) {
+            case ALL:
+                bizLocFilterAll.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizLocFilterAll.setTextColor(white);
+                break;
+            case UNREAD:
+                bizLocFilterUnread.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizLocFilterUnread.setTextColor(white);
+                break;
+            case READ:
+                bizLocFilterRead.setBackgroundResource(R.drawable.bg_search_filter_active);
+                bizLocFilterRead.setTextColor(white);
                 break;
         }
     }

@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.everythingbim.R;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -51,8 +49,9 @@ public class ViewCompletedLocationToAddressAdapter
 
         // ── Request number ───────────────────────
         if (holder.requestNo != null) {
+            String docId = doc.getId();
             holder.requestNo.setText("Request #" +
-                    doc.getId().substring(0, 6).toUpperCase());
+                    docId.substring(0, Math.min(6, docId.length())).toUpperCase());
         }
 
         // ── Submission date ──────────────────────
@@ -95,12 +94,14 @@ public class ViewCompletedLocationToAddressAdapter
 
         // ── Location name ────────────────────────
         if (holder.locationName != null) {
-            holder.locationName.setText(doc.getString("locationName"));
+            String locationName = doc.getString("locationName");
+            holder.locationName.setText(locationName != null ? locationName : "");
         }
 
         // ── Place type ────────────────────────────
         if (holder.placeType != null) {
-            holder.placeType.setText(doc.getString("placeType"));
+            String placeType = doc.getString("placeType");
+            holder.placeType.setText(placeType != null ? placeType : "");
         }
 
         // ── Images ────────────────────────────────
@@ -110,26 +111,27 @@ public class ViewCompletedLocationToAddressAdapter
             List<String> imageUrls = (List<String>) doc.get("imageUrls");
             if (imageUrls != null && !imageUrls.isEmpty()) {
                 for (String url : imageUrls) {
-                    StorageReference ref = FirebaseStorage.getInstance()
-                            .getReferenceFromUrl(url);
-
-                    ref.getBytes(2 * 1024 * 1024)
-                            .addOnSuccessListener(bytes -> {
-                                android.graphics.Bitmap bitmap =
-                                        android.graphics.BitmapFactory.decodeByteArray(
-                                                bytes, 0, bytes.length);
-
-                                ImageView imageView = new ImageView(
-                                        holder.imageContainer.getContext());
-                                LinearLayout.LayoutParams params =
-                                        new LinearLayout.LayoutParams(120, 120);
-                                params.setMarginEnd(8);
-                                imageView.setLayoutParams(params);
-                                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                                imageView.setImageBitmap(bitmap);
-                                holder.imageContainer.addView(imageView);
-                            })
-                            .addOnFailureListener(e -> { /* skip failed images */ });
+                    try {
+                        FirebaseStorage.getInstance()
+                                .getReferenceFromUrl(url)
+                                .getBytes(2 * 1024 * 1024)
+                                .addOnSuccessListener(bytes -> {
+                                    android.graphics.Bitmap bitmap =
+                                            android.graphics.BitmapFactory.decodeByteArray(
+                                                    bytes, 0, bytes.length);
+                                    ImageView imageView = new ImageView(
+                                            holder.imageContainer.getContext());
+                                    LinearLayout.LayoutParams params =
+                                            new LinearLayout.LayoutParams(120, 120);
+                                    params.setMarginEnd(8);
+                                    imageView.setLayoutParams(params);
+                                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                                    imageView.setImageBitmap(bitmap);
+                                    holder.imageContainer.addView(imageView);
+                                });
+                    } catch (Exception e) {
+                        // skip failed images
+                    }
                 }
             }
         }
@@ -142,9 +144,8 @@ public class ViewCompletedLocationToAddressAdapter
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView requestNo, submissionDate, statusValue;
         TextView locationName, placeType;
-        Spinner placeTypeSpinner;
         LinearLayout imageContainer;
-        ImageView statusIcon, uploadImgBttn;
+        ImageView statusIcon;
 
         @SuppressLint("WrongViewCast")
         public ViewHolder(@NonNull View itemView) {
@@ -155,9 +156,7 @@ public class ViewCompletedLocationToAddressAdapter
             statusIcon         = itemView.findViewById(R.id.status_icon);
             locationName       = itemView.findViewById(R.id.location_name_et);
             placeType          = itemView.findViewById(R.id.place_type_tv);
-            placeTypeSpinner   = itemView.findViewById(R.id.place_type_spinner);
-            imageContainer     = itemView.findViewById(R.id.img_icon_container);
-            uploadImgBttn      = itemView.findViewById(R.id.upload_img_bttn);
+            imageContainer    = itemView.findViewById(R.id.img_icon_container);
         }
     }
 }

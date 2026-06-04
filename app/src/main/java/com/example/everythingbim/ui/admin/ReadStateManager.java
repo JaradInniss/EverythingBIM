@@ -38,6 +38,7 @@ public class ReadStateManager {
     // ─────────────────────────────────────────────────────────────
     public static final String KEY_READ_REQUEST_IDS = "read_request_ids";   // Location/Info requests
     public static final String KEY_READ_BIZ_VER_IDS = "read_biz_ver_ids";    // Business verification
+    public static final String KEY_READ_BIZ_LOC_VER_IDS = "read_biz_loc_ver_ids"; // Business location verification
     public static final String KEY_READ_REPORT_IDS = "read_report_ids";      // Reports
 
     // ─────────────────────────────────────────────────────────────
@@ -225,6 +226,41 @@ public class ReadStateManager {
         if (ids.add(bizVerId)) {
             getPrefs(context).edit().putStringSet(KEY_READ_BIZ_VER_IDS, ids).apply();
         }
+    }
+
+    // ─── Business location verification IDs ───
+
+    /**
+     * Returns the set of business location verification IDs marked as read.
+     */
+    public static Set<String> getReadBizLocVerIds(Context context) {
+        return new HashSet<>(getPrefs(context).getStringSet(KEY_READ_BIZ_LOC_VER_IDS, new HashSet<>()));
+    }
+
+    /**
+     * Returns true if the business location verification ID is marked as read.
+     */
+    public static boolean isBizLocVerRead(Context context, String bizLocVerId) {
+        if (bizLocVerId == null) return false;
+        return getReadBizLocVerIds(context).contains(bizLocVerId);
+    }
+
+    /**
+     * Marks a business location verification ID as read.
+     */
+    public static void markBizLocVerRead(Context context, String bizLocVerId) {
+        if (bizLocVerId == null || bizLocVerId.isEmpty()) return;
+        Set<String> ids = new HashSet<>(getReadBizLocVerIds(context));
+        if (ids.add(bizLocVerId)) {
+            getPrefs(context).edit().putStringSet(KEY_READ_BIZ_LOC_VER_IDS, ids).apply();
+        }
+    }
+
+    /**
+     * Convenience method to mark business location verification section as read.
+     */
+    public static void markBizLocVerSectionRead(Context context) {
+        getPrefs(context).edit().putLong(KEY_LAST_READ_BUSINESS, System.currentTimeMillis()).apply();
     }
 
     // ─── Report IDs ───

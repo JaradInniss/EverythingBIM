@@ -15,22 +15,23 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.everythingbim.ui.utils.AddLocationToAddressAdapter;
-import com.google.firebase.auth.FirebaseAuth;
+import com.example.everythingbim.ui.utils.ViewAddLocationToAddressAdapter;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ViewAddLocationToAddressFragment extends Fragment {
 
     private FirebaseFirestore db;
-    private FirebaseAuth auth;
-    private AddLocationToAddressAdapter adapter;
+    private ViewAddLocationToAddressAdapter adapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
     }
 
     @Nullable
@@ -47,10 +48,11 @@ public class ViewAddLocationToAddressFragment extends Fragment {
                 requireActivity().getSupportFragmentManager().popBackStack());
 
         // Set user ID in toolbar
-        String userId = auth.getCurrentUser() != null
-                ? auth.getCurrentUser().getUid() : "unknown";
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
         TextView userIdTv = view.findViewById(R.id.viewlocareq_user_id_tv);
-        if (userIdTv != null) {
+        if (userIdTv != null && userId != null && !userId.isEmpty()) {
             userIdTv.setText("User #" + userId.substring(0, Math.min(8, userId.length())).toUpperCase());
         }
 
@@ -58,11 +60,9 @@ public class ViewAddLocationToAddressFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.viewlocationtoaddreq_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new AddLocationToAddressAdapter(
+        adapter = new ViewAddLocationToAddressAdapter(
                 new java.util.ArrayList<>(),
-                R.layout.item_view_add_location_to_address,
-                requireContext(),
-                requireActivity()
+                R.layout.item_view_add_location_to_address
         );
         recyclerView.setAdapter(adapter);
 
@@ -73,25 +73,25 @@ public class ViewAddLocationToAddressFragment extends Fragment {
     }
 
     private void loadPendingRequests() {
-        String userId = auth.getCurrentUser() != null
-                ? auth.getCurrentUser().getUid() : null;
+        // Get userId from SharedPreferences (consistent with other fragments)
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
 
-        if (userId == null) {
+        if (userId.isEmpty()) {
             Toast.makeText(getContext(), "Please sign in to view your requests",
                     Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Query both collections: regular location requests AND business location requests
         db.collection("add_location_requests")
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("status", "In Review")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
-                .addOnSuccessListener(snapshot -> {
-                    if (snapshot != null && !snapshot.isEmpty()) {
-                        adapter.setRequests(snapshot.getDocuments());
-                    }
-                    updateEmptyState(snapshot);
+                .addOnSuccessListener(locationSnapshot -> {
+                    // Also check business location requests
+                    loadBusinessLocationRequests(locationSnapshot);
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ViewAddLocationToAddress", "Failed to load requests", e);
@@ -101,7 +101,47 @@ public class ViewAddLocationToAddressFragment extends Fragment {
                 });
     }
 
-    private void updateEmptyState(com.google.firebase.firestore.QuerySnapshot snapshot) {
+    private void loadBusinessLocationRequests(QuerySnapshot locationSnapshot) {
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        db.collection("add_business_location_requests")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("status", "In Review")
+                .get()
+                .addOnSuccessListener(bizSnapshot -> {
+                    // Combine both document lists
+                    List<com.google.firebase.firestore.DocumentSnapshot> combinedDocs = new java.util.ArrayList<>();
+
+                    if (locationSnapshot != null && !locationSnapshot.isEmpty()) {
+                        combinedDocs.addAll(locationSnapshot.getDocuments());
+                    }
+                    if (bizSnapshot != null && !bizSnapshot.isEmpty()) {
+                        combinedDocs.addAll(bizSnapshot.getDocuments());
+                    }
+
+                    adapter.setRequests(combinedDocs);
+                    updateEmptyState(combinedDocs.isEmpty() ? null : createMergedSnapshot(locationSnapshot, bizSnapshot));
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewAddLocationToAddress", "Failed to load business requests", e);
+                    // Still show location requests if business ones fail
+                    if (locationSnapshot != null && !locationSnapshot.isEmpty()) {
+                        adapter.setRequests(locationSnapshot.getDocuments());
+                    }
+                    updateEmptyState(locationSnapshot);
+                });
+    }
+
+    private QuerySnapshot createMergedSnapshot(
+            QuerySnapshot s1,
+            QuerySnapshot s2) {
+        // Return s1 if available, otherwise s2 (for empty state calculation)
+        return s1 != null && !s1.isEmpty() ? s1 : s2;
+    }
+
+    private void updateEmptyState(QuerySnapshot snapshot) {
         View view = getView();
         if (view == null) return;
 

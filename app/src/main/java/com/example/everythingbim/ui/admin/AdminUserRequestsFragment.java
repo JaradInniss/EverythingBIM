@@ -58,7 +58,7 @@ public class AdminUserRequestsFragment extends Fragment {
     private int currentLoadId = 0;
 
     // ─── Request type ─────────────────────────
-    private String requestType = "info"; // "info", "location", or "dataset"
+    private String requestType = "info"; // "info", "location", "dataset", "business_location"
 
     // ────────────────────────────────────────────────────────
     // FACTORY
@@ -203,7 +203,10 @@ public class AdminUserRequestsFragment extends Fragment {
                             item.address = doc.getString("address") != null ? doc.getString("address") : "";
                             item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
                             if (item.businessType.isEmpty()) {
-                                item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
+                                item.businessType = doc.getString("type") != null ? doc.getString("type") : "";
+                            }
+                            if (item.businessType.isEmpty()) {
+                                item.businessType = doc.getString("businessCategory") != null ? doc.getString("businessCategory") : "";
                             }
 
                             allItems.add(item);
@@ -332,6 +335,9 @@ public class AdminUserRequestsFragment extends Fragment {
         }
         if ("dataset".equals(requestType)) {
             return "dataset_image_submissions";
+        }
+        if ("business_location".equals(requestType)) {
+            return "add_business_location_requests";
         }
         return "add_information_requests";
     }
@@ -474,6 +480,19 @@ public class AdminUserRequestsFragment extends Fragment {
                         );
                     } else if ("dataset".equals(requestType)) {
                         detail = AdminDatasetSubmissionDetailFragment.newInstance(item.docId);
+                    } else if ("business_location".equals(requestType)) {
+                        detail = AdminBizLocationDetailFragment.newInstance(
+                                item.docId,
+                                item.number,
+                                item.status,
+                                item.date,
+                                item.submittedBy,
+                                item.locationName,
+                                item.placeType,
+                                item.coordinates,
+                                item.latitude,
+                                item.longitude
+                        );
                     } else {
                         detail = AdminBizVerificationDetailFragment.newInstance(
                                 item.docId,

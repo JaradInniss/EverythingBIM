@@ -69,7 +69,6 @@ public class ViewAddInformationRequestFragment extends Fragment {
         db.collection("add_information_requests")
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("status", "In Review")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     Log.d("ViewAddInfo", "Query succeeded, docs: " + (snapshot != null ? snapshot.size() : 0));

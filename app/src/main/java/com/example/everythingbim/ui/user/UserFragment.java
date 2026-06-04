@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,7 @@ import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class UserFragment extends Fragment {
 
@@ -133,6 +135,9 @@ public class UserFragment extends Fragment {
         setupEditToggle(view, R.id.business_edit_desc_et, R.id.business_edit_desc_btn);
         setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
 
+        // Load user profile data into settings fields
+        loadUserProfileData(view);
+
         return view;
     }
 
@@ -213,10 +218,10 @@ public class UserFragment extends Fragment {
         if (field == null || button == null) {
             return;
         }
-        button.setOnClickListener(v -> toggleFieldEdit(field, button));
+        button.setOnClickListener(v -> toggleFieldEdit(field, button, fieldId));
     }
 
-    private void toggleFieldEdit(TextInputEditText field, ImageButton button) {
+    private void toggleFieldEdit(TextInputEditText field, ImageButton button, int fieldId) {
         // TextInputLayout is the direct parent of TextInputEditText
         ViewParent parent = field.getParent();
         TextInputLayout fieldLayout = (parent instanceof TextInputLayout) ? (TextInputLayout) parent : null;
@@ -257,8 +262,66 @@ public class UserFragment extends Fragment {
                             requireActivity().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(field.getWindowToken(), 0);
 
-            // TODO: save updated field value to backend here
+            // Save updated field value to backend
+            String newValue = field.getText() != null ? field.getText().toString().trim() : "";
+            saveField(fieldId, newValue);
         }
+    }
+
+    private void saveField(int fieldId, String newValue) {
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        String userType = getUserType();
+        if (userId.isEmpty()) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        String collection = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businesses" : "users";
+
+        boolean hasValidUpdate = false;
+        if (MainActivity.USER_TYPE_GENERAL.equals(userType)) {
+            if (fieldId == R.id.general_user_edit_username_et) {
+                updates.put("username", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.general_user_edit_email_et) {
+                updates.put("email", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.general_user_bio_et) {
+                updates.put("bio", newValue);
+                hasValidUpdate = true;
+            }
+        } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
+            if (fieldId == R.id.business_edit_email_et) {
+                updates.put("businessEmail", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.business_edit_password_et) {
+                if (!newValue.isEmpty()) {
+                    updates.put("password", newValue); // In production, hash this before saving
+                    hasValidUpdate = true;
+                }
+            } else if (fieldId == R.id.business_edit_desc_et) {
+                updates.put("description", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.business_edit_address_et) {
+                updates.put("address", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.business_user_bio_et) {
+                updates.put("bio", newValue);
+                hasValidUpdate = true;
+            }
+        }
+
+        if (!hasValidUpdate) return;
+
+        db.collection(collection).document(userId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    android.util.Log.d("UserFragment", "Field " + fieldId + " saved successfully");
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("UserFragment", "Failed to save field " + fieldId + ": " + e.getMessage());
+                });
     }
 
     private void navigateTo(Fragment fragment) {
@@ -267,6 +330,99 @@ public class UserFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void loadUserProfileData(View view) {
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        String userType = getUserType();
+
+        if (userId.isEmpty()) return;
+
+        if (MainActivity.USER_TYPE_GENERAL.equals(userType)) {
+            // General user - load from Firestore users collection
+            TextInputEditText usernameEt = view.findViewById(R.id.general_user_edit_username_et);
+            TextInputEditText emailEt = view.findViewById(R.id.general_user_edit_email_et);
+            TextInputEditText bioEt = view.findViewById(R.id.general_user_bio_et);
+
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("users").document(userId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            requireActivity().runOnUiThread(() -> {
+                                String username = doc.getString("username");
+                                String email = doc.getString("email");
+                                String bio = doc.getString("bio");
+
+                                if (usernameEt != null) usernameEt.setText(username != null ? username : "");
+                                if (emailEt != null) emailEt.setText(email != null ? email : "");
+                                if (bioEt != null) bioEt.setText(bio != null ? bio : "");
+                            });
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        // Fallback to SharedPreferences
+                        requireActivity().runOnUiThread(() -> {
+                            String username = prefs.getString("username", "User");
+                            String email = prefs.getString("email", "anonymous@gmail.com");
+
+                            if (usernameEt != null) usernameEt.setText(username);
+                            if (emailEt != null) emailEt.setText(email);
+                            if (bioEt != null) bioEt.setText("");
+                        });
+                    });
+        } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
+            // Business user - load from Firestore businesses collection
+            String username = prefs.getString("username", "BusinessUser");
+
+            // Update header info
+            TextView businessUserTv = view.findViewById(R.id.business_user_tv);
+            if (businessUserTv != null) businessUserTv.setText(username);
+
+            // Fields for saving edits
+            TextInputEditText emailEt = view.findViewById(R.id.business_edit_email_et);
+            TextInputEditText passwordEt = view.findViewById(R.id.business_edit_password_et);
+            TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
+            TextInputEditText addressEt = view.findViewById(R.id.business_edit_address_et);
+            TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
+
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("businesses").document(userId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            requireActivity().runOnUiThread(() -> {
+                                String email = doc.getString("businessEmail");
+                                String desc = doc.getString("description");
+                                String address = doc.getString("address");
+                                String bio = doc.getString("bio");
+
+                                if (emailEt != null) emailEt.setText(email != null ? email : "");
+                                if (descEt != null) descEt.setText(desc != null ? desc : "");
+                                if (addressEt != null) addressEt.setText(address != null ? address : "");
+                                if (bioEt != null) bioEt.setText(bio != null ? bio : "");
+                                // Password field left blank for security - user must enter to change
+                                if (passwordEt != null) passwordEt.setText("");
+                            });
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        // Fallback to SharedPreferences
+                        requireActivity().runOnUiThread(() -> {
+                            String email = prefs.getString("email", "");
+                            String businessDescription = prefs.getString("businessDescription", "");
+                            String address = prefs.getString("address", "");
+
+                            if (emailEt != null) emailEt.setText(email.isEmpty() ? "Not set" : email);
+                            if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
+                            if (addressEt != null) addressEt.setText(address.isEmpty() ? "Not set" : address);
+                            if (bioEt != null) bioEt.setText("Not set");
+                            if (passwordEt != null) passwordEt.setText("");
+                        });
+                    });
+        }
     }
 
     private void replayTour() {
