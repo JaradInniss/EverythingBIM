@@ -47,7 +47,7 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id")
     LiveData<LocationWithDetails> getLocationWithDetailsById(long id);
 
-    @Query("SELECT * FROM locations WHERE locationId = :id")
+    @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
 
     /**
@@ -59,8 +59,8 @@ public interface LocationDao {
     @Query("SELECT * FROM locations")
     LiveData<List<LocationWithDetails>> getAllLocationsWithDetails();
 
-    @Query("SELECT * FROM locations WHERE name LIKE '%' || :query || '%'")
-    LiveData<List<LocationEntity>> searchLocations(String query);
+    @Query("SELECT * FROM locations")
+    LiveData<List<LocationEntity>> getAllLocations();
 
     /**
      * Inserts a new location or replaces an existing one if there's a conflict.

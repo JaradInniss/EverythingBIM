@@ -23,9 +23,6 @@ public interface PostDao {
     @Query("SELECT * FROM posts")
     LiveData<List<PostEntity>> getAllPosts();
 
-    /**
-     * Synchronously retrieves all posts from the database.
-     */
     @Query("SELECT * FROM posts")
     List<PostEntity> getAllPostsSync();
 
@@ -37,10 +34,6 @@ public interface PostDao {
     @Insert
     long insert(PostEntity post);
 
-    /**
-     * Updates an existing post in the database.
-     * @param post The PostEntity to update.
-     */
     @Update
     void update(PostEntity post);
 
