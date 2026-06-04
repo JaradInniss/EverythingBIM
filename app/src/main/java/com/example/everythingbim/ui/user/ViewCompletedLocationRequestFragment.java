@@ -70,7 +70,6 @@ public class ViewCompletedLocationRequestFragment extends Fragment {
         db.collection("add_location_requests")
                 .whereEqualTo("userId", userId)
                 .whereIn("status", Arrays.asList("Completed", "Rejected"))
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     Log.d("ViewCompletedLocation", "Query succeeded, docs: " + (snapshot != null ? snapshot.size() : 0));

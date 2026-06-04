@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ViewCompletedAccountVerificationRequestFragment extends Fragment {
@@ -61,18 +62,17 @@ public class ViewCompletedAccountVerificationRequestFragment extends Fragment {
     private void loadCompletedAccountVerificationRequests(View view) {
         // Get current user ID from SharedPreferences
         SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("user_prefs", requireActivity().MODE_PRIVATE);
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 
         if (userId.isEmpty()) {
             return;
         }
 
-        // Query business_verification collection for completed requests
-        db.collection("business_verification")
+        // Query businesses collection for completed requests (Completed or Rejected)
+        db.collection("businesses")
                 .whereEqualTo("userId", userId)
-                .whereNotEqualTo("status", "In Review")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .whereIn("verificationStatus", Arrays.asList("Completed", "Rejected"))
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot != null && !snapshot.isEmpty()) {
