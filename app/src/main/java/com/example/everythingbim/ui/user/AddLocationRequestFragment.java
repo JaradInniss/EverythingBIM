@@ -40,6 +40,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.File;
+import com.example.everythingbim.ui.admin.AdminNotificationHelper;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
@@ -764,6 +765,19 @@ public class AddLocationRequestFragment extends Fragment {
         db.collection("add_location_requests")
                 .add(request)
                 .addOnSuccessListener(doc -> {
+                    AdminNotificationHelper.createNotification(
+                            db,
+                            AdminNotificationHelper.TYPE_LOCATION_REQUEST,
+                            "New Location Request",
+                            "A new location request for " + locationName + " was submitted.",
+                            "In Review",
+                            doc.getId(),
+                            "add_location_requests",
+                            AdminNotificationHelper.TARGET_LOCATION_DETAIL,
+                            AdminNotificationHelper.TYPE_LOCATION_REQUEST,
+                            locationName,
+                            userId
+                    );
                     Toast.makeText(getContext(),
                             "Request submitted!", Toast.LENGTH_SHORT).show();
                     requireActivity().getSupportFragmentManager().popBackStack();

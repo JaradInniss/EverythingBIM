@@ -63,6 +63,7 @@ public class AdminUserFragment extends Fragment {
     // ─── Views ───────────────────────────────
     private LinearLayout btnGeneral, btnBusiness;
     private EditText searchEt;
+    private TextView headerTitle;
     private View searchResultsCard;
     private LinearLayout searchResultsContainer;
     private TextView filterIdPill, filterUsernamePill;
@@ -71,8 +72,7 @@ public class AdminUserFragment extends Fragment {
 
     // General lists
     private LinearLayout generalLocReqContainer;
-    private LinearLayout generalInfoReqContainer;
-    private LinearLayout generalDatasetReqContainer;
+    private LinearLayout generalSubmissionsContainer;
 
     // Business lists
     private LinearLayout businessVerReqContainer;
@@ -106,6 +106,7 @@ public class AdminUserFragment extends Fragment {
         btnGeneral  = view.findViewById(R.id.general_user_container);
         btnBusiness = view.findViewById(R.id.business_user_container);
         searchEt    = view.findViewById(R.id.users_search_et);
+        headerTitle = view.findViewById(R.id.users_header_title);
 
         // Bind search card
         searchResultsCard      = view.findViewById(R.id.users_search_results_card);
@@ -120,8 +121,7 @@ public class AdminUserFragment extends Fragment {
 
         // Bind general list containers
         generalLocReqContainer  = view.findViewById(R.id.general_locreq_container);
-        generalInfoReqContainer = view.findViewById(R.id.general_inforeq_container);
-        generalDatasetReqContainer = view.findViewById(R.id.general_datasetreq_container);
+        generalSubmissionsContainer = view.findViewById(R.id.general_submissions_container);
 
         // Bind business containers
         businessVerReqContainer = view.findViewById(R.id.business_verreq_container);
@@ -166,25 +166,12 @@ public class AdminUserFragment extends Fragment {
                     .addToBackStack(null).commit();
         });
 
-        view.findViewById(R.id.general_inforeq_view_all).setOnClickListener(v -> {
-            // Mark info section as read (set lastReadTimestamp to now)
-            markSectionAsRead("info");
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.admin_fragment_container,
-                            AdminUserRequestsFragment.newInstance("info"))
-                    .addToBackStack(null).commit();
-        });
-
-        view.findViewById(R.id.general_datasetreq_view_all).setOnClickListener(v ->
-                {
-                    ReadStateManager.markDatasetSectionRead(requireContext());
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .add(R.id.admin_fragment_container,
-                                    AdminUserRequestsFragment.newInstance("dataset"))
-                            .addToBackStack(null).commit();
-                });
+        view.findViewById(R.id.general_submissions_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("submissions"))
+                        .addToBackStack(null).commit());
 
         // ── Search text watcher ───────────────
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -258,6 +245,9 @@ public class AdminUserFragment extends Fragment {
 
         switch (tab) {
             case GENERAL:
+                if (headerTitle != null) {
+                    headerTitle.setText("Users' Submissions");
+                }
                 btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_active);
                 btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
                 generalContent.setVisibility(View.VISIBLE);
@@ -265,6 +255,9 @@ public class AdminUserFragment extends Fragment {
                 generalLegend.setVisibility(View.VISIBLE);
                 break;
             case BUSINESS:
+                if (headerTitle != null) {
+                    headerTitle.setText("Users");
+                }
                 btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_active);
                 btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
                 businessContent.setVisibility(View.VISIBLE);
@@ -272,6 +265,9 @@ public class AdminUserFragment extends Fragment {
                 generalLegend.setVisibility(View.GONE);
                 break;
             default: // NONE
+                if (headerTitle != null) {
+                    headerTitle.setText("Users");
+                }
                 btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
                 btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
                 generalContent.setVisibility(View.GONE);
@@ -287,8 +283,7 @@ public class AdminUserFragment extends Fragment {
         // Re-render current tab — data is already in memory, just refresh UI with latest read state
         if (activeTab == Tab.GENERAL) {
             renderGeneralLocReqs();
-            renderGeneralInfoReqs();
-            renderGeneralDatasetReqs();
+            renderGeneralSubmissionsReqs();
         } else if (activeTab == Tab.BUSINESS) {
             renderBusinessVerReqs();
         }
@@ -378,7 +373,7 @@ public class AdminUserFragment extends Fragment {
                     if (allLocReqs.isEmpty()) addLocReqPlaceholders();
                     renderGeneralLocReqs();
                     if (infoCount[0] >= 0 && datasetCount[0] >= 0) {
-                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                        updateGeneralCounts(locCount[0], infoCount[0] + datasetCount[0]);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -386,7 +381,7 @@ public class AdminUserFragment extends Fragment {
                     renderGeneralLocReqs();
                     locCount[0] = 0;
                     if (infoCount[0] >= 0 && datasetCount[0] >= 0) {
-                        updateGeneralCounts(0, infoCount[0], datasetCount[0]);
+                        updateGeneralCounts(0, infoCount[0] + datasetCount[0]);
                     }
                 });
 
@@ -396,21 +391,23 @@ public class AdminUserFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
-                        allInfoReqs.add(buildRequestItem(doc));
+                        RequestItem item = buildRequestItem(doc);
+                        item.requestType = "info";
+                        allInfoReqs.add(item);
                     }
                     infoCount[0] = snap.size();
                     if (allInfoReqs.isEmpty()) addInfoReqPlaceholders();
-                    renderGeneralInfoReqs();
+                    renderGeneralSubmissionsReqs();
                     if (locCount[0] >= 0 && datasetCount[0] >= 0) {
-                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                        updateGeneralCounts(locCount[0], infoCount[0] + datasetCount[0]);
                     }
                 })
                 .addOnFailureListener(e -> {
                     addInfoReqPlaceholders();
-                    renderGeneralInfoReqs();
+                    renderGeneralSubmissionsReqs();
                     infoCount[0] = 0;
                     if (locCount[0] >= 0 && datasetCount[0] >= 0) {
-                        updateGeneralCounts(locCount[0], 0, datasetCount[0]);
+                        updateGeneralCounts(locCount[0], datasetCount[0]);
                     }
                 });
 
@@ -419,19 +416,21 @@ public class AdminUserFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
-                        allDatasetReqs.add(buildRequestItem(doc));
+                        RequestItem item = buildRequestItem(doc);
+                        item.requestType = "dataset";
+                        allDatasetReqs.add(item);
                     }
                     datasetCount[0] = snap.size();
-                    renderGeneralDatasetReqs();
+                    renderGeneralSubmissionsReqs();
                     if (locCount[0] >= 0 && infoCount[0] >= 0) {
-                        updateGeneralCounts(locCount[0], infoCount[0], datasetCount[0]);
+                        updateGeneralCounts(locCount[0], infoCount[0] + datasetCount[0]);
                     }
                 })
                 .addOnFailureListener(e -> {
                     datasetCount[0] = 0;
-                    renderGeneralDatasetReqs();
+                    renderGeneralSubmissionsReqs();
                     if (locCount[0] >= 0 && infoCount[0] >= 0) {
-                        updateGeneralCounts(locCount[0], infoCount[0], 0);
+                        updateGeneralCounts(locCount[0], infoCount[0]);
                     }
                 });
     }
@@ -443,12 +442,20 @@ public class AdminUserFragment extends Fragment {
     }
 
     private void addInfoReqPlaceholders() {
-        allInfoReqs.add(new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88"));
-        allInfoReqs.add(new RequestItem("#87","Marton Gardens",         "User","2026/02/01",true, "ph_info_87"));
-        allInfoReqs.add(new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86"));
+        RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
+        item1.requestType = "info";
+        allInfoReqs.add(item1);
+
+        RequestItem item2 = new RequestItem("#87","Marton Gardens",         "User","2026/02/01",true, "ph_info_87");
+        item2.requestType = "info";
+        allInfoReqs.add(item2);
+
+        RequestItem item3 = new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86");
+        item3.requestType = "info";
+        allInfoReqs.add(item3);
     }
 
-    private void updateGeneralCounts(int locCount, int infoCount, int datasetCount) {
+    private void updateGeneralCounts(int locCount, int submissionsCount) {
         if (!isAdded()) return;
         View view = getView();
         if (view == null) return;
@@ -457,13 +464,9 @@ public class AdminUserFragment extends Fragment {
             TextView tv = view.findViewById(R.id.general_locreq_count);
             if (tv != null) tv.setText(String.valueOf(locCount));
         }
-        if (infoCount >= 0) {
-            TextView tv = view.findViewById(R.id.general_inforeq_count);
-            if (tv != null) tv.setText(String.valueOf(infoCount));
-        }
-        if (datasetCount >= 0) {
-            TextView tv = view.findViewById(R.id.general_datasetreq_count);
-            if (tv != null) tv.setText(String.valueOf(datasetCount));
+        if (submissionsCount >= 0) {
+            TextView tv = view.findViewById(R.id.general_submissions_count);
+            if (tv != null) tv.setText(String.valueOf(submissionsCount));
         }
     }
 
@@ -542,24 +545,19 @@ public class AdminUserFragment extends Fragment {
         }
     }
 
-    private void renderGeneralInfoReqs() {
-        if (generalInfoReqContainer == null) return;
-        generalInfoReqContainer.removeAllViews();
-        int count = 0;
-        for (RequestItem item : allInfoReqs) {
-            if (count >= 3) break; // Only show first 3
-            generalInfoReqContainer.addView(inflateGeneralRequestRow(item, "info"));
-            count++;
-        }
-    }
+    private void renderGeneralSubmissionsReqs() {
+        if (generalSubmissionsContainer == null) return;
+        generalSubmissionsContainer.removeAllViews();
 
-    private void renderGeneralDatasetReqs() {
-        if (generalDatasetReqContainer == null) return;
-        generalDatasetReqContainer.removeAllViews();
+        List<RequestItem> combined = new ArrayList<>();
+        combined.addAll(allInfoReqs);
+        combined.addAll(allDatasetReqs);
+        combined.sort((a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+
         int count = 0;
-        for (RequestItem item : allDatasetReqs) {
-            if (count >= 3) break;
-            generalDatasetReqContainer.addView(inflateGeneralRequestRow(item, "dataset"));
+        for (RequestItem item : combined) {
+            if (count >= 3) break; // Only show first 3
+            generalSubmissionsContainer.addView(inflateGeneralRequestRow(item, item.requestType));
             count++;
         }
     }
@@ -605,6 +603,21 @@ public class AdminUserFragment extends Fragment {
                 .setText("Submitted By: " + item.submittedBy);
         ((TextView) row.findViewById(R.id.user_req_date)).setText(item.date);
 
+        TextView typeBadge = row.findViewById(R.id.user_req_type_badge);
+        if ("info".equals(requestType)) {
+            typeBadge.setVisibility(View.VISIBLE);
+            typeBadge.setText("Info Request");
+            typeBadge.setBackgroundResource(R.drawable.bg_submission_badge_info);
+            typeBadge.setTextColor(android.graphics.Color.WHITE);
+        } else if ("dataset".equals(requestType)) {
+            typeBadge.setVisibility(View.VISIBLE);
+            typeBadge.setText("Dataset Image");
+            typeBadge.setBackgroundResource(R.drawable.bg_submission_badge_dataset);
+            typeBadge.setTextColor(android.graphics.Color.parseColor("#8B0000"));
+        } else {
+            typeBadge.setVisibility(View.GONE);
+        }
+
         // Dot colour — use effective read state (Firestore read OR local SharedPreferences)
         boolean effectivelyRead = isRequestEffectivelyRead(item);
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
@@ -630,8 +643,7 @@ public class AdminUserFragment extends Fragment {
             // Re-render current tab so state is consistent across tab switches
             if (activeTab == Tab.GENERAL) {
                 renderGeneralLocReqs();
-                renderGeneralInfoReqs();
-                renderGeneralDatasetReqs();
+                renderGeneralSubmissionsReqs();
             }
 
             Fragment detail;
@@ -851,6 +863,7 @@ public class AdminUserFragment extends Fragment {
                 Locale.getDefault()).format(ts.toDate()) : "";
 
         RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
+        item.createdAtMillis = ts != null ? ts.toDate().getTime() : 0L;
 
         item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
         item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
@@ -893,6 +906,8 @@ public class AdminUserFragment extends Fragment {
     private static class RequestItem {
         String number, title, submittedBy, date, docId, status;
         boolean read;
+        String requestType;
+        long createdAtMillis;
         String locationName, description, placeType, reason, coordinates;
         double latitude, longitude;
         String imageUrl, userNote;
@@ -904,6 +919,8 @@ public class AdminUserFragment extends Fragment {
             this.submittedBy = submittedBy; this.date = date;
             this.read = read; this.docId = docId;
             this.status = "In Review";
+            this.requestType = "info";
+            this.createdAtMillis = 0L;
             this.locationName = ""; this.description = "";
             this.placeType = ""; this.reason = "";
             this.coordinates = "";
