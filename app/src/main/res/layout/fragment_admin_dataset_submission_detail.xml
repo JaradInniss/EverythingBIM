@@ -6,319 +6,389 @@
     android:background="@drawable/bg_main">
 
     <LinearLayout
-        android:id="@+id/dataset_detail_header"
+        android:id="@+id/dataset_detail_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="10dp">
+        android:layout_height="56dp"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/bg_main"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/dataset_detail_back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:contentDescription="Go back"
+            android:focusable="true"
+            android:src="@drawable/ic_caret_left"
+            app:tint="@color/white" />
+
+        <TextView
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:fontFamily="@font/roboto_medium"
+            android:gravity="center"
+            android:text="View Dataset Image Submission"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/dataset_detail_back_btn"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Go back"
-                android:src="@drawable/ic_caret_left"
-                app:tint="@color/white" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Dataset Submission"
-                android:textAlignment="center"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/roboto_medium" />
-
-            <TextView
-                android:id="@+id/dataset_detail_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_rectangle_alice_blue"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:text="Pending Review"
-                android:textColor="@color/space_indigo"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/roboto_medium" />
-        </LinearLayout>
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
     </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/dataset_detail_header"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="16dp"
+        android:layout_below="@id/dataset_detail_toolbar"
+        android:fillViewport="true"
         android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="20dp">
 
-            <androidx.cardview.widget.CardView
+            <LinearLayout
+                android:id="@+id/dataset_detail_card_wrapper"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:background="@drawable/bg_card_default"
+                android:orientation="vertical"
+                android:padding="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@color/white"
                     android:orientation="vertical"
                     android:padding="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/dataset_detail_number"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/roboto_medium"
+                            android:text="Request #"
+                            android:textColor="@color/black"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/dataset_detail_status"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/roboto_medium"
+                                android:text="Status: In Review"
+                                android:textColor="@color/true_cobalt"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/dataset_detail_created_at"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/roboto_medium"
+                                android:text="Submitted: 2026/06/03"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/dataset_detail_submitted_by"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Submitted By: User"
+                        android:textColor="@color/dim_grey"
+                        android:textSize="12sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@color/light_grey" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Suggested Landmark"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/dataset_detail_title"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Dataset Title"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:fontFamily="@font/roboto_medium"
+                        android:padding="10dp"
                         android:textColor="@color/black"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <ImageView
-                        android:id="@+id/dataset_detail_image"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp"
-                        android:layout_marginTop="12dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_images" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
+                        android:textSize="13sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Submission Details"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Location Coordinates"
                         android:textColor="@color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium" />
+                        android:textSize="13sp" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Submitted By"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/dataset_detail_coordinates"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/roboto_medium"
+                            android:padding="10dp"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="10dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_pin_area"
+                            app:tint="@color/true_cobalt" />
+                    </LinearLayout>
 
                     <TextView
-                        android:id="@+id/dataset_detail_submitted_by"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Location Description / User Note"
                         android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Submitted On"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_created_at"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Image Source"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_source"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="CNN Result State"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_result"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Confidence"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_confidence"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="GPS Support"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_gps"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="User Coordinates"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/dataset_detail_coordinates"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="User Note"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/dataset_detail_note"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:fontFamily="@font/roboto_medium"
+                        android:padding="10dp"
                         android:textColor="@color/black"
-                        android:textSize="14sp" />
+                        android:textSize="13sp" />
 
                     <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Submission Metadata"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Model Context"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp" />
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:id="@+id/dataset_detail_source"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/dataset_detail_result"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/dataset_detail_confidence"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/dataset_detail_gps"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Submitted Image"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:id="@+id/dataset_detail_image"
+                        android:layout_width="match_parent"
+                        android:layout_height="220dp"
+                        android:layout_marginBottom="10dp"
+                        android:adjustViewBounds="true"
+                        android:background="@drawable/bg_admin_field"
+                        android:padding="8dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_images" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Review Context"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/dataset_detail_description"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:fontFamily="@font/roboto_medium"
+                        android:padding="10dp"
                         android:textColor="@color/black"
-                        android:textSize="14sp" />
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="14dp"
+                        android:background="@color/light_grey" />
+
+                    <LinearLayout
+                        android:id="@+id/dataset_detail_resolution_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/dataset_detail_resolution_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/dataset_detail_resolution_by"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:id="@+id/dataset_detail_rejection_reason_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/dataset_detail_rejection_reason"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/roboto_medium"
+                                android:textColor="@color/black"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/dataset_detail_action_buttons"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/dataset_detail_accept"
+                            android:layout_width="120dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="16dp"
+                            android:background="@drawable/bg_border_rectangle_celadon"
+                            android:fontFamily="@font/roboto_medium"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Accept"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/dataset_detail_reject"
+                            android:layout_width="120dp"
+                            android:layout_height="46dp"
+                            android:background="@drawable/bg_border_rectangle_old_rose"
+                            android:fontFamily="@font/roboto_medium"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Reject"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/dataset_detail_mark_reviewed"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_rectangle_alice_blue"
-                    android:gravity="center"
-                    android:text="Mark Reviewed"
-                    android:textColor="@color/space_indigo"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/roboto_medium" />
-
-                <TextView
-                    android:id="@+id/dataset_detail_accept"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_border_rectangle_gold"
-                    android:gravity="center"
-                    android:text="Accept"
-                    android:textColor="@color/prussian_blue"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/roboto_medium" />
-
-                <TextView
-                    android:id="@+id/dataset_detail_reject"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_rectangle_blue"
-                    android:gravity="center"
-                    android:text="Reject"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/roboto_medium" />
             </LinearLayout>
 
         </LinearLayout>

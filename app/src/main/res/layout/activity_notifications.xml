@@ -41,10 +41,20 @@
         style="@style/heading_txt_style"/>
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notifications_recycler"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginTop="5dp"
         android:layout_below="@id/notifcation_title_txt"
         tools:listitem="@layout/item_notification_group"/>
+
+    <TextView
+        android:id="@+id/notifications_empty_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="No notifications yet."
+        android:visibility="gone"
+        style="@style/subheading_txt_style" />
 
 </RelativeLayout>

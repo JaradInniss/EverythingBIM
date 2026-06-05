@@ -31,6 +31,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.home.UserNotificationHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -80,6 +81,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     private String cachedResolvedAt = "";
     private String cachedResolvedBy = "";
     private String cachedRejectionReason = "";
+    private String cachedRecipientUserId = "";
     private boolean dataFromBundle = false;
 
     // ─── Map ─────────────────────────────────
@@ -302,6 +304,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                     submittedByTv.setText("Submitted By: User "
                             + (sub != null ? sub : ""));
                     cachedSubmittedBy = sub != null ? sub : "";
+                    cachedRecipientUserId = nvl(doc.getString("userId"));
 
                     String locationName = nvl(doc.getString("locationName"));
                     locationNameTv.setText(locationName);
@@ -407,6 +410,19 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                     if (!isUiActive()) return;
                     // Log approval activity
                     activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            "Location Request Update",
+                            "Your location request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted.",
+                            "Accepted",
+                            docId,
+                            "add_location_requests",
+                            UserNotificationHelper.TARGET_COMPLETED_LOCATION,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            firstNonEmpty(cachedLocationName, "Location Request")
+                    );
                     showToast("Request Accepted");
                     applyAcceptedState(todayStr(), "Administrator");
                 })
@@ -427,6 +443,19 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                     if (!isUiActive()) return;
                     // Log rejection activity
                     activityLogger.logRejection(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            "Location Request Update",
+                            "Your location request for " + firstNonEmpty(cachedLocationName, "this location") + " was rejected.",
+                            "Rejected",
+                            docId,
+                            "add_location_requests",
+                            UserNotificationHelper.TARGET_COMPLETED_LOCATION,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            firstNonEmpty(cachedLocationName, "Location Request")
+                    );
                     showToast("Request Rejected");
                     applyRejectedState(todayStr(), "Administrator", reason);
                 })
@@ -511,6 +540,14 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
+    private String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
     private String fmt(Timestamp ts) { return ts != null
             ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
             : todayStr(); }

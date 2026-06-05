@@ -43,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACTION_ADD_INFORMATION_REQUEST = "action_add_information_request";
     public static final String ACTION_ADD_BUSINESS_LOCATION_REQUEST = "action_add_business_location_request";
     public static final String ACTION_ADD_DATASET_SUBMISSION = "action_add_dataset_submission";
+    public static final String ACTION_VIEW_COMPLETED_INFORMATION_REQUESTS = "action_view_completed_information_requests";
+    public static final String ACTION_VIEW_COMPLETED_LOCATION_REQUESTS = "action_view_completed_location_requests";
+    public static final String ACTION_VIEW_COMPLETED_ACCOUNT_VERIFICATION_REQUESTS = "action_view_completed_account_verification_requests";
 
     // For Args for focusing location in Map Fragment
     public static final String EXTRA_OPEN_MAP_FOCUS = "open_map_focus";
@@ -159,15 +162,8 @@ public class MainActivity extends AppCompatActivity {
         MenuItem mapItem = bottomNavigationView.getMenu().findItem(R.id.navbar_map);
         MenuItem postItem = bottomNavigationView.getMenu().findItem(R.id.navbar_post);
 
-        if (USER_TYPE_BUSINESS.equals(userType)) {
-            // For business users, hide map? Or show different set? Adjust as needed.
-            mapItem.setVisible(false);
-            postItem.setVisible(true);
-        } else {
-            // General users: show all or hide some
-            mapItem.setVisible(true);
-            postItem.setVisible(true);
-        }
+        mapItem.setVisible(true);
+        postItem.setVisible(true);
 
         // Optionally set the default selection
         if (USER_TYPE_BUSINESS.equals(userType)) {
@@ -321,6 +317,21 @@ public class MainActivity extends AppCompatActivity {
 
         if (ACTION_ADD_DATASET_SUBMISSION.equals(pendingAction)) {
             openDatasetSubmissionResume();
+            return;
+        }
+
+        if (ACTION_VIEW_COMPLETED_INFORMATION_REQUESTS.equals(pendingAction)) {
+            openUserActionFragment(new com.example.everythingbim.ui.user.ViewCompletedInformationRequestFragment());
+            return;
+        }
+
+        if (ACTION_VIEW_COMPLETED_LOCATION_REQUESTS.equals(pendingAction)) {
+            openUserActionFragment(new com.example.everythingbim.ui.user.ViewCompletedLocationRequestFragment());
+            return;
+        }
+
+        if (ACTION_VIEW_COMPLETED_ACCOUNT_VERIFICATION_REQUESTS.equals(pendingAction)) {
+            openUserActionFragment(new com.example.everythingbim.ui.user.ViewCompletedAccountVerificationRequestFragment());
         }
     }
 
