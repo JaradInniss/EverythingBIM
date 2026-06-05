@@ -476,7 +476,9 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         iv.setImageBitmap(bmp);
                         imagesContainer.addView(iv);
                     });
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image: " + e.getMessage());
+        }
     }
 
     private boolean isUiActive() {

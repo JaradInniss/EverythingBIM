@@ -1,6 +1,9 @@
 package com.example.everythingbim.ui.utils;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,12 +28,16 @@ import java.util.Locale;
 public class AccountVerificationAdapter
         extends RecyclerView.Adapter<AccountVerificationAdapter.ViewHolder> {
 
+    private static final String TAG = "AccVerificationAdapter";
+
     private List<DocumentSnapshot> requests = new ArrayList<>();
     private int itemLayoutRes;
+    private FirebaseStorage storage;
 
     public AccountVerificationAdapter(List<DocumentSnapshot> requests, int itemLayoutRes) {
         this.requests = requests;
         this.itemLayoutRes = itemLayoutRes;
+        this.storage = FirebaseStorage.getInstance();
     }
 
     public void setRequests(List<DocumentSnapshot> newRequests) {
@@ -67,52 +74,118 @@ public class AccountVerificationAdapter
             }
         }
 
-        // Status
-        String status = doc.getString("status");
+        // Status - check both verificationStatus and status fields
+        String status = doc.getString("verificationStatus");
+        if (status == null) status = doc.getString("status");
+        if (status == null) status = "In Review";
         if (holder.statusValue != null) {
-            holder.statusValue.setText(status != null ? status : "In Review");
+            holder.statusValue.setText(status);
         }
 
-        // Business Name
+        // Business Name - check multiple possible field names
         if (holder.nameEt != null) {
-            String name = doc.getString("businessName");
+            String name = doc.getString("businessName"); // Actual Firestore field (lowercase)
+            if (name == null || name.isEmpty()) name = doc.getString("BusinessName");
+            if (name == null || name.isEmpty()) name = doc.getString("companyName");
+            if (name == null || name.isEmpty()) name = doc.getString("name");
             holder.nameEt.setText(name != null ? name : "");
         }
 
-        // Phone
+        // Phone - Firestore field is "phone"
         if (holder.phoneEt != null) {
             String phone = doc.getString("phone");
             holder.phoneEt.setText(phone != null ? phone : "");
         }
 
-        // Email
+        // Email - check multiple possible field names
         if (holder.emailEt != null) {
-            String email = doc.getString("email");
+            String email = doc.getString("businessEmail"); // Actual Firestore field
+            if (email == null || email.isEmpty()) email = doc.getString("email");
             holder.emailEt.setText(email != null ? email : "");
         }
 
-        // Location
+        // Location - Firestore field is "address"
         if (holder.locationEt != null) {
-            String location = doc.getString("location");
-            holder.locationEt.setText(location != null ? location : "");
+            String address = doc.getString("address");
+            holder.locationEt.setText(address != null ? address : "");
         }
 
-        // Description
+        // Business Type - check multiple possible field names
+        if (holder.businessTypeEt != null) {
+            String type = doc.getString("businessType"); // Actual Firestore field
+            if (type == null || type.isEmpty()) type = doc.getString("type");
+            if (type == null || type.isEmpty()) type = doc.getString("businessCategory");
+            holder.businessTypeEt.setText(type != null ? type : "");
+        }
+
+        // Description - Firestore field is "description"
         if (holder.descEt != null) {
             String desc = doc.getString("description");
             holder.descEt.setText(desc != null ? desc : "");
         }
 
-        // Business Type
+        // Business Type - Firestore field is "businessType"
         if (holder.businessTypeEt != null) {
             String type = doc.getString("businessType");
             holder.businessTypeEt.setText(type != null ? type : "");
+        }
+
+        // Load business images
+        if (holder.imageContainer != null) {
+            holder.imageContainer.removeAllViews();
+            List<String> imageUrls = (List<String>) doc.get("imageUrls");
+            if (imageUrls != null) {
+                for (String url : imageUrls) {
+                    loadImage(url, holder.imageContainer);
+                }
+            }
+        }
+
+        // Load business certificates/documents
+        if (holder.certificatesContainer != null) {
+            holder.certificatesContainer.removeAllViews();
+            List<String> fileUrls = (List<String>) doc.get("fileUrls");
+            if (fileUrls != null) {
+                for (String url : fileUrls) {
+                    loadImage(url, holder.certificatesContainer);
+                }
+            }
+        }
+    }
+
+    private void loadImage(String url, LinearLayout container) {
+        try {
+            StorageReference ref = storage.getReferenceFromUrl(url);
+            ref.getBytes(2 * 1024 * 1024)
+                    .addOnSuccessListener(bytes -> {
+                        Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        ImageView iv = new ImageView(container.getContext());
+                        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(80, 60);
+                        p.setMarginEnd(8);
+                        iv.setLayoutParams(p);
+                        iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        iv.setImageBitmap(bmp);
+                        container.addView(iv);
+                    })
+                    .addOnFailureListener(e -> {
+                        // Try loading as file icon on failure
+                        ImageView iv = new ImageView(container.getContext());
+                        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(80, 60);
+                        p.setMarginEnd(8);
+                        iv.setLayoutParams(p);
+                        iv.setImageResource(R.drawable.ic_file_pdf);
+                        container.addView(iv);
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image: " + e.getMessage());
         }
     }
 
     @Override
     public int getItemCount() {
-        return requests.size();
+        int count = requests.size();
+        Log.d(TAG, "getItemCount: returning " + count);
+        return count;
     }
 
     @SuppressLint("MissingPermission")

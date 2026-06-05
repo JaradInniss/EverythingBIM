@@ -245,10 +245,14 @@ public class LoginViewModel extends ViewModel {
 
     private void saveAndNavigate(String userType, String userId) {
         if (sharedPreferences != null) {
-            sharedPreferences.edit().putString("userType", userType).apply();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("userType", userType);
+            editor.putString("userId", userId);
+            editor.apply();
         }
         Bundle extras = new Bundle();
         extras.putString("userType", userType);
+        extras.putString("userId", userId);
         if ("admin".equals(userType)) {
             navigationEvent.setValue(new NavigationCommand(AdminActivity.class, extras));
         } else {

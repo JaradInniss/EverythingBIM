@@ -567,6 +567,165 @@
                     android:background="@color/white"
                     android:layout_marginBottom="4dp" />
 
+                <!-- Business Location Verification Requests section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="6dp">
+
+                    <!-- Label + count + View All -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Business Location Verification Requests"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium" />
+
+                        <TextView
+                            android:id="@+id/business_locverreq_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textColor="@color/dim_grey"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:layout_marginEnd="4dp" />
+
+                        <TextView
+                            android:id="@+id/business_locverreq_view_all"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View All >"
+                            android:textColor="@color/dim_grey"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                    </LinearLayout>
+
+                    <!-- Legend + All / Unread / Read filter pills (inline) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="6dp">
+
+                        <!-- Legend on LEFT -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <View
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:background="@drawable/bg_dot_red"
+                                android:layout_marginEnd="4dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Unread"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="11sp"
+                                android:layout_marginEnd="12dp" />
+                            <View
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:background="@drawable/bg_dot_grey"
+                                android:layout_marginEnd="4dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Read"
+                                android:textColor="@color/dim_grey"
+                                android:textSize="11sp" />
+
+                        </LinearLayout>
+
+                        <!-- Spacer to push filter pills to right -->
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <!-- Filter pills on RIGHT -->
+                        <TextView
+                            android:id="@+id/biz_loc_filter_all"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_search_filter_active"
+                            android:textColor="@color/white"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/biz_loc_filter_unread"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Unread"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_biz_unread_pill"
+                            android:textColor="@color/black"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/biz_loc_filter_read"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Read"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/roboto_medium"
+                            android:background="@drawable/bg_biz_read_pill"
+                            android:textColor="@color/black"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Business location requests list -->
+                <LinearLayout
+                    android:id="@+id/business_locverreq_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@color/white"
+                    android:layout_marginBottom="4dp" />
+
             </LinearLayout>
 
         </LinearLayout>

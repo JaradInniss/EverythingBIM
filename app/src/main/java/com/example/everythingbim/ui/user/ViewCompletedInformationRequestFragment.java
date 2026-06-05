@@ -70,7 +70,6 @@ public class ViewCompletedInformationRequestFragment extends Fragment {
         db.collection("add_information_requests")
                 .whereEqualTo("userId", userId)
                 .whereIn("status", Arrays.asList("Completed", "Rejected"))
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     Log.d("ViewCompletedInfo", "Query succeeded, docs: " + (snapshot != null ? snapshot.size() : 0));

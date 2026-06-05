@@ -86,7 +86,7 @@ public class AdminHomeFragment extends Fragment {
     private int unreadAdminNotificationCount;
 
     // Collection names
-    private static final String COLLECTION_BUSINESS = "add_business_requests";
+    private static final String COLLECTION_BUSINESS = "businesses";
     private static final String COLLECTION_INFO = "add_information_requests";
     private static final String COLLECTION_LOCATION = "add_location_requests";
     private static final String COLLECTION_DATASET = "dataset_image_submissions";

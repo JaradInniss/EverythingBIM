@@ -209,7 +209,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
 
     private void displayCachedData() {
         Log.d(TAG, "Displaying cached data from Bundle");
-        numberTv.setText("Request " + cachedNumber);
+        numberTv.setText("Request #" + cachedNumber);
         statusTv.setText("Status: " + cachedStatus);
         dateTv.setText("Submitted: " + cachedDate);
         submittedByTv.setText("Submitted By: " + cachedSubmittedBy);
@@ -236,22 +236,25 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // ────────────────────────────────────────────────────────
 
     private void loadData() {
-        Log.d(TAG, "Loading data from Firestore for docId: " + docId);
+        Log.d(TAG, "loadData: Loading data from Firestore for docId: " + docId);
         db.collection("businesses").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (!isUiActive()) return;
                     if (!doc.exists()) {
-                        Log.e(TAG, "Document does not exist: " + docId);
+                        Log.e(TAG, "loadData: Document does not exist for docId: " + docId);
+                        // Try to log all field names in the document
+                        Log.e(TAG, "loadData: All fields in document: " + doc.getData().keySet());
                         return;
                     }
 
-                    Log.d(TAG, "Document found, updating fields");
+                    Log.d(TAG, "loadData: Document found, updating fields");
+                    Log.d(TAG, "loadData: All fields = " + doc.getData().keySet());
 
-                    long number = doc.contains("requestNumber")
-                            ? doc.getLong("requestNumber") : 0;
-                    numberTv.setText("Request #" + number);
-                    cachedNumber = String.valueOf(number);
+                    // Use doc ID (first 6 chars) as request number since requestNumber field doesn't exist
+                    String requestNum = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                    numberTv.setText("Request #" + requestNum);
+                    cachedNumber = requestNum;
 
                     String status = doc.getString("verificationStatus");
                     if (status == null) status = "In Review";
@@ -270,14 +273,22 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     cachedSubmittedBy = submittedBy != null ? submittedBy : "";
                     cachedRecipientUserId = doc.getId();
 
-                    String businessName = nvl(doc.getString("BusinessName"));
+                    // Get business name - check multiple possible field names
+                    // Firestore stores as 'businessName' (lowercase based on actual doc)
+                    String businessName = nvl(doc.getString("businessName"));
+                    if (businessName.isEmpty()) businessName = nvl(doc.getString("BusinessName"));
+                    if (businessName.isEmpty()) businessName = nvl(doc.getString("companyName"));
+                    if (businessName.isEmpty()) businessName = nvl(doc.getString("name"));
+                    if (businessName.isEmpty()) businessName = "[Business Name Not Provided]";
+                    Log.d(TAG, "loadData: businessName from doc = '" + businessName + "'");
                     nameTv.setText(businessName);
                     cachedName = businessName;
 
                     cachedPhone = nvl(doc.getString("phone"));
                     phoneTv.setText(cachedPhone);
 
-                    cachedEmail = nvl(doc.getString("email"));
+                    cachedEmail = nvl(doc.getString("businessEmail"));
+                    if (cachedEmail.isEmpty()) cachedEmail = nvl(doc.getString("email"));
                     emailTv.setText(cachedEmail);
 
                     cachedAddress = nvl(doc.getString("address"));
@@ -286,7 +297,11 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     cachedDescription = nvl(doc.getString("description"));
                     descriptionTv.setText(cachedDescription);
 
+                    // Get business type - check multiple possible field names
                     cachedType = nvl(doc.getString("businessType"));
+                    if (cachedType.isEmpty()) cachedType = nvl(doc.getString("type"));
+                    if (cachedType.isEmpty()) cachedType = nvl(doc.getString("businessCategory"));
+                    if (cachedType.isEmpty()) cachedType = "[Business Type Not Provided]";
                     typeTv.setText(cachedType);
 
                     // Business images
@@ -497,7 +512,9 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                         iv.setImageBitmap(bmp);
                         container.addView(iv);
                     });
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image: " + e.getMessage());
+        }
     }
 
     private boolean isUiActive() {

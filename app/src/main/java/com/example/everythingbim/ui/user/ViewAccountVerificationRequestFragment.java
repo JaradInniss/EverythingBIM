@@ -2,6 +2,7 @@ package com.example.everythingbim.ui.user;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,7 @@ import java.util.List;
 
 public class ViewAccountVerificationRequestFragment extends Fragment {
 
+    private static final String TAG = "AccVerificationReq";
     private FirebaseFirestore db;
     private RecyclerView recyclerView;
     private AccountVerificationAdapter adapter;
@@ -61,8 +63,10 @@ public class ViewAccountVerificationRequestFragment extends Fragment {
     private void loadAccountVerificationRequests(View view) {
         // Get current user ID from SharedPreferences
         SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("user_prefs", requireActivity().MODE_PRIVATE);
+                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
+
+        Log.d(TAG, "loadAccountVerificationRequests: userId = " + userId);
 
         // Show user ID in header
         android.widget.TextView userIdTv = view.findViewById(R.id.viewaccverreq_user_id_tv);
@@ -72,31 +76,37 @@ public class ViewAccountVerificationRequestFragment extends Fragment {
 
         if (userId.isEmpty()) {
             // No user logged in - show empty state
+            Log.w(TAG, "loadAccountVerificationRequests: userId is empty, showing empty state");
             showEmptyState(view, true);
             return;
         }
 
-        // Query business_verification collection for this user's requests
-        db.collection("business_verification")
+        // Query businesses collection for this user's verification requests
+        // Status "In Review" means not yet verified (verificationStatus != "Completed")
+        Log.d(TAG, "loadAccountVerificationRequests: querying businesses collection with userId=" + userId);
+        db.collection("businesses")
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("status", "In Review")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .whereEqualTo("verificationStatus", "In Review")
                 .get()
                 .addOnSuccessListener(snapshot -> {
+                    Log.d(TAG, "loadAccountVerificationRequests: query returned " + (snapshot != null ? snapshot.size() : "null") + " documents");
                     if (snapshot != null && !snapshot.isEmpty()) {
                         List<DocumentSnapshot> docs = new ArrayList<>();
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            Log.d(TAG, "loadAccountVerificationRequests: found doc id=" + doc.getId() + ", businessName=" + doc.getString("businessName"));
                             docs.add(doc);
                         }
                         adapter.setRequests(docs);
                         showEmptyState(view, false);
                     } else {
                         // Show empty state when no data
+                        Log.w(TAG, "loadAccountVerificationRequests: no documents found, showing empty state");
                         adapter.setRequests(new ArrayList<>());
                         showEmptyState(view, true);
                     }
                 })
                 .addOnFailureListener(e -> {
+                    Log.e(TAG, "loadAccountVerificationRequests: query failed", e);
                     // Show empty state on failure
                     adapter.setRequests(new ArrayList<>());
                     showEmptyState(view, true);

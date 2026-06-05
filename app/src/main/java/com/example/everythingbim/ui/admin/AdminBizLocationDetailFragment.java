@@ -31,7 +31,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
-import com.example.everythingbim.ui.home.UserNotificationHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -39,9 +38,9 @@ import java.util.Locale;
 
 import com.example.everythingbim.ActivityLogger;
 
-public class AdminLocationRequestDetailsFragment extends Fragment {
+public class AdminBizLocationDetailFragment extends Fragment {
 
-    private static final String TAG = "LocReqDetail";
+    private static final String TAG = "BizLocDetail";
 
     // ─── Bundle arg keys ─────────────────────
     public static final String ARG_DOC_ID = "doc_id";
@@ -50,15 +49,10 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     public static final String ARG_DATE = "date";
     public static final String ARG_SUBMITTED_BY = "submittedBy";
     public static final String ARG_LOCATION_NAME = "locationName";
-    public static final String ARG_COORDINATES = "coordinates";
-    public static final String ARG_DESCRIPTION = "description";
     public static final String ARG_PLACE_TYPE = "placeType";
-    public static final String ARG_REASON = "reason";
+    public static final String ARG_COORDINATES = "coordinates";
     public static final String ARG_LATITUDE = "latitude";
     public static final String ARG_LONGITUDE = "longitude";
-    public static final String ARG_RESOLVED_AT = "resolvedAt";
-    public static final String ARG_RESOLVED_BY = "resolvedBy";
-    public static final String ARG_REJECTION_REASON = "rejectionReason";
 
     // ─── State ───────────────────────────────
     private String docId = "";
@@ -72,16 +66,10 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     private String cachedDate = "";
     private String cachedSubmittedBy = "";
     private String cachedLocationName = "";
-    private String cachedCoordinates = "";
-    private String cachedDescription = "";
     private String cachedPlaceType = "";
-    private String cachedReason = "";
+    private String cachedCoordinates = "";
     private double cachedLatitude = 0.0;
     private double cachedLongitude = 0.0;
-    private String cachedResolvedAt = "";
-    private String cachedResolvedBy = "";
-    private String cachedRejectionReason = "";
-    private String cachedRecipientUserId = "";
     private boolean dataFromBundle = false;
 
     // ─── Map ─────────────────────────────────
@@ -92,7 +80,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     // ─── Views ───────────────────────────────
     private LinearLayout cardWrapper;
     private TextView numberTv, statusTv, dateTv, submittedByTv;
-    private TextView locationNameTv, coordinatesTv, descriptionTv, placeTypeTv, reasonTv;
+    private TextView locationNameTv, placeTypeTv, coordinatesTv;
     private LinearLayout imagesContainer, actionButtons;
     private Button acceptBtn, rejectBtn;
     private LinearLayout resolutionContainer;
@@ -100,16 +88,15 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     private LinearLayout resolutionReasonRow;
 
     // ────────────────────────────────────────────────────────
-    // FACTORY — Bundle approach for instant display
+    // FACTORY
     // ────────────────────────────────────────────────────────
 
-    public static AdminLocationRequestDetailsFragment newInstance(
+    public static AdminBizLocationDetailFragment newInstance(
             String docId, String number, String status, String date,
-            String submittedBy, String locationName, String coordinates,
-            String description, String placeType, String reason,
-            double latitude, double longitude) {
+            String submittedBy, String locationName, String placeType,
+            String coordinates, double latitude, double longitude) {
 
-        AdminLocationRequestDetailsFragment f = new AdminLocationRequestDetailsFragment();
+        AdminBizLocationDetailFragment f = new AdminBizLocationDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOC_ID, docId);
         args.putString(ARG_NUMBER, number);
@@ -117,19 +104,17 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
         args.putString(ARG_DATE, date);
         args.putString(ARG_SUBMITTED_BY, submittedBy);
         args.putString(ARG_LOCATION_NAME, locationName);
-        args.putString(ARG_COORDINATES, coordinates);
-        args.putString(ARG_DESCRIPTION, description);
         args.putString(ARG_PLACE_TYPE, placeType);
-        args.putString(ARG_REASON, reason);
+        args.putString(ARG_COORDINATES, coordinates);
         args.putDouble(ARG_LATITUDE, latitude);
         args.putDouble(ARG_LONGITUDE, longitude);
         f.setArguments(args);
         return f;
     }
 
-    // Legacy factory for backward compatibility with Firestore fallback
-    public static AdminLocationRequestDetailsFragment newInstance(String docId) {
-        AdminLocationRequestDetailsFragment f = new AdminLocationRequestDetailsFragment();
+    // Legacy factory for backward compatibility
+    public static AdminBizLocationDetailFragment newInstance(String docId) {
+        AdminBizLocationDetailFragment f = new AdminBizLocationDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOC_ID, docId);
         f.setArguments(args);
@@ -146,7 +131,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_admin_location_request_details,
+        View view = inflater.inflate(R.layout.fragment_admin_biz_location_detail,
                 container, false);
         db      = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
@@ -160,49 +145,45 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
             cachedDate = getArguments().getString(ARG_DATE, "");
             cachedSubmittedBy = getArguments().getString(ARG_SUBMITTED_BY, "");
             cachedLocationName = getArguments().getString(ARG_LOCATION_NAME, "");
-            cachedCoordinates = getArguments().getString(ARG_COORDINATES, "");
-            cachedDescription = getArguments().getString(ARG_DESCRIPTION, "");
             cachedPlaceType = getArguments().getString(ARG_PLACE_TYPE, "");
-            cachedReason = getArguments().getString(ARG_REASON, "");
+            cachedCoordinates = getArguments().getString(ARG_COORDINATES, "");
             cachedLatitude = getArguments().getDouble(ARG_LATITUDE, 0.0);
             cachedLongitude = getArguments().getDouble(ARG_LONGITUDE, 0.0);
-            cachedResolvedAt = getArguments().getString(ARG_RESOLVED_AT, "");
-            cachedResolvedBy = getArguments().getString(ARG_RESOLVED_BY, "");
-            cachedRejectionReason = getArguments().getString(ARG_REJECTION_REASON, "");
 
-            // If we have number, data was passed via Bundle
             dataFromBundle = !cachedNumber.isEmpty();
         }
 
         // Bind views
-        cardWrapper    = view.findViewById(R.id.loc_detail_card_wrapper);
-        numberTv       = view.findViewById(R.id.loc_detail_number);
-        statusTv       = view.findViewById(R.id.loc_detail_status);
-        dateTv         = view.findViewById(R.id.loc_detail_date);
-        submittedByTv  = view.findViewById(R.id.loc_detail_submitted_by);
-        locationNameTv = view.findViewById(R.id.loc_detail_location_name);
-        coordinatesTv  = view.findViewById(R.id.loc_detail_coordinates);
-        descriptionTv  = view.findViewById(R.id.loc_detail_description);
-        placeTypeTv    = view.findViewById(R.id.loc_detail_place_type);
-        reasonTv       = view.findViewById(R.id.loc_detail_reason);
-        imagesContainer     = view.findViewById(R.id.loc_detail_images_container);
-        actionButtons       = view.findViewById(R.id.loc_detail_action_buttons);
-        acceptBtn           = view.findViewById(R.id.loc_detail_accept_btn);
-        rejectBtn           = view.findViewById(R.id.loc_detail_reject_btn);
-        resolutionContainer = view.findViewById(R.id.loc_detail_resolution_container);
-        resolutionDateTv    = view.findViewById(R.id.loc_detail_resolution_date);
-        resolutionByTv      = view.findViewById(R.id.loc_detail_resolution_by);
-        resolutionReasonTv  = view.findViewById(R.id.loc_detail_rejection_reason);
-        resolutionReasonRow = view.findViewById(R.id.loc_detail_rejection_reason_row);
+        cardWrapper    = view.findViewById(R.id.bizloc_detail_card_wrapper);
+        numberTv       = view.findViewById(R.id.bizloc_detail_number);
+        statusTv       = view.findViewById(R.id.bizloc_detail_status);
+        dateTv         = view.findViewById(R.id.bizloc_detail_date);
+        submittedByTv  = view.findViewById(R.id.bizloc_detail_submitted_by);
+        locationNameTv = view.findViewById(R.id.bizloc_detail_location_name);
+        placeTypeTv    = view.findViewById(R.id.bizloc_detail_place_type);
+        coordinatesTv  = view.findViewById(R.id.bizloc_detail_coordinates);
+        imagesContainer = view.findViewById(R.id.bizloc_detail_images_container);
+        actionButtons   = view.findViewById(R.id.bizloc_detail_action_buttons);
+        acceptBtn       = view.findViewById(R.id.bizloc_detail_accept_btn);
+        rejectBtn       = view.findViewById(R.id.bizloc_detail_reject_btn);
+        resolutionContainer = view.findViewById(R.id.bizloc_detail_resolution_container);
+        resolutionDateTv    = view.findViewById(R.id.bizloc_detail_resolution_date);
+        resolutionByTv      = view.findViewById(R.id.bizloc_detail_resolution_by);
+        resolutionReasonTv  = view.findViewById(R.id.bizloc_detail_rejection_reason);
+        resolutionReasonRow = view.findViewById(R.id.bizloc_detail_rejection_reason_row);
 
-        view.findViewById(R.id.loc_detail_back_btn).setOnClickListener(v ->
+        view.findViewById(R.id.bizloc_detail_back_btn).setOnClickListener(v ->
                 getParentFragmentManager().popBackStack());
 
-        acceptBtn.setOnClickListener(v -> showAcceptDialog());
-        rejectBtn.setOnClickListener(v -> showRejectDialog());
+        if (acceptBtn != null) {
+            acceptBtn.setOnClickListener(v -> showAcceptDialog());
+        }
+        if (rejectBtn != null) {
+            rejectBtn.setOnClickListener(v -> showRejectDialog());
+        }
 
         // Map — read-only
-        mapView = view.findViewById(R.id.loc_detail_map);
+        mapView = view.findViewById(R.id.bizloc_detail_map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(map -> {
             googleMap = map;
@@ -219,7 +200,6 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
         // Always try to fetch fresh data from Firestore as fallback/refresh
         if (!docId.isEmpty()) {
             loadData();
-            // Log activity - admin viewed this location request
             activityLogger.logView(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
         }
 
@@ -237,10 +217,8 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
         dateTv.setText("Submitted: " + cachedDate);
         submittedByTv.setText("Submitted By: " + cachedSubmittedBy);
         locationNameTv.setText(cachedLocationName);
-        coordinatesTv.setText(cachedCoordinates);
-        descriptionTv.setText(cachedDescription);
         placeTypeTv.setText(cachedPlaceType);
-        reasonTv.setText(cachedReason);
+        coordinatesTv.setText(cachedCoordinates);
 
         if (cachedLatitude != 0.0 && cachedLongitude != 0.0) {
             pinLat = cachedLatitude;
@@ -253,9 +231,9 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
 
     private void applyStatusVisual(String status) {
         if ("Completed".equals(status)) {
-            applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
+            applyAcceptedState(cachedDate, "Administrator");
         } else if ("Rejected".equals(status)) {
-            applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
+            applyRejectedState(cachedDate, "Administrator", "");
         }
     }
 
@@ -265,10 +243,9 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
 
     private void loadData() {
         Log.d(TAG, "Loading data from Firestore for docId: " + docId);
-        db.collection("add_location_requests").document(docId)
+        db.collection("add_business_location_requests").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (!isUiActive()) return;
                     if (!doc.exists()) {
                         Log.e(TAG, "Document does not exist: " + docId);
                         return;
@@ -276,17 +253,9 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
 
                     Log.d(TAG, "Document found, updating fields");
 
-                    // Use 'number' field if present, otherwise use first 6 chars of document ID
-                    long number = doc.contains("number") ? doc.getLong("number") : 0;
-                    if (number == 0 && !doc.getId().isEmpty()) {
-                        // Fallback to doc ID when number field is missing
-                        String docIdPrefix = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
-                        numberTv.setText("Request #" + docIdPrefix);
-                        cachedNumber = docIdPrefix;
-                    } else {
-                        numberTv.setText("Request #" + number);
-                        cachedNumber = String.valueOf(number);
-                    }
+                    String docIdPrefix = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+                    numberTv.setText("Request #" + docIdPrefix);
+                    cachedNumber = docIdPrefix;
 
                     String status = doc.getString("status");
                     if (status == null) status = "In Review";
@@ -300,33 +269,22 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                         cachedDate = dateStr;
                     }
 
-                    String sub = doc.getString("submittedByUsername");
-                    submittedByTv.setText("Submitted By: User "
-                            + (sub != null ? sub : ""));
-                    cachedSubmittedBy = sub != null ? sub : "";
-                    cachedRecipientUserId = nvl(doc.getString("userId"));
+                    String submittedBy = doc.getString("userId");
+                    submittedByTv.setText("Submitted By: " + (submittedBy != null ? submittedBy : "User"));
+                    cachedSubmittedBy = submittedBy != null ? submittedBy : "";
 
                     String locationName = nvl(doc.getString("locationName"));
                     locationNameTv.setText(locationName);
                     cachedLocationName = locationName;
 
-                    String description = nvl(doc.getString("description"));
-                    descriptionTv.setText(description);
-                    cachedDescription = description;
-
                     String placeType = nvl(doc.getString("placeType"));
                     placeTypeTv.setText(placeType);
                     cachedPlaceType = placeType;
 
-                    String reason = nvl(doc.getString("reason"));
-                    reasonTv.setText(reason);
-                    cachedReason = reason;
-
                     Double lat = doc.getDouble("latitude");
                     Double lng = doc.getDouble("longitude");
                     if (lat != null && lng != null) {
-                        String coords = String.format(Locale.getDefault(),
-                                "%.5f, %.5f", lat, lng);
+                        String coords = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
                         coordinatesTv.setText(coords);
                         cachedCoordinates = coords;
                         cachedLatitude = lat;
@@ -341,23 +299,17 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
                     if ("Completed".equals(status)) {
                         String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
                         applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")));
-                        cachedResolvedAt = resolvedAt;
-                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
                     } else if ("Rejected".equals(status)) {
                         String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
                         String rejectionReason = nvl(doc.getString("rejectionReason"));
                         applyRejectedState(resolvedAt, nvl(doc.getString("resolvedBy")), rejectionReason);
-                        cachedResolvedAt = resolvedAt;
-                        cachedResolvedBy = nvl(doc.getString("resolvedBy"));
-                        cachedRejectionReason = rejectionReason;
                     }
 
                     doc.getReference().update("read", true);
                 })
                 .addOnFailureListener(e -> {
-                    if (!isAdded()) return;
                     Log.e(TAG, "Failed to load document: " + e.getMessage(), e);
-                    showToast("Failed to load request details");
+                    Toast.makeText(getContext(), "Failed to load request details", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -402,73 +354,37 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
 
     private void confirmAccept() {
         if (docId.isEmpty()) return;
-        db.collection("add_location_requests").document(docId)
+        db.collection("add_business_location_requests").document(docId)
                 .update("status", "Completed",
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId())
                 .addOnSuccessListener(v -> {
-                    if (!isUiActive()) return;
-                    // Log approval activity
                     activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
-                    UserNotificationHelper.createNotification(
-                            db,
-                            cachedRecipientUserId,
-                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
-                            "Location Request Update",
-                            "Your location request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted.",
-                            "Accepted",
-                            docId,
-                            "add_location_requests",
-                            UserNotificationHelper.TARGET_COMPLETED_LOCATION,
-                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
-                            firstNonEmpty(cachedLocationName, "Location Request")
-                    );
-                    showToast("Request Accepted");
+                    Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
                     applyAcceptedState(todayStr(), "Administrator");
                 })
-                .addOnFailureListener(e -> {
-                    if (!isAdded()) return;
-                    showToast("Failed: " + e.getMessage());
-                });
+                .addOnFailureListener(e -> Toast.makeText(getContext(),
+                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void confirmReject(String reason) {
         if (docId.isEmpty()) return;
-        db.collection("add_location_requests").document(docId)
+        db.collection("add_business_location_requests").document(docId)
                 .update("status", "Rejected",
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId(),
                         "rejectionReason", reason)
                 .addOnSuccessListener(v -> {
-                    if (!isUiActive()) return;
-                    // Log rejection activity
                     activityLogger.logRejection(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
-                    UserNotificationHelper.createNotification(
-                            db,
-                            cachedRecipientUserId,
-                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
-                            "Location Request Update",
-                            "Your location request for " + firstNonEmpty(cachedLocationName, "this location") + " was rejected.",
-                            "Rejected",
-                            docId,
-                            "add_location_requests",
-                            UserNotificationHelper.TARGET_COMPLETED_LOCATION,
-                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
-                            firstNonEmpty(cachedLocationName, "Location Request")
-                    );
-                    showToast("Request Rejected");
+                    Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
                     applyRejectedState(todayStr(), "Administrator", reason);
                 })
-                .addOnFailureListener(e -> {
-                    if (!isAdded()) return;
-                    showToast("Failed: " + e.getMessage());
-                });
+                .addOnFailureListener(e -> Toast.makeText(getContext(),
+                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     // ────────────────────────────────────────────────────────
-    // BORDER STATE — applied to wrapper LinearLayout, not CardView
-    // This is the correct approach: setBackgroundResource on a plain
-    // LinearLayout works reliably; CardView ignores setBackground().
+    // BORDER STATE
     // ────────────────────────────────────────────────────────
 
     private void applyAcceptedState(String date, String by) {
@@ -515,7 +431,6 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
             storage.getReferenceFromUrl(url)
                     .getBytes(2 * 1024 * 1024)
                     .addOnSuccessListener(bytes -> {
-                        if (!isUiActive()) return;
                         Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         ImageView iv = new ImageView(requireContext());
                         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(90, 70);
@@ -530,24 +445,7 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
         }
     }
 
-    private boolean isUiActive() {
-        return isAdded() && getView() != null;
-    }
-
-    private void showToast(String message) {
-        if (!isAdded()) return;
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
     private String nvl(String s) { return s != null ? s : ""; }
-    private String firstNonEmpty(String... values) {
-        for (String value : values) {
-            if (value != null && !value.trim().isEmpty()) {
-                return value.trim();
-            }
-        }
-        return "";
-    }
     private String fmt(Timestamp ts) { return ts != null
             ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
             : todayStr(); }
@@ -560,19 +458,10 @@ public class AdminLocationRequestDetailsFragment extends Fragment {
     @Override public void onPause()     { super.onPause();     if (mapView != null) mapView.onPause(); }
     @Override public void onStart()     { super.onStart();     if (mapView != null) mapView.onStart(); }
     @Override public void onStop()      { super.onStop();      if (mapView != null) mapView.onStop(); }
+    @Override public void onDestroy()   { super.onDestroy();   if (mapView != null) mapView.onDestroy(); }
     @Override public void onLowMemory() { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) {
         super.onSaveInstanceState(out);
         if (mapView != null) mapView.onSaveInstanceState(out);
-    }
-
-    @Override
-    public void onDestroyView() {
-        if (mapView != null) {
-            mapView.onDestroy();
-            mapView = null;
-        }
-        googleMap = null;
-        super.onDestroyView();
     }
 }

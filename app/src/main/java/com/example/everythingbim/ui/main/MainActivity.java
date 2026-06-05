@@ -97,6 +97,12 @@ public class MainActivity extends AppCompatActivity {
             userType = normalizeUserType(sharedPreferences.getString("userType", USER_TYPE_GUEST));
         }
 
+        // Also save userId from intent if present (sent from Login after successful authentication)
+        if (getIntent().hasExtra("userId")) {
+            String userId = getIntent().getStringExtra("userId");
+            sharedPreferences.edit().putString("userId", userId).apply();
+        }
+
         pendingMapFocus = getIntent().getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
                 || getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
 

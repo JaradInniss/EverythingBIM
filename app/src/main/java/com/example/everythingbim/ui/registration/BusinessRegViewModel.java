@@ -36,8 +36,10 @@ public class BusinessRegViewModel extends ViewModel {
     private final FirebaseProvider firebaseProvider;
 
     // Form fields
+    private final MutableLiveData<String> username = new MutableLiveData<>();
     private final MutableLiveData<String> companyName = new MutableLiveData<>();
     private final MutableLiveData<String> businessEmail = new MutableLiveData<>();
+    private final MutableLiveData<String> businessType = new MutableLiveData<>();
     private final MutableLiveData<String> phone = new MutableLiveData<>();
     private final MutableLiveData<String> address = new MutableLiveData<>();
     private final MutableLiveData<String> description = new MutableLiveData<>();
@@ -87,8 +89,10 @@ public class BusinessRegViewModel extends ViewModel {
     public LiveData<HashMap<Integer, String>> getErrorFields() { return errorFields; }
 
     // Form field getters/setters
+    public MutableLiveData<String> getUsername() { return username; }
     public MutableLiveData<String> getCompanyName() { return companyName; }
     public MutableLiveData<String> getBusinessEmail() { return businessEmail; }
+    public MutableLiveData<String> getBusinessType() { return businessType; }
     public MutableLiveData<String> getPhone() { return phone; }
     public MutableLiveData<String> getAddress() { return address; }
     public MutableLiveData<String> getDescription() { return description; }
@@ -263,7 +267,9 @@ public class BusinessRegViewModel extends ViewModel {
 
     // --- Business registration ---
     public void registerBusiness(String email, String password) {
+        Log.d(TAG, "registerBusiness called with email: " + email);
         if (email.isEmpty() || password.isEmpty() || companyName.getValue() == null || companyName.getValue().isEmpty()) {
+            Log.w(TAG, "registerBusiness: validation failed - email=" + email + ", password empty=" + password.isEmpty() + ", companyName=" + companyName.getValue());
             errorMessage.setValue("Please fill all required fields");
             return;
         }
@@ -271,21 +277,43 @@ public class BusinessRegViewModel extends ViewModel {
         isLoading.setValue(true);
         errorMessage.setValue(null);
 
+        Log.d(TAG, "registerBusiness: creating Firebase user...");
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
+                    Log.d(TAG, "registerBusiness: createUserWithEmailAndPassword completed, success=" + task.isSuccessful());
                     if (task.isSuccessful()) {
                         FirebaseUser user = auth.getCurrentUser();
                         if (user != null) {
+                            Log.d(TAG, "registerBusiness: user created with UID=" + user.getUid());
                             uploadAllFilesAndSaveProfile(user.getUid(), email);
                         } else {
+                            Log.e(TAG, "registerBusiness: user is null after successful auth");
                             registrationFailed("Authentication error");
                         }
                     } else {
-                        String error = task.getException() != null ? task.getException().getMessage() : "Registration failed";
+                        // Handle specific auth errors with user-friendly messages
+                        String error;
+                        if (task.getException() != null) {
+                            String exceptionMsg = task.getException().getMessage();
+                            if (exceptionMsg != null && exceptionMsg.contains("email is already in use")) {
+                                error = "Email already registered. Please login instead.";
+                            } else if (exceptionMsg != null && exceptionMsg.contains("weak password")) {
+                                error = "Password is too weak. Please use at least 6 characters.";
+                            } else if (exceptionMsg != null && exceptionMsg.contains("invalid email")) {
+                                error = "Invalid email address. Please check and try again.";
+                            } else {
+                                error = exceptionMsg;
+                            }
+                        } else {
+                            error = "Registration failed";
+                        }
+                        Log.e(TAG, "registerBusiness: auth failed", task.getException());
                         registrationFailed(error);
                     }
                 });
     }
+
+    private static final String TAG = "BusinessRegViewModel";
 
     private void uploadAllFilesAndSaveProfile(String userId, String email) {
         List<String> imageUrls = new ArrayList<>();
@@ -334,11 +362,14 @@ public class BusinessRegViewModel extends ViewModel {
                     if (task.isSuccessful()) {
                         BusinessProfile profile = new BusinessProfile(
                                 userId,
+                                username.getValue(),
                                 companyName.getValue(),
-                                email,
+                                businessEmail.getValue(), // Use ViewModel's business email, not Firebase email
+                                businessType.getValue(),  // Business type from dropdown
                                 phone.getValue(),
                                 address.getValue(),
                                 description.getValue(),
+                                "", // bio - empty for new registrations, can be updated in profile settings
                                 imageUrls,
                                 fileUrls,
                                 com.google.firebase.Timestamp.now()
