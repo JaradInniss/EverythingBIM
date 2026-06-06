@@ -18,6 +18,7 @@ public class BusinessProfile {
     private String userType = "business";
     private String businessType;  // Restaurant, Retail, etc.
     private String bio;  // Personal/about text, separate from description
+    private List<String> addresses;  // Multiple addresses for business
     // Verification fields - these control admin workflow
     private String verificationStatus = "In Review";  // "In Review", "Completed", "Rejected"
     private Boolean verified = false;                // true when approved
@@ -62,6 +63,8 @@ public class BusinessProfile {
     public void setBusinessType(String businessType) { this.businessType = businessType; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public List<String> getAddresses() { return addresses; }
+    public void setAddresses(List<String> addresses) { this.addresses = addresses; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
     public String getAddress() { return address; }

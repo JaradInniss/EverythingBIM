@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.user;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -7,7 +8,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -131,12 +136,20 @@ public class UserFragment extends Fragment {
 
         setupEditToggle(view, R.id.business_edit_email_et, R.id.business_edit_email_btn);
         setupEditToggle(view, R.id.business_edit_password_et, R.id.business_edit_password_btn);
-        setupEditToggle(view, R.id.business_edit_address_et, R.id.business_edit_address_btn);
         setupEditToggle(view, R.id.business_edit_desc_et, R.id.business_edit_desc_btn);
         setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
 
         // Load user profile data into settings fields
         loadUserProfileData(view);
+
+        // Load addresses on main screen
+        loadAddressesOnMainScreen(view);
+
+        // Setup business category click to edit
+        TextView categoryTv = view.findViewById(R.id.business_category_tv);
+        if (categoryTv != null) {
+            categoryTv.setOnClickListener(v -> showCategoryDialog());
+        }
 
         return view;
     }
@@ -218,14 +231,60 @@ public class UserFragment extends Fragment {
         if (field == null || button == null) {
             return;
         }
+        
+        // Special handling for password and description - open dialog immediately
+        if (fieldId == R.id.business_edit_password_et || fieldId == R.id.general_user_edit_password_et) {
+            button.setOnClickListener(v -> openPasswordDialog());
+            return;
+        }
+        if (fieldId == R.id.business_edit_desc_et) {
+            button.setOnClickListener(v -> openDescriptionDialog());
+            return;
+        }
+        
+        // Normal behavior for other fields
         button.setOnClickListener(v -> toggleFieldEdit(field, button, fieldId));
     }
 
     private void toggleFieldEdit(TextInputEditText field, ImageButton button, int fieldId) {
+        android.util.Log.d("UserFragment", "toggleFieldEdit called for fieldId=" + fieldId + ", field class=" + field.getClass().getName());
+        
         // TextInputLayout is the direct parent of TextInputEditText
         ViewParent parent = field.getParent();
+        android.util.Log.d("UserFragment", "direct parent=" + (parent != null ? parent.getClass().getName() : "null"));
+        
         TextInputLayout fieldLayout = (parent instanceof TextInputLayout) ? (TextInputLayout) parent : null;
+        android.util.Log.d("UserFragment", "fieldLayout direct=" + (fieldLayout != null ? "found" : "null"));
+        
+        // Try to find TextInputLayout by walking up the hierarchy if not found directly
+        if (fieldLayout == null && parent != null) {
+            ViewParent current = parent;
+            int depth = 0;
+            while (current != null && depth < 10) {
+                android.util.Log.d("UserFragment", "Hierarchy[" + depth + "]=" + current.getClass().getName());
+                if (current instanceof TextInputLayout) {
+                    fieldLayout = (TextInputLayout) current;
+                    android.util.Log.d("UserFragment", "Found TextInputLayout at depth=" + depth);
+                    break;
+                }
+                if (current instanceof View) {
+                    current = ((View) current).getParent();
+                    depth++;
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        final TextInputLayout finalFieldLayout = fieldLayout;
+        android.util.Log.d("UserFragment", "final fieldLayout=" + (finalFieldLayout != null ? "found" : "null"));
+
+        // Store original value before entering edit mode
+        String originalValue = field.getText() != null ? field.getText().toString() : "";
+
         if (!field.isFocusable()) {
+            // Entering edit mode - store original value in tag
+            field.setTag(originalValue);
             field.setFocusable(true);
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
@@ -236,35 +295,667 @@ public class UserFragment extends Fragment {
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
             ));
             // Blue outline on field
-            if (fieldLayout != null) {
-                fieldLayout.setBoxStrokeColor(
+            if (finalFieldLayout != null) {
+                finalFieldLayout.setBoxStrokeColor(
                         androidx.core.content.ContextCompat.getColor(requireContext(), R.color.persian_blue)
                 );
             }
         } else {
-            field.setFocusable(false);
-            field.setFocusableInTouchMode(false);
-            field.setClickable(false);
-            // Grey background, black icon
-            button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
-            button.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
-            ));
-            // Reset field outline to grey
-            if (fieldLayout != null) {
-                fieldLayout.setBoxStrokeColor(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
-                );
-            }
-
+            // Exiting edit mode - retrieve original value from tag (set when entering edit mode)
+            String storedOriginal = (String) field.getTag();
+            String trimmedOriginal = (storedOriginal != null ? storedOriginal : "").trim();
+            String newValue = field.getText() != null ? field.getText().toString().trim() : "";
+            
+            // Hide keyboard
             android.view.inputmethod.InputMethodManager imm =
                     (android.view.inputmethod.InputMethodManager)
                             requireActivity().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(field.getWindowToken(), 0);
 
-            // Save updated field value to backend
-            String newValue = field.getText() != null ? field.getText().toString().trim() : "";
-            saveField(fieldId, newValue);
+            // Reset button appearance
+            button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
+            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
+            ));
+            if (finalFieldLayout != null) {
+                finalFieldLayout.setBoxStrokeColor(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
+                );
+            }
+            field.setFocusable(false);
+            field.setFocusableInTouchMode(false);
+            field.setClickable(false);
+
+            // Check if value actually changed (for email/bio fields)
+            if (!newValue.equals(trimmedOriginal)) {
+                android.util.Log.d("UserFragment", "Value changed - showing dialog");
+                showFieldDialog(fieldId, newValue,
+                    () -> saveField(fieldId, newValue),
+                    () -> resetFieldToOriginal(field, button, finalFieldLayout, trimmedOriginal));
+            } else {
+                // No change - just reset UI without dialog
+                android.util.Log.d("UserFragment", "No change - no dialog");
+            }
+        }
+    }
+
+    private void openPasswordDialog() {
+        android.util.Log.d("UserFragment", "Opening password dialog immediately");
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_change_password);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextInputEditText currentPasswordEt = dialog.findViewById(R.id.dialog_current_password_et);
+        TextInputEditText newPasswordEt = dialog.findViewById(R.id.dialog_new_password_et);
+        TextInputEditText reenterPasswordEt = dialog.findViewById(R.id.dialog_reenter_password_et);
+        TextView errorTv = dialog.findViewById(R.id.dialog_password_error_tv);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        saveBtn.setOnClickListener(v -> {
+            String current = currentPasswordEt.getText() != null ? currentPasswordEt.getText().toString() : "";
+            String newPass = newPasswordEt.getText() != null ? newPasswordEt.getText().toString() : "";
+            String reenter = reenterPasswordEt.getText() != null ? reenterPasswordEt.getText().toString() : "";
+
+            if (current.isEmpty() || newPass.isEmpty() || reenter.isEmpty()) {
+                errorTv.setText("All fields are required");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (!newPass.equals(reenter)) {
+                errorTv.setText("New passwords do not match");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (newPass.length() < 6) {
+                errorTv.setText("Password must be at least 6 characters");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            dialog.dismiss();
+            saveField(R.id.business_edit_password_et, newPass);
+        });
+
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void openDescriptionDialog() {
+        android.util.Log.d("UserFragment", "Opening description dialog immediately");
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        // Get current description
+        TextInputEditText descField = requireView().findViewById(R.id.business_edit_desc_et);
+        String currentDesc = descField.getText() != null ? descField.getText().toString() : "";
+
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_business_description);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextView titleTv = dialog.findViewById(R.id.dialog_title);
+        TextInputEditText descriptionEt = dialog.findViewById(R.id.dialog_description_et);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        if (titleTv != null) titleTv.setText("Business Description");
+        if (descriptionEt != null) descriptionEt.setText(currentDesc);
+
+        saveBtn.setOnClickListener(v -> {
+            String newDesc = descriptionEt.getText() != null ? descriptionEt.getText().toString().trim() : "";
+            if (!newDesc.isEmpty()) {
+                dialog.dismiss();
+                saveField(R.id.business_edit_desc_et, newDesc);
+            }
+        });
+
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void resetFieldToOriginal(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout, String originalValue) {
+        field.setText(originalValue);
+        resetField(field, button, fieldLayout);
+    }
+
+    private String getFieldName(int fieldId) {
+        if (fieldId == R.id.general_user_edit_username_et || fieldId == R.id.business_user_tv) return "Username";
+        if (fieldId == R.id.general_user_edit_email_et || fieldId == R.id.business_edit_email_et) return "Email";
+        if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
+        if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
+        if (fieldId == R.id.business_edit_desc_et) return "Business Description";
+        return "Field";
+    }
+
+    private void showFieldDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+        try {
+            android.util.Log.d("UserFragment", "showFieldDialog called for fieldId=" + fieldId + ", value=" + currentValue);
+            Dialog dialog;
+            if (fieldId == R.id.business_edit_password_et || fieldId == R.id.general_user_edit_password_et) {
+                android.util.Log.d("UserFragment", "Creating password dialog");
+                dialog = createPasswordDialog(fieldId, currentValue, onSave, onCancel);
+            } else if (fieldId == R.id.business_edit_desc_et) {
+                android.util.Log.d("UserFragment", "Creating description dialog");
+                dialog = createDescriptionDialog(fieldId, currentValue, onSave, onCancel);
+            } else {
+                android.util.Log.d("UserFragment", "Creating confirm dialog");
+                dialog = createConfirmDialog(fieldId, currentValue, onSave, onCancel);
+            }
+            if (dialog != null) {
+                android.util.Log.d("UserFragment", "Dialog created, showing now");
+                dialog.show();
+            } else {
+                android.util.Log.e("UserFragment", "Dialog was null!");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("UserFragment", "Error showing dialog: " + e.getMessage(), e);
+        }
+    }
+
+    private void showCategoryDialog() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        String currentCategory = prefs.getString("businessCategory", "Restaurant");
+
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_business_description);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextView titleTv = dialog.findViewById(R.id.dialog_title);
+        TextInputEditText descriptionEt = dialog.findViewById(R.id.dialog_description_et);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        if (titleTv != null) titleTv.setText("Business Type");
+        if (descriptionEt != null) descriptionEt.setText(currentCategory);
+
+        saveBtn.setOnClickListener(v -> {
+            String newCategory = descriptionEt.getText() != null ? descriptionEt.getText().toString().trim() : "";
+            if (!newCategory.isEmpty()) {
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                updates.put("businessType", newCategory);
+
+                db.collection("businesses").document(userId)
+                    .update(updates)
+                    .addOnSuccessListener(aVoid -> {
+                        requireActivity().runOnUiThread(() -> {
+                            prefs.edit().putString("businessCategory", newCategory).apply();
+                            TextView categoryTv = requireView().findViewById(R.id.business_category_tv);
+                            if (categoryTv != null) categoryTv.setText(newCategory);
+                        });
+                    });
+                dialog.dismiss();
+            }
+        });
+
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private Dialog createPasswordDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_change_password);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextInputEditText currentPasswordEt = dialog.findViewById(R.id.dialog_current_password_et);
+        TextInputEditText newPasswordEt = dialog.findViewById(R.id.dialog_new_password_et);
+        TextInputEditText reenterPasswordEt = dialog.findViewById(R.id.dialog_reenter_password_et);
+        TextView errorTv = dialog.findViewById(R.id.dialog_password_error_tv);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        saveBtn.setOnClickListener(v -> {
+            String current = currentPasswordEt.getText() != null ? currentPasswordEt.getText().toString() : "";
+            String newPass = newPasswordEt.getText() != null ? newPasswordEt.getText().toString() : "";
+            String reenter = reenterPasswordEt.getText() != null ? reenterPasswordEt.getText().toString() : "";
+
+            if (current.isEmpty() || newPass.isEmpty() || reenter.isEmpty()) {
+                errorTv.setText("All fields are required");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (!newPass.equals(reenter)) {
+                errorTv.setText("New passwords do not match");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (newPass.length() < 6) {
+                errorTv.setText("Password must be at least 6 characters");
+                errorTv.setVisibility(View.VISIBLE);
+                return;
+            }
+            dialog.dismiss();
+            onSave.run();
+        });
+
+        closeBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            onCancel.run();
+        });
+
+        return dialog;
+    }
+
+    private Dialog createDescriptionDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_business_description);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextInputEditText descriptionEt = dialog.findViewById(R.id.dialog_description_et);
+        TextView titleTv = dialog.findViewById(R.id.dialog_title);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        if (descriptionEt != null && currentValue != null) {
+            descriptionEt.setText(currentValue);
+        }
+
+        saveBtn.setOnClickListener(v -> {
+            String newDesc = descriptionEt.getText() != null ? descriptionEt.getText().toString() : "";
+            if (!newDesc.isEmpty()) {
+                dialog.dismiss();
+                onSave.run();
+            }
+        });
+
+        closeBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            onCancel.run();
+        });
+
+return dialog;
+    }
+
+private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_confirm_field_change);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
+        TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
+        Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
+        Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
+
+        String fieldName = getFieldName(fieldId);
+        if (titleTv != null) titleTv.setText("Confirm " + fieldName + " Change?");
+        if (messageTv != null) messageTv.setText("Update " + fieldName.toLowerCase() + " to:\n\n" + currentValue);
+
+        yesBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            onSave.run();
+        });
+
+        noBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            onCancel.run();
+        });
+
+        return dialog;
+    }
+
+    private String getAddressFromObject(Object addressObj) {
+        if (addressObj == null) return "";
+        if (addressObj instanceof String) return (String) addressObj;
+        if (addressObj instanceof java.util.Map) {
+            java.util.Map<String, Object> map = (java.util.Map<String, Object>) addressObj;
+            Object addr = map.get("address");
+            return addr != null ? addr.toString() : "";
+        }
+        return addressObj.toString();
+    }
+
+    private void showAddressesDialog() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_addresses);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        LinearLayout addressesList = dialog.findViewById(R.id.dialog_addresses_list);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+        saveBtn.setOnClickListener(v -> dialog.dismiss());
+
+        // Load addresses from Firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .get()
+            .addOnSuccessListener(doc -> {
+                if (doc != null && doc.exists()) {
+                    requireActivity().runOnUiThread(() -> {
+                        addressesList.removeAllViews();
+                        Object addressesObj = doc.get("addresses");
+                        if (addressesObj instanceof java.util.List) {
+                            java.util.List<?> addresses = (java.util.List<?>) addressesObj;
+                            for (int i = 0; i < addresses.size(); i++) {
+                                final int addressIndex = i;
+                                Object addr = addresses.get(i);
+                                final String addressText = getAddressFromObject(addr);
+                                View itemView = LayoutInflater.from(requireContext())
+                                    .inflate(R.layout.dialog_address_item, addressesList, false);
+                                TextInputEditText addressEt = itemView.findViewById(R.id.dialog_address_item_et);
+                                ImageButton editBtn = itemView.findViewById(R.id.dialog_address_edit_btn);
+                                ImageButton deleteBtn = itemView.findViewById(R.id.dialog_address_delete_btn);
+
+                                if (addressEt != null) {
+                                    addressEt.setText(addressText);
+                                    addressEt.setFocusable(false);
+                                    addressEt.setClickable(false);
+                                }
+                                if (editBtn != null) {
+                                    editBtn.setVisibility(View.VISIBLE);
+                                    editBtn.setOnClickListener(v -> showEditAddressDialog(addressIndex, addressText, addresses));
+                                }
+                                if (deleteBtn != null) {
+                                    deleteBtn.setVisibility(View.VISIBLE);
+                                    deleteBtn.setOnClickListener(v -> showDeleteAddressDialog(addressIndex, addressText, addresses));
+                                }
+                                addressesList.addView(itemView);
+                            }
+                        }
+                    });
+                }
+            });
+
+        dialog.show();
+    }
+
+    private void showEditAddressDialog(int index, String currentAddress, java.util.List<?> addresses) {
+        android.util.Log.d("UserFragment", "showEditAddressDialog called for index=" + index);
+
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_business_description);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextView titleTv = dialog.findViewById(R.id.dialog_title);
+        TextInputEditText addressEt = dialog.findViewById(R.id.dialog_description_et);
+        Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
+        ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+
+        if (titleTv != null) titleTv.setText("Edit Address");
+        if (addressEt != null) addressEt.setText(currentAddress);
+
+        saveBtn.setOnClickListener(v -> {
+            String newAddress = addressEt.getText() != null ? addressEt.getText().toString().trim() : "";
+            if (!newAddress.isEmpty()) {
+                dialog.dismiss();
+                // Show confirm dialog before updating
+                showAddressConfirmDialog("Edit Address", "Update address to:\n\n" + newAddress, () -> {
+                    updateAddressInList(index, newAddress, addresses);
+                });
+            }
+        });
+
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void showDeleteAddressDialog(int index, String currentAddress, java.util.List<?> addresses) {
+        android.util.Log.d("UserFragment", "showDeleteAddressDialog called for index=" + index);
+
+        // Show confirm dialog before deleting
+        showAddressConfirmDialog("Delete Address", "Are you sure you want to delete this address?\n\n" + currentAddress, () -> {
+            deleteAddressFromList(index, addresses);
+        });
+    }
+
+    private void showAddressConfirmDialog(String title, String message, Runnable onConfirm) {
+        final Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_confirm_field_change);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
+        TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
+        Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
+        Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
+
+        if (titleTv != null) titleTv.setText(title);
+        if (messageTv != null) messageTv.setText(message);
+
+        yesBtn.setOnClickListener(v -> {
+            dialog.dismiss();
+            onConfirm.run();
+        });
+
+        noBtn.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void updateAddressInList(int index, String newAddress, java.util.List<?> addresses) {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        // Create new list with updated address
+        java.util.List<java.util.Map<String, Object>> updatedAddresses = new java.util.ArrayList<>();
+        for (int i = 0; i < addresses.size(); i++) {
+            Object addr = addresses.get(i);
+            if (addr instanceof java.util.Map) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>((java.util.Map<String, Object>) addr);
+                if (i == index) {
+                    map.put("address", newAddress);
+                }
+                updatedAddresses.add(map);
+            } else if (i == index) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("address", newAddress);
+                updatedAddresses.add(map);
+            } else {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("address", addr.toString());
+                updatedAddresses.add(map);
+            }
+        }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .update("addresses", updatedAddresses)
+            .addOnSuccessListener(aVoid -> {
+                android.util.Log.d("UserFragment", "Address updated successfully");
+                // Reload addresses on main screen
+                loadAddressesOnMainScreen(requireView());
+            })
+            .addOnFailureListener(e -> {
+                android.util.Log.e("UserFragment", "Failed to update address: " + e.getMessage());
+            });
+    }
+
+    private void deleteAddressFromList(int index, java.util.List<?> addresses) {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        // Create new list without the deleted address
+        java.util.List<java.util.Map<String, Object>> updatedAddresses = new java.util.ArrayList<>();
+        for (int i = 0; i < addresses.size(); i++) {
+            if (i == index) continue; // Skip the one being deleted
+            Object addr = addresses.get(i);
+            if (addr instanceof java.util.Map) {
+                updatedAddresses.add(new java.util.HashMap<>((java.util.Map<String, Object>) addr));
+            } else {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("address", addr.toString());
+                updatedAddresses.add(map);
+            }
+        }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .update("addresses", updatedAddresses)
+            .addOnSuccessListener(aVoid -> {
+                android.util.Log.d("UserFragment", "Address deleted successfully");
+                // Reload addresses on main screen
+                loadAddressesOnMainScreen(requireView());
+            })
+            .addOnFailureListener(e -> {
+                android.util.Log.e("UserFragment", "Failed to delete address: " + e.getMessage());
+            });
+    }
+
+    private void loadAddressesOnMainScreen(View view) {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        LinearLayout addressesContainer = view.findViewById(R.id.business_addresses_container);
+        TextView addressesCount = view.findViewById(R.id.business_addresses_count);
+        TextView viewAllBtn = view.findViewById(R.id.business_view_all_addresses_tv);
+
+        viewAllBtn.setOnClickListener(v -> showAddressesDialog());
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .get()
+            .addOnSuccessListener(doc -> {
+                if (doc != null && doc.exists()) {
+                    requireActivity().runOnUiThread(() -> {
+                        addressesContainer.removeAllViews();
+                        Object addressesObj = doc.get("addresses");
+                        if (addressesObj instanceof java.util.List) {
+                            java.util.List<?> addresses = (java.util.List<?>) addressesObj;
+                            if (addressesCount != null) addressesCount.setText("(" + addresses.size() + ")");
+
+                            int displayCount = Math.min(addresses.size(), 3);
+                            for (int i = 0; i < displayCount; i++) {
+                                final int addressIndex = i;
+                                Object addr = addresses.get(i);
+                                final String addressText = getAddressFromObject(addr);
+                                View itemView = LayoutInflater.from(requireContext())
+                                    .inflate(R.layout.dialog_address_item, addressesContainer, false);
+                                TextInputEditText addressEt = itemView.findViewById(R.id.dialog_address_item_et);
+                                ImageButton editBtn = itemView.findViewById(R.id.dialog_address_edit_btn);
+                                ImageButton deleteBtn = itemView.findViewById(R.id.dialog_address_delete_btn);
+
+                                if (addressEt != null) {
+                                    addressEt.setText(addressText);
+                                    addressEt.setFocusable(false);
+                                    addressEt.setClickable(false);
+                                }
+                                // Show edit/delete buttons on main screen
+                                if (editBtn != null) {
+                                    editBtn.setVisibility(View.VISIBLE);
+                                    editBtn.setOnClickListener(v -> showEditAddressDialog(addressIndex, addressText, addresses));
+                                }
+                                if (deleteBtn != null) {
+                                    deleteBtn.setVisibility(View.VISIBLE);
+                                    deleteBtn.setOnClickListener(v -> showDeleteAddressDialog(addressIndex, addressText, addresses));
+                                }
+
+                                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                );
+                                params.bottomMargin = 8;
+                                itemView.setLayoutParams(params);
+                                addressesContainer.addView(itemView);
+                            }
+                        } else {
+                            if (addressesCount != null) addressesCount.setText("(0)");
+                        }
+                    });
+                }
+            });
+    }
+
+    private void resetField(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout) {
+        field.setFocusable(false);
+        field.setFocusableInTouchMode(false);
+        field.setClickable(false);
+        button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
+        button.setImageTintList(android.content.res.ColorStateList.valueOf(
+                androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
+        ));
+        if (fieldLayout != null) {
+            fieldLayout.setBoxStrokeColor(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
+            );
         }
     }
 
@@ -303,9 +994,6 @@ public class UserFragment extends Fragment {
             } else if (fieldId == R.id.business_edit_desc_et) {
                 updates.put("description", newValue);
                 hasValidUpdate = true;
-            } else if (fieldId == R.id.business_edit_address_et) {
-                updates.put("address", newValue);
-                hasValidUpdate = true;
             } else if (fieldId == R.id.business_user_bio_et) {
                 updates.put("bio", newValue);
                 hasValidUpdate = true;
@@ -342,6 +1030,8 @@ public class UserFragment extends Fragment {
 
         if (MainActivity.USER_TYPE_GENERAL.equals(userType)) {
             // General user - load from Firestore users collection
+            TextView generalUsernameTv = view.findViewById(R.id.general_user_username);
+            TextView generalUserIdTv = view.findViewById(R.id.general_user_id_tv);
             TextInputEditText usernameEt = view.findViewById(R.id.general_user_edit_username_et);
             TextInputEditText emailEt = view.findViewById(R.id.general_user_edit_email_et);
             TextInputEditText bioEt = view.findViewById(R.id.general_user_bio_et);
@@ -353,9 +1043,18 @@ public class UserFragment extends Fragment {
                         if (doc != null && doc.exists()) {
                             requireActivity().runOnUiThread(() -> {
                                 String username = doc.getString("username");
+                                String shortUserId = doc.getString("shortUserId");
                                 String email = doc.getString("email");
                                 String bio = doc.getString("bio");
 
+                                // Update header from Firestore
+                                if (generalUsernameTv != null) generalUsernameTv.setText(username != null ? username : "");
+                                if (generalUserIdTv != null) {
+                                    String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
+                                    generalUserIdTv.setText(displayId);
+                                }
+
+                                // Update fields from Firestore
                                 if (usernameEt != null) usernameEt.setText(username != null ? username : "");
                                 if (emailEt != null) emailEt.setText(email != null ? email : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
@@ -366,8 +1065,11 @@ public class UserFragment extends Fragment {
                         // Fallback to SharedPreferences
                         requireActivity().runOnUiThread(() -> {
                             String username = prefs.getString("username", "User");
+                            String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
                             String email = prefs.getString("email", "anonymous@gmail.com");
 
+                            if (generalUsernameTv != null) generalUsernameTv.setText(username);
+                            if (generalUserIdTv != null) generalUserIdTv.setText(shortUserId);
                             if (usernameEt != null) usernameEt.setText(username);
                             if (emailEt != null) emailEt.setText(email);
                             if (bioEt != null) bioEt.setText("");
@@ -375,17 +1077,13 @@ public class UserFragment extends Fragment {
                     });
         } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
             // Business user - load from Firestore businesses collection
-            String username = prefs.getString("username", "BusinessUser");
-
-            // Update header info
             TextView businessUserTv = view.findViewById(R.id.business_user_tv);
-            if (businessUserTv != null) businessUserTv.setText(username);
+            TextView businessUserIdTv = view.findViewById(R.id.business_user_id_tv);
+            TextView businessCategoryTv = view.findViewById(R.id.business_category_tv);
 
-            // Fields for saving edits
             TextInputEditText emailEt = view.findViewById(R.id.business_edit_email_et);
             TextInputEditText passwordEt = view.findViewById(R.id.business_edit_password_et);
             TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
-            TextInputEditText addressEt = view.findViewById(R.id.business_edit_address_et);
             TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
 
             FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -394,16 +1092,25 @@ public class UserFragment extends Fragment {
                     .addOnSuccessListener(doc -> {
                         if (doc != null && doc.exists()) {
                             requireActivity().runOnUiThread(() -> {
+                                String username = doc.getString("username");
+                                String shortUserId = doc.getString("shortUserId");
+                                String category = doc.getString("businessType");
                                 String email = doc.getString("businessEmail");
                                 String desc = doc.getString("description");
-                                String address = doc.getString("address");
                                 String bio = doc.getString("bio");
 
+                                // Update header from Firestore
+                                if (businessUserTv != null) businessUserTv.setText(username != null ? username : "");
+                                if (businessUserIdTv != null) {
+                                    String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
+                                    businessUserIdTv.setText(displayId);
+                                }
+                                if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
+
+                                // Update fields from Firestore
                                 if (emailEt != null) emailEt.setText(email != null ? email : "");
                                 if (descEt != null) descEt.setText(desc != null ? desc : "");
-                                if (addressEt != null) addressEt.setText(address != null ? address : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
-                                // Password field left blank for security - user must enter to change
                                 if (passwordEt != null) passwordEt.setText("");
                             });
                         }
@@ -411,13 +1118,17 @@ public class UserFragment extends Fragment {
                     .addOnFailureListener(e -> {
                         // Fallback to SharedPreferences
                         requireActivity().runOnUiThread(() -> {
+                            String username = prefs.getString("username", "BusinessUser");
+                            String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
+                            String category = prefs.getString("businessCategory", "Business");
                             String email = prefs.getString("email", "");
                             String businessDescription = prefs.getString("businessDescription", "");
-                            String address = prefs.getString("address", "");
 
+                            if (businessUserTv != null) businessUserTv.setText(username);
+                            if (businessUserIdTv != null) businessUserIdTv.setText(shortUserId);
+                            if (businessCategoryTv != null) businessCategoryTv.setText(category);
                             if (emailEt != null) emailEt.setText(email.isEmpty() ? "Not set" : email);
                             if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
-                            if (addressEt != null) addressEt.setText(address.isEmpty() ? "Not set" : address);
                             if (bioEt != null) bioEt.setText("Not set");
                             if (passwordEt != null) passwordEt.setText("");
                         });
