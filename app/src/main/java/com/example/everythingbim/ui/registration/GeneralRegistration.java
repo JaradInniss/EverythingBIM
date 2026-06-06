@@ -5,6 +5,7 @@ import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
 import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -45,6 +46,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeneralRegistration extends AppCompatActivity implements View.OnClickListener {
+    private static final String PREFS_NAME = "ui_hints_prefs";
+    private static final String PREF_GENERAL_REG_SCROLL_HINT_SEEN = "general_registration_scroll_hint_seen";
 
     private GeneralRegViewModel viewModel;
     private ActivityGeneralRegistrationBinding binding;
@@ -101,6 +104,27 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        setupKeyboardInsets();
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.generalRegistrationScroll.getPaddingLeft();
+        int initialTop = binding.generalRegistrationScroll.getPaddingTop();
+        int initialRight = binding.generalRegistrationScroll.getPaddingRight();
+        int initialBottom = binding.generalRegistrationScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.generalRegistrationScroll,
+                binding.generalRegistrationScroll,
+                PREF_GENERAL_REG_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> binding.generalRegistrationScroll.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private void initViews() {

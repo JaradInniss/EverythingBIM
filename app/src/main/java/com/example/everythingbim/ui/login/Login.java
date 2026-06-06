@@ -27,6 +27,7 @@ import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.ActivityLoginBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
+    private static final String PREF_LOGIN_SCROLL_HINT_SEEN = "login_scroll_hint_seen";
 
     private LoginViewModel viewModel;
     private ActivityLoginBinding binding;
@@ -76,6 +78,27 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        setupKeyboardInsets();
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.loginScroll.getPaddingLeft();
+        int initialTop = binding.loginScroll.getPaddingTop();
+        int initialRight = binding.loginScroll.getPaddingRight();
+        int initialBottom = binding.loginScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.loginScroll,
+                binding.loginScroll,
+                PREF_LOGIN_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> binding.loginScroll.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private void initViews() {
@@ -109,6 +132,18 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         // Progress Bar
         progressBar = binding.loginProgressBar;
+
+        View.OnLongClickListener resetHintsListener = v -> {
+            KeyboardScrollHintHelper.resetAllHints(this);
+            Toast.makeText(this, "Scroll hints reset", Toast.LENGTH_SHORT).show();
+            return true;
+        };
+        binding.logo.setOnLongClickListener(resetHintsListener);
+        binding.titleTxt.setOnLongClickListener(v -> {
+            KeyboardScrollHintHelper.showPreview(binding.getRoot());
+            Toast.makeText(this, "Scroll hint preview", Toast.LENGTH_SHORT).show();
+            return true;
+        });
     }
 
     private void applyPreselectedUserType() {

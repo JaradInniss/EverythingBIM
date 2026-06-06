@@ -10,6 +10,18 @@
     android:background="@drawable/bg_main"
     tools:context=".ui.login.Login">
 
+    <ScrollView
+        android:id="@+id/general_registration_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
     <LinearLayout
         android:id="@+id/logo_container"
         android:layout_width="wrap_content"
@@ -134,5 +146,15 @@
         </ViewFlipper>
 
     </LinearLayout>
+
+    </RelativeLayout>
+    </ScrollView>
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </RelativeLayout>

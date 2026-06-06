@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.posts;
 
+import android.content.SharedPreferences;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -25,6 +26,7 @@ import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,6 +38,7 @@ import java.util.Locale;
  * Handles adding new comments and replies with a nested UI.
  */
 public class ViewPost extends AppCompatActivity {
+    private static final String PREF_VIEW_POST_SCROLL_HINT_SEEN = "view_post_scroll_hint_seen";
 
     ActivityViewPostBinding binding;
     private PostViewModel viewModel;
@@ -76,11 +79,32 @@ public class ViewPost extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        setupKeyboardInsets();
 
         initViews();
         setupRecyclerView();
         setupObservers();
         setupListeners();
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.writeReviewContainer.getPaddingLeft();
+        int initialTop = binding.writeReviewContainer.getPaddingTop();
+        int initialRight = binding.writeReviewContainer.getPaddingRight();
+        int initialBottom = binding.writeReviewContainer.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.writeReviewContainer,
+                binding.viewPostScroll,
+                PREF_VIEW_POST_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> binding.writeReviewContainer.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private void initViews() {

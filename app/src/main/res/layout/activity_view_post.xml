@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/view_posts"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@drawable/bg_main"
     tools:context=".ui.posts.ViewPost">
 
@@ -40,8 +39,10 @@
         </LinearLayout>
 
         <androidx.core.widget.NestedScrollView
+            android:id="@+id/view_post_scroll"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:fillViewport="true">
 
             <LinearLayout
@@ -203,69 +204,6 @@
                     android:textColor="@color/pale_slate"
                     style="@style/white_small_txt_style"/>
 
-                <!-- New Comment Container -->
-                <LinearLayout
-                    android:id="@+id/write_review_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:paddingVertical="8dp"
-                    android:paddingHorizontal="10dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rectangle_white">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/replying_to_username"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Re: User"
-                            style="@style/black_small_txt_style"/>
-
-                        <!-- New Review Input -->
-                        <EditText
-                            android:id="@+id/new_comment_input"
-                            android:layout_width="match_parent"
-                            android:layout_height="50dp"
-                            android:gravity="top|start"
-                            android:inputType="textMultiLine"
-                            style="@style/black_small_txt_style"
-                            android:background="@android:color/transparent"/>
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/submit_comment_bttn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dp"
-                        android:padding="10dp"
-                        android:text="Submit"
-                        android:textSize="14sp"
-                        style="@style/black_medium_txt_style"
-                        android:background="@drawable/bg_rectangle_gold"
-                        android:visibility="visible"/>
-
-                    <TextView
-                        android:id="@+id/submit_reply_bttn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dp"
-                        android:padding="10dp"
-                        android:text="Reply"
-                        android:textSize="14sp"
-                        style="@style/black_medium_txt_style"
-                        android:background="@drawable/bg_rectangle_gold"
-                        android:visibility="gone"/>
-
-                </LinearLayout>
-                <!-- New Comment Container [End] -->
-
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/viewpost_comments_rv"
                     android:layout_width="match_parent"
@@ -278,6 +216,75 @@
 
         </androidx.core.widget.NestedScrollView>
 
+        <!-- New Comment Container -->
+        <LinearLayout
+            android:id="@+id/write_review_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="10dp"
+            android:gravity="center"
+            android:background="@drawable/bg_rectangle_white">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/replying_to_username"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Re: User"
+                    style="@style/black_small_txt_style"/>
+
+                <EditText
+                    android:id="@+id/new_comment_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    style="@style/black_small_txt_style"
+                    android:background="@android:color/transparent"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/submit_comment_bttn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:padding="10dp"
+                android:text="Submit"
+                android:textSize="14sp"
+                style="@style/black_medium_txt_style"
+                android:background="@drawable/bg_rectangle_gold"
+                android:visibility="visible"/>
+
+            <TextView
+                android:id="@+id/submit_reply_bttn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:padding="10dp"
+                android:text="Reply"
+                android:textSize="14sp"
+                style="@style/black_medium_txt_style"
+                android:background="@drawable/bg_rectangle_gold"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+        <!-- New Comment Container [End] -->
+
     </LinearLayout>
 
-</LinearLayout>
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="100dp"
+        layout="@layout/view_scroll_hint_overlay" />
+
+</FrameLayout>

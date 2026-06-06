@@ -32,8 +32,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.fragment.app.Fragment;
@@ -45,6 +48,7 @@ import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.FileAdapter;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -82,6 +86,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class AddLocationRequestFragment extends Fragment {
+    private static final String PREF_ADD_LOCATION_SCROLL_HINT_SEEN = "add_location_scroll_hint_seen";
 
     // ─── Map ────────────────────────────────────
     private MapView mapView;
@@ -248,8 +253,34 @@ public class AddLocationRequestFragment extends Fragment {
         setupPlaceTypeSpinner();
         setupReasonSpinner();
         setupMap(view, savedInstanceState);
+        setupKeyboardInsets(view);
 
         return view;
+    }
+
+    private void setupKeyboardInsets(View root) {
+        View scrollContainer = root.findViewById(R.id.add_locreq_scroll);
+        if (scrollContainer == null) {
+            return;
+        }
+
+        int initialLeft = scrollContainer.getPaddingLeft();
+        int initialTop = scrollContainer.getPaddingTop();
+        int initialRight = scrollContainer.getPaddingRight();
+        int initialBottom = scrollContainer.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                root,
+                scrollContainer,
+                scrollContainer,
+                PREF_ADD_LOCATION_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> scrollContainer.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private boolean isGuestUser() {

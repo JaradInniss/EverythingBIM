@@ -47,6 +47,7 @@ import com.example.everythingbim.databinding.BusinessRegisForm3Binding;
 import com.example.everythingbim.databinding.BusinessRegisForm4Binding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.example.everythingbim.ui.utils.FileAdapter;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -67,6 +68,7 @@ import android.widget.Spinner;
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "BusinessRegistration";
+    private static final String PREF_BUSINESS_REG_SCROLL_HINT_SEEN = "business_registration_scroll_hint_seen";
     private BusinessRegViewModel viewModel;
     private ActivityBusinessRegistrationBinding binding;
     private BusinessRegisForm1Binding form1Binding;
@@ -126,6 +128,27 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        setupKeyboardInsets();
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.businessRegistrationScroll.getPaddingLeft();
+        int initialTop = binding.businessRegistrationScroll.getPaddingTop();
+        int initialRight = binding.businessRegistrationScroll.getPaddingRight();
+        int initialBottom = binding.businessRegistrationScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.businessRegistrationScroll,
+                binding.businessRegistrationScroll,
+                PREF_BUSINESS_REG_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> binding.businessRegistrationScroll.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private void initViews() {

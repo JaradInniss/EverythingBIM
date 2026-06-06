@@ -304,9 +304,12 @@
         </RelativeLayout>
 
         <ScrollView
+            android:id="@+id/map_details_scroll"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="10dp">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false">
             
             <LinearLayout
                 android:layout_width="match_parent"
@@ -538,111 +541,6 @@
                 </LinearLayout>
                 <!-- Write Review Button [End] -->
 
-                <!-- New Review Container -->
-                <LinearLayout
-                    android:id="@+id/write_review_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:padding="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rectangle_alice_blue"
-                    android:visibility="gone">
-
-                    <!-- New Review Input -->
-                    <EditText
-                        android:id="@+id/new_review_input"
-                        android:layout_width="0dp"
-                        android:layout_height="80dp"
-                        android:layout_weight="1"
-                        android:layout_marginTop="5dp"
-                        android:gravity="top|start"
-                        android:inputType="textMultiLine"
-                        style="@style/black_small_txt_style"
-                        android:background="@android:color/transparent"/>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <!-- Rating Stars Container -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_horizontal">
-
-                            <ImageView
-                                android:id="@+id/rating_star_1"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
-                                android:src="@drawable/ic_star_outlined"/>
-
-                            <ImageView
-                                android:id="@+id/rating_star_2"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
-                                android:src="@drawable/ic_star_outlined"/>
-
-                            <ImageView
-                                android:id="@+id/rating_star_3"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
-                                android:src="@drawable/ic_star_outlined"/>
-
-                            <ImageView
-                                android:id="@+id/rating_star_4"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
-                                android:src="@drawable/ic_star_outlined"/>
-
-                            <ImageView
-                                android:id="@+id/rating_star_5"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
-                                android:src="@drawable/ic_star_outlined"/>
-                        </LinearLayout>
-                        <!-- Rating Stars Container [End] -->
-
-                        <!-- Submit Review Button -->
-                        <LinearLayout
-                            android:id="@+id/submit_review_bttn"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="15dp"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:padding="10dp"
-                            android:background="@drawable/bg_rectangle_blue">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_marginRight="8dp"
-                                android:src="@drawable/ic_plus"
-                                app:tint="@color/white" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="@font/roboto_medium"
-                                android:text="Submit"
-                                android:textColor="@color/white"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-                        <!-- Submit Review Button [End] -->
-
-                    </LinearLayout>
-
-                </LinearLayout>
-                <!-- New Review Container [End] -->
-
-
                 <!-- Posts Section Header -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -734,6 +632,110 @@
 
         </ScrollView>
 
+        <!-- New Review Container -->
+        <LinearLayout
+            android:id="@+id/write_review_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:padding="8dp"
+            android:gravity="center"
+            android:background="@drawable/bg_rectangle_alice_blue"
+            android:visibility="gone">
+
+            <!-- New Review Input -->
+            <EditText
+                android:id="@+id/new_review_input"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:layout_marginTop="5dp"
+                android:gravity="top|start"
+                android:inputType="textMultiLine"
+                style="@style/black_small_txt_style"
+                android:background="@android:color/transparent"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Rating Stars Container -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal">
+
+                    <ImageView
+                        android:id="@+id/rating_star_1"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:layout_marginRight="2dp"
+                        android:src="@drawable/ic_star_outlined"/>
+
+                    <ImageView
+                        android:id="@+id/rating_star_2"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:layout_marginRight="2dp"
+                        android:src="@drawable/ic_star_outlined"/>
+
+                    <ImageView
+                        android:id="@+id/rating_star_3"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:layout_marginRight="2dp"
+                        android:src="@drawable/ic_star_outlined"/>
+
+                    <ImageView
+                        android:id="@+id/rating_star_4"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:layout_marginRight="2dp"
+                        android:src="@drawable/ic_star_outlined"/>
+
+                    <ImageView
+                        android:id="@+id/rating_star_5"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:layout_marginRight="2dp"
+                        android:src="@drawable/ic_star_outlined"/>
+                </LinearLayout>
+                <!-- Rating Stars Container [End] -->
+
+                <!-- Submit Review Button -->
+                <LinearLayout
+                    android:id="@+id/submit_review_bttn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_rectangle_blue">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginRight="8dp"
+                        android:src="@drawable/ic_plus"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_medium"
+                        android:text="Submit"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+                </LinearLayout>
+                <!-- Submit Review Button [End] -->
+
+            </LinearLayout>
+
+        </LinearLayout>
+        <!-- New Review Container [End] -->
+
         <TextView
             android:id="@+id/map_place_meta"
             android:layout_width="match_parent"
@@ -753,7 +755,14 @@
             android:textSize="13sp"
             android:visibility="gone" />
 
-    </LinearLayout>
+</LinearLayout>
     <!-- Map Location Details Container [End] -->
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="110dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </FrameLayout>

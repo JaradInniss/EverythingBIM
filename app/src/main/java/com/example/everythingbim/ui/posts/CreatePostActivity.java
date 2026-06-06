@@ -34,6 +34,7 @@ import com.example.everythingbim.databinding.ActivityCreatePostBinding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +47,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class CreatePostActivity extends AppCompatActivity implements View.OnClickListener {
+    private static final String PREF_CREATE_POST_SCROLL_HINT_SEEN = "create_post_scroll_hint_seen";
 
     private ActivityCreatePostBinding binding;
     private CreatePostViewModel viewModel;
@@ -74,6 +76,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        setupKeyboardInsets();
 
         if (isGuestUser()) {
             showAuthRequiredDialog();
@@ -82,6 +85,26 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
 
         setupViews();
         observeViewModel();
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.createPostScroll.getPaddingLeft();
+        int initialTop = binding.createPostScroll.getPaddingTop();
+        int initialRight = binding.createPostScroll.getPaddingRight();
+        int initialBottom = binding.createPostScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.createPostScroll,
+                binding.createPostScroll,
+                PREF_CREATE_POST_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> binding.createPostScroll.setPadding(
+                        initialLeft,
+                        initialTop,
+                        initialRight,
+                        initialBottom + keyboardExtraBottom
+                )
+        );
     }
 
     private void setupViews() {

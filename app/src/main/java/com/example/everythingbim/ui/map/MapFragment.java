@@ -29,6 +29,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -43,6 +46,7 @@ import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.data.models.MarkerDetails;
 import com.example.everythingbim.ui.home.NearbySavedLocation;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -88,6 +92,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final long SEARCH_DEBOUNCE_MS = 300L;
+    private static final String PREF_MAP_SCROLL_HINT_SEEN = "map_scroll_hint_seen";
 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService routeExecutor = Executors.newSingleThreadExecutor();
@@ -161,6 +166,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         View view = inflater.inflate(R.layout.fragment_map, container, false);
 
         bindViews(view);
+        setupKeyboardInsets(view);
         setupSearchUi();
         setUpObservers();
         observeFocusedSavedLocation();
@@ -217,6 +223,38 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         viewAllPostsBttn.setOnClickListener(this);
         View directionsButton = root.findViewById(R.id.directions_bttn);
         directionsButton.setOnClickListener(this);
+    }
+
+    private void setupKeyboardInsets(View root) {
+        View detailsScroll = root.findViewById(R.id.map_details_scroll);
+        View reviewComposer = root.findViewById(R.id.write_review_container);
+        if (detailsScroll == null || reviewComposer == null) {
+            return;
+        }
+
+        int scrollLeft = detailsScroll.getPaddingLeft();
+        int scrollTop = detailsScroll.getPaddingTop();
+        int scrollRight = detailsScroll.getPaddingRight();
+        int scrollBottom = detailsScroll.getPaddingBottom();
+
+        int composerLeft = reviewComposer.getPaddingLeft();
+        int composerTop = reviewComposer.getPaddingTop();
+        int composerRight = reviewComposer.getPaddingRight();
+        int composerBottom = reviewComposer.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                root,
+                reviewComposer,
+                detailsScroll,
+                PREF_MAP_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    reviewComposer.setPadding(composerLeft, composerTop, composerRight, composerBottom + keyboardExtraBottom);
+                    detailsScroll.setPadding(scrollLeft, scrollTop, scrollRight, scrollBottom + keyboardExtraBottom);
+                },
+                () -> detailsContainer != null
+                        && detailsContainer.getVisibility() == View.VISIBLE
+                        && reviewComposer.getVisibility() == View.VISIBLE
+        );
     }
 
     @Override
