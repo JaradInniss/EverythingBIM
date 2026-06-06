@@ -17,6 +17,7 @@ public final class UserNotificationHelper {
     public static final String TYPE_BUSINESS_VERIFICATION = "business_verification";
     public static final String TARGET_COMPLETED_INFO = "user_completed_info";
     public static final String TARGET_COMPLETED_LOCATION = "user_completed_location";
+    public static final String TARGET_COMPLETED_LOCATION_TO_ADDRESS = "user_completed_location_to_address";
     public static final String TARGET_DATASET_DIALOG = "user_dataset_dialog";
     public static final String TARGET_COMPLETED_BUSINESS_VERIFICATION = "user_completed_business_verification";
 

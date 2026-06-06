@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACTION_ADD_DATASET_SUBMISSION = "action_add_dataset_submission";
     public static final String ACTION_VIEW_COMPLETED_INFORMATION_REQUESTS = "action_view_completed_information_requests";
     public static final String ACTION_VIEW_COMPLETED_LOCATION_REQUESTS = "action_view_completed_location_requests";
+    public static final String ACTION_VIEW_COMPLETED_LOCATION_TO_ADDRESS_REQUESTS = "action_view_completed_location_to_address_requests";
     public static final String ACTION_VIEW_COMPLETED_ACCOUNT_VERIFICATION_REQUESTS = "action_view_completed_account_verification_requests";
 
     // For Args for focusing location in Map Fragment
@@ -335,6 +336,11 @@ public class MainActivity extends AppCompatActivity {
 
         if (ACTION_VIEW_COMPLETED_LOCATION_REQUESTS.equals(pendingAction)) {
             openUserActionFragment(new com.example.everythingbim.ui.user.ViewCompletedLocationRequestFragment());
+            return;
+        }
+
+        if (ACTION_VIEW_COMPLETED_LOCATION_TO_ADDRESS_REQUESTS.equals(pendingAction)) {
+            openUserActionFragment(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment());
             return;
         }
 

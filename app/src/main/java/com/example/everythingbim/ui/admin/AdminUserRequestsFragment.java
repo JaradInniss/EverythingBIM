@@ -34,7 +34,7 @@ import com.example.everythingbim.R;
 public class AdminUserRequestsFragment extends Fragment {
 
     // ─── Bundle args ─────────────────────────
-    // Pass REQUEST_TYPE = "location", "info", "dataset", or "submissions"
+    // Pass REQUEST_TYPE = "location", "info", "dataset", "submissions", or "business_location"
     public static final String ARG_TYPE = "request_type";
 
     // ─── Read filter ─────────────────────────
@@ -58,8 +58,7 @@ public class AdminUserRequestsFragment extends Fragment {
     private int currentLoadId = 0;
 
     // ─── Request type ─────────────────────────
-    private String requestType = "info"; // "info", "location", "dataset", or "submissions"
-    private String requestType = "info"; // "info", "location", "dataset", "business_location"
+    private String requestType = "info"; // "info", "location", "dataset", "submissions", or "business_location"
 
     // ────────────────────────────────────────────────────────
     // FACTORY
@@ -101,6 +100,8 @@ public class AdminUserRequestsFragment extends Fragment {
         TextView sectionTitle = view.findViewById(R.id.req_list_section_title);
         if (requestType.equals("location")) {
             sectionTitle.setText("Add Location Requests");
+        } else if (requestType.equals("business_location")) {
+            sectionTitle.setText("Business Location Requests");
         } else if (requestType.equals("submissions")) {
             sectionTitle.setText("Users' Submissions");
         } else if (requestType.equals("dataset")) {
@@ -336,6 +337,26 @@ public class AdminUserRequestsFragment extends Fragment {
             allItems.add(item2);
 
             allItems.sort((a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+        } else if (requestType.equals("business_location")) {
+            RequestItem item1 = new RequestItem("#145","Harbour Lights","Business Owner","2026/03/04",false,"ph_biz_145");
+            item1.requestType = "business_location";
+            item1.title = "Harbour Lights";
+            item1.phone = "(246) 555-0145";
+            item1.email = "owner@harbourlights.test";
+            item1.address = "Bay Street, Bridgetown";
+            item1.description = "Business requested to be added as a nightlife venue.";
+            item1.businessType = "Entertainment";
+            allItems.add(item1);
+
+            RequestItem item2 = new RequestItem("#144","Bath Hut Cafe","Business Owner","2026/02/27",true,"ph_biz_144");
+            item2.requestType = "business_location";
+            item2.title = "Bath Hut Cafe";
+            item2.phone = "(246) 555-0144";
+            item2.email = "hello@bathhutcafe.test";
+            item2.address = "Bathsheba, St. Joseph";
+            item2.description = "Cafe owner submitted a business location request.";
+            item2.businessType = "Food & Drink";
+            allItems.add(item2);
         } else {
             RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
             item1.requestType = "info";
@@ -375,11 +396,11 @@ public class AdminUserRequestsFragment extends Fragment {
         if ("location".equals(requestType)) {
             return "add_location_requests";
         }
-        if ("dataset".equals(requestType)) {
-            return "dataset_image_submissions";
-        }
         if ("business_location".equals(requestType)) {
             return "add_business_location_requests";
+        }
+        if ("dataset".equals(requestType)) {
+            return "dataset_image_submissions";
         }
         return "add_information_requests";
     }
@@ -423,6 +444,12 @@ public class AdminUserRequestsFragment extends Fragment {
         item.email = doc.getString("email") != null ? doc.getString("email") : "";
         item.address = doc.getString("address") != null ? doc.getString("address") : "";
         item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("type") != null ? doc.getString("type") : "";
+        }
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("businessCategory") != null ? doc.getString("businessCategory") : "";
+        }
         if (item.businessType.isEmpty()) {
             item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
         }
