@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.home.UserNotificationHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -73,6 +74,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     private String cachedResolvedAt = "";
     private String cachedResolvedBy = "";
     private String cachedRejectionReason = "";
+    private String cachedRecipientUserId = "";
     private boolean dataFromBundle = false;
 
     // ─── Views ───────────────────────────────
@@ -269,6 +271,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     submittedByTv.setText("Submitted By: BusinessUser "
                             + (submittedBy != null ? submittedBy : ""));
                     cachedSubmittedBy = submittedBy != null ? submittedBy : "";
+                    cachedRecipientUserId = doc.getId();
 
                     // Get business name - check multiple possible field names
                     // Firestore stores as 'businessName' (lowercase based on actual doc)
@@ -388,6 +391,19 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     if (!isUiActive()) return;
                     // Log approval activity
                     activityLogger.logApproval(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_BUSINESS_VERIFICATION,
+                            "Business Verification Update",
+                            "Your business verification for " + firstNonEmpty(cachedName, "your business") + " was accepted.",
+                            "Accepted",
+                            docId,
+                            "businesses",
+                            UserNotificationHelper.TARGET_COMPLETED_BUSINESS_VERIFICATION,
+                            UserNotificationHelper.TYPE_BUSINESS_VERIFICATION,
+                            firstNonEmpty(cachedName, "Business Verification")
+                    );
                     showToast("Request Accepted");
                     applyAcceptedState(today, "Administrator");
                 })
@@ -416,6 +432,19 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     if (!isUiActive()) return;
                     // Log rejection activity
                     activityLogger.logRejection(ActivityLogger.TYPE_BUSINESS, cachedName, docId);
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_BUSINESS_VERIFICATION,
+                            "Business Verification Update",
+                            "Your business verification for " + firstNonEmpty(cachedName, "your business") + " was rejected.",
+                            "Rejected",
+                            docId,
+                            "businesses",
+                            UserNotificationHelper.TARGET_COMPLETED_BUSINESS_VERIFICATION,
+                            UserNotificationHelper.TYPE_BUSINESS_VERIFICATION,
+                            firstNonEmpty(cachedName, "Business Verification")
+                    );
                     showToast("Request Rejected");
                     applyRejectedState(today, "Administrator", reason);
                 })
@@ -498,6 +527,15 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
+
+    private String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
 
     private String fmt(Timestamp ts) {
         return ts != null

@@ -24,6 +24,7 @@
 
         <!-- "Users" title -->
         <TextView
+            android:id="@+id/users_header_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Users"
@@ -355,7 +356,7 @@
                     android:background="@color/white"
                     android:layout_marginBottom="4dp" />
 
-                <!-- Information Requests section -->
+                <!-- Users' Submissions section -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -367,14 +368,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Information Requests"
+                        android:text="Users' Submissions"
                         android:textColor="@color/white"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:fontFamily="@font/roboto_medium" />
 
                     <TextView
-                        android:id="@+id/general_inforeq_count"
+                        android:id="@+id/general_submissions_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="88 -"
@@ -384,7 +385,7 @@
                         android:layout_marginEnd="4dp" />
 
                     <TextView
-                        android:id="@+id/general_inforeq_view_all"
+                        android:id="@+id/general_submissions_view_all"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="View All >"
@@ -396,58 +397,9 @@
 
                 </LinearLayout>
 
-                <!-- Information Requests list -->
+                <!-- Users' Submissions list -->
                 <LinearLayout
-                    android:id="@+id/general_inforeq_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@color/white"
-                    android:layout_marginBottom="4dp" />
-
-                <!-- Dataset Image Submissions section -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="6dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Dataset Image Submissions"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/roboto_medium" />
-
-                    <TextView
-                        android:id="@+id/general_datasetreq_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0 -"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:layout_marginEnd="4dp" />
-
-                    <TextView
-                        android:id="@+id/general_datasetreq_view_all"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="View All >"
-                        android:textColor="@color/dim_grey"
-                        android:textSize="12sp"
-                        android:fontFamily="@font/roboto_medium"
-                        android:clickable="true"
-                        android:focusable="true" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/general_datasetreq_container"
+                    android:id="@+id/general_submissions_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
