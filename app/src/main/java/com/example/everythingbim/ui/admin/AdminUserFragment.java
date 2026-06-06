@@ -80,10 +80,10 @@ public class AdminUserFragment extends Fragment {
 
     // Business lists
     private LinearLayout businessVerReqContainer;
+    private LinearLayout businessLocVerReqContainer;
     private TextView bizFilterAll, bizFilterUnread, bizFilterRead;
 
     // Business Location lists
-    private LinearLayout businessLocVerReqContainer;
     private TextView bizLocFilterAll, bizLocFilterUnread, bizLocFilterRead;
 
     // ─── Firebase ────────────────────────────
@@ -134,6 +134,7 @@ public class AdminUserFragment extends Fragment {
 
         // Bind business containers
         businessVerReqContainer = view.findViewById(R.id.business_verreq_container);
+        businessLocVerReqContainer = view.findViewById(R.id.business_locverreq_container);
         bizFilterAll    = view.findViewById(R.id.biz_filter_all);
         bizFilterUnread = view.findViewById(R.id.biz_filter_unread);
         bizFilterRead   = view.findViewById(R.id.biz_filter_read);
@@ -186,6 +187,13 @@ public class AdminUserFragment extends Fragment {
                         .beginTransaction()
                         .add(R.id.admin_fragment_container,
                                 AdminUserRequestsFragment.newInstance("submissions"))
+                        .addToBackStack(null).commit());
+
+        view.findViewById(R.id.business_locverreq_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("business_location"))
                         .addToBackStack(null).commit());
 
         // ── Search text watcher ───────────────
@@ -531,6 +539,7 @@ public class AdminUserFragment extends Fragment {
         // Clear lists at the START before any Firestore calls
         allBizUsers.clear();
         allBizVerReqs.clear();
+        allBizLocVerReqs.clear();
 
         // Load business users for search
         db.collection("businesses")
@@ -1151,6 +1160,12 @@ public class AdminUserFragment extends Fragment {
         item.email = doc.getString("email") != null ? doc.getString("email") : "";
         item.address = doc.getString("address") != null ? doc.getString("address") : "";
         item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("type") != null ? doc.getString("type") : "";
+        }
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("businessCategory") != null ? doc.getString("businessCategory") : "";
+        }
 
         return item;
     }
