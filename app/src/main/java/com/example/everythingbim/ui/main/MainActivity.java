@@ -97,6 +97,14 @@ public class MainActivity extends AppCompatActivity {
             userType = normalizeUserType(sharedPreferences.getString("userType", USER_TYPE_GUEST));
         }
 
+        // Security check: verify FirebaseAuth state matches SharedPreferences userType
+        // If SharedPreferences says logged in but Firebase is signed out, force logout
+        if (!USER_TYPE_GUEST.equals(userType) && FirebaseAuth.getInstance().getCurrentUser() == null) {
+            userType = USER_TYPE_GUEST;
+            sharedPreferences.edit().putString("userType", userType).apply();
+            sharedPreferences.edit().remove("userId").apply();
+        }
+
         // Also save userId from intent if present (sent from Login after successful authentication)
         if (getIntent().hasExtra("userId")) {
             String userId = getIntent().getStringExtra("userId");
@@ -168,11 +176,11 @@ public class MainActivity extends AppCompatActivity {
         // Optionally set the default selection
         if (USER_TYPE_BUSINESS.equals(userType)) {
             // Possibly start with a different default fragment
-            viewModel.setNavbarItemId(R.id.navbar_post);
+            viewModel.setNavbarItemId(R.id.navbar_home);
         } else if (pendingMapFocus) {
             viewModel.setNavbarItemId(R.id.navbar_map);
         } else {
-            viewModel.setNavbarItemId(R.id.navbar_home);
+            viewModel.setNavbarItemId(R.id.navbar_post);
         }
     }
 

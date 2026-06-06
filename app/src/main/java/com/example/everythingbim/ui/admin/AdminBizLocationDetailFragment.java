@@ -354,17 +354,107 @@ public class AdminBizLocationDetailFragment extends Fragment {
 
     private void confirmAccept() {
         if (docId.isEmpty()) return;
+
+        // First, get the document to find the userId
         db.collection("add_business_location_requests").document(docId)
-                .update("status", "Completed",
-                        "resolvedAt", Timestamp.now(),
-                        "resolvedBy", getAdminId())
-                .addOnSuccessListener(v -> {
-                    activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
-                    Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
-                    applyAcceptedState(todayStr(), "Administrator");
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Toast.makeText(getContext(), "Document not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    final String userId = doc.getString("userId");
+                    final String locationName = nvl(doc.getString("locationName"));
+                    final String placeType = nvl(doc.getString("placeType"));
+                    final String address = locationName; // Use locationName as the address
+
+                    if (userId == null || userId.isEmpty()) {
+                        Toast.makeText(getContext(), "Cannot find userId for this request", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Update request status to Completed
+                    db.collection("add_business_location_requests").document(docId)
+                            .update("status", "Completed",
+                                    "resolvedAt", Timestamp.now(),
+                                    "resolvedBy", getAdminId())
+                            .addOnSuccessListener(v -> {
+                                activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
+                                Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+                                applyAcceptedState(todayStr(), "Administrator");
+
+                                // Now add this address to the business user's addresses list
+                                addAddressToBusinessProfile(userId, address, placeType);
+                            })
+                            .addOnFailureListener(e -> Toast.makeText(getContext(),
+                                    "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 })
                 .addOnFailureListener(e -> Toast.makeText(getContext(),
-                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        "Failed to fetch request: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void addAddressToBusinessProfile(String userId, String address, String placeType) {
+        // Format the new address with place type label
+        final String formattedAddress;
+        if (!placeType.isEmpty()) {
+            formattedAddress = address + " (" + placeType + ")";
+        } else {
+            formattedAddress = address;
+        }
+
+        // Fetch current business profile
+        db.collection("businesses").document(userId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    // Get existing addresses or create new list
+                    List<String> addresses = doc != null && doc.get("addresses") != null
+                            ? new java.util.ArrayList<>((java.util.List<String>) doc.get("addresses"))
+                            : new java.util.ArrayList<>();
+
+                    // If addresses list is empty but legacy address field exists, migrate it first
+                    if (addresses.isEmpty() && doc != null && doc.exists()) {
+                        String legacyAddress = doc.getString("address");
+                        if (legacyAddress != null && !legacyAddress.isEmpty()) {
+                            addresses.add(legacyAddress);
+                        }
+                    }
+
+                    // Add new address
+                    addresses.add(formattedAddress);
+
+                    // Build update data - include both addresses list and legacy address for backward compat
+                    java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                    updates.put("addresses", addresses);
+                    // Keep legacy address field pointing to the most recent address for other parts of app
+                    updates.put("address", formattedAddress);
+
+                    // Save back to Firestore
+                    db.collection("businesses").document(userId)
+                            .update(updates)
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(getContext(), "Address added to business profile", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                // If update fails (document doesn't exist), create new document
+                                java.util.Map<String, Object> profileData = new java.util.HashMap<>();
+                                profileData.put("addresses", addresses);
+                                profileData.put("address", formattedAddress);
+                                profileData.put("userId", userId);
+
+                                db.collection("businesses").document(userId)
+                                        .set(profileData)
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            Toast.makeText(getContext(), "Business profile created with address", Toast.LENGTH_SHORT).show();
+                                        })
+                                        .addOnFailureListener(e2 -> {
+                                            Toast.makeText(getContext(), "Address approved but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        });
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Address approved but failed to access business profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void confirmReject(String reason) {

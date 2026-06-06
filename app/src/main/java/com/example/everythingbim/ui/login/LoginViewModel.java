@@ -161,15 +161,42 @@ public class LoginViewModel extends ViewModel {
                         if (firebaseUser != null) {
                             fetchUserTypeAndNavigate(firebaseUser.getUid());
                         } else {
-                            setErrorField(R.id.login_error, "User not found");
+                            toastMessage.setValue("User not found");
                         }
                     } else {
-                        String errorMessage = task.getException() != null
-                                ? task.getException().getMessage()
-                                : "Login failed";
-                        setErrorField(R.id.login_error, errorMessage);
+                        String errorMessage = getFriendlyErrorMessage(task.getException());
+                        toastMessage.setValue(errorMessage);
                     }
                 });
+    }
+
+    private String getFriendlyErrorMessage(Exception exception) {
+        if (exception == null) return "Login failed. Please try again.";
+
+        String message = exception.getMessage();
+        if (message == null) return "Login failed. Please try again.";
+
+        // Firebase Auth error messages that are not user-friendly
+        if (message.contains("INVALID_LOGIN_CREDENTIALS") || message.contains("ERROR_INVALID_CREDENTIAL")) {
+            return "Invalid email or password";
+        } else if (message.contains("user-not-found") || message.contains("ERROR_USER_NOT_FOUND")) {
+            return "No account found with this email";
+        } else if (message.contains("wrong-password") || message.contains("ERROR_WRONG_PASSWORD")) {
+            return "Incorrect password";
+        } else if (message.contains("too-many-requests") || message.contains("TOO_MANY_ATTEMPTS")) {
+            return "Too many failed attempts. Please try again later.";
+        } else if (message.contains("user-disabled") || message.contains("USER_DISABLED")) {
+            return "This account has been disabled";
+        } else if (message.contains("invalid-email")) {
+            return "Invalid email address";
+        } else if (message.contains("operation-not-allowed") || message.contains("OPERATION_NOT_ALLOWED")) {
+            return "Email/password login is not enabled";
+        } else if (message.contains("network")) {
+            return "Network error. Please check your connection.";
+        }
+
+        // Return a cleaned up version of the original message
+        return message;
     }
 
     private void fetchUserTypeAndNavigate(String userId) {
@@ -190,7 +217,7 @@ public class LoginViewModel extends ViewModel {
                                               int index) {
         if (index >= collectionsToCheck.length) {
             isLoading.setValue(false);
-            setErrorField(R.id.login_error, "User document not found");
+            toastMessage.setValue("User document not found");
             return;
         }
 
@@ -199,10 +226,7 @@ public class LoginViewModel extends ViewModel {
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
                         isLoading.setValue(false);
-                        String error = task.getException() != null
-                                ? task.getException().getMessage()
-                                : "Failed to fetch user data";
-                        setErrorField(R.id.login_error, error);
+                        toastMessage.setValue("Failed to fetch user data");
                         return;
                     }
 
@@ -217,7 +241,7 @@ public class LoginViewModel extends ViewModel {
                             saveAndNavigate(resolvedUserType, userId);
                         } else {
                             isLoading.setValue(false);
-                            setErrorField(R.id.login_error, "User type not found");
+                            toastMessage.setValue("User type not found");
                         }
                         return;
                     }
