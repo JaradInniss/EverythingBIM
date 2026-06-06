@@ -32,8 +32,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.fragment.app.Fragment;
@@ -232,8 +235,30 @@ public class AddBusinessLocationRequestFragment extends Fragment {
 
         setupPlaceTypeSpinner();
         setupMap(view, savedInstanceState);
+        setupKeyboardInsets(view);
 
         return view;
+    }
+
+    private void setupKeyboardInsets(View root) {
+        View scrollContainer = root.findViewById(R.id.addbizlocreq_container);
+        if (scrollContainer == null) {
+            return;
+        }
+
+        int initialLeft = scrollContainer.getPaddingLeft();
+        int initialTop = scrollContainer.getPaddingTop();
+        int initialRight = scrollContainer.getPaddingRight();
+        int initialBottom = scrollContainer.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(scrollContainer, (view, insets) -> {
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            int keyboardBottom = Math.max(ime.bottom, systemBars.bottom);
+            view.setPadding(initialLeft, initialTop, initialRight, initialBottom + keyboardBottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(scrollContainer);
     }
 
     private boolean isGuestUser() {
@@ -657,9 +682,12 @@ public class AddBusinessLocationRequestFragment extends Fragment {
         List<String> imageUrls = new ArrayList<>();
         List<com.google.android.gms.tasks.Task<Uri>> uploadTasks = new ArrayList<>();
 
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
-        String userId = prefs.getString("userId", "anon");
+        String userId = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getUid() : null;
+        if (userId == null || userId.trim().isEmpty()) {
+            submissionFailed("Please sign in again before submitting a request.");
+            return;
+        }
 
         for (File file : selectedImages) {
             StorageReference ref = storage.getReference()
@@ -693,9 +721,12 @@ public class AddBusinessLocationRequestFragment extends Fragment {
     }
 
     private void saveRequestToFirestore(String locationName, List<String> imageUrls) {
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
-        String userId = prefs.getString("userId", "anonymous");
+        String userId = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getUid() : null;
+        if (userId == null || userId.trim().isEmpty()) {
+            submissionFailed("Please sign in again before submitting a request.");
+            return;
+        }
 
         Map<String, Object> request = new HashMap<>();
         request.put("userId",        userId);
