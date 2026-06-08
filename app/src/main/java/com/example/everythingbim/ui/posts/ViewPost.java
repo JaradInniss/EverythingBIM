@@ -37,7 +37,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
@@ -45,6 +44,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -298,10 +298,7 @@ public class ViewPost extends AppCompatActivity {
         likes.setText(String.valueOf(likeCount));
 
         // Load the post image
-        Glide.with(this)
-                .load(post.imageUrl)
-                .placeholder(R.drawable.butterfly)
-                .into(postImage);
+        ImageReferenceLoader.loadInto(postImage, post.imageUrl, R.drawable.butterfly);
 
         setupLocationTag(post.locationId);
     }
