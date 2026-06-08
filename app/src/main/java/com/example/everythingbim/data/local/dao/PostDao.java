@@ -37,6 +37,9 @@ public interface PostDao {
     @Update
     void update(PostEntity post);
 
+    @Query("UPDATE posts SET imageUrl = :imageUrl WHERE postId = :postId")
+    void updateImageUrl(long postId, String imageUrl);
+
     /**
      * Retrieves all posts in a random order. 
      * Useful for providing a randomized "feed" experience for users.

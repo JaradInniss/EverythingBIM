@@ -10,9 +10,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +43,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
         holder.commentsCountTv.setText("0"); // Placeholder
         holder.uploadDateTv.setText("Recently"); // Placeholder
 
-        Glide.with(context)
-                .load(post.imageUrl)
-                .placeholder(R.color.dim_grey)
-                .centerCrop()
-                .into(holder.postImageView);
+        ImageReferenceLoader.loadInto(holder.postImageView, post.imageUrl, R.drawable.ic_images);
     }
 
     private String resolveAuthorLabel(PostEntity post) {

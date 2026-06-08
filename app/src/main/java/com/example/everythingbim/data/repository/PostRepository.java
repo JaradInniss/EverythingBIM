@@ -19,6 +19,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PostRepository {
+    private static final String LOCAL_HARRISONS_CAVE_IMAGE = "harrisons_cave.jpg";
+    private static final String LOCAL_BATHSHEBA_IMAGE = "bathsheba.jpg";
+    private static final String LEGACY_BATHSHEBA_LOCATION_IMAGE = "bathsheba_beach";
+    private static final String LEGACY_HARRISONS_CAVE_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg";
+    private static final String LEGACY_BATHSHEBA_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg";
+
     private final PostDao postDao;
     private final CommentDao commentDao;
     private final LocationDao locationDao;
@@ -88,7 +94,7 @@ public class PostRepository {
                 ));
                 
                 // Insert a sample post
-                long postId = postDao.insert(new PostEntity(locId, 101, "TravelAddict", "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM", "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg", System.currentTimeMillis() - 86400000));
+                long postId = postDao.insert(new PostEntity(locId, 101, "TravelAddict", "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM", LOCAL_HARRISONS_CAVE_IMAGE, System.currentTimeMillis() - 86400000));
                 
                 // Top-level comments
                 long c1 = commentDao.insert(new CommentEntity(postId, null, "TravelAddict", null, "This place looks incredible! Is it easy to get there?", System.currentTimeMillis() - 70000000));
@@ -115,11 +121,77 @@ public class PostRepository {
                         "Admin",
                         "Scenic east-coast beach famous for its rock formations and surf culture.",
                         "beach",
-                        "bathsheba_beach",
+                        "bathsheba",
                         "Bathsheba, St. Joseph, Barbados"
                 ));
-                postDao.insert(new PostEntity(locId2, 102, "IslandExplorer", "Sunset at Bathsheba. The rock formations are unlike anything else.", "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg", System.currentTimeMillis() - 172800000));
+                postDao.insert(new PostEntity(locId2, 102, "IslandExplorer", "Sunset at Bathsheba. The rock formations are unlike anything else.", LOCAL_BATHSHEBA_IMAGE, System.currentTimeMillis() - 172800000));
             }
+
+            repairSeededPostImages();
+            repairSampleLocationImages();
         });
+    }
+
+    private void repairSeededPostImages() {
+        for (PostEntity post : postDao.getAllPostsSync()) {
+            String correctedImageRef = getCorrectedImageRef(post);
+            if (correctedImageRef == null || correctedImageRef.equals(post.imageUrl)) {
+                continue;
+            }
+            postDao.updateImageUrl(post.postId, correctedImageRef);
+        }
+    }
+
+    private void repairSampleLocationImages() {
+        for (LocationEntity location : locationDao.getAllLocationsSync()) {
+            String correctedImageRef = getCorrectedLocationImageRef(location);
+            if (correctedImageRef == null || correctedImageRef.equals(location.imageUrl)) {
+                continue;
+            }
+            locationDao.updateImageUrl(location.locationId, correctedImageRef);
+        }
+    }
+
+    private String getCorrectedImageRef(PostEntity post) {
+        if (post == null) {
+            return null;
+        }
+
+        if (LEGACY_HARRISONS_CAVE_IMAGE.equals(post.imageUrl) || containsIgnoreCase(post.caption, "Harrison's Cave")) {
+            return LOCAL_HARRISONS_CAVE_IMAGE;
+        }
+
+        if (LEGACY_BATHSHEBA_IMAGE.equals(post.imageUrl) || containsIgnoreCase(post.caption, "Bathsheba")) {
+            return LOCAL_BATHSHEBA_IMAGE;
+        }
+
+        return null;
+    }
+
+    private String getCorrectedLocationImageRef(LocationEntity location) {
+        if (location == null) {
+            return null;
+        }
+
+        if (containsIgnoreCase(location.name, "Harrison's Cave")) {
+            return LOCAL_HARRISONS_CAVE_IMAGE;
+        }
+
+        if (containsIgnoreCase(location.name, "Bathsheba")) {
+            if (LEGACY_BATHSHEBA_LOCATION_IMAGE.equals(location.imageUrl)
+                    || location.imageUrl == null
+                    || location.imageUrl.trim().isEmpty()
+                    || !LOCAL_BATHSHEBA_IMAGE.equals(location.imageUrl)) {
+                return LOCAL_BATHSHEBA_IMAGE;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean containsIgnoreCase(String text, String query) {
+        return text != null
+                && query != null
+                && text.toLowerCase(java.util.Locale.US).contains(query.toLowerCase(java.util.Locale.US));
     }
 }
