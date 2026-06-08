@@ -7,6 +7,7 @@ public class Landmark {
     private final String token;
     private final String displayName;
     private final String description;
+    private final String mapSubtitle;
     private final double latitude;
     private final double longitude;
     private final int nearbyRadiusMeters;
@@ -15,6 +16,7 @@ public class Landmark {
                     @NonNull String token,
                     @NonNull String displayName,
                     @NonNull String description,
+                    @NonNull String mapSubtitle,
                     double latitude,
                     double longitude,
                     int nearbyRadiusMeters) {
@@ -22,6 +24,7 @@ public class Landmark {
         this.token = token;
         this.displayName = displayName;
         this.description = description;
+        this.mapSubtitle = mapSubtitle;
         this.latitude = latitude;
         this.longitude = longitude;
         this.nearbyRadiusMeters = nearbyRadiusMeters;
@@ -45,6 +48,11 @@ public class Landmark {
     @NonNull
     public String getDescription() {
         return description;
+    }
+
+    @NonNull
+    public String getMapSubtitle() {
+        return mapSubtitle;
     }
 
     public double getLatitude() {

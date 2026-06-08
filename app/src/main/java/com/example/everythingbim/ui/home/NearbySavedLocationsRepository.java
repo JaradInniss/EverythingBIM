@@ -21,6 +21,9 @@ public class NearbySavedLocationsRepository {
     private static final int DEFAULT_RADIUS_METERS = 1000;
     private static final String SEEDED_BY = "seed_data";
     private static final int EXPECTED_SEED_COUNT = 12;
+    private static final String LOCAL_BATHSHEBA_IMAGE = "bathsheba.jpg";
+    private static final String LOCAL_HARRISONS_CAVE_IMAGE = "harrisons_cave.jpg";
+    private static final String LEGACY_BATHSHEBA_LOCATION_IMAGE = "bathsheba_beach";
 
     private final LocationDao locationDao;
 
@@ -31,10 +34,12 @@ public class NearbySavedLocationsRepository {
     @NonNull
     public NearbySavedLocationsResult getNearbySavedLocations(@NonNull Landmark landmark,
                                                               @Nullable Double userLatitude,
-                                                              @Nullable Double userLongitude) {
+                                                              @Nullable Double userLongitude,
+                                                              @Nullable Integer radiusOverrideMeters) {
         ensureSeedLocations();
         List<LocationWithDetails> allLocations = locationDao.getAllLocationsWithDetailsList();
         Map<String, NearbySavedLocation> nearbyLocationsByKey = new LinkedHashMap<>();
+        int effectiveRadiusMeters = resolveRadiusMeters(landmark, radiusOverrideMeters);
 
         for (LocationWithDetails item : allLocations) {
             LocationEntity location = item.location;
@@ -49,7 +54,7 @@ public class NearbySavedLocationsRepository {
                     location.longitude
             );
 
-            if (distanceFromParliament > landmark.getNearbyRadiusMeters()) {
+            if (distanceFromParliament > effectiveRadiusMeters) {
                 continue;
             }
 
@@ -92,12 +97,23 @@ public class NearbySavedLocationsRepository {
                 landmark.getDisplayName(),
                 landmark.getLatitude(),
                 landmark.getLongitude(),
-                landmark.getNearbyRadiusMeters() > 0 ? landmark.getNearbyRadiusMeters() : DEFAULT_RADIUS_METERS,
+                effectiveRadiusMeters,
                 nearbyLocations
         );
     }
 
+    private int resolveRadiusMeters(@NonNull Landmark landmark, @Nullable Integer radiusOverrideMeters) {
+        if (radiusOverrideMeters != null && radiusOverrideMeters > 0) {
+            return radiusOverrideMeters;
+        }
+        return landmark.getNearbyRadiusMeters() > 0
+                ? landmark.getNearbyRadiusMeters()
+                : DEFAULT_RADIUS_METERS;
+    }
+
     private void ensureSeedLocations() {
+        repairSampleLocationImages();
+
         int seedCount = locationDao.getLocationCountByAddedBy(SEEDED_BY);
         if (seedCount == 0) {
             locationDao.insertLocations(LocationSeedProvider.createSeedLocations());
@@ -109,6 +125,39 @@ public class NearbySavedLocationsRepository {
             locationDao.deleteLocationsByAddedBy(SEEDED_BY);
             locationDao.insertLocations(LocationSeedProvider.createSeedLocations());
         }
+    }
+
+    private void repairSampleLocationImages() {
+        for (LocationEntity location : locationDao.getAllLocationsSync()) {
+            String correctedImageRef = getCorrectedImageRef(location);
+            if (correctedImageRef == null || correctedImageRef.equals(location.imageUrl)) {
+                continue;
+            }
+            locationDao.updateImageUrl(location.locationId, correctedImageRef);
+        }
+    }
+
+    @Nullable
+    private String getCorrectedImageRef(@NonNull LocationEntity location) {
+        if (containsIgnoreCase(location.name, "Bathsheba")) {
+            if (LEGACY_BATHSHEBA_LOCATION_IMAGE.equals(location.imageUrl)
+                    || location.imageUrl == null
+                    || location.imageUrl.trim().isEmpty()) {
+                return LOCAL_BATHSHEBA_IMAGE;
+            }
+        }
+
+        if (containsIgnoreCase(location.name, "Harrison's Cave")) {
+            if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
+                return LOCAL_HARRISONS_CAVE_IMAGE;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean containsIgnoreCase(@Nullable String text, @NonNull String query) {
+        return text != null && text.toLowerCase(Locale.US).contains(query.toLowerCase(Locale.US));
     }
 
     @NonNull
