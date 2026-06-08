@@ -35,6 +35,12 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     private boolean locationPermissionGranted;
     private Double userLatitude;
     private Double userLongitude;
+    private Integer selectedNearbyRadiusMeters;
+    private Landmark currentConfirmedLandmark;
+    private Float currentConfirmedProbability;
+    private Boolean currentConfirmedGpsContextAvailable;
+    private Boolean currentConfirmedImageIsGallery;
+    private Double currentConfirmedUserDistanceMeters;
 
     public AIIdentifierViewModel(@NonNull Application application) {
         super(application);
@@ -130,30 +136,16 @@ public class AIIdentifierViewModel extends AndroidViewModel {
             NearbySavedLocationsResult nearbyResult = nearbySavedLocationsRepository.getNearbySavedLocations(
                     predictedLandmark,
                     canUseGps ? userLatitude : null,
-                    canUseGps ? userLongitude : null
+                    canUseGps ? userLongitude : null,
+                    selectedNearbyRadiusMeters
             );
 
-            String detail = buildConfirmedDetail(
-                    predictedLandmark,
-                    canUseGps,
-                    isGalleryImage,
-                    userDistanceToLandmark,
-                    nearbyResult.getNearbyLocations().size()
-            );
-
-            uiState.postValue(HomeUiState.result(
-                    selectedImage,
-                    predictedLandmark,
-                    formatConfidence(getDisplayProbability(prediction, predictedLandmark)),
-                    detail,
-                    gpsAvailable,
-                    canUseGps && !isGalleryImage,
-                    !isParliament(predictedLandmark)
-                            || (canUseGps && userDistanceToLandmark <= GPS_SUPPORT_DISTANCE_METERS),
-                    !canUseGps || isGalleryImage,
-                    canUseGps ? userDistanceToLandmark : null,
-                    nearbyResult.getNearbyLocations()
-            ));
+            currentConfirmedLandmark = predictedLandmark;
+            currentConfirmedProbability = getDisplayProbability(prediction, predictedLandmark);
+            currentConfirmedGpsContextAvailable = canUseGps;
+            currentConfirmedImageIsGallery = isGalleryImage;
+            currentConfirmedUserDistanceMeters = canUseGps ? userDistanceToLandmark : null;
+            postConfirmedResult(nearbyResult);
             return;
         }
 
@@ -184,6 +176,60 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         ));
     }
 
+    public void updateNearbyRadius(int radiusMeters) {
+        selectedNearbyRadiusMeters = radiusMeters > 0 ? radiusMeters : null;
+        if (currentConfirmedLandmark == null || selectedImage == null) {
+            return;
+        }
+
+        executorService.execute(() -> {
+            boolean canUseGps = Boolean.TRUE.equals(currentConfirmedGpsContextAvailable);
+            NearbySavedLocationsResult nearbyResult = nearbySavedLocationsRepository.getNearbySavedLocations(
+                    currentConfirmedLandmark,
+                    canUseGps ? userLatitude : null,
+                    canUseGps ? userLongitude : null,
+                    selectedNearbyRadiusMeters
+            );
+            postConfirmedResult(nearbyResult);
+        });
+    }
+
+    private void postConfirmedResult(@NonNull NearbySavedLocationsResult nearbyResult) {
+        if (currentConfirmedLandmark == null || selectedImage == null) {
+            return;
+        }
+
+        boolean canUseGps = Boolean.TRUE.equals(currentConfirmedGpsContextAvailable);
+        boolean isGalleryImage = Boolean.TRUE.equals(currentConfirmedImageIsGallery);
+        double userDistanceToLandmark = currentConfirmedUserDistanceMeters != null
+                ? currentConfirmedUserDistanceMeters
+                : Double.NaN;
+
+        String detail = buildConfirmedDetail(
+                currentConfirmedLandmark,
+                canUseGps,
+                isGalleryImage,
+                userDistanceToLandmark,
+                nearbyResult.getNearbyLocations().size(),
+                nearbyResult.getSearchRadiusMeters()
+        );
+
+        uiState.postValue(HomeUiState.result(
+                selectedImage,
+                currentConfirmedLandmark,
+                formatConfidence(currentConfirmedProbability != null ? currentConfirmedProbability : 0f),
+                detail,
+                gpsAvailable,
+                canUseGps && !isGalleryImage,
+                !isParliament(currentConfirmedLandmark)
+                        || (canUseGps && userDistanceToLandmark <= GPS_SUPPORT_DISTANCE_METERS),
+                !canUseGps || isGalleryImage,
+                currentConfirmedUserDistanceMeters,
+                nearbyResult.getNearbyLocations(),
+                nearbyResult.getSearchRadiusMeters()
+        ));
+    }
+
     private double computeDistanceToLandmark(@NonNull Landmark landmark) {
         if (userLatitude == null || userLongitude == null) {
             return Double.NaN;
@@ -205,7 +251,8 @@ public class AIIdentifierViewModel extends AndroidViewModel {
                                         boolean canUseGps,
                                         boolean isGalleryImage,
                                         double userDistanceToLandmark,
-                                        int nearbyCount) {
+                                        int nearbyCount,
+                                        int nearbyRadiusMeters) {
         StringBuilder detail = new StringBuilder(landmark.getDescription());
         String shortName = landmark.getDisplayName();
 
@@ -228,9 +275,15 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         }
 
         if (nearbyCount > 0) {
-            detail.append("\nShowing ").append(nearbyCount).append(" nearby saved locations within 1.0 km.");
+            detail.append("\nShowing ")
+                    .append(nearbyCount)
+                    .append(" nearby saved locations within ")
+                    .append(formatRadius(nearbyRadiusMeters))
+                    .append(".");
         } else {
-            detail.append("\nNo saved locations were found within 1.0 km yet.");
+            detail.append("\nNo saved locations were found within ")
+                    .append(formatRadius(nearbyRadiusMeters))
+                    .append(" yet.");
         }
         return detail.toString();
     }
@@ -322,6 +375,14 @@ public class AIIdentifierViewModel extends AndroidViewModel {
             return String.format(java.util.Locale.US, "%.1f km", meters / 1000f);
         }
         return String.format(java.util.Locale.US, "%.0f m", meters);
+    }
+
+    @NonNull
+    private String formatRadius(int meters) {
+        if (meters >= 1000) {
+            return String.format(java.util.Locale.US, "%.1f km", meters / 1000f);
+        }
+        return String.format(java.util.Locale.US, "%d m", meters);
     }
 
     @Override

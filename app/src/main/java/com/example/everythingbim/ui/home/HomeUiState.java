@@ -31,6 +31,7 @@ public class HomeUiState {
     private final boolean imageOnlyResult;
     private final Double userDistanceToLandmarkMeters;
     private final List<NearbySavedLocation> nearbyLocations;
+    private final Integer nearbyRadiusMeters;
     private final Double anchorLatitude;
     private final Double anchorLongitude;
 
@@ -46,6 +47,7 @@ public class HomeUiState {
                         boolean imageOnlyResult,
                         @Nullable Double userDistanceToLandmarkMeters,
                         @NonNull List<NearbySavedLocation> nearbyLocations,
+                        @Nullable Integer nearbyRadiusMeters,
                         @Nullable Double anchorLatitude,
                         @Nullable Double anchorLongitude) {
         this.status = status;
@@ -60,23 +62,24 @@ public class HomeUiState {
         this.imageOnlyResult = imageOnlyResult;
         this.userDistanceToLandmarkMeters = userDistanceToLandmarkMeters;
         this.nearbyLocations = Collections.unmodifiableList(nearbyLocations);
+        this.nearbyRadiusMeters = nearbyRadiusMeters;
         this.anchorLatitude = anchorLatitude;
         this.anchorLongitude = anchorLongitude;
     }
 
     @NonNull
     public static HomeUiState idle() {
-        return new HomeUiState(Status.IDLE, null, null, null, null, null, false, false, false, false, null, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.IDLE, null, null, null, null, null, false, false, false, false, null, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
     public static HomeUiState preview(@NonNull SelectedImage selectedImage) {
-        return new HomeUiState(Status.PREVIEW_READY, selectedImage, null, null, null, null, false, false, false, false, null, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.PREVIEW_READY, selectedImage, null, null, null, null, false, false, false, false, null, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
     public static HomeUiState analyzing(@NonNull SelectedImage selectedImage, @NonNull String message) {
-        return new HomeUiState(Status.ANALYZING, selectedImage, null, null, message, null, false, false, false, false, null, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.ANALYZING, selectedImage, null, null, message, null, false, false, false, false, null, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
@@ -89,7 +92,8 @@ public class HomeUiState {
                                      boolean gpsSupportedResult,
                                      boolean imageOnlyResult,
                                      @Nullable Double userDistanceToLandmarkMeters,
-                                     @NonNull List<NearbySavedLocation> nearbyLocations) {
+                                     @NonNull List<NearbySavedLocation> nearbyLocations,
+                                     int nearbyRadiusMeters) {
         return new HomeUiState(
                 Status.RESULT,
                 selectedImage,
@@ -103,6 +107,7 @@ public class HomeUiState {
                 imageOnlyResult,
                 userDistanceToLandmarkMeters,
                 nearbyLocations,
+                nearbyRadiusMeters,
                 landmark.getLatitude(),
                 landmark.getLongitude()
         );
@@ -110,7 +115,7 @@ public class HomeUiState {
 
     @NonNull
     public static HomeUiState unknown(@NonNull SelectedImage selectedImage, @NonNull String detail) {
-        return new HomeUiState(Status.UNKNOWN, selectedImage, null, null, "No landmark match found", detail, false, false, false, false, null, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.UNKNOWN, selectedImage, null, null, "No landmark match found", detail, false, false, false, false, null, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
@@ -121,12 +126,12 @@ public class HomeUiState {
                                         boolean gpsAvailable,
                                         boolean usedGps,
                                         @Nullable Double userDistanceToLandmarkMeters) {
-        return new HomeUiState(Status.UNCERTAIN, selectedImage, null, confidenceText, message, detail, gpsAvailable, usedGps, false, false, userDistanceToLandmarkMeters, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.UNCERTAIN, selectedImage, null, confidenceText, message, detail, gpsAvailable, usedGps, false, false, userDistanceToLandmarkMeters, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
     public static HomeUiState error(@Nullable SelectedImage selectedImage, @NonNull String message) {
-        return new HomeUiState(Status.ERROR, selectedImage, null, null, message, null, false, false, false, false, null, Collections.emptyList(), null, null);
+        return new HomeUiState(Status.ERROR, selectedImage, null, null, message, null, false, false, false, false, null, Collections.emptyList(), null, null, null);
     }
 
     @NonNull
@@ -183,6 +188,11 @@ public class HomeUiState {
     @NonNull
     public List<NearbySavedLocation> getNearbyLocations() {
         return nearbyLocations;
+    }
+
+    @Nullable
+    public Integer getNearbyRadiusMeters() {
+        return nearbyRadiusMeters;
     }
 
     @Nullable
