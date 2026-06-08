@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.text.Editable;
@@ -56,8 +55,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private ArrayAdapter<String> locationSuggestionsAdapter;
     private Uri pendingCameraUri;
 
-    private ActivityResultLauncher<String> galleryPickerLauncher;
-    private ActivityResultLauncher<String> galleryPermissionLauncher;
+    private ActivityResultLauncher<String[]> galleryPickerLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<Uri> takePictureLauncher;
 
@@ -251,19 +249,8 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
 
     private void registerLaunchers() {
         galleryPickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
+                new ActivityResultContracts.OpenDocument(),
                 this::handleGalleryResult
-        );
-
-        galleryPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                granted -> {
-                    if (granted) {
-                        galleryPickerLauncher.launch("image/*");
-                    } else {
-                        Toast.makeText(this, "Gallery permission was denied.", Toast.LENGTH_SHORT).show();
-                    }
-                }
         );
 
         cameraPermissionLauncher = registerForActivityResult(
@@ -290,12 +277,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void openGallery() {
-        String permission = getGalleryPermission();
-        if (permission == null || ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-            galleryPickerLauncher.launch("image/*");
-        } else {
-            galleryPermissionLauncher.launch(permission);
-        }
+        launchGalleryPicker();
+    }
+
+    private void launchGalleryPicker() {
+        galleryPickerLauncher.launch(new String[]{"image/*"});
     }
 
     private void openCamera() {
@@ -324,6 +310,13 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         if (uri == null) {
             Toast.makeText(this, "No image was selected.", Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        try {
+            getContentResolver().takePersistableUriPermission(uri, takeFlags);
+        } catch (SecurityException ignored) {
+            // Some providers do not support persistable permissions.
         }
 
         viewModel.setImageUri(uri);
@@ -376,13 +369,6 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         binding.prevBttn2.setBackgroundResource(
                 canShare ? R.drawable.bg_rectangle_gold : R.drawable.bg_rectangle_dim_grey
         );
-    }
-
-    private String getGalleryPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return Manifest.permission.READ_MEDIA_IMAGES;
-        }
-        return Manifest.permission.READ_EXTERNAL_STORAGE;
     }
 
     private File createImageFile() throws IOException {
