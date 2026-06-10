@@ -97,13 +97,8 @@ public class MainActivity extends AppCompatActivity {
             userType = normalizeUserType(sharedPreferences.getString("userType", USER_TYPE_GUEST));
         }
 
-        // Security check: verify FirebaseAuth state matches SharedPreferences userType
-        // If SharedPreferences says logged in but Firebase is signed out, force logout
-        if (!USER_TYPE_GUEST.equals(userType) && FirebaseAuth.getInstance().getCurrentUser() == null) {
-            userType = USER_TYPE_GUEST;
-            sharedPreferences.edit().putString("userType", userType).apply();
-            sharedPreferences.edit().remove("userId").apply();
-        }
+        // Security check removed - app uses custom Firestore authentication, not Firebase Auth
+        // The login flow verifies credentials via Firestore query, so no Firebase Auth check needed
 
         // Also save userId from intent if present (sent from Login after successful authentication)
         if (getIntent().hasExtra("userId")) {

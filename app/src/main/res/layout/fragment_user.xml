@@ -750,49 +750,6 @@
                                     app:tint="@color/black" />
                             </LinearLayout>
 
-                            <!-- Email -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="10dp">
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:hint="Email"
-                                    app:boxBackgroundMode="outline"
-                                    app:boxStrokeColor="@color/light_grey"
-                                    app:boxStrokeWidth="1dp"
-                                    app:boxStrokeWidthFocused="2dp"
-                                    app:hintTextColor="@color/light_grey"
-                                    android:layout_marginEnd="8dp"
-                                    android:background="@drawable/bg_rectangle_dim_grey">
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/general_user_edit_email_et"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:inputType="textEmailAddress"
-                                        android:text="anonymous@gmail.com"
-                                        android:textSize="15sp"
-                                        android:padding="10dp"
-                                        android:background="@android:color/transparent"
-                                        android:focusable="false"
-                                        android:clickable="false" />
-                                </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton
-                                    android:id="@+id/general_user_edit_email_btn"
-                                    android:layout_width="40dp"
-                                    android:layout_height="40dp"
-                                    android:src="@drawable/ic_edit"
-                                    android:background="@drawable/bg_rectangle_edit_btn"
-                                    android:contentDescription="Edit email"
-                                    android:clickable="true"
-                                    android:focusable="true"
-                                    app:tint="@color/black" />
-                            </LinearLayout>
-
                             <!-- Password -->
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -1436,10 +1393,10 @@
 
                             <!-- Email -->
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
-                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Email" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
-                                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_email_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textEmailAddress" android:text="anonymous@gmail.com" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
+                                <com.google.android.material.textfield.TextInputLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Username" app:boxBackgroundMode="outline" app:boxStrokeColor="@color/light_grey" app:boxStrokeWidth="1dp" app:boxStrokeWidthFocused="2dp" app:hintTextColor="@color/light_grey" android:layout_marginEnd="8dp" android:background="@drawable/bg_rectangle_dim_grey">
+                                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/business_edit_username_et" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:textSize="15sp" android:padding="10dp" android:background="@android:color/transparent" android:focusable="false" android:clickable="false" />
                                 </com.google.android.material.textfield.TextInputLayout>
-                                <ImageButton android:id="@+id/business_edit_email_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@drawable/bg_rectangle_edit_btn" android:contentDescription="Edit email" android:clickable="true" android:focusable="true" app:tint="@color/black" />
+                                <ImageButton android:id="@+id/business_edit_username_btn" android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_edit" android:background="@drawable/bg_rectangle_edit_btn" android:contentDescription="Edit username" android:clickable="true" android:focusable="true" app:tint="@color/black" />
                             </LinearLayout>
 
                             <!-- Password -->

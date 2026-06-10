@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,6 +31,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.example.everythingbim.ui.utils.PasswordHash;
 
 public class UserFragment extends Fragment {
 
@@ -132,11 +134,10 @@ public class UserFragment extends Fragment {
                 navigateTo(new AddBusinessLocationRequestFragment()));
 
         setupEditToggle(view, R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn);
-        setupEditToggle(view, R.id.general_user_edit_email_et, R.id.general_user_edit_email_btn);
         setupEditToggle(view, R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn);
         setupEditToggle(view, R.id.general_user_bio_et, R.id.general_user_edit_bio_btn);
 
-        setupEditToggle(view, R.id.business_edit_email_et, R.id.business_edit_email_btn);
+        setupEditToggle(view, R.id.business_edit_username_et, R.id.business_edit_username_btn);
         setupEditToggle(view, R.id.business_edit_password_et, R.id.business_edit_password_btn);
         setupEditToggle(view, R.id.business_edit_desc_et, R.id.business_edit_desc_btn);
         setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
@@ -388,9 +389,7 @@ public class UserFragment extends Fragment {
                 return;
             }
 
-            // Get the email from Firestore to re-authenticate
             String collection = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businesses" : "users";
-            String emailField = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businessEmail" : "email";
 
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             dialog.dismiss();
@@ -398,35 +397,29 @@ public class UserFragment extends Fragment {
             // Show loading indicator
             android.widget.Toast.makeText(requireContext(), "Verifying current password...", android.widget.Toast.LENGTH_SHORT).show();
 
+            // Verify current password directly from Firestore (app uses custom auth, not Firebase Auth)
             db.collection(collection).document(userId).get()
                     .addOnSuccessListener(doc -> {
                         if (doc != null && doc.exists()) {
-                            String email = doc.getString(emailField);
-                            if (email != null && !email.isEmpty()) {
-                                // Re-authenticate with Firebase Auth
-                                FirebaseAuth.getInstance().signInWithEmailAndPassword(email, current)
-                                        .addOnSuccessListener(authResult -> {
-                                            // Re-auth successful, now update password
-                                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                                            if (user != null) {
-                                                user.updatePassword(newPass)
-                                                        .addOnSuccessListener(aVoid -> {
-                                                            // Firebase Auth updated, now update Firestore
-                                                            saveField(R.id.business_edit_password_et, newPass);
-                                                            android.widget.Toast.makeText(requireContext(), "Password updated successfully", android.widget.Toast.LENGTH_SHORT).show();
-                                                        })
-                                                        .addOnFailureListener(e -> {
-                                                            android.widget.Toast.makeText(requireContext(), "Failed to update password: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
-                                                        });
-                                            } else {
-                                                android.widget.Toast.makeText(requireContext(), "User not found", android.widget.Toast.LENGTH_SHORT).show();
-                                            }
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            android.widget.Toast.makeText(requireContext(), "Current password is incorrect", android.widget.Toast.LENGTH_SHORT).show();
-                                        });
+                            String storedPassword = doc.getString("password");
+                            // Check hashed password first, then fall back to plain text for backwards compatibility
+                            boolean passwordMatches = storedPassword != null &&
+                                (PasswordHash.verify(current, storedPassword) || storedPassword.equals(current));
+
+                            if (passwordMatches) {
+                                // Check if new password is same as current (comparing plain text)
+                                if (newPass.equals(current)) {
+                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", android.widget.Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                                // Current password verified - update in Firestore
+                                int passwordFieldId = MainActivity.USER_TYPE_GENERAL.equals(userType)
+                                        ? R.id.general_user_edit_password_et
+                                        : R.id.business_edit_password_et;
+                                saveField(passwordFieldId, newPass);
+                                android.widget.Toast.makeText(requireContext(), "Password updated successfully", android.widget.Toast.LENGTH_SHORT).show();
                             } else {
-                                android.widget.Toast.makeText(requireContext(), "Email not found for this account", android.widget.Toast.LENGTH_SHORT).show();
+                                android.widget.Toast.makeText(requireContext(), "Current password is incorrect", android.widget.Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             android.widget.Toast.makeText(requireContext(), "User document not found", android.widget.Toast.LENGTH_SHORT).show();
@@ -490,7 +483,8 @@ public class UserFragment extends Fragment {
 
     private String getFieldName(int fieldId) {
         if (fieldId == R.id.general_user_edit_username_et || fieldId == R.id.business_user_tv) return "Username";
-        if (fieldId == R.id.general_user_edit_email_et || fieldId == R.id.business_edit_email_et) return "Email";
+        
+        if (fieldId == R.id.business_edit_username_et) return "Username";
         if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
         if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
         if (fieldId == R.id.business_edit_desc_et) return "Business Description";
@@ -1013,31 +1007,37 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                 .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
         String userType = getUserType();
-        if (userId.isEmpty()) return;
+        if (userId.isEmpty()) {
+            Toast.makeText(requireContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
         String collection = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businesses" : "users";
 
         boolean hasValidUpdate = false;
+        String fieldName = getFieldName(fieldId);
         if (MainActivity.USER_TYPE_GENERAL.equals(userType)) {
             if (fieldId == R.id.general_user_edit_username_et) {
                 updates.put("username", newValue);
                 hasValidUpdate = true;
-            } else if (fieldId == R.id.general_user_edit_email_et) {
-                updates.put("email", newValue);
-                hasValidUpdate = true;
             } else if (fieldId == R.id.general_user_bio_et) {
                 updates.put("bio", newValue);
                 hasValidUpdate = true;
+            } else if (fieldId == R.id.general_user_edit_password_et) {
+                if (!newValue.isEmpty()) {
+                    updates.put("password", PasswordHash.hash(newValue));
+                    hasValidUpdate = true;
+                }
             }
         } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
-            if (fieldId == R.id.business_edit_email_et) {
-                updates.put("businessEmail", newValue);
+            if (fieldId == R.id.business_edit_username_et) {
+                updates.put("username", newValue);
                 hasValidUpdate = true;
             } else if (fieldId == R.id.business_edit_password_et) {
                 if (!newValue.isEmpty()) {
-                    updates.put("password", newValue); // In production, hash this before saving
+                    updates.put("password", PasswordHash.hash(newValue));
                     hasValidUpdate = true;
                 }
             } else if (fieldId == R.id.business_edit_desc_et) {
@@ -1054,10 +1054,16 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
         db.collection(collection).document(userId)
                 .update(updates)
                 .addOnSuccessListener(aVoid -> {
-                    android.util.Log.d("UserFragment", "Field " + fieldId + " saved successfully");
+                    android.util.Log.d("UserFragment", fieldName + " saved successfully");
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), fieldName + " updated successfully", Toast.LENGTH_SHORT).show();
+                    });
                 })
                 .addOnFailureListener(e -> {
-                    android.util.Log.e("UserFragment", "Failed to save field " + fieldId + ": " + e.getMessage());
+                    android.util.Log.e("UserFragment", "Failed to save " + fieldName + ": " + e.getMessage());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "Failed to update " + fieldName + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
                 });
     }
 
@@ -1082,7 +1088,6 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
             TextView generalUsernameTv = view.findViewById(R.id.general_user_username);
             TextView generalUserIdTv = view.findViewById(R.id.general_user_id_tv);
             TextInputEditText usernameEt = view.findViewById(R.id.general_user_edit_username_et);
-            TextInputEditText emailEt = view.findViewById(R.id.general_user_edit_email_et);
             TextInputEditText bioEt = view.findViewById(R.id.general_user_bio_et);
 
             FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -1093,7 +1098,6 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                             requireActivity().runOnUiThread(() -> {
                                 String username = doc.getString("username");
                                 String shortUserId = doc.getString("shortUserId");
-                                String email = doc.getString("email");
                                 String bio = doc.getString("bio");
 
                                 // Update header from Firestore
@@ -1105,7 +1109,6 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
 
                                 // Update fields from Firestore
                                 if (usernameEt != null) usernameEt.setText(username != null ? username : "");
-                                if (emailEt != null) emailEt.setText(email != null ? email : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
                             });
                         }
@@ -1115,12 +1118,11 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                         requireActivity().runOnUiThread(() -> {
                             String username = prefs.getString("username", "User");
                             String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
-                            String email = prefs.getString("email", "anonymous@gmail.com");
+
 
                             if (generalUsernameTv != null) generalUsernameTv.setText(username);
                             if (generalUserIdTv != null) generalUserIdTv.setText(shortUserId);
                             if (usernameEt != null) usernameEt.setText(username);
-                            if (emailEt != null) emailEt.setText(email);
                             if (bioEt != null) bioEt.setText("");
                         });
                     });
@@ -1130,7 +1132,7 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
             TextView businessUserIdTv = view.findViewById(R.id.business_user_id_tv);
             TextView businessCategoryTv = view.findViewById(R.id.business_category_tv);
 
-            TextInputEditText emailEt = view.findViewById(R.id.business_edit_email_et);
+            TextInputEditText usernameEt = view.findViewById(R.id.business_edit_username_et);
             TextInputEditText passwordEt = view.findViewById(R.id.business_edit_password_et);
             TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
             TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
@@ -1140,11 +1142,10 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                     .get()
                     .addOnSuccessListener(doc -> {
                         if (doc != null && doc.exists()) {
-                            requireActivity().runOnUiThread(() -> {
+requireActivity().runOnUiThread(() -> {
                                 String username = doc.getString("username");
                                 String shortUserId = doc.getString("shortUserId");
                                 String category = doc.getString("businessType");
-                                String email = doc.getString("businessEmail");
                                 String desc = doc.getString("description");
                                 String bio = doc.getString("bio");
 
@@ -1157,7 +1158,7 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                                 if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
 
                                 // Update fields from Firestore
-                                if (emailEt != null) emailEt.setText(email != null ? email : "");
+                                if (usernameEt != null) usernameEt.setText(username != null ? username : "");
                                 if (descEt != null) descEt.setText(desc != null ? desc : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
                                 if (passwordEt != null) passwordEt.setText("");
@@ -1176,7 +1177,6 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
                             if (businessUserTv != null) businessUserTv.setText(username);
                             if (businessUserIdTv != null) businessUserIdTv.setText(shortUserId);
                             if (businessCategoryTv != null) businessCategoryTv.setText(category);
-                            if (emailEt != null) emailEt.setText(email.isEmpty() ? "Not set" : email);
                             if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
                             if (bioEt != null) bioEt.setText("Not set");
                             if (passwordEt != null) passwordEt.setText("");
