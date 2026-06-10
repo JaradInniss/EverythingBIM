@@ -27,6 +27,8 @@ import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class UserFragment extends Fragment {
@@ -343,6 +345,7 @@ public class UserFragment extends Fragment {
         android.util.Log.d("UserFragment", "Opening password dialog immediately");
         SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
+        String userType = getUserType();
 
         final Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -379,13 +382,59 @@ public class UserFragment extends Fragment {
                 errorTv.setVisibility(View.VISIBLE);
                 return;
             }
-            if (newPass.length() < 6) {
-                errorTv.setText("Password must be at least 6 characters");
+            if (newPass.length() < 8) {
+                errorTv.setText("Password must be at least 8 characters");
                 errorTv.setVisibility(View.VISIBLE);
                 return;
             }
+
+            // Get the email from Firestore to re-authenticate
+            String collection = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businesses" : "users";
+            String emailField = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businessEmail" : "email";
+
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
             dialog.dismiss();
-            saveField(R.id.business_edit_password_et, newPass);
+
+            // Show loading indicator
+            android.widget.Toast.makeText(requireContext(), "Verifying current password...", android.widget.Toast.LENGTH_SHORT).show();
+
+            db.collection(collection).document(userId).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            String email = doc.getString(emailField);
+                            if (email != null && !email.isEmpty()) {
+                                // Re-authenticate with Firebase Auth
+                                FirebaseAuth.getInstance().signInWithEmailAndPassword(email, current)
+                                        .addOnSuccessListener(authResult -> {
+                                            // Re-auth successful, now update password
+                                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                            if (user != null) {
+                                                user.updatePassword(newPass)
+                                                        .addOnSuccessListener(aVoid -> {
+                                                            // Firebase Auth updated, now update Firestore
+                                                            saveField(R.id.business_edit_password_et, newPass);
+                                                            android.widget.Toast.makeText(requireContext(), "Password updated successfully", android.widget.Toast.LENGTH_SHORT).show();
+                                                        })
+                                                        .addOnFailureListener(e -> {
+                                                            android.widget.Toast.makeText(requireContext(), "Failed to update password: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                                                        });
+                                            } else {
+                                                android.widget.Toast.makeText(requireContext(), "User not found", android.widget.Toast.LENGTH_SHORT).show();
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            android.widget.Toast.makeText(requireContext(), "Current password is incorrect", android.widget.Toast.LENGTH_SHORT).show();
+                                        });
+                            } else {
+                                android.widget.Toast.makeText(requireContext(), "Email not found for this account", android.widget.Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            android.widget.Toast.makeText(requireContext(), "User document not found", android.widget.Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        android.widget.Toast.makeText(requireContext(), "Failed to verify: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+                    });
         });
 
         closeBtn.setOnClickListener(v -> dialog.dismiss());
