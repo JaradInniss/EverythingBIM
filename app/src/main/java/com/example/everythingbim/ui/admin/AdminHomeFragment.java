@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.admin;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -26,6 +27,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.ActivityLogger;
+import com.example.everythingbim.ui.home.NotificationsActivity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,11 +53,10 @@ public class AdminHomeFragment extends Fragment {
     private TextView tvRequestVolumeTotal, tvRequestVolumeIncremental;
     private TextView tvNotificationBadge;
 
-    // View references for 4 request type cards
+    // View references for request type cards
     private TextView tvBusinessCount, tvBusinessIncremental;
     private TextView tvInfoCount, tvInfoIncremental;
     private TextView tvLocationCount, tvLocationIncremental;
-    private TextView tvDatasetCount, tvDatasetIncremental;
     private TextView tvReportsCount, tvReportsIncremental;
 
     // View references for recent activity items
@@ -72,9 +73,8 @@ public class AdminHomeFragment extends Fragment {
     // Guard flag to prevent double updateActivityUI() calls during back navigation
     private boolean activityUIAlreadyBound = false;
 
-    // View dot indicators for 4 cards
+    // View dot indicators for request cards
     private View dotBusiness, dotInfo, dotLocation, dotReports;
-    private View dotDataset;
 
     // View dot indicators for recent activity items
     private View dotActivity1, dotActivity2, dotActivity3;
@@ -83,9 +83,10 @@ public class AdminHomeFragment extends Fragment {
     private int unreadLocationCount;
     private int unreadDatasetCount;
     private int unreadReportsCount;
+    private int unreadAdminNotificationCount;
 
     // Collection names
-    private static final String COLLECTION_BUSINESS = "add_business_requests";
+    private static final String COLLECTION_BUSINESS = "businesses";
     private static final String COLLECTION_INFO = "add_information_requests";
     private static final String COLLECTION_LOCATION = "add_location_requests";
     private static final String COLLECTION_DATASET = "dataset_image_submissions";
@@ -150,8 +151,6 @@ public class AdminHomeFragment extends Fragment {
         tvInfoIncremental = view.findViewById(R.id.tv_info_count_incremental);
         tvLocationCount = view.findViewById(R.id.tv_location_count);
         tvLocationIncremental = view.findViewById(R.id.tv_location_count_incremental);
-        tvDatasetCount = view.findViewById(R.id.tv_dataset_count);
-        tvDatasetIncremental = view.findViewById(R.id.tv_dataset_count_incremental);
         tvReportsCount = view.findViewById(R.id.tv_reports_count);
         tvReportsIncremental = view.findViewById(R.id.tv_reports_count_incremental);
 
@@ -179,7 +178,6 @@ public class AdminHomeFragment extends Fragment {
         dotBusiness = view.findViewById(R.id.dot_business);
         dotInfo = view.findViewById(R.id.dot_info);
         dotLocation = view.findViewById(R.id.dot_location);
-        dotDataset = view.findViewById(R.id.dot_dataset);
         dotReports = view.findViewById(R.id.dot_reports);
 
         // Bind recent activity dot indicators
@@ -195,6 +193,7 @@ public class AdminHomeFragment extends Fragment {
 
         // Load data from Firestore
         loadDashboardData();
+        listenForAdminBellNotifications();
 
         // Load recent activities from local store.
         // Called here (not just in loadDashboardData) so that on back-navigation
@@ -223,6 +222,10 @@ public class AdminHomeFragment extends Fragment {
         if (activityListenerRegistration != null) {
             activityListenerRegistration.remove();
             activityListenerRegistration = null;
+        }
+        if (adminNotificationListenerRegistration != null) {
+            adminNotificationListenerRegistration.remove();
+            adminNotificationListenerRegistration = null;
         }
         // Reset guard flag so updateActivityUI runs fresh on next view creation
         activityUIAlreadyBound = false;
@@ -264,8 +267,8 @@ public class AdminHomeFragment extends Fragment {
         View cardBusiness = requireView().findViewById(R.id.card_business);
         View cardInfo = requireView().findViewById(R.id.card_info);
         View cardLocation = requireView().findViewById(R.id.card_location);
-        View cardDataset = requireView().findViewById(R.id.card_dataset);
         View cardReports = requireView().findViewById(R.id.card_reports);
+        View bellButton = requireView().findViewById(R.id.btn_notification);
 
         if (cardBusiness != null) {
             cardBusiness.setOnClickListener(v -> {
@@ -276,7 +279,12 @@ public class AdminHomeFragment extends Fragment {
         if (cardInfo != null) {
             cardInfo.setOnClickListener(v -> {
                 // Don't mark as read here - only when admin clicks "View" on individual requests
-                navigateToRequestSection("info");
+                Fragment fragment = AdminUserFragment.newInstance(AdminUserFragment.TAB_GENERAL);
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.admin_fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
             });
         }
         if (cardLocation != null) {
@@ -285,16 +293,18 @@ public class AdminHomeFragment extends Fragment {
                 navigateToRequestSection("location");
             });
         }
-        if (cardDataset != null) {
-            cardDataset.setOnClickListener(v -> {
-                // Don't mark as read here - only when admin clicks "View" on individual requests
-                navigateToRequestSection("dataset");
-            });
-        }
         if (cardReports != null) {
             cardReports.setOnClickListener(v -> {
                 // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToReportsSection();
+            });
+        }
+
+        if (bellButton != null) {
+            bellButton.setOnClickListener(v -> {
+                Intent intent = new Intent(requireContext(), NotificationsActivity.class);
+                intent.putExtra(NotificationsActivity.EXTRA_NOTIFICATION_MODE, NotificationsActivity.MODE_ADMIN);
+                startActivity(intent);
             });
         }
     }
@@ -374,6 +384,7 @@ public class AdminHomeFragment extends Fragment {
 
     // Listener registration for cleanup
     private com.google.firebase.firestore.ListenerRegistration activityListenerRegistration;
+    private com.google.firebase.firestore.ListenerRegistration adminNotificationListenerRegistration;
 
     /**
      * Listens for new activities in real-time.
@@ -401,6 +412,20 @@ public class AdminHomeFragment extends Fragment {
                             }
                         }
                     }
+                });
+    }
+
+    private void listenForAdminBellNotifications() {
+        if (adminNotificationListenerRegistration != null) {
+            adminNotificationListenerRegistration.remove();
+            adminNotificationListenerRegistration = null;
+        }
+
+        adminNotificationListenerRegistration = db.collection(AdminNotificationHelper.COLLECTION_ADMIN_NOTIFICATIONS)
+                .whereEqualTo("read", false)
+                .addSnapshotListener((value, error) -> {
+                    unreadAdminNotificationCount = (error != null || value == null) ? 0 : value.size();
+                    updateNotificationBadge();
                 });
     }
 
@@ -585,14 +610,14 @@ public class AdminHomeFragment extends Fragment {
                 .addOnSuccessListener(snap -> {
                     int count = countUnreadSince(snap, infoTs, ReadStateManager.KEY_LAST_READ_INFO);
                     unreadInfoCount = count;
-                    updateInfoCount(count, 0);
-                    updateDotVisibility(dotInfo, count > 0);
+                    updateInfoCount(unreadInfoCount + unreadDatasetCount, 0);
+                    updateDotVisibility(dotInfo, (unreadInfoCount + unreadDatasetCount) > 0);
                     updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
                     unreadInfoCount = 0;
-                    updateInfoCount(0, 0);
-                    updateDotVisibility(dotInfo, false);
+                    updateInfoCount(unreadInfoCount + unreadDatasetCount, 0);
+                    updateDotVisibility(dotInfo, (unreadInfoCount + unreadDatasetCount) > 0);
                     updateNotificationBadge();
                 });
 
@@ -618,14 +643,14 @@ public class AdminHomeFragment extends Fragment {
                 .addOnSuccessListener(snap -> {
                     int count = countUnreadSince(snap, datasetTs, ReadStateManager.KEY_LAST_READ_DATASET);
                     unreadDatasetCount = count;
-                    updateDatasetCount(count, 0);
-                    updateDotVisibility(dotDataset, count > 0);
+                    updateInfoCount(unreadInfoCount + unreadDatasetCount, 0);
+                    updateDotVisibility(dotInfo, (unreadInfoCount + unreadDatasetCount) > 0);
                     updateNotificationBadge();
                 })
                 .addOnFailureListener(e -> {
                     unreadDatasetCount = 0;
-                    updateDatasetCount(0, 0);
-                    updateDotVisibility(dotDataset, false);
+                    updateInfoCount(unreadInfoCount + unreadDatasetCount, 0);
+                    updateDotVisibility(dotInfo, (unreadInfoCount + unreadDatasetCount) > 0);
                     updateNotificationBadge();
                 });
 
@@ -691,19 +716,15 @@ public class AdminHomeFragment extends Fragment {
             return;
         }
 
-        int totalUnread = unreadBusinessCount
-                + unreadInfoCount
-                + unreadLocationCount
-                + unreadDatasetCount
-                + unreadReportsCount;
-
-        if (totalUnread <= 0) {
+        if (unreadAdminNotificationCount <= 0) {
             tvNotificationBadge.setVisibility(View.GONE);
             return;
         }
 
         tvNotificationBadge.setVisibility(View.VISIBLE);
-        tvNotificationBadge.setText(totalUnread > 99 ? "99+" : String.valueOf(totalUnread));
+        tvNotificationBadge.setText(unreadAdminNotificationCount > 99
+                ? "99+"
+                : String.valueOf(unreadAdminNotificationCount));
     }
 
     /**
@@ -818,14 +839,6 @@ public class AdminHomeFragment extends Fragment {
         if (tvLocationIncremental != null) {
             String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
             tvLocationIncremental.setText(text);
-        }
-    }
-
-    private void updateDatasetCount(int count, int incremental) {
-        if (tvDatasetCount != null) tvDatasetCount.setText(String.format("%02d", count));
-        if (tvDatasetIncremental != null) {
-            String text = incremental >= 0 ? String.format("+%d", incremental) : String.format("%d", incremental);
-            tvDatasetIncremental.setText(text);
         }
     }
 

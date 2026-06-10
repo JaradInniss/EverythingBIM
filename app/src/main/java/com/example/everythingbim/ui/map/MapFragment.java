@@ -295,9 +295,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         fixLocationButton = null;
         returnButton = null;
         selectedPlace = null;
-
-        placesClient = null;
-
         routeExecutor.shutdownNow();
         super.onDestroyView();
     }
@@ -464,7 +461,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         final LatLng targetCoords = externalFocusLatLng;
         final String targetTitle = externalFocusTitle;
 
-        // Clear class members immediately so this logic doesn't trigger again on the next DB update
         if (focusedSavedLocationId > 0L) {
             return;
         }
@@ -787,10 +783,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (apiKey == null || apiKey.isEmpty()) return;
 
         if (!Places.isInitialized()) {
-            Places.initializeWithNewPlacesApiEnabled(
-                    requireContext().getApplicationContext(),
-                    apiKey
-            );
+            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(),apiKey);
         }
 
         placesClient = Places.createClient(requireContext());
@@ -1454,6 +1447,4 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             enableMyLocation();
         }
     }
-
-
 }

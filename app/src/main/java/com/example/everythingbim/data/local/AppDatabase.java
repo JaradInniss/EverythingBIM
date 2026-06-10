@@ -15,14 +15,14 @@ import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.dao.ReportDao;
 import com.example.everythingbim.data.local.dao.UserDao;
 import com.example.everythingbim.data.local.entities.BusinessUserEntity;
-import com.example.everythingbim.data.local.entities.GeneralUserEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
-import com.example.everythingbim.data.local.entities.ReportEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.example.everythingbim.data.local.entities.GeneralUserEntity;
 import com.example.everythingbim.data.local.entities.LikeEntity;
+import com.example.everythingbim.data.local.entities.ReportEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 
 import java.util.concurrent.ExecutorService;

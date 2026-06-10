@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.ActivityAiidentifierBinding;
+import com.example.everythingbim.ui.admin.AdminNotificationHelper;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
@@ -299,7 +300,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
             return;
         }
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
@@ -361,7 +362,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     @Override
     public void onLocationDetailsRequested(@NonNull NearbySavedLocation location) {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, location.getLocationId());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, location.getLatitude());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, location.getLongitude());
@@ -488,8 +489,22 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
 
         db.collection(COLLECTION_DATASET_SUBMISSIONS)
                 .add(submission)
-                .addOnSuccessListener(documentReference ->
-                        finishDatasetSubmission(true, "Image sent for admin review. Thank you."))
+                .addOnSuccessListener(documentReference -> {
+                    AdminNotificationHelper.createNotification(
+                            db,
+                            AdminNotificationHelper.TYPE_DATASET_SUBMISSION,
+                            "New Dataset Submission",
+                            "A new dataset image submission was received.",
+                            "In Review",
+                            documentReference.getId(),
+                            COLLECTION_DATASET_SUBMISSIONS,
+                            AdminNotificationHelper.TARGET_DATASET_DETAIL,
+                            AdminNotificationHelper.TYPE_DATASET_SUBMISSION,
+                            buildSubmissionTitle(),
+                            auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : ""
+                    );
+                    finishDatasetSubmission(true, "Image sent for admin review. Thank you.");
+                })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Dataset submission save failed", e);
                     finishDatasetSubmission(false, "Could not save the submission. Please try again.");

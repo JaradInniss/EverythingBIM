@@ -28,8 +28,10 @@ public class ViewCompletedAddLocationToAddressFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        db = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
+        if (getContext() != null) {
+            db = FirebaseFirestore.getInstance();
+            auth = FirebaseAuth.getInstance();
+        }
     }
 
     @Nullable
@@ -79,33 +81,68 @@ public class ViewCompletedAddLocationToAddressFragment extends Fragment {
             return;
         }
 
+        java.util.List<com.google.firebase.firestore.DocumentSnapshot> allCompleted = new java.util.ArrayList<>();
+        final boolean[] queriesCompleted = {false, false};
+        final boolean[] hasAnyData = {false};
+
+        // Load regular completed location requests
         db.collection("add_location_requests")
                 .whereEqualTo("userId", userId)
                 .whereIn("status", java.util.Arrays.asList("Completed", "Rejected"))
-                .orderBy("updatedAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot != null && !snapshot.isEmpty()) {
-                        adapter.setRequests(snapshot.getDocuments());
+                        allCompleted.addAll(snapshot.getDocuments());
+                        hasAnyData[0] = true;
                     }
-                    updateEmptyState(snapshot);
+                    queriesCompleted[0] = true;
+                    if (queriesCompleted[0] && queriesCompleted[1]) {
+                        adapter.setRequests(allCompleted);
+                        updateEmptyState(!hasAnyData[0]);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ViewCompletedLocationToAddress", "Failed to load requests", e);
-                    Toast.makeText(getContext(),
-                            "Failed to load requests: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    queriesCompleted[0] = true;
+                    if (queriesCompleted[0] && queriesCompleted[1]) {
+                        adapter.setRequests(allCompleted);
+                        updateEmptyState(!hasAnyData[0]);
+                    }
+                });
+
+        // Also load completed business location requests
+        db.collection("add_business_location_requests")
+                .whereEqualTo("userId", userId)
+                .whereIn("status", java.util.Arrays.asList("Completed", "Rejected"))
+                .get()
+                .addOnSuccessListener(bizSnapshot -> {
+                    if (bizSnapshot != null && !bizSnapshot.isEmpty()) {
+                        allCompleted.addAll(bizSnapshot.getDocuments());
+                        hasAnyData[0] = true;
+                    }
+                    queriesCompleted[1] = true;
+                    if (queriesCompleted[0] && queriesCompleted[1]) {
+                        adapter.setRequests(allCompleted);
+                        updateEmptyState(!hasAnyData[0]);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewCompletedLocationToAddress", "Failed to load business requests", e);
+                    queriesCompleted[1] = true;
+                    if (queriesCompleted[0] && queriesCompleted[1]) {
+                        adapter.setRequests(allCompleted);
+                        updateEmptyState(!hasAnyData[0]);
+                    }
                 });
     }
 
-    private void updateEmptyState(com.google.firebase.firestore.QuerySnapshot snapshot) {
+    private void updateEmptyState(boolean isEmpty) {
         View view = getView();
         if (view == null) return;
 
         TextView emptyTv = view.findViewById(R.id.empty_state_tv);
         RecyclerView recyclerView = view.findViewById(R.id.viewlocationtoaddreq_recycler);
 
-        boolean isEmpty = snapshot == null || snapshot.isEmpty();
         if (emptyTv != null) {
             emptyTv.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         }

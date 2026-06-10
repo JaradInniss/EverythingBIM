@@ -12,6 +12,7 @@ import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -59,9 +60,13 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
 
+    private static final String TAG = "BusinessRegistration";
     private BusinessRegViewModel viewModel;
     private ActivityBusinessRegistrationBinding binding;
     private BusinessRegisForm1Binding form1Binding;
@@ -83,6 +88,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
     // Form fields (match IDs from layouts)
     private TextInputEditText businessUsername, businessEmailEt, businessNameEt, contactNumberEt, businessAddressEt, businessDescriptionEt, passwordEt, rePasswordEt;
+    private Spinner businessTypeSpinner;
 
     // Adapters
     private FileAdapter imageAdapter, fileAdapter;
@@ -177,6 +183,10 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         contactNumberEt = form3Binding.registerContactNumberEt;
         businessAddressEt = form3Binding.registerBusinessAddressEt;
         businessDescriptionEt = form3Binding.registerBusinessDescriptionEt;
+        businessTypeSpinner = form3Binding.businessTypeSpinner;
+
+        // Setup business type dropdown
+        setupBusinessTypeDropdown();
 
         // RecyclerViews
         imgIconContainer = form4Binding.imgIconContainer;
@@ -201,6 +211,63 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         // Auto‑advance and backspace handling
         setDigitAutoAdvance();
+    }
+
+    private void setupBusinessTypeDropdown() {
+        if (businessTypeSpinner == null) {
+            Log.e(TAG, "setupBusinessTypeDropdown: businessTypeSpinner is null!");
+            return;
+        }
+        final String[] BUSINESS_TYPES = {
+                "Select Business Type",
+                "Restaurant",
+                "Retail",
+                "Technology",
+                "Healthcare",
+                "Construction",
+                "Finance"
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                this, android.R.layout.simple_spinner_item, BUSINESS_TYPES) {
+
+            @Override public boolean isEnabled(int position) { return position != 0; }
+
+            @Override
+            public View getView(int position, @Nullable View convertView,
+                                @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                // Make the spinner display text black
+                ((android.widget.TextView) view).setTextColor(android.graphics.Color.BLACK);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView,
+                                        @NonNull ViewGroup parent) {
+                View v = super.getDropDownView(position, convertView, parent);
+                ((android.widget.TextView) v).setTextColor(android.graphics.Color.BLACK);
+                return v;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        businessTypeSpinner.setAdapter(adapter);
+
+        // Set listener to update ViewModel when selection changes
+        businessTypeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position != 0) { // Skip placeholder
+                    String selected = BUSINESS_TYPES[position];
+                    viewModel.getBusinessType().setValue(selected);
+                    Log.d(TAG, "Business type selected: " + selected);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                viewModel.getBusinessType().setValue("");
+            }
+        });
     }
 
     private void setDigitAutoAdvance() {
@@ -304,6 +371,14 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             } else {
                 progressBar.setVisibility(View.GONE);
                 submitBttn.setEnabled(true);
+            }
+        });
+
+        // Observe error messages
+        viewModel.getErrorMessage().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Registration error: " + error);
             }
         });
 
@@ -604,8 +679,13 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             }
 
             // Pass values to ViewModel
+            viewModel.getUsername().setValue(businessUsername.getText().toString().trim());
             viewModel.getCompanyName().setValue(businessNameEt.getText().toString().trim());
             viewModel.getBusinessEmail().setValue(email);
+            viewModel.getBusinessType().setValue(
+                    businessTypeSpinner != null && businessTypeSpinner.getSelectedItem() != null
+                    ? businessTypeSpinner.getSelectedItem().toString().trim() : ""
+            );
             viewModel.getPhone().setValue(contactNumberEt.getText().toString().trim());
             viewModel.getAddress().setValue(businessAddressEt.getText().toString().trim());
             viewModel.getDescription().setValue(businessDescriptionEt.getText().toString().trim());

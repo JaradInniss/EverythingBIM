@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.home.UserNotificationHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -73,6 +74,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
     private String cachedResolvedAt = "";
     private String cachedResolvedBy = "";
     private String cachedRejectionReason = "";
+    private String cachedRecipientUserId = "";
     private boolean dataFromBundle = false;
 
     // ─── Views ───────────────────────────────
@@ -231,6 +233,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
         db.collection("add_information_requests").document(docId)
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
                     if (!doc.exists()) {
                         Log.e(TAG, "Document does not exist: " + docId);
                         return;
@@ -265,6 +268,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                     submittedByTv.setText("Submitted By: User "
                             + (sub != null ? sub : ""));
                     cachedSubmittedBy = sub != null ? sub : "";
+                    cachedRecipientUserId = nvl(doc.getString("userId"));
 
                     String locationName = nvl(doc.getString("locationName"));
                     locationNameTv.setText(locationName);
@@ -309,9 +313,9 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                     doc.getReference().update("read", true);
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
                     Log.e(TAG, "Failed to load document: " + e.getMessage(), e);
-                    Toast.makeText(getContext(),
-                            "Failed to load request details", Toast.LENGTH_SHORT).show();
+                    showToast("Failed to load request details");
                 });
     }
 
@@ -361,13 +365,29 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         "resolvedAt", Timestamp.now(),
                         "resolvedBy", getAdminId())
                 .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
                     // Log approval activity
                     activityLogger.logApproval(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
-                    Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_INFO_REQUEST,
+                            "Information Request Update",
+                            "Your information request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted.",
+                            "Accepted",
+                            docId,
+                            "add_information_requests",
+                            UserNotificationHelper.TARGET_COMPLETED_INFO,
+                            UserNotificationHelper.TYPE_INFO_REQUEST,
+                            firstNonEmpty(cachedLocationName, "Information Request")
+                    );
+                    showToast("Request Accepted");
                     applyAcceptedState(todayStr(), "Administrator");
                 })
-                .addOnFailureListener(e -> Toast.makeText(getContext(),
-                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Failed: " + e.getMessage());
+                });
     }
 
     private void confirmReject(String reason) {
@@ -378,13 +398,29 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         "resolvedBy", getAdminId(),
                         "rejectionReason", reason)
                 .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
                     // Log rejection activity
                     activityLogger.logRejection(ActivityLogger.TYPE_INFO, cachedLocationName, docId);
-                    Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_INFO_REQUEST,
+                            "Information Request Update",
+                            "Your information request for " + firstNonEmpty(cachedLocationName, "this location") + " was rejected.",
+                            "Rejected",
+                            docId,
+                            "add_information_requests",
+                            UserNotificationHelper.TARGET_COMPLETED_INFO,
+                            UserNotificationHelper.TYPE_INFO_REQUEST,
+                            firstNonEmpty(cachedLocationName, "Information Request")
+                    );
+                    showToast("Request Rejected");
                     applyRejectedState(todayStr(), "Administrator", reason);
                 })
-                .addOnFailureListener(e -> Toast.makeText(getContext(),
-                        "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    showToast("Failed: " + e.getMessage());
+                });
     }
 
     // ────────────────────────────────────────────────────────
@@ -430,6 +466,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
             storage.getReferenceFromUrl(url)
                     .getBytes(2 * 1024 * 1024)
                     .addOnSuccessListener(bytes -> {
+                        if (!isUiActive()) return;
                         Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                         ImageView iv = new ImageView(requireContext());
                         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(100, 100);
@@ -439,10 +476,29 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                         iv.setImageBitmap(bmp);
                         imagesContainer.addView(iv);
                     });
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load image: " + e.getMessage());
+        }
+    }
+
+    private boolean isUiActive() {
+        return isAdded() && getView() != null;
+    }
+
+    private void showToast(String message) {
+        if (!isAdded()) return;
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
+    private String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
     private String fmt(Timestamp ts) { return ts != null
             ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
             : todayStr(); }

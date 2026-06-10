@@ -52,6 +52,22 @@
                 android:textSize="13sp"
                 android:fontFamily="@font/roboto_medium" />
 
+            <TextView
+                android:id="@+id/user_req_type_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_submission_badge_info"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:text="Info Request"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:fontFamily="@font/roboto_medium"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <LinearLayout
