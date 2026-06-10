@@ -59,7 +59,7 @@ public class AdminUserRequestsFragment extends Fragment {
 
     // ─── Request type ─────────────────────────
     private String requestType = "info"; // "info", "location", "dataset", or "submissions"
-    private String requestType = "info"; // "info", "location", "dataset", "business_location"
+    //private String requestType = "info"; // "info", "location", "dataset", "business_location"
 
     // ────────────────────────────────────────────────────────
     // FACTORY
