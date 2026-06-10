@@ -574,7 +574,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             return;
         }
 
-        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP, false)) {
+        if (intent != null && intent.getBooleanExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, false)) {
             focusedSavedLocationId = intent.getLongExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, -1L);
 
             double lat = intent.getDoubleExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
