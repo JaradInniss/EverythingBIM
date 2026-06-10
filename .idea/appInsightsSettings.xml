@@ -7,14 +7,6 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
-              <option name="connection">
-                <ConnectionSetting>
-                  <option name="appId" value="com.example.everythingbim" />
-                  <option name="mobileSdkAppId" value="1:767965773842:android:b77723769fbb63453c58cb" />
-                  <option name="projectId" value="everything-bim" />
-                  <option name="projectNumber" value="767965773842" />
-                </ConnectionSetting>
-              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />

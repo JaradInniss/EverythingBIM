@@ -34,4 +34,52 @@ public class ReviewEntity {
         this.rating = rating;
         this.createdAt = createdAt;
     }
+
+    public long getReviewId() {
+        return reviewId;
+    }
+
+    public void setReviewId(long reviewId) {
+        this.reviewId = reviewId;
+    }
+
+    public long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(long locationId) {
+        this.locationId = locationId;
+    }
+
+    public long getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(long authorId) {
+        this.authorId = authorId;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+    public float getRating() {
+        return rating;
+    }
+
+    public void setRating(float rating) {
+        this.rating = rating;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+    }
 }

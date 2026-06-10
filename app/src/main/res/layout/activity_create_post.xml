@@ -15,26 +15,62 @@
         android:orientation="vertical"
         android:layout_margin="20dp">
 
-        <LinearLayout
-            android:id="@+id/return_bttn"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="26dp"
-                android:src="@drawable/ic_caret_left"
-                app:tint="@color/white"/>
-
-            <TextView
+            <LinearLayout
+                android:id="@+id/return_bttn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:text="Posts"
-                style="@style/subheading_txt_style"/>
+                android:gravity="center_vertical">
 
-        </LinearLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_caret_left"
+                    app:tint="@color/white"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:text="Posts"
+                    style="@style/subheading_txt_style"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/clear_post_content_bttn"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_centerInParent="true"
+                android:background="@drawable/bg_rectangle_amaranth"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/ic_trash"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_medium"
+                    android:text="Clear"
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </RelativeLayout>
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -51,7 +87,7 @@
 
             <!-- Submit Button -->
             <LinearLayout
-                android:id="@+id/prev_bttn2"
+                android:id="@+id/submit_post_bttn"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
@@ -63,6 +99,7 @@
                 android:paddingRight="10dp">
 
                 <ImageView
+                    android:id="@+id/submit_post_bttn_icon"
                     android:layout_width="15dp"
                     android:layout_height="15dp"
                     android:layout_marginRight="8dp"
@@ -70,6 +107,7 @@
                     app:tint="@color/white" />
 
                 <TextView
+                    android:id="@+id/submit_post_bttn_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/roboto_medium"
@@ -80,6 +118,23 @@
 
         </RelativeLayout>
 
+        <!-- ===== FORM FIELDS (scrollable) =====
+             Wrapping the fields in a ScrollView lets the user scroll down to
+             reach the caption and tag-user fields when the soft keyboard is
+             shown (with windowSoftInputMode=adjustResize the layout shrinks
+             and the bottom fields would otherwise be hidden). -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:isScrollContainer="true"
+            android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
         <!-- Searchbar and dropdown-->
         <LinearLayout
@@ -108,11 +163,19 @@
                     android:layout_weight="1"
                     android:background="@null"
                     android:fontFamily="@font/roboto_medium"
-                    android:hint="Location"
+                    android:hint="Search for Location"
                     android:inputType="text"
                     android:singleLine="true"
                     android:textSize="13sp"
                     android:textColor="@color/black"/>
+
+                <ProgressBar
+                    android:id="@+id/createpost_search_progress"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="5dp"
+                    android:visibility="gone"/>
 
                 <!-- Search Button -->
                 <ImageView
@@ -124,11 +187,42 @@
                     app:tint="@color/black" />
             </LinearLayout>
 
-            <ListView
-                android:id="@+id/search_results_list"
+            <androidx.cardview.widget.CardView
+                android:id="@+id/createpost_search_results_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"/>
+                android:layout_marginTop="2dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Search Results Header -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="5dp"
+                        android:paddingHorizontal="10dp"
+                        android:text="Search Results"
+                        android:textSize="13sp"
+                        style="@style/black_medium_txt_style"/>
+
+                    <ListView
+                        android:id="@+id/posts_search_results_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:divider="@color/dim_grey"
+                        android:dividerHeight="0.5dp"
+                        android:layout_marginVertical="4dp"
+                        style="@style/white_small_txt_style"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
 
@@ -147,8 +241,9 @@
                 android:text="Image:"
                 style="@style/subheading_txt_style"/>
 
-            <!-- Upload Options -->
+            <!-- Upload Options (visible until an image is selected) -->
             <LinearLayout
+                android:id="@+id/upload_options_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingVertical="10dp"
@@ -165,14 +260,14 @@
                     android:layout_marginRight="2dp"
                     android:gravity="center_horizontal"
                     android:padding="10dp"
-                    android:background="@drawable/bg_rectangle_prussian_blue">
+                    android:background="@drawable/bg_rectangle_gold">
 
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:layout_marginRight="8dp"
                         android:src="@drawable/ic_camera"
-                        app:tint="@color/white"/>
+                        app:tint="@color/space_indigo"/>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -184,7 +279,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Take Photo"
-                            style="@style/white_small_txt_style"
+                            style="@style/black_small_txt_style"
+                            android:textColor="@color/space_indigo"
                             android:textAlignment="center"/>
 
                         <TextView
@@ -193,7 +289,7 @@
                             android:layout_marginTop="5dp"
                             android:fontFamily="@font/roboto_light"
                             android:text="Use device camera"
-                            android:textColor="@color/white"
+                            android:textColor="@color/space_indigo"
                             android:textSize="10sp"
                             android:textAlignment="center"/>
 
@@ -212,7 +308,7 @@
                     android:layout_marginLeft="2dp"
                     android:gravity="center_horizontal"
                     android:padding="10dp"
-                    android:background="@drawable/bg_rectangle_prussian_blue">
+                    android:background="@drawable/bg_rectangle_blue">
 
                     <ImageView
                         android:layout_width="40dp"
@@ -249,30 +345,35 @@
 
             </LinearLayout>
 
+            <!-- Uploaded Image Display (visible after an image is selected) -->
             <androidx.cardview.widget.CardView
-                android:id="@+id/selected_image_card"
+                android:id="@+id/image_container"
                 android:layout_width="match_parent"
-                android:layout_height="220dp"
-                android:layout_marginTop="8dp"
-                android:visibility="gone"
-                app:cardCornerRadius="12dp">
+                android:layout_height="200dp"
+                app:cardCornerRadius="10dp"
+                android:elevation="10dp"
+                android:visibility="gone">
 
+                <!-- Image Upload Method Icon -->
                 <ImageView
-                    android:id="@+id/selected_image_preview"
+                    android:id="@+id/image_upload_method_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="18dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginLeft="5dp"
+                    android:src="@drawable/ic_camera"
+                    app:tint="@color/space_indigo"
+                    android:elevation="10dp"/>
+
+                <!-- Uploaded Image -->
+                <ImageView
+                    android:id="@+id/createpost_uploaded_image"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/butterfly" />
+                    android:scaleType="centerCrop"/>
 
             </androidx.cardview.widget.CardView>
 
-            <TextView
-                android:id="@+id/selected_image_hint"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Choose an image from the camera or gallery."
-                style="@style/white_small_txt_style" />
         </LinearLayout>
 
 
@@ -346,35 +447,67 @@
                     android:singleLine="true"/>
             </LinearLayout>
 
+            <!-- Search Results View -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/createposts_tag_user_results_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/white">
 
-            <LinearLayout
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Search Results Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="5dp"
+                        android:paddingHorizontal="5dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:text="Users"
+                            android:textSize="13sp"
+                            style="@style/black_medium_txt_style"/>
+
+                    </LinearLayout>
+
+                    <ListView
+                        android:id="@+id/createposts_tag_user_results_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:divider="@color/dim_grey"
+                        android:dividerHeight="0.5dp"
+                        android:layout_marginVertical="4dp"
+                        tools:listitem="@layout/item_user_search_result"
+                        style="@style/black_small_txt_style"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/tags_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="5dp"
-                android:gravity="center_vertical">
+                tools:listitem="@layout/item_user_tag"/>
 
-                <ImageView
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:src="@drawable/ic_plus"
-                    app:tint="@color/black" />
-
-                <HorizontalScrollView
-                    android:layout_width="0dp"
-                    android:layout_height="30dp"
-                    android:layout_weight="1"
-                    android:scrollbars="none">
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/tags_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="4dp"/>
-                </HorizontalScrollView>
-            </LinearLayout>
         </LinearLayout>
+
+        </LinearLayout>
+
+        </ScrollView>
+        <!-- ===== END FORM FIELDS ===== -->
 
     </LinearLayout>
 

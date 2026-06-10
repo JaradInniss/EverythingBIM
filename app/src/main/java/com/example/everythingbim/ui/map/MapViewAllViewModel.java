@@ -42,12 +42,14 @@ public class MapViewAllViewModel extends ViewModel {
         List<PostEntity> placeholderList = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             placeholderList.add(new PostEntity(
-                    locationId, 
-                    101, 
+                    locationId,
+                    "Sample Location",
+                    101L,
                     "TravelAddict",
-                    "Sample post caption for post #" + (i + 1), 
-                    "https://picsum.photos/seed/" + (locationId + i) + "/400", 
-                    System.currentTimeMillis()
+                    "Sample post caption for post #" + (i + 1),
+                    "https://picsum.photos/seed/" + (locationId + i) + "/400",
+                    System.currentTimeMillis(),
+                    new ArrayList<>()
             ));
         }
         posts.setValue(placeholderList);

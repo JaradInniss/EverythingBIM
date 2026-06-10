@@ -640,19 +640,14 @@
                                 android:textSize="14sp"
                                 android:layout_marginBottom="8dp" />
 
-                            <GridLayout
+                            <androidx.recyclerview.widget.RecyclerView
                                 android:id="@+id/general_user_posts_grid"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:columnCount="3"
-                                android:layout_marginBottom="8dp">
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                            </GridLayout>
+                                android:layout_marginBottom="8dp"
+                                android:clipToPadding="false"
+                                android:padding="2dp"
+                                tools:listitem="@layout/item_post" />
 
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
@@ -1368,19 +1363,14 @@
                                 android:textSize="14sp"
                                 android:layout_marginBottom="8dp" />
 
-                            <GridLayout
+                            <androidx.recyclerview.widget.RecyclerView
                                 android:id="@+id/business_user_posts_grid"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:columnCount="3"
-                                android:layout_marginBottom="8dp">
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                                <View android:layout_width="0dp" android:layout_height="100dp" android:layout_columnWeight="1" android:background="@color/light_grey" android:layout_margin="1dp" />
-                            </GridLayout>
+                                android:layout_marginBottom="8dp"
+                                android:clipToPadding="false"
+                                android:padding="2dp"
+                                tools:listitem="@layout/item_post" />
 
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>

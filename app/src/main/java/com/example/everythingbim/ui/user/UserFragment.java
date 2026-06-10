@@ -12,15 +12,24 @@ import android.widget.ImageButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
+import com.example.everythingbim.data.repository.PostRepository;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.posts.PostAdapter;
+import com.example.everythingbim.ui.posts.ViewUserProfileActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.ArrayList;
 
 public class UserFragment extends Fragment {
 
@@ -43,6 +52,13 @@ public class UserFragment extends Fragment {
     private View businessIndSubmissions;
     private View businessIndMyProfile;
     private View businessIndSettings;
+
+    private RecyclerView generalUserPostsGrid;
+    private RecyclerView businessUserPostsGrid;
+    private PostAdapter generalPostsAdapter;
+    private PostAdapter businessPostsAdapter;
+
+    private PostRepository postRepository;
 
     @Nullable
     @Override
@@ -71,6 +87,12 @@ public class UserFragment extends Fragment {
         businessIndSubmissions = view.findViewById(R.id.business_tab_submissions_indicator);
         businessIndMyProfile = view.findViewById(R.id.business_tab_my_profile_indicator);
         businessIndSettings = view.findViewById(R.id.business_tab_settings_indicator);
+
+        // Profile posts grids (now RecyclerViews)
+        generalUserPostsGrid = view.findViewById(R.id.general_user_posts_grid);
+        businessUserPostsGrid = view.findViewById(R.id.business_user_posts_grid);
+
+        setupPostsGrids();
 
         switchUserLayout(getUserType());
         setupGeneralUserTabs(view);
@@ -115,7 +137,6 @@ public class UserFragment extends Fragment {
 
         view.findViewById(R.id.addloc_view_btn).setOnClickListener(v ->
                 navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
-
         view.findViewById(R.id.addloc_view_btn_2).setOnClickListener(v ->
                 navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
 
@@ -134,6 +155,65 @@ public class UserFragment extends Fragment {
         setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
 
         return view;
+    }
+
+    /**
+     * Initializes the two profile-post RecyclerViews. Tapping a thumbnail in
+     * either grid opens the post detail screen for that post.
+     */
+    private void setupPostsGrids() {
+        generalPostsAdapter = new PostAdapter();
+        businessPostsAdapter = new PostAdapter();
+
+        generalUserPostsGrid.setLayoutManager(new GridLayoutManager(requireContext(), 3));
+        businessUserPostsGrid.setLayoutManager(new GridLayoutManager(requireContext(), 3));
+        generalUserPostsGrid.setAdapter(generalPostsAdapter);
+        businessUserPostsGrid.setAdapter(businessPostsAdapter);
+
+        // Reuse the same click handler for both grids.
+        PostAdapter.OnPostClickListener openPost = post -> {
+            Intent intent = new Intent(requireContext(), ViewUserProfileActivity.class);
+            intent.putExtra("USER_ID", post.authorId);
+            startActivity(intent);
+        };
+        generalPostsAdapter.setOnPostClickListener(openPost);
+        businessPostsAdapter.setOnPostClickListener(openPost);
+
+        // requireContext() returns a Context which is what PostRepository needs.
+        postRepository = new PostRepository(requireContext());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh the grids every time the user returns to the tab so freshly
+        // created posts show up without requiring a full app restart.
+        loadCurrentUserPosts();
+    }
+
+    /**
+     * Pulls the current Firebase user's posts from Firestore and pushes them
+     * into whichever grid is currently visible (general vs. business).
+     * Guests fall through silently - the guest layout has no grids.
+     */
+    private void loadCurrentUserPosts() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            // Not signed in (guest). Clear any stale posts and bail.
+            generalPostsAdapter.setPosts(new ArrayList<>());
+            businessPostsAdapter.setPosts(new ArrayList<>());
+            return;
+        }
+
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        postRepository.getPostsByAuthorUid(uid).observe(getViewLifecycleOwner(), posts -> {
+            if (posts == null) return;
+            String userType = getUserType();
+            if (MainActivity.USER_TYPE_GENERAL.equals(userType)) {
+                generalPostsAdapter.setPosts(posts);
+            } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
+                businessPostsAdapter.setPosts(posts);
+            }
+        });
     }
 
     private void performLogout() {
@@ -217,7 +297,6 @@ public class UserFragment extends Fragment {
     }
 
     private void toggleFieldEdit(TextInputEditText field, ImageButton button) {
-        // TextInputLayout is the direct parent of TextInputEditText
         ViewParent parent = field.getParent();
         TextInputLayout fieldLayout = (parent instanceof TextInputLayout) ? (TextInputLayout) parent : null;
         if (!field.isFocusable()) {
@@ -225,12 +304,10 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
-            // Blue background, white icon
             button.setBackgroundResource(R.drawable.bg_rectangle_blue);
             button.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
             ));
-            // Blue outline on field
             if (fieldLayout != null) {
                 fieldLayout.setBoxStrokeColor(
                         androidx.core.content.ContextCompat.getColor(requireContext(), R.color.persian_blue)
@@ -240,12 +317,10 @@ public class UserFragment extends Fragment {
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
-            // Grey background, black icon
             button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
             button.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
             ));
-            // Reset field outline to grey
             if (fieldLayout != null) {
                 fieldLayout.setBoxStrokeColor(
                         androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)

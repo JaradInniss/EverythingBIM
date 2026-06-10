@@ -13,18 +13,23 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
-import com.example.everythingbim.data.repository.PostRepository;
 
 
-// Fragment for User Posts Info in TabLayout in ViewUserProfile
-
+/**
+ * Fragment for User Posts Info in TabLayout in ViewUserProfile
+ *
+ * Displays the posts authored by a given local user id. Backed by the
+ * {@link ViewUserProfileViewModel}, which queries Room for posts with the
+ * matching {@code authorId}. Posts created via {@code CreatePostViewModel}
+ * are written to Room (in addition to Firestore) so they show up here
+ * immediately after being shared.
+ */
 public class UserPostsFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
     private long userId;
     private PostAdapter adapter;
     private ViewUserProfileViewModel viewModel;
-
 
     public static UserPostsFragment newInstance(long userId) {
         UserPostsFragment fragment = new UserPostsFragment();
@@ -51,7 +56,7 @@ public class UserPostsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
         RecyclerView recyclerView = view.findViewById(R.id.user_posts_rv);
         adapter = new PostAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
