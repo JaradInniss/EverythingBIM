@@ -3,13 +3,16 @@ package com.example.everythingbim.ui.map;
 import android.app.Application;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.everythingbim.data.local.AppDatabase;
 import com.example.everythingbim.data.local.dao.MarkerDao;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
+import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.ui.login.LoginViewModel;
 import com.example.everythingbim.ui.utils.NavigationCommand;
@@ -19,19 +22,25 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapViewModel extends AndroidViewModel {
 
     private final MarkerDao markerDao;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final LiveData<List<MarkerEntity>> allMarkers;
-    private final LoginViewModel.SingleLiveEvent<NavigationCommand> navigationEvent = new LoginViewModel.SingleLiveEvent<>();
+    private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
 
     // Tracks if a location is currently selected to manage UI visibility and map padding
     private final MutableLiveData<MapDetailsState> detailsUIState = new MutableLiveData<>(MapDetailsState.HIDDEN);
     
     // Tracks the specific location to focus on when selected
     private final MutableLiveData<LatLng> focusedLocation = new MutableLiveData<>();
+    private final MutableLiveData<Integer> rating = new MutableLiveData<>();
+    private final MutableLiveData<String> reviewBody = new MutableLiveData<>();
+    private final MediatorLiveData<Boolean> isReviewValid = new MediatorLiveData<>();
+    private final SingleLiveEvent<Boolean> reviewSubmited = new SingleLiveEvent<>();
+    private final LiveData<Long> authorId = new MutableLiveData<>();
 
     // Metadata for navigation
     private long selectedLocationId = -1;
@@ -51,6 +60,12 @@ public class MapViewModel extends AndroidViewModel {
         super(application);
         markerDao = AppDatabase.getInstance(application).markerDao();
         allMarkers = markerDao.getAllMarkers();
+
+        isReviewValid.addSource(reviewBody, body -> isReviewValid());
+        isReviewValid.addSource(rating, rating -> isReviewValid());
+
+        rating.setValue(0);
+        reviewBody.setValue("");
     }
 
     public LiveData<List<MarkerEntity>> getAllMarkers() {
@@ -78,6 +93,16 @@ public class MapViewModel extends AndroidViewModel {
         this.selectedLocationName = name;
     }
 
+    public void setRating(int newRating) { rating.setValue(newRating); }
+
+    public LiveData<Integer> getRating() { return rating; }
+
+    public LiveData<String> getReviewBody() { return reviewBody; }
+
+    public void setReviewBody(String newReview) { reviewBody.setValue(newReview); }
+
+    public LiveData<Boolean> getReviewSubmited() { return reviewSubmited; }
+
     public void insertMarker(MarkerEntity marker) {
         executorService.execute(() -> markerDao.insert(marker));
     }
@@ -93,7 +118,7 @@ public class MapViewModel extends AndroidViewModel {
         return BARBADOS_BOUNDS.getCenter();
     }
 
-    public LoginViewModel.SingleLiveEvent<NavigationCommand> getNavigationEvent() {
+    public SingleLiveEvent<NavigationCommand> getNavigationEvent() {
         return navigationEvent;
     }
 
@@ -105,4 +130,48 @@ public class MapViewModel extends AndroidViewModel {
 
         navigationEvent.setValue(new NavigationCommand(MapViewAllActivity.class, extras));
     }
+
+    public void isReviewValid() {
+        String currBody = reviewBody.getValue();
+        Integer currRating = rating.getValue();
+
+        boolean isValid = (currBody != null && !currBody.isEmpty()) && (currRating != null && currRating > 0);
+        isReviewValid.setValue(isValid);
+    }
+
+    public LiveData<Boolean> getIsReviewValid() {
+        return isReviewValid;
+    }
+
+    public void resetReviewForm() {
+        reviewBody.setValue("");
+        rating.setValue(0);
+        reviewSubmited.setValue(false);
+    }
+
+    public void submitReview() {
+        // Handle submit review here
+    }
+
+
+    public static class SingleLiveEvent<T> extends MutableLiveData<T> {
+        private final AtomicBoolean pending = new AtomicBoolean(false);
+
+        @Override
+        public void setValue(T value) {
+            pending.set(true);
+            super.setValue(value);
+        }
+
+        @Override
+        public void observe(@NonNull androidx.lifecycle.LifecycleOwner owner,
+                            @NonNull androidx.lifecycle.Observer<? super T> observer) {
+            super.observe(owner, t -> {
+                if (pending.compareAndSet(true, false)) {
+                    observer.onChanged(t);
+                }
+            });
+        }
+    }
+
 }

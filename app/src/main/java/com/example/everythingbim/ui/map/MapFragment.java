@@ -10,6 +10,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +20,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -42,6 +45,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.data.models.MarkerDetails;
+import com.example.everythingbim.databinding.FragmentMapBinding;
 import com.example.everythingbim.ui.home.NearbySavedLocation;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -116,23 +120,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationClient;
+    private FragmentMapBinding binding;
     private MapViewModel mapViewModel;
     private PlacesClient placesClient;
     private AutocompleteSessionToken autocompleteSessionToken;
 
-    private EditText searchInput;
-    private EditText overviewInput;
+    // UI Elements
+    private EditText searchInput, overviewInput, newReviewInput;
     private ProgressBar searchProgress;
-    private View searchResultsContainer, detailsContainer;
+    private View searchResultsContainer, detailsContainer, zoomInButton, zoomOutButton, fixLocationButton, returnButton;
     private ListView searchResultsList;
-    private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn;
+    private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn, writeReviewBttn, writeReviewContainer, submitReviewBttn, directionsButton;
     private HorizontalScrollView imagesField, reviewsField, postsField;
     private RelativeLayout detailsHeader;
     private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
-    private ArrayAdapter<String> searchResultsAdapter;
+    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5;
 
-    // Custom UI Buttons
-    private View zoomInButton, zoomOutButton, fixLocationButton, returnButton;
+    private ArrayAdapter<String> searchResultsAdapter;
 
     private Marker searchMarker;
     private Place selectedPlace;
@@ -162,9 +166,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_map, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        binding = FragmentMapBinding.inflate(inflater, container, false);
+        View view = binding.getRoot();
 
         bindViews(view);
         setupSearchUi();
@@ -188,41 +192,84 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     }
 
     private void bindViews(View root) {
-        searchInput = root.findViewById(R.id.map_search_input);
-        overviewInput = root.findViewById(R.id.map_overview_input);
-        searchProgress = root.findViewById(R.id.map_search_progress);
-        searchResultsContainer = root.findViewById(R.id.map_search_results_card);
-        searchResultsList = root.findViewById(R.id.map_search_results_list);
-        detailsContainer = root.findViewById(R.id.map_location_details_container);
-        detailsHeader = root.findViewById(R.id.details_peek_header);
-        barbadosText = root.findViewById(R.id.map_barbados_tv);
-        placeName = root.findViewById(R.id.map_location_name);
-        placeAddress = root.findViewById(R.id.map_location_address);
-        placeRating = root.findViewById(R.id.location_overall_rating_tv);
-        placeMeta = root.findViewById(R.id.map_place_meta);
-        placeContact = root.findViewById(R.id.map_place_contact);
-        noImagesText = root.findViewById(R.id.no_images_tv);
-        noPostsText = root.findViewById(R.id.no_posts_tv);
-        noReviewsText = root.findViewById(R.id.no_reviews_tv);
-        imagesCount = root.findViewById(R.id.location_images_count_tv);
-        reviewsCount = root.findViewById(R.id.location_reviews_count_tv);
-        postsCount = root.findViewById(R.id.location_posts_count_tv);
-        imagesField = root.findViewById(R.id.location_images_field);
-        reviewsField = root.findViewById(R.id.location_reviews_field);
-        postsField = root.findViewById(R.id.location_posts_field);
-        zoomInButton = root.findViewById(R.id.map_zoom_in_bttn);
-        zoomOutButton = root.findViewById(R.id.map_zoom_out_bttn);
-        fixLocationButton = root.findViewById(R.id.map_fix_location_bttn);
-        returnButton = root.findViewById(R.id.map_return_bttn);
-        returnButton.setOnClickListener(this);
-        viewAllImagesBttn = root.findViewById(R.id.location_images_view_all_bttn);
+        // Linear Layouts
+        writeReviewBttn = binding.writeReviewBttn;
+        writeReviewBttn.setOnClickListener(this);
+        submitReviewBttn = binding.submitReviewBttn;
+        submitReviewBttn.setOnClickListener(this);
+        viewAllImagesBttn = binding.locationImagesViewAllBttn;
         viewAllImagesBttn.setOnClickListener(this);
-        viewAllReviewsBttn = root.findViewById(R.id.location_reviews_view_all_bttn);
+        viewAllReviewsBttn = binding.locationReviewsViewAllBttn;
         viewAllReviewsBttn.setOnClickListener(this);
-        viewAllPostsBttn = root.findViewById(R.id.location_posts_view_all_bttn);
+        viewAllPostsBttn = binding.locationPostsViewAllBttn;
         viewAllPostsBttn.setOnClickListener(this);
-        View directionsButton = root.findViewById(R.id.directions_bttn);
+        directionsButton = binding.directionsBttn;
         directionsButton.setOnClickListener(this);
+        writeReviewContainer = binding.writeReviewContainer;
+
+        // Progress Bar
+        searchProgress = binding.mapSearchProgress;
+
+        // Views
+        zoomInButton = binding.mapZoomInBttn;
+        zoomOutButton = binding.mapZoomOutBttn;
+        fixLocationButton = binding.mapFixLocationBttn;
+        returnButton = binding.mapReturnBttn;
+        returnButton.setOnClickListener(this);
+        searchResultsContainer = binding.mapSearchResultsCard;
+        detailsContainer = binding.mapLocationDetailsContainer;
+
+        // List View
+        searchResultsList = binding.mapSearchResultsList;
+
+        // Relative Layout
+        detailsHeader = binding.detailsPeekHeader;
+
+        // Text View
+        barbadosText = binding.mapBarbadosTv;
+        placeName = binding.mapLocationName;
+        placeAddress = binding.mapLocationAddress;
+        placeRating = binding.locationOverallRatingTv;
+        placeMeta = binding.mapPlaceMeta;
+        placeContact = binding.mapPlaceContact;
+        noImagesText = binding.noImagesTv;
+        noPostsText = binding.noPostsTv;
+        noReviewsText = binding.noReviewsTv;
+        imagesCount = binding.locationImagesCountTv;
+        reviewsCount = binding.locationReviewsCountTv;
+        postsCount = binding.locationPostsCountTv;
+
+        // Image Views
+        ratingStar1 = binding.ratingStar1;
+        ratingStar1.setOnClickListener(v -> mapViewModel.setRating(1));
+        ratingStar2 = binding.ratingStar2;
+        ratingStar2.setOnClickListener(v -> mapViewModel.setRating(2));
+        ratingStar3 = binding.ratingStar3;
+        ratingStar3.setOnClickListener(v -> mapViewModel.setRating(3));
+        ratingStar4 = binding.ratingStar4;
+        ratingStar4.setOnClickListener(v -> mapViewModel.setRating(4));
+        ratingStar5 = binding.ratingStar5;
+        ratingStar5.setOnClickListener(v -> mapViewModel.setRating(5));
+
+        // Horizontal Scroll Views
+        imagesField = binding.locationImagesField;
+        reviewsField = binding.locationReviewsField;
+        postsField = binding.locationPostsField;
+
+        // Edit Texts
+        searchInput = binding.mapSearchInput;
+        overviewInput = binding.mapOverviewInput;
+        newReviewInput = binding.newReviewInput;
+        newReviewInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override public void afterTextChanged(Editable s) {
+                mapViewModel.setReviewBody(s.toString());
+            }
+        });
     }
 
     @Override
@@ -285,54 +332,53 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (detailsContainer != null) {
                 detailsContainer.setVisibility(View.GONE);
             }
+        } else if (bttnId == R.id.write_review_bttn) {
+            toggleWriteReview();
+        } else if (bttnId == R.id.submit_review_bttn) {
+            mapViewModel.submitReview();
         }
+    }
 
-        map.setOnPoiClickListener(this::handlePointOfInterestClick);
+    private void setUpObservers() {
+        mapViewModel.getDetailsUIState().observe(getViewLifecycleOwner(), this::updateUIState);
 
-        map.setOnMarkerClickListener(marker -> {
-            LatLng position = marker.getPosition();
-            MarkerDetails details = getMarkerDetails(marker);
-            showPlaceDetails(details);
-            marker.showInfoWindow();
+        mapViewModel.getNavigationEvent().observe(getViewLifecycleOwner(), event -> {
+            if (event == null) return;
 
-            mapViewModel.setFocusedLocation(position);
-
-            // Set metadata for navigation
-            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
-
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            return true;
+            Intent intent = new Intent(requireContext(), event.getDestination());
+            intent.putExtras(event.getExtras());
+            startActivity(intent);
         });
 
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            enableMyLocation();
-        } else {
-            requestLocationPermissions();
-        }
-
-        mapViewModel.getAllMarkers().observe(getViewLifecycleOwner(), markers -> {
-            storedMarkers.clear();
-            if (markers != null) {
-                storedMarkers.addAll(markers);
+        mapViewModel.getRating().observe(getViewLifecycleOwner(), rating -> {
+            List<ImageView> starsList = Arrays.asList(ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5);
+            for (int i = 0; i < starsList.size(); i++) {
+                if (i < rating) {
+                    starsList.get(i).setImageResource(R.drawable.ic_star_fill);
+                    starsList.get(i).setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.gold));
+                } else {
+                    starsList.get(i).setImageResource(R.drawable.ic_star_outlined);
+                    starsList.get(i).setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.dim_grey));
+                }
             }
-            renderMarkers();
         });
 
-        if (!routePreviewLocations.isEmpty()) {
-            mapViewModel.setFocusedLocation(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
-            mapViewModel.setSelectedLocationMetadata(-1, "Parliament route preview");
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showRoutePreview();
-        } else if (externalFocusLatLng != null) {
-            mapViewModel.setFocusedLocation(externalFocusLatLng);
-            mapViewModel.setSelectedLocationMetadata(
-                    focusedSavedMarkerDetails != null ? focusedSavedMarkerDetails.id : -1,
-                    externalFocusTitle != null ? externalFocusTitle : "Selected location"
-            );
-            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            showExternalFocusedLocation();
-        }
+        mapViewModel.getIsReviewValid().observe(getViewLifecycleOwner(), isValid -> {
+            TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+            submitReviewBttn.setEnabled(isValid);
+            if (isValid) {
+                submitReviewBttn.setBackgroundResource(R.drawable.bg_rectangle_blue);
+            } else {
+                submitReviewBttn.setBackgroundResource(R.drawable.bg_rectangle_dim_grey);
+            }
+        });
+
+        mapViewModel.getReviewSubmited().observe(getViewLifecycleOwner(), submitted -> {
+            if (submitted) {
+                Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show();
+                toggleWriteReview();
+            }
+        });
     }
 
     @Override
@@ -354,9 +400,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         map.setOnPoiClickListener(this::handlePointOfInterestClick);
 
         map.setOnMarkerClickListener(marker -> {
+            LatLng position = marker.getPosition();
             MarkerDetails details = getMarkerDetails(marker);
             showPlaceDetails(details);
-            mapViewModel.setFocusedLocation(marker.getPosition());
+            marker.showInfoWindow();
+
+            mapViewModel.setFocusedLocation(position);
             mapViewModel.setSelectedLocationMetadata(details.id, details.title);
             mapViewModel.setDetailsUIState(MapDetailsState.FULL);
             return true;
@@ -380,6 +429,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 processExternalFocus();
             }
         });
+
+        if (!routePreviewLocations.isEmpty()) {
+            mapViewModel.setFocusedLocation(new LatLng(PARLIAMENT_LATITUDE, PARLIAMENT_LONGITUDE));
+            mapViewModel.setSelectedLocationMetadata(-1, "Parliament route preview");
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            showRoutePreview();
+        } else if (externalFocusLatLng != null) {
+            mapViewModel.setFocusedLocation(externalFocusLatLng);
+            mapViewModel.setSelectedLocationMetadata(
+                    focusedSavedMarkerDetails != null ? focusedSavedMarkerDetails.id : -1,
+                    externalFocusTitle != null ? externalFocusTitle : "Selected location"
+            );
+            mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+            showExternalFocusedLocation();
+        }
 
         // 5. Initial Camera Position
         if (!routePreviewLocations.isEmpty()) {
@@ -530,18 +594,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         }
     }
 
-    private void setUpObservers() {
-        mapViewModel.getDetailsUIState().observe(getViewLifecycleOwner(), this::updateUIState);
-
-        mapViewModel.getNavigationEvent().observe(getViewLifecycleOwner(), event -> {
-            if (event == null) return;
-
-            Intent intent = new Intent(requireContext(), event.getDestination());
-            intent.putExtras(event.getExtras());
-            startActivity(intent);
-        });
-    }
-
     private void observeFocusedSavedLocation() {
         if (focusedSavedLocationId <= 0L) {
             return;
@@ -646,6 +698,39 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(focus, zoom));
         }
     }
+
+    private void toggleWriteReview() {
+        if (writeReviewBttn.getVisibility() == View.VISIBLE) {
+            writeReviewBttn.setVisibility(View.GONE);
+            writeReviewContainer.setVisibility(View.VISIBLE);
+            mapViewModel.resetReviewForm();
+        } else {
+            writeReviewBttn.setVisibility(View.VISIBLE);
+            writeReviewContainer.setVisibility(View.GONE);
+            mapViewModel.resetReviewForm();
+        }
+    }
+
+//    private void handleReviewSubmit() {
+//        Boolean isValid = mapViewModel.getIsReviewValid().getValue();
+//
+//        if (isValid != null && isValid) {
+//            mapViewModel.submitReview();
+//        } else {
+//            StringBuilder missingFields = new StringBuilder("Please Enter: ");
+//            boolean first = true;
+//            if (mapViewModel.getRating().getValue() == null) {
+//                missingFields.append("Rating");
+//                first = false;
+//            }
+//            if (mapViewModel.getReviewBody().getValue() == null || mapViewModel.getReviewBody().getValue().trim().isEmpty()) {
+//                if (!first) missingFields.append(", ");
+//                missingFields.append("Review Body");
+//            }
+//
+//            Toast.makeText(requireContext(), missingFields.toString(), Toast.LENGTH_LONG).show();
+//        }
+//    }
 
     private void hideKeyboard() {
         if (getView() != null) {
