@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (pendingMapFocus) {
             viewModel.setNavbarItemId(R.id.navbar_map);
         } else {
-            viewModel.setNavbarItemId(R.id.navbar_post);
+            viewModel.setNavbarItemId(R.id.navbar_home);
         }
     }
 

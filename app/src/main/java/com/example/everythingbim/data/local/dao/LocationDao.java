@@ -51,6 +51,18 @@ public interface LocationDao {
     LiveData<LocationEntity> getLocationById(long id);
 
     /**
+     * Synchronous variant of {@link #getLocationById(long)} for use from
+     * background threads (e.g. inside a Firestore mirror that needs to
+     * check the cache before inserting a child row). MUST NOT be called
+     * from the main thread; Room enforces this.
+     *
+     * @return the {@link LocationEntity} with the given id, or
+     *         {@code null} if it isn't cached locally.
+     */
+    @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
+    LocationEntity getLocationByIdSync(long id);
+
+    /**
      * Retrieves all locations stored in the database, including their associated details.
      * 
      * @return LiveData list of all locations with their details.

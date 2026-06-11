@@ -6,9 +6,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -21,12 +23,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.ActivityLoginBinding;
 import com.example.everythingbim.ui.main.MainActivity;
-import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -34,38 +34,36 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
-    private static final String PREF_LOGIN_SCROLL_HINT_SEEN = "login_scroll_hint_seen";
 
     private LoginViewModel viewModel;
     private ActivityLoginBinding binding;
     private SharedPreferences sharedPreferences;
 
-    private ImageView generalUserIcon;
-    private ImageView businessUserIcon;
-    private TextView userTypeText;
-    private TextView createAccountOption;
-    private TextView generalUserText;
-    private TextView businessUserText;
+    // UI elements
+    private ImageView generalUserIcon, businessUserIcon;
+    private TextView userTypeText, createAccountOption, generalUserText, businessUserText;
     private Button loginBttn;
-    private TextInputEditText emailEditText;
-    private TextInputEditText passwordEditText;
+    private TextInputEditText usernameEditText, passwordEditText;
     private ProgressBar progressBar;
     private TextView errorTextView;
     private TextView adminAccessHint;
-    private LinearLayout generalUserContainer;
-    private LinearLayout businessUserContainer;
+    private LinearLayout generalUserContainer, businessUserContainer;
     private View userTypeSelection;
 
-    private final Handler handler = new Handler(android.os.Looper.getMainLooper());
+
+    // Variables
+    private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Initialize binding
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         viewModel.setSharedPreferences(sharedPreferences);
 
@@ -78,39 +76,21 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        setupKeyboardInsets();
-    }
-
-    private void setupKeyboardInsets() {
-        int initialLeft = binding.loginScroll.getPaddingLeft();
-        int initialTop = binding.loginScroll.getPaddingTop();
-        int initialRight = binding.loginScroll.getPaddingRight();
-        int initialBottom = binding.loginScroll.getPaddingBottom();
-
-        KeyboardScrollHintHelper.attach(
-                binding.getRoot(),
-                binding.loginScroll,
-                binding.loginScroll,
-                PREF_LOGIN_SCROLL_HINT_SEEN,
-                keyboardExtraBottom -> binding.loginScroll.setPadding(
-                        initialLeft,
-                        initialTop,
-                        initialRight,
-                        initialBottom + keyboardExtraBottom
-                )
-        );
     }
 
     private void initViews() {
+        // Image Views
         generalUserIcon = binding.generalUserIv;
         businessUserIcon = binding.businessUserIv;
 
+        // Linear Layouts
         generalUserContainer = binding.generalUserContainer;
         businessUserContainer = binding.businessUserContainer;
         userTypeSelection = binding.userTypeSelection;
         generalUserContainer.setOnClickListener(this);
         businessUserContainer.setOnClickListener(this);
 
+        // Text Views
         generalUserText = binding.generalUserTv;
         businessUserText = binding.businessUserTv;
         userTypeText = binding.userTypeText;
@@ -119,25 +99,16 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         createAccountOption = binding.createAccountOpt;
         createAccountOption.setOnClickListener(this);
 
+        // Buttons
         loginBttn = binding.loginBttn;
         loginBttn.setOnClickListener(this);
 
-        emailEditText = binding.loginEmailEt;
+        // Edit Texts
+        usernameEditText = binding.loginUsernameEt;
         passwordEditText = binding.loginPasswordEt;
 
+        // Progress Bar
         progressBar = binding.loginProgressBar;
-
-        View.OnLongClickListener resetHintsListener = v -> {
-            KeyboardScrollHintHelper.resetAllHints(this);
-            Toast.makeText(this, "Scroll hints reset", Toast.LENGTH_SHORT).show();
-            return true;
-        };
-        binding.logo.setOnLongClickListener(resetHintsListener);
-        binding.titleTxt.setOnLongClickListener(v -> {
-            KeyboardScrollHintHelper.showPreview(binding.getRoot());
-            Toast.makeText(this, "Scroll hint preview", Toast.LENGTH_SHORT).show();
-            return true;
-        });
     }
 
     private void applyPreselectedUserType() {
@@ -149,10 +120,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         try {
             viewModel.setSelectedUserType(UserType.valueOf(preselectedUserType));
         } catch (IllegalArgumentException ignored) {
+            // Ignore invalid preselection extras and use the default choice.
         }
     }
 
     private void setupObservers() {
+        
+        // Observe user type selection (icons, texts, and background)
         viewModel.getSelectedUserType().observe(this, userType -> {
             if (userType == UserType.GENERAL) {
                 userTypeSelection.setVisibility(View.VISIBLE);
@@ -183,7 +157,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 userTypeSelection.setVisibility(View.GONE);
                 adminAccessHint.setVisibility(View.VISIBLE);
                 userTypeText.setText("Administrator");
-            } else {
+            }
+            else {
                 userTypeSelection.setVisibility(View.VISIBLE);
                 adminAccessHint.setVisibility(View.GONE);
                 generalUserIcon.setImageTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(this, R.color.dark)));
@@ -198,6 +173,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             }
         });
 
+        // Loading state
         viewModel.getIsLoading().observe(this, isLoading -> {
             if (isLoading) {
                 progressBar.setVisibility(View.VISIBLE);
@@ -214,37 +190,47 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             }
         });
 
+        // Error messages
         viewModel.getErrorFields().observe(this, errors -> {
+            // Safety check: If the ViewModel sends a null map, stop execution
             handler.removeCallbacksAndMessages(null);
             if (errors == null) {
+                // If errors are null, manually hide everything immediately
                 TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                 errorTextView.setVisibility(View.GONE);
-                binding.tilLoginEmail.setError(null);
+                binding.tilLoginUsername.setError(null);
                 binding.tilLoginPassword.setError(null);
                 return;
             }
 
+            // Map IDs to Layouts: We create a temporary map to link the EditText IDs
             HashMap<Integer, TextInputLayout> fieldMap = new HashMap<>();
-            fieldMap.put(R.id.login_email_et, binding.tilLoginEmail);
+            fieldMap.put(R.id.login_username_et, binding.tilLoginUsername);
             fieldMap.put(R.id.login_password_et, binding.tilLoginPassword);
 
+            // Iterate through errors: The ViewModel might return multiple errors at once
             for (Map.Entry<Integer, String> entry : errors.entrySet()) {
                 int fieldId = entry.getKey();
                 String error = entry.getValue();
 
+                // Find the corresponding layout for the field that has the error
                 TextInputLayout fieldLayout = fieldMap.get(fieldId);
-                if (fieldLayout == null) {
-                    continue;
-                }
+                if (fieldLayout == null) continue;
 
+                // Animate layout changes
                 TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
-                fieldLayout.setError(error);
+                // Set the Error UI: Update the Material layout and our custom TextView
+                fieldLayout.setError(error);        // Shows red text under the entry field
                 fieldLayout.setErrorEnabled(true);
-                errorTextView.setVisibility(View.VISIBLE);
+                errorTextView.setVisibility(View.VISIBLE); // Makes error text appear
                 errorTextView.setText(error);
 
+                // Delayed Disappearance: Create a timer to hide the error after 2 seconds
                 handler.postDelayed(() -> {
+                    
+                    // Animate the views sliding back into their original places
                     TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                    // Reset UI: Hide the error box and clear the red outlines/text from the field
                     errorTextView.setVisibility(View.GONE);
                     fieldLayout.setError(null);
                     fieldLayout.setErrorEnabled(false);
@@ -252,6 +238,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             }
         });
 
+        // Navigation commands
         viewModel.getNavigationEvent().observe(this, command -> {
             if (command != null) {
                 Intent intent = new Intent(Login.this, command.getDestination());
@@ -266,7 +253,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                     copyDatasetResumeExtras(getIntent(), intent);
                 }
                 startActivity(intent);
-                finish();
+                finish(); // optional: remove login from back stack
             }
         });
     }
@@ -275,9 +262,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     public void onClick(View view) {
         int id = view.getId();
         if (id == R.id.login_bttn) {
-            String email = emailEditText.getText().toString().trim();
+            String username = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
-            viewModel.onLoginClicked(email, password);
+            viewModel.onLoginClicked(username, password);
         } else if (id == R.id.general_user_container) {
             viewModel.setSelectedUserType(UserType.GENERAL);
         } else if (id == R.id.business_user_container) {

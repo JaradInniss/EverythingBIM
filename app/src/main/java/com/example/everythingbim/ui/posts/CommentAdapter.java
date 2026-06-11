@@ -101,8 +101,13 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             CommentEntity comment = uiModel.getComment();
             username.setText(comment.authorName);
             body.setText(comment.body);
-            long createdAt = comment.createdAt != null ? comment.createdAt : System.currentTimeMillis();
-            uploadDate.setText(dateFormat.format(new Date(createdAt)));
+            // createdAt is a boxed Long; for comments that haven't
+            // received a server timestamp yet we fall back to "now" so
+            // the UI never shows a 1970 date.
+            long createdAtMillis = comment.createdAt != null
+                    ? comment.createdAt
+                    : System.currentTimeMillis();
+            uploadDate.setText(dateFormat.format(new Date(createdAtMillis)));
 
             // Display "Re: @username" if this is a reply
             if (comment.parentCommentId != null && comment.parentAuthorName != null) {

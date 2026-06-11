@@ -48,21 +48,36 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_user_profile);
 
-        // Retrieve the User ID passed via Intent
+        viewModel = new ViewModelProvider(this).get(ViewUserProfileViewModel.class);
+
+        // The activity can be launched with either a local Room userId
+        // (USER_ID) or a Firebase Auth UID (USER_UID). Prefer the local
+        // id when both are present so that the locally-cached profile
+        // (including the user's posts and business tabs) works as before;
+        // fall back to the UID when the user is not in the local cache
+        // (e.g. navigating from a tagged-user chip on the View Post page).
         targetUserId = getIntent().getLongExtra("USER_ID", -1);
-        if (targetUserId == -1) {
+        String targetUserUid = getIntent().getStringExtra("USER_UID");
+
+        if (targetUserId != -1) {
+            viewModel.setUserId(targetUserId);
+            initViews();
+            setupViewPager(targetUserId);
+        } else if (targetUserUid != null && !targetUserUid.isEmpty()) {
+            viewModel.loadUserByFirebaseUid(targetUserUid);
+            initViews();
+            // We don't have a local userId, so the posts/business tabs
+            // can't be loaded. Hide them - the user can still see the
+            // profile information from Firestore.
+            tabLayout.setVisibility(View.GONE);
+            viewPager.setVisibility(View.GONE);
+        } else {
             finish();
             return;
         }
 
-        viewModel = new ViewModelProvider(this).get(ViewUserProfileViewModel.class);
-        viewModel.setUserId(targetUserId);
-
         // Observe User Profile data from ViewModel
         viewModel.getUserWithProfile().observe(this, this::updateUI);
-
-        initViews();
-        setupViewPager(targetUserId);
     }
 
     private void initViews() {

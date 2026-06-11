@@ -24,19 +24,18 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
-import com.example.everythingbim.ui.utils.ImageReferenceLoader;
-import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +45,6 @@ import java.util.Locale;
  * Handles adding new comments and replies with a nested UI.
  */
 public class ViewPost extends AppCompatActivity {
-    private static final String PREF_VIEW_POST_SCROLL_HINT_SEEN = "view_post_scroll_hint_seen";
 
     ActivityViewPostBinding binding;
     private PostViewModel viewModel;
@@ -54,31 +52,21 @@ public class ViewPost extends AppCompatActivity {
     private ViewPostTagAdapter taggedUsersAdapter;
     private long postId;
     private long lastObservedLocationId = -1L;
+
+    // The most recently observed post; used to add comments without
+    // re-resolving the firestoreId at click time.
     private PostEntity currentPost;
 
+    // State for managing replies
     private Long currentParentCommentId = null;
     private String currentParentAuthorName = null;
 
-    private TextView username;
-    private TextView location;
-    private TextView likes;
-    private TextView commentsCount;
-    private TextView caption;
-    private TextView uploadDate;
-    private TextView submitCommentBttn;
-    private TextView submitReplyBttn;
-    private TextView replyingToUsername;
-    private TextView viewTaggedUsersBttn;
-    private ImageView postImage;
-    private ImageView profilePic;
-    private ImageView reportBttn;
-    private ImageView likesIcon;
-    private ImageView commentsIcon;
+    private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
+    private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
     private EditText commentInput;
-    private RecyclerView commentsRv;
-    private RecyclerView taggedUsersRv;
-    private CardView taggedUsersCard;
+    private RecyclerView commentsRv, taggedUsersRv;
     private LinearLayout returnBttn;
+    private CardView taggedUsersCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +75,7 @@ public class ViewPost extends AppCompatActivity {
         binding = ActivityViewPostBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // Retrieve post ID from intent
         postId = getIntent().getLongExtra("POST_ID", -1);
         if (postId == -1) {
             Toast.makeText(this, "Error loading post", Toast.LENGTH_SHORT).show();
@@ -95,38 +84,18 @@ public class ViewPost extends AppCompatActivity {
         }
 
         viewModel = new ViewModelProvider(this).get(PostViewModel.class);
-
+        
+        // Handle window insets for edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(binding.viewPosts, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        setupKeyboardInsets();
 
         initViews();
         setupRecyclerView();
         setupObservers();
         setupListeners();
-    }
-
-    private void setupKeyboardInsets() {
-        int initialLeft = binding.writeReviewContainer.getPaddingLeft();
-        int initialTop = binding.writeReviewContainer.getPaddingTop();
-        int initialRight = binding.writeReviewContainer.getPaddingRight();
-        int initialBottom = binding.writeReviewContainer.getPaddingBottom();
-
-        KeyboardScrollHintHelper.attach(
-                binding.getRoot(),
-                binding.writeReviewContainer,
-                binding.viewPostScroll,
-                PREF_VIEW_POST_SCROLL_HINT_SEEN,
-                keyboardExtraBottom -> binding.writeReviewContainer.setPadding(
-                        initialLeft,
-                        initialTop,
-                        initialRight,
-                        initialBottom + keyboardExtraBottom
-                )
-        );
     }
 
     private void initViews() {
@@ -147,44 +116,83 @@ public class ViewPost extends AppCompatActivity {
         submitReplyBttn = binding.submitReplyBttn;
         replyingToUsername = binding.replyingToUsername;
         commentsRv = binding.viewpostCommentsRv;
+
+        // Tagged users views
         viewTaggedUsersBttn = binding.viewTaggedUsersBttn;
         taggedUsersCard = binding.viewpostTaggedUsersCard;
         taggedUsersRv = binding.viewpostTaggedUsersRv;
 
+        // Set initial visibility for reply-related UI
         replyingToUsername.setVisibility(View.GONE);
         submitReplyBttn.setVisibility(View.GONE);
+
+        // Tagged-users card is hidden until the user taps the button.
+        // The button itself is shown/hidden by the tagged-users observer
+        // based on whether the post has any tagged users.
         taggedUsersCard.setVisibility(View.GONE);
+        taggedUsersRv.setVisibility(View.GONE);
     }
 
+    // Set up the RecyclerView for comments and handles reply button clicks.
     private void setupRecyclerView() {
         commentAdapter = new CommentAdapter();
         commentsRv.setLayoutManager(new LinearLayoutManager(this));
         commentsRv.setAdapter(commentAdapter);
+        // Disable nested scrolling to let the parent ScrollView handle it if necessary
         commentsRv.setNestedScrollingEnabled(false);
-        taggedUsersAdapter = new ViewPostTagAdapter(this::openTaggedUserProfile);
-        taggedUsersRv.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        taggedUsersRv.setAdapter(taggedUsersAdapter);
-        taggedUsersRv.setNestedScrollingEnabled(false);
 
+        // When a reply button is clicked in the adapter, update the UI to "reply mode"
         commentAdapter.setOnReplyClickListener(comment -> {
             currentParentCommentId = comment.commentId;
             currentParentAuthorName = comment.authorName;
 
             replyingToUsername.setText("Re: @" + currentParentAuthorName);
             replyingToUsername.setVisibility(View.VISIBLE);
-
+            
             submitCommentBttn.setVisibility(View.GONE);
             submitReplyBttn.setVisibility(View.VISIBLE);
 
+            // Focus input and show keyboard
             commentInput.requestFocus();
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
             }
         });
+
+        // Tagged users: horizontal list. We pass a click listener that
+        // navigates to the user profile, preferring the local Room id
+        // when available and falling back to the Firebase UID.
+        taggedUsersAdapter = new ViewPostTagAdapter(this::openTaggedUserProfile);
+        taggedUsersRv.setLayoutManager(new LinearLayoutManager(
+                this, LinearLayoutManager.HORIZONTAL, false));
+        taggedUsersRv.setAdapter(taggedUsersAdapter);
+        taggedUsersRv.setNestedScrollingEnabled(false);
     }
 
+    /**
+     * Navigates to {@link ViewUserProfileActivity} for the given tagged user.
+     * Prefers the local Room {@code userId} (so any locally-cached profile
+     * data, including business tabs etc., keeps working); falls back to the
+     * Firebase UID when the user is not in the local cache (the activity
+     * supports both extras).
+     */
+    private void openTaggedUserProfile(@NonNull UserEntity user) {
+        Intent intent = new Intent(this, ViewUserProfileActivity.class);
+        if (user.userId > 0L) {
+            intent.putExtra("USER_ID", user.userId);
+        } else if (user.firebaseUid != null && !user.firebaseUid.isEmpty()) {
+            intent.putExtra("USER_UID", user.firebaseUid);
+        } else {
+            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivity(intent);
+    }
+
+    // Set up LiveData observers for post details and comments.
     private void setupObservers() {
+        // Observe Post Details and populate the UI
         viewModel.getPostById(postId).observe(this, post -> {
             if (post != null) {
                 currentPost = post;
@@ -192,25 +200,56 @@ public class ViewPost extends AppCompatActivity {
             }
         });
 
+        // Observe Comments and update the adapter and total count
         viewModel.getCommentsForPost(postId).observe(this, comments -> {
             if (comments != null) {
                 commentAdapter.setComments(comments);
+                // Calculate and display total count including all nested replies
                 int totalCount = calculateTotalComments(comments);
                 commentsCount.setText(String.valueOf(totalCount));
             }
         });
+
+        // Observe Tagged Users: the "view tagged users" button is shown
+        // only when the post has tagged users. The RecyclerView itself is
+        // toggled by the button click.
         viewModel.getTaggedUsersForPost(postId).observe(this, this::renderTaggedUsers);
+
+        // Observe the current user's like state. Drives the heart tint.
         viewModel.isLikedByCurrentUser(postId).observe(this, this::renderLikeState);
     }
 
+    /**
+     * Updates the heart icon's tint based on whether the current user
+     * has liked the post. Red when liked, pale slate when not.
+     */
     private void renderLikeState(Boolean isLiked) {
-        if (isLiked == null) {
-            return;
-        }
+        if (isLiked == null) return;
         int tintRes = isLiked ? R.color.red : R.color.pale_slate;
         likesIcon.setColorFilter(ContextCompat.getColor(this, tintRes));
     }
 
+    /**
+     * Updates the "view tagged users" button visibility and pushes the
+     * resolved user list to the adapter. The card containing the
+     * RecyclerView is intentionally left alone here - it's controlled by
+     * the button's click listener so the user controls when it appears.
+     */
+    private void renderTaggedUsers(List<UserEntity> users) {
+        if (users == null || users.isEmpty()) {
+            viewTaggedUsersBttn.setVisibility(View.GONE);
+            taggedUsersAdapter.setTaggedUsers(new java.util.ArrayList<>());
+            // Hide the card too: nothing to show, even if the user
+            // expanded it before the tagged list emptied.
+            taggedUsersCard.setVisibility(View.GONE);
+            taggedUsersRv.setVisibility(View.GONE);
+            return;
+        }
+        viewTaggedUsersBttn.setVisibility(View.VISIBLE);
+        taggedUsersAdapter.setTaggedUsers(users);
+    }
+
+    // Calculates the total number of comments by summing top-level comments and all their replies.
     private int calculateTotalComments(List<CommentUIModel> topLevelComments) {
         int total = topLevelComments.size();
         for (CommentUIModel comment : topLevelComments) {
@@ -219,16 +258,25 @@ public class ViewPost extends AppCompatActivity {
         return total;
     }
 
+    // Populates the post UI elements with data from a PostEntity.
     private void populatePostDetails(PostEntity post) {
         username.setText(resolveAuthorLabel(post));
         caption.setText(post.caption);
-        int likeCount = post.likeCount != null ? post.likeCount : 0;
-        likes.setText(String.valueOf(likeCount));
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         uploadDate.setText(sdf.format(new Date(post.createdAt)));
 
-        ImageReferenceLoader.loadInto(postImage, post.imageUrl, R.drawable.butterfly);
+        // Like count: comes from the denormalized counter on the post
+        // document in Firestore. Null means the post hasn't been
+        // touched by a like yet, so default to 0.
+        int likeCount = post.likeCount != null ? post.likeCount : 0;
+        likes.setText(String.valueOf(likeCount));
+
+        // Load the post image
+        Glide.with(this)
+                .load(post.imageUrl)
+                .placeholder(R.drawable.butterfly)
+                .into(postImage);
 
         setupLocationTag(post.locationId);
     }
@@ -278,45 +326,50 @@ public class ViewPost extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void renderTaggedUsers(List<UserEntity> users) {
-        if (users == null || users.isEmpty()) {
-            viewTaggedUsersBttn.setVisibility(View.GONE);
-            taggedUsersCard.setVisibility(View.GONE);
-            taggedUsersAdapter.setTaggedUsers(new ArrayList<>());
-            return;
-        }
-        viewTaggedUsersBttn.setVisibility(View.VISIBLE);
-        taggedUsersAdapter.setTaggedUsers(users);
+    private boolean isCurrentPostSynced() {
+        return currentPost != null
+                && currentPost.firestoreId != null
+                && !currentPost.firestoreId.trim().isEmpty();
     }
 
-    private void openTaggedUserProfile(@NonNull UserEntity user) {
-        Intent intent = new Intent(this, ViewUserProfileActivity.class);
-        if (user.userId > 0L) {
-            intent.putExtra("USER_ID", user.userId);
-        } else if (user.firebaseUid != null && !user.firebaseUid.isEmpty()) {
-            intent.putExtra("USER_UID", user.firebaseUid);
-        } else {
-            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        startActivity(intent);
+    private void showPostNotSyncedMessage() {
+        Toast.makeText(this, "This post is not synced yet", Toast.LENGTH_SHORT).show();
     }
 
+    private <T> void observeOnce(@NonNull LiveData<T> liveData, @NonNull Observer<T> observer) {
+        liveData.observe(this, new Observer<T>() {
+            @Override
+            public void onChanged(T value) {
+                liveData.removeObserver(this);
+                observer.onChanged(value);
+            }
+        });
+    }
+
+    // Sets up click listeners for the return button and comment submission buttons
     private void setupListeners() {
+        // Back button functionality
         returnBttn.setOnClickListener(v -> finish());
+
         viewTaggedUsersBttn.setOnClickListener(v -> {
-            boolean shouldShow = taggedUsersCard.getVisibility() != View.VISIBLE;
-            taggedUsersCard.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+            boolean show = taggedUsersCard.getVisibility() != View.VISIBLE;
+            taggedUsersCard.setVisibility(show ? View.VISIBLE : View.GONE);
+            taggedUsersRv.setVisibility(show ? View.VISIBLE : View.GONE);
         });
 
+        // Like / unlike. Guarded for unauthenticated users.
         likesIcon.setOnClickListener(v -> {
             FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
             if (current == null || current.getUid() == null) {
                 Toast.makeText(this, "Sign in to like posts", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (currentPost == null || !isCurrentPostSynced()) {
-                Toast.makeText(this, "This post is not synced yet", Toast.LENGTH_SHORT).show();
+            if (currentPost == null) {
+                // Post not yet loaded; the like listener will catch up once it is.
+                return;
+            }
+            if (!isCurrentPostSynced()) {
+                showPostNotSyncedMessage();
                 return;
             }
             observeOnce(viewModel.toggleLike(postId), nowLiked -> {
@@ -326,6 +379,7 @@ public class ViewPost extends AppCompatActivity {
             });
         });
 
+        // Submit a new top-level comment
         submitCommentBttn.setOnClickListener(v -> {
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
@@ -337,17 +391,17 @@ public class ViewPost extends AppCompatActivity {
                 return;
             }
             if (!isCurrentPostSynced()) {
-                Toast.makeText(this, "This post is not synced yet", Toast.LENGTH_SHORT).show();
+                showPostNotSyncedMessage();
                 return;
             }
-            FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
-            if (current == null) {
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
                 Toast.makeText(this, "Sign in to comment", Toast.LENGTH_SHORT).show();
                 return;
             }
-            submitComment(currentPost, null, null, body, current);
+            submitComment(currentPost, /*parentCommentId*/ null, /*parentAuthorName*/ null, body);
         });
 
+        // Submit a reply to an existing comment
         submitReplyBttn.setOnClickListener(v -> {
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
@@ -359,50 +413,65 @@ public class ViewPost extends AppCompatActivity {
                 return;
             }
             if (!isCurrentPostSynced()) {
-                Toast.makeText(this, "This post is not synced yet", Toast.LENGTH_SHORT).show();
+                showPostNotSyncedMessage();
                 return;
             }
-            FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
-            if (current == null) {
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
                 Toast.makeText(this, "Sign in to reply", Toast.LENGTH_SHORT).show();
                 return;
             }
-            submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body, current);
+            submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
+
+            // Reset UI to comment mode
+            commentInput.setText("");
+            currentParentCommentId = null;
+            currentParentAuthorName = null;
+            replyingToUsername.setVisibility(View.GONE);
+            submitReplyBttn.setVisibility(View.GONE);
+            submitCommentBttn.setVisibility(View.VISIBLE);
+
+            Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
         });
     }
 
+    /**
+     * Resolves the current Firebase user and forwards the comment write
+     * to the ViewModel. We observe the resulting LiveData so we can show
+     * a toast on failure (the LiveData emits {@code null} on error).
+     */
     private void submitComment(@NonNull PostEntity post,
                                Long parentCommentId,
                                String parentAuthorName,
-                               @NonNull String body,
-                               @NonNull FirebaseUser currentUser) {
-        String authorName = resolveCurrentUserName(currentUser);
+                               @NonNull String body) {
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current == null) return;
+        String authorUid = current.getUid();
+        String authorName = resolveCurrentUserName(current);
         observeOnce(
-                viewModel.addComment(post, parentCommentId, authorName, currentUser.getUid(), parentAuthorName, body),
+                viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, body),
                 persisted -> {
                     if (persisted == null) {
                         Toast.makeText(this, "Failed to add comment", Toast.LENGTH_SHORT).show();
-                        return;
+                    } else {
+                        commentInput.setText("");
+                        Toast.makeText(this,
+                                parentCommentId == null ? "Comment added" : "Reply added",
+                                Toast.LENGTH_SHORT).show();
                     }
-                    commentInput.setText("");
-                    currentParentCommentId = null;
-                    currentParentAuthorName = null;
-                    replyingToUsername.setVisibility(View.GONE);
-                    submitReplyBttn.setVisibility(View.GONE);
-                    submitCommentBttn.setVisibility(View.VISIBLE);
-                    Toast.makeText(this,
-                            parentCommentId == null ? "Comment added" : "Reply added",
-                            Toast.LENGTH_SHORT).show();
                 }
         );
     }
 
-    @NonNull
-    private String resolveCurrentUserName(@NonNull FirebaseUser currentUser) {
-        if (currentUser.getDisplayName() != null && !currentUser.getDisplayName().trim().isEmpty()) {
-            return currentUser.getDisplayName().trim();
+    /**
+     * Mirrors the name resolution used by {@code CreatePostViewModel}:
+     * prefer the display name, fall back to the email prefix, and
+     * finally to a generic "User" placeholder.
+     */
+    private String resolveCurrentUserName(@NonNull FirebaseUser current) {
+        if (current.getDisplayName() != null && !current.getDisplayName().trim().isEmpty()) {
+            return current.getDisplayName().trim();
         }
-        String email = currentUser.getEmail();
+        String email = current.getEmail();
         if (email != null) {
             int at = email.indexOf('@');
             if (at > 0) {
@@ -411,21 +480,5 @@ public class ViewPost extends AppCompatActivity {
             return email;
         }
         return "User";
-    }
-
-    private boolean isCurrentPostSynced() {
-        return currentPost != null
-                && currentPost.firestoreId != null
-                && !currentPost.firestoreId.trim().isEmpty();
-    }
-
-    private <T> void observeOnce(@NonNull LiveData<T> liveData, @NonNull Observer<T> observer) {
-        liveData.observe(this, new Observer<T>() {
-            @Override
-            public void onChanged(T value) {
-                liveData.removeObserver(this);
-                observer.onChanged(value);
-            }
-        });
     }
 }
