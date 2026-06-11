@@ -208,7 +208,7 @@
                 android:textSize="14dp"
                 android:gravity="center"
                 android:visibility="gone"
-                tools:text="â“˜ Invalid email or password" />
+                tools:text="ⓘ Invalid email or password" />
 
             <!-- Progress Bar (loading indicator) -->
             <ProgressBar

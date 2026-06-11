@@ -2,161 +2,354 @@ package com.example.everythingbim.ui.posts;
 
 import android.app.Application;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.AppDatabase;
 import com.example.everythingbim.data.local.dao.LocationDao;
 import com.example.everythingbim.data.local.dao.PostDao;
+import com.example.everythingbim.data.local.dao.UserDao;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.data.local.entities.UserEntity;
+import com.example.everythingbim.data.local.entities.UserWithProfile;
+import com.example.everythingbim.data.models.SelectedImage;
+import com.example.everythingbim.data.repository.PostRepository;
+import com.example.everythingbim.data.repository.UserRepository;
+import com.google.android.gms.tasks.Tasks;
+import com.google.android.libraries.places.api.model.Place;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-// ViewModel for CreatePost Activity
-
+/**
+ * ViewModel for the {@link CreatePostActivity}. Manages the draft state of a
+ * post (caption, image, location, tagged users) and persists the result to
+ * both Firebase Storage (for the image) and Firestore (for the document).
+ */
 public class CreatePostViewModel extends AndroidViewModel {
+
+    private static final String TAG = "CreatePostViewModel";
+
     private final PostDao postDao;
     private final LocationDao locationDao;
+    private final UserDao userDao;
+    private PostRepository postRepository;
+    private UserRepository userRepository;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    private final SingleLiveEvent<SelectedImage> navigationEvent = new SingleLiveEvent<>();
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<LocationEntity> location = new MutableLiveData<>();
     private final MutableLiveData<String> caption = new MutableLiveData<>("");
     private final MutableLiveData<Uri> imageUri = new MutableLiveData<>();
+    private final MutableLiveData<List<UserEntity>> taggedUsers = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Long> selectedLocationId = new MutableLiveData<>();
     private final LiveData<List<LocationEntity>> availableLocations;
-    private final MutableLiveData<List<String>> taggedUsers = new MutableLiveData<>(new ArrayList<>());
-    
+
     private final MutableLiveData<Boolean> isSaving = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> postCreated = new MutableLiveData<>(false);
-    private final MutableLiveData<String> validationMessage = new MutableLiveData<>();
+    private final MediatorLiveData<Boolean> isPostValid = new MediatorLiveData<>();
+
+    private final MutableLiveData<String> userQuery = new MutableLiveData<>("");
+    private final LiveData<List<UserWithProfile>> userSearchResults;
 
     public CreatePostViewModel(@NonNull Application application) {
         super(application);
         AppDatabase database = AppDatabase.getInstance(application);
         postDao = database.postDao();
         locationDao = database.locationDao();
+        userDao = database.userDao();
         availableLocations = locationDao.getAllLocations();
+
+        // Recompute validity whenever any required field changes.
+        isPostValid.addSource(caption, text -> validatePost());
+        isPostValid.addSource(imageUri, uri -> validatePost());
+        isPostValid.addSource(location, value -> validatePost());
+
+        // The previous implementation searched the local Room database, which
+        // only knows about the two seed users. Searching Firestore instead
+        // finds any user that has registered through the app, regardless of
+        // whether they've been mirrored to the local cache.
+        userSearchResults = Transformations.switchMap(userQuery,
+                query -> getOrCreateUserRepository().searchUsersInFirestore(query));
     }
 
-    public LiveData<String> getCaption() {
-        return caption;
+    private PostRepository getOrCreatePostRepository() {
+        if (postRepository == null) {
+            postRepository = new PostRepository(getApplication());
+        }
+        return postRepository;
     }
 
-    public void setCaption(String text) {
-        caption.setValue(text);
+    private UserRepository getOrCreateUserRepository() {
+        if (userRepository == null) {
+            userRepository = new UserRepository(getApplication());
+        }
+        return userRepository;
     }
 
-    public LiveData<Uri> getImageUri() {
-        return imageUri;
+    // ---- Getters / Setters -------------------------------------------------
+
+    @NonNull public LiveData<SelectedImage> getNavigationEvent() { return navigationEvent; }
+    @NonNull public LiveData<String> getErrorMessage() { return errorMessage; }
+
+    public LiveData<LocationEntity> getLocation() { return location; }
+
+    public void setLocation(LocationEntity newLocation) {
+        location.setValue(newLocation);
+        validatePost();
     }
 
-    public void setImageUri(Uri uri) {
-        imageUri.setValue(uri);
+    public LiveData<String> getCaption() { return caption; }
+
+    public void setCaption(@Nullable String text) {
+        // Treat null as empty so observers can rely on a non-null value.
+        caption.setValue(text == null ? "" : text);
     }
 
-    public LiveData<Long> getSelectedLocationId() {
-        return selectedLocationId;
+    public LiveData<Uri> getImageUri() { return imageUri; }
+
+    public void setImageUri(@Nullable Uri uri) { imageUri.setValue(uri); }
+
+    public LiveData<Long> getSelectedLocationId() { return selectedLocationId; }
+
+    public void setSelectedLocationId(@Nullable Long locationId) { selectedLocationId.setValue(locationId); }
+
+    public LiveData<List<LocationEntity>> getAvailableLocations() { return availableLocations; }
+
+    public LiveData<List<UserEntity>> getTaggedUsers() { return taggedUsers; }
+
+    public LiveData<Boolean> getIsSaving() { return isSaving; }
+
+    public LiveData<Boolean> getPostCreated() { return postCreated; }
+
+    public LiveData<List<UserWithProfile>> getUserSearchResults() { return userSearchResults; }
+
+    public LiveData<Boolean> getIsPostValid() { return isPostValid; }
+
+    // ---- Image selection ---------------------------------------------------
+
+    public void onImageSelected(@NonNull SelectedImage selectedImage) {
+        navigationEvent.setValue(selectedImage);
     }
 
-    public void setSelectedLocationId(Long locationId) {
-        selectedLocationId.setValue(locationId);
+    public void onSelectionError(@NonNull String message) {
+        errorMessage.setValue(message);
     }
 
-    public LiveData<List<LocationEntity>> getAvailableLocations() {
-        return availableLocations;
-    }
+    // ---- Tagged user management -------------------------------------------
 
-    public LiveData<List<String>> getTaggedUsers() {
-        return taggedUsers;
-    }
-
-    public void addTaggedUser(String user) {
-        List<String> currentTags = taggedUsers.getValue();
+    public void addTaggedUser(@Nullable UserEntity user) {
+        if (user == null) return; // Guard against null (see equals contract).
+        List<UserEntity> currentTags = taggedUsers.getValue();
         if (currentTags != null && !currentTags.contains(user)) {
             currentTags.add(user);
             taggedUsers.setValue(currentTags);
         }
     }
 
-    public void removeTaggedUser(String user) {
-        List<String> currentTags = taggedUsers.getValue();
+    public void removeTaggedUser(@Nullable UserEntity user) {
+        if (user == null) return;
+        List<UserEntity> currentTags = taggedUsers.getValue();
         if (currentTags != null) {
             currentTags.remove(user);
             taggedUsers.setValue(currentTags);
         }
     }
 
-    public LiveData<Boolean> getIsSaving() {
-        return isSaving;
+    /** Replaces the tagged users list with an empty one. */
+    public void clearTaggedUsers() {
+        taggedUsers.setValue(new ArrayList<>());
     }
 
-    public LiveData<Boolean> getPostCreated() {
-        return postCreated;
+    public void searchUsers(@Nullable String query) {
+        userQuery.setValue(query == null ? "" : query);
     }
 
-    public LiveData<String> getValidationMessage() {
-        return validationMessage;
-    }
+    // ---- Location management ---------------------------------------------
 
-    public void createPost() {
-        String currentCaption = caption.getValue();
-        Uri currentUri = imageUri.getValue();
-        Long locationId = selectedLocationId.getValue();
-
-        if (locationId == null || currentUri == null) {
-            validationMessage.setValue(buildValidationMessage(locationId, currentUri));
-            return;
-        }
-
-        validationMessage.setValue(null);
-        isSaving.setValue(true);
+    public void setLocationFromPlaces(@NonNull Place place) {
         executorService.execute(() -> {
-            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-            long authorId = resolveAuthorId(currentUser);
-            String authorName = resolveAuthorName(currentUser);
-
-            PostEntity newPost = new PostEntity(
-                    locationId,
-                    authorId,
-                    authorName,
-                    currentCaption,
-                    currentUri.toString(),
-                    System.currentTimeMillis()
+            LocationEntity newLocation = new LocationEntity(
+                    place.getName(),
+                    place.getLatLng().latitude,
+                    place.getLatLng().longitude,
+                    (place.getRating() != null) ? place.getRating().floatValue() : 0.0f,
+                    false,
+                    "GooglePlaces",
+                    "",
+                    (place.getTypes() != null && !place.getTypes().isEmpty()) ? place.getTypes().get(0).name() : "General",
+                    "",
+                    place.getAddress()
             );
 
-            postDao.insert(newPost);
-
-            isSaving.postValue(false);
-            postCreated.postValue(true);
+            long id = locationDao.insert(newLocation);
+            newLocation.setLocationId(id);
+            location.postValue(newLocation);
+            // Keep the legacy selectedLocationId in sync for backwards compatibility
+            // with code that still reads it.
+            selectedLocationId.postValue(id);
         });
     }
 
-    private String buildValidationMessage(Long locationId, Uri currentUri) {
-        if (currentUri == null && locationId == null) {
-            return "Select an image and a location before sharing.";
-        }
-        if (currentUri == null) {
-            return "Select an image before sharing.";
-        }
-        return "Choose a location before sharing.";
+    // ---- Validation -------------------------------------------------------
+
+    public void validatePost() {
+        String currentCaption = caption.getValue();
+        Uri currentUri = imageUri.getValue();
+        LocationEntity currentLocation = location.getValue();
+
+        boolean isValid = (currentCaption != null && !currentCaption.trim().isEmpty())
+                && (currentUri != null)
+                && (currentLocation != null);
+        isPostValid.setValue(isValid);
     }
 
-    private long resolveAuthorId(FirebaseUser currentUser) {
+    // ---- Reset all draft state -------------------------------------------
+
+    /**
+     * Wipes every draft field on this ViewModel. Called when the user taps the
+     * "Clear" button in the activity. The activity is responsible for also
+     * clearing its own UI text fields.
+     */
+    public void resetDraft() {
+        caption.setValue("");
+        imageUri.setValue(null);
+        location.setValue(null);
+        selectedLocationId.setValue(null);
+        taggedUsers.setValue(new ArrayList<>());
+        userQuery.setValue("");
+        validatePost();
+    }
+
+    // ---- Persist to Firestore --------------------------------------------
+
+    /**
+     * Uploads the selected image to Firebase Storage, then writes the post
+     * document to Firestore. On success, {@link #postCreated} is set to
+     * {@code true}; on failure, {@link #errorMessage} is set.
+     */
+    public void createPost() {
+        String currentCaption = caption.getValue();
+        Uri currentUri = imageUri.getValue();
+        LocationEntity currentLocation = location.getValue();
+        List<UserEntity> currentTags = taggedUsers.getValue();
+
+        if (currentLocation == null
+                || currentUri == null
+                || currentCaption == null
+                || currentCaption.trim().isEmpty()) {
+            return;
+        }
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.getUid() == null) {
+            errorMessage.setValue("Sign in to create a post.");
+            return;
+        }
+        String uid = currentUser.getUid();
+        String authorName = resolveAuthorName(currentUser);
+        long authorLocalId = resolveAuthorId(currentUser);
+
+        List<String> taggedUids = new ArrayList<>();
+        if (currentTags != null) {
+            for (UserEntity user : currentTags) {
+                if (user.firebaseUid != null) {
+                    taggedUids.add(user.firebaseUid);
+                }
+            }
+        }
+
+        isSaving.setValue(true);
+        executorService.execute(() -> {
+            String imageDownloadUrl = uploadImageToStorage(currentUri, uid);
+            if (imageDownloadUrl == null) {
+                errorMessage.postValue("Failed to upload image. Please try again.");
+                isSaving.postValue(false);
+                return;
+            }
+
+            PostEntity newPost = new PostEntity(
+                    currentLocation.getLocationId(),
+                    currentLocation.getName(),
+                    authorLocalId,
+                    authorName,
+                    uid,
+                    currentCaption,
+                    imageDownloadUrl,
+                    System.currentTimeMillis(),
+                    taggedUids
+            );
+
+            // Write to Firestore via a one-shot callback. The callback fires on
+            // a background thread (Firestore worker), so we use postValue on the
+            // already-existing LiveData fields; the Activity observes them on
+            // the main thread. This avoids the previous observeForever-on-
+            // background-thread FATAL that crashed the app on every post create.
+            getOrCreatePostRepository().createPostInFirestoreAsync(newPost, (persisted, error) -> {
+                if (error != null || persisted == null) {
+                    errorMessage.postValue("Failed to share post. Please try again.");
+                    isSaving.postValue(false);
+                    return;
+                }
+                isSaving.postValue(false);
+                postCreated.postValue(true);
+            });
+        });
+    }
+
+    /**
+     * Uploads the image at {@code uri} to Firebase Storage under the path
+     * {@code post_images/{uid}/{timestamp}.jpg} and returns the resulting
+     * download URL. Returns {@code null} if the upload fails for any reason.
+     *
+     * This call is blocking; callers should invoke it from a background
+     * executor.
+     */
+    @Nullable
+    private String uploadImageToStorage(@NonNull Uri uri, @Nullable String uid) {
+        try {
+            String safeUid = (uid == null || uid.isEmpty()) ? "anonymous" : uid;
+            StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                    .child("post_images/" + safeUid + "/" + System.currentTimeMillis() + ".jpg");
+
+            UploadTask.TaskSnapshot snapshot = Tasks.await(storageRef.putFile(uri));
+            if (snapshot == null) {
+                Log.w(TAG, "Upload snapshot was null");
+                return null;
+            }
+            return Tasks.await(snapshot.getStorage().getDownloadUrl()).toString();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to upload post image", e);
+            return null;
+        }
+    }
+
+    private long resolveAuthorId(@Nullable FirebaseUser currentUser) {
         if (currentUser == null || currentUser.getUid() == null) {
             return 0L;
         }
         return Integer.toUnsignedLong(currentUser.getUid().hashCode());
     }
 
-    private String resolveAuthorName(FirebaseUser currentUser) {
+    @Nullable
+    private String resolveAuthorName(@Nullable FirebaseUser currentUser) {
         if (currentUser == null) {
             return "Current User";
         }
@@ -172,5 +365,25 @@ public class CreatePostViewModel extends AndroidViewModel {
             return email;
         }
         return "Current User";
+    }
+
+    public static class SingleLiveEvent<T> extends MutableLiveData<T> {
+        private final AtomicBoolean pending = new AtomicBoolean(false);
+
+        @Override
+        public void setValue(T value) {
+            pending.set(true);
+            super.setValue(value);
+        }
+
+        @Override
+        public void observe(@NonNull androidx.lifecycle.LifecycleOwner owner,
+                            @NonNull androidx.lifecycle.Observer<? super T> observer) {
+            super.observe(owner, t -> {
+                if (pending.compareAndSet(true, false)) {
+                    observer.onChanged(t);
+                }
+            });
+        }
     }
 }

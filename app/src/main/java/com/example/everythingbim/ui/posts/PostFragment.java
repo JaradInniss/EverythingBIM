@@ -32,6 +32,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -120,9 +121,13 @@ public class PostFragment extends Fragment {
     private void setupObservers() {
         // Observe the list of posts
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
+            allPosts.clear();
             if (posts != null) {
-                allPosts.clear();
-                allPosts.addAll(posts);
+                for (PostEntity post : posts) {
+                    if (isSyncedPost(post)) {
+                        allPosts.add(post);
+                    }
+                }
             }
             applySearchAndSuggestions();
         });
@@ -148,7 +153,7 @@ public class PostFragment extends Fragment {
     private void setupListeners() {
         // Navigate to create post screen
         createPostButton.setOnClickListener(v -> {
-            if (isGuestUser()) {
+            if (!isPostingAuthorized()) {
                 showAuthRequiredDialog();
                 return;
             }
@@ -312,6 +317,19 @@ public class PostFragment extends Fragment {
             }
         }
         return "Unknown location";
+    }
+
+    private boolean isSyncedPost(@Nullable PostEntity post) {
+        return post != null
+                && post.firestoreId != null
+                && !post.firestoreId.trim().isEmpty();
+    }
+
+    private boolean isPostingAuthorized() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            return false;
+        }
+        return !isGuestUser();
     }
 
     private boolean isGuestUser() {
