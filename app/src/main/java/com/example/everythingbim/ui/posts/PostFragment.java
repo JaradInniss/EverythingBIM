@@ -6,16 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +15,15 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.LocationEntity;
@@ -43,7 +42,6 @@ import java.util.Set;
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
-
 public class PostFragment extends Fragment {
 
     private PostViewModel viewModel;
@@ -63,13 +61,11 @@ public class PostFragment extends Fragment {
     private final List<LocationEntity> allLocations = new ArrayList<>();
 
     public PostFragment() {
-        // Required empty public constructor
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_post, container, false);
     }
 
@@ -77,10 +73,8 @@ public class PostFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
-        // Find views by ID
         recyclerView = view.findViewById(R.id.posts_rv);
         createPostButton = view.findViewById(R.id.prev_bttn2);
         searchBar = view.findViewById(R.id.posts_search_bar);
@@ -99,15 +93,11 @@ public class PostFragment extends Fragment {
         setupListeners();
     }
 
-    /**
-     * Configures the RecyclerView with a GridLayoutManager and sets up the click listener for posts.
-     */
     private void setupRecyclerView() {
         adapter = new PostAdapter();
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3)); // 3 columns grid
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
 
-        // Handle post selection: navigate to ViewPost activity
         adapter.setOnPostClickListener(post -> {
             Intent intent = new Intent(getActivity(), ViewPost.class);
             intent.putExtra("POST_ID", post.postId);
@@ -115,11 +105,7 @@ public class PostFragment extends Fragment {
         });
     }
 
-    /**
-     * Observes LiveData from the ViewModel to update the UI when data changes.
-     */
     private void setupObservers() {
-        // Observe the list of posts
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
             allPosts.clear();
             if (posts != null) {
@@ -140,18 +126,13 @@ public class PostFragment extends Fragment {
             applySearchAndSuggestions();
         });
 
-        // Observe the current filter type (Account vs Location)
         viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
             updateFilterUI(type);
             applySearchAndSuggestions();
         });
     }
 
-    /**
-     * Sets up click listeners for the search bar, filter buttons, and create post button.
-     */
     private void setupListeners() {
-        // Navigate to create post screen
         createPostButton.setOnClickListener(v -> {
             if (!isPostingAuthorized()) {
                 showAuthRequiredDialog();
@@ -161,14 +142,12 @@ public class PostFragment extends Fragment {
             startActivity(intent);
         });
 
-        // Show search results when search bar gains focus
         searchEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 applySearchAndSuggestions();
             }
         });
 
-        // Show search results on click
         searchEditText.setOnClickListener(v -> applySearchAndSuggestions());
 
         searchEditText.addTextChangedListener(new TextWatcher() {
@@ -186,7 +165,6 @@ public class PostFragment extends Fragment {
             }
         });
 
-        // Handle filter type selection
         filterAccount.setOnClickListener(v -> viewModel.setFilterType("account"));
         filterLocation.setOnClickListener(v -> viewModel.setFilterType("location"));
 
@@ -205,34 +183,20 @@ public class PostFragment extends Fragment {
         });
     }
 
-    /**
-     * Updates the visual state of the filter buttons based on the selected type.
-     * @param type The active filter type ("account" or "location").
-     */
     private void updateFilterUI(String type) {
         if ("account".equals(type)) {
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_active);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.white));
-            
+
             filterLocation.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterLocation.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         } else {
             filterLocation.setBackgroundResource(R.drawable.bg_search_filter_active);
             filterLocation.setTextColor(ContextCompat.getColor(getContext(), R.color.white));
-            
+
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         }
-    }
-
-    /**
-     * Performs a search for users based on the provided query.
-     * @param query The search query.
-     */
-    private void performUserSearch(String query) {
-        searchEditText.setText(query);
-        searchEditText.setSelection(query.length());
-        applySearchAndSuggestions();
     }
 
     private void applySearchAndSuggestions() {

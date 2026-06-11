@@ -125,7 +125,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     }
 
     private void setupObservers() {
-
+        
         // Observe user type selection (icons, texts, and background)
         viewModel.getSelectedUserType().observe(this, userType -> {
             if (userType == UserType.GENERAL) {
@@ -227,7 +227,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
                 // Delayed Disappearance: Create a timer to hide the error after 2 seconds
                 handler.postDelayed(() -> {
-
+                    
                     // Animate the views sliding back into their original places
                     TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                     // Reset UI: Hide the error box and clear the red outlines/text from the field
@@ -257,7 +257,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             }
         });
     }
-
 
     @Override
     public void onClick(View view) {

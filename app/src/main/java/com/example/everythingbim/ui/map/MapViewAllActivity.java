@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.map;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.posts.ViewPost;
 
 public class MapViewAllActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -69,6 +71,11 @@ public class MapViewAllActivity extends AppCompatActivity implements View.OnClic
         imagesAdapter = new GalleryAdapter(this, post -> {});
         reviewsAdapter = new ReviewsAdapter(this);
         postsAdapter = new PostsAdapter(this);
+        postsAdapter.setOnPostClickListener(post -> {
+            Intent intent = new Intent(this, ViewPost.class);
+            intent.putExtra("POST_ID", post.postId);
+            startActivity(intent);
+        });
 
         // Setup RecyclerViews
         imagesRv.setLayoutManager(new GridLayoutManager(this, 3));
@@ -89,6 +96,12 @@ public class MapViewAllActivity extends AppCompatActivity implements View.OnClic
                 imagesAdapter.setPosts(posts);
                 postsAdapter.setPosts(posts);
                 updateCount(posts.size());
+            }
+        });
+
+        viewModel.getLikedPostIds().observe(this, likedPostIds -> {
+            if (likedPostIds != null) {
+                postsAdapter.setLikedPostIds(likedPostIds);
             }
         });
 
