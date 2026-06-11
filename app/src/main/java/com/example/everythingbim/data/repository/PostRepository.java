@@ -106,12 +106,8 @@ public class PostRepository {
 
                     List<PostEntity> posts = new ArrayList<>();
                     for (DocumentSnapshot doc : value.getDocuments()) {
-                        PostEntity post = doc.toObject(PostEntity.class);
+                        PostEntity post = mapPostFromFirestore(doc);
                         if (post == null) continue;
-                        post.firestoreId = doc.getId();
-                        // Firestore doesn't auto-generate the Room auto-increment
-                        // primary key, so we hash the document id into a long.
-                        post.postId = stableLongFromString(doc.getId());
                         posts.add(post);
                     }
 
@@ -219,10 +215,8 @@ public class PostRepository {
 
                     List<PostEntity> posts = new ArrayList<>();
                     for (DocumentSnapshot doc : value.getDocuments()) {
-                        PostEntity post = doc.toObject(PostEntity.class);
+                        PostEntity post = mapPostFromFirestore(doc);
                         if (post == null) continue;
-                        post.firestoreId = doc.getId();
-                        post.postId = stableLongFromString(doc.getId());
                         posts.add(post);
                     }
                     // Mirror into Room so offline reads (e.g. ViewPost's
@@ -351,6 +345,45 @@ public class PostRepository {
         // handled transactionally in toggleLike().
         map.put("likeCount", post.likeCount != null ? post.likeCount : 0);
         return map;
+    }
+
+    @androidx.annotation.Nullable
+    private PostEntity mapPostFromFirestore(@NonNull DocumentSnapshot doc) {
+        try {
+            Long locationId = doc.getLong("locationId");
+            Long authorId = doc.getLong("authorId");
+            String locationName = doc.getString("locationName");
+            String authorName = doc.getString("authorName");
+            String authorUid = doc.getString("authorUid");
+            String caption = doc.getString("caption");
+            String imageUrl = doc.getString("imageUrl");
+            long createdAt = timestampFieldToMillis(doc.get("createdAt"));
+
+            @SuppressWarnings("unchecked")
+            List<String> taggedUserUids = (List<String>) doc.get("taggedUserUids");
+
+            PostEntity post = new PostEntity(
+                    locationId != null ? locationId : 0L,
+                    locationName,
+                    authorId != null ? authorId : 0L,
+                    authorName,
+                    authorUid,
+                    caption,
+                    imageUrl,
+                    createdAt,
+                    taggedUserUids != null ? taggedUserUids : new ArrayList<>()
+            );
+            post.firestoreId = doc.getId();
+            post.postId = stableLongFromString(doc.getId());
+            Long likeCount = doc.getLong("likeCount");
+            post.likeCount = likeCount != null ? likeCount.intValue() : 0;
+            Long commentCount = doc.getLong("commentCount");
+            post.commentCount = commentCount != null ? commentCount.intValue() : null;
+            return post;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to map Firestore post " + doc.getId(), e);
+            return null;
+        }
     }
 
     public void insert(PostEntity post) {
@@ -508,7 +541,7 @@ public class PostRepository {
         return map;
     }
 
-    private Long timestampFieldToMillis(Object value) {
+    private long timestampFieldToMillis(Object value) {
         if (value instanceof Timestamp) {
             return ((Timestamp) value).toDate().getTime();
         }
@@ -518,7 +551,7 @@ public class PostRepository {
         if (value instanceof java.util.Date) {
             return ((java.util.Date) value).getTime();
         }
-        return null;
+        return System.currentTimeMillis();
     }
 
     // ---------------------------------------------------------------------

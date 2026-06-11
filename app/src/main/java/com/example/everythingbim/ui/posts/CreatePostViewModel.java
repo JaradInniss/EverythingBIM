@@ -27,7 +27,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -45,6 +47,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class CreatePostViewModel extends AndroidViewModel {
 
     private static final String TAG = "CreatePostViewModel";
+
+    private static final class UploadResult {
+        @Nullable
+        final String downloadUrl;
+        @Nullable
+        final String errorMessage;
+
+        UploadResult(@Nullable String downloadUrl, @Nullable String errorMessage) {
+            this.downloadUrl = downloadUrl;
+            this.errorMessage = errorMessage;
+        }
+    }
 
     private final PostDao postDao;
     private final LocationDao locationDao;
@@ -158,7 +172,12 @@ public class CreatePostViewModel extends AndroidViewModel {
     public void addTaggedUser(@Nullable UserEntity user) {
         if (user == null) return; // Guard against null (see equals contract).
         List<UserEntity> currentTags = taggedUsers.getValue();
-        if (currentTags != null && !currentTags.contains(user)) {
+        if (currentTags == null) {
+            currentTags = new ArrayList<>();
+        } else {
+            currentTags = new ArrayList<>(currentTags);
+        }
+        if (!currentTags.contains(user)) {
             currentTags.add(user);
             taggedUsers.setValue(currentTags);
         }
@@ -168,8 +187,9 @@ public class CreatePostViewModel extends AndroidViewModel {
         if (user == null) return;
         List<UserEntity> currentTags = taggedUsers.getValue();
         if (currentTags != null) {
-            currentTags.remove(user);
-            taggedUsers.setValue(currentTags);
+            List<UserEntity> updatedTags = new ArrayList<>(currentTags);
+            updatedTags.remove(user);
+            taggedUsers.setValue(updatedTags);
         }
     }
 
@@ -186,10 +206,12 @@ public class CreatePostViewModel extends AndroidViewModel {
 
     public void setLocationFromPlaces(@NonNull Place place) {
         executorService.execute(() -> {
+            double latitude = place.getLatLng() != null ? place.getLatLng().latitude : 0.0;
+            double longitude = place.getLatLng() != null ? place.getLatLng().longitude : 0.0;
             LocationEntity newLocation = new LocationEntity(
                     place.getName(),
-                    place.getLatLng().latitude,
-                    place.getLatLng().longitude,
+                    latitude,
+                    longitude,
                     (place.getRating() != null) ? place.getRating().floatValue() : 0.0f,
                     false,
                     "GooglePlaces",
@@ -278,9 +300,13 @@ public class CreatePostViewModel extends AndroidViewModel {
 
         isSaving.setValue(true);
         executorService.execute(() -> {
-            String imageDownloadUrl = uploadImageToStorage(currentUri, uid);
-            if (imageDownloadUrl == null) {
-                errorMessage.postValue("Failed to upload image. Please try again.");
+            refreshAuthSessionIfPossible(currentUser);
+
+            UploadResult uploadResult = uploadImageToStorage(currentUri, uid);
+            if (uploadResult.downloadUrl == null) {
+                errorMessage.postValue(uploadResult.errorMessage != null
+                        ? uploadResult.errorMessage
+                        : "Failed to upload image. Please try again.");
                 isSaving.postValue(false);
                 return;
             }
@@ -292,10 +318,11 @@ public class CreatePostViewModel extends AndroidViewModel {
                     authorName,
                     uid,
                     currentCaption,
-                    imageDownloadUrl,
+                    uploadResult.downloadUrl,
                     System.currentTimeMillis(),
                     taggedUids
             );
+            newPost.likeCount = 0;
 
             // Write to Firestore via a one-shot callback. The callback fires on
             // a background thread (Firestore worker), so we use postValue on the
@@ -323,7 +350,7 @@ public class CreatePostViewModel extends AndroidViewModel {
      * executor.
      */
     @Nullable
-    private String uploadImageToStorage(@NonNull Uri uri, @Nullable String uid) {
+    private UploadResult uploadImageToStorage(@NonNull Uri uri, @Nullable String uid) {
         try {
             String safeUid = (uid == null || uid.isEmpty()) ? "anonymous" : uid;
             StorageReference storageRef = FirebaseStorage.getInstance().getReference()
@@ -332,12 +359,61 @@ public class CreatePostViewModel extends AndroidViewModel {
             UploadTask.TaskSnapshot snapshot = Tasks.await(storageRef.putFile(uri));
             if (snapshot == null) {
                 Log.w(TAG, "Upload snapshot was null");
-                return null;
+                return new UploadResult(null, "Upload failed before Firebase returned a result.");
             }
-            return Tasks.await(snapshot.getStorage().getDownloadUrl()).toString();
+            return new UploadResult(Tasks.await(snapshot.getStorage().getDownloadUrl()).toString(), null);
         } catch (Exception e) {
             Log.e(TAG, "Failed to upload post image", e);
-            return null;
+            return new UploadResult(null, buildUploadErrorMessage(e));
+        }
+    }
+
+    @NonNull
+    private String buildUploadErrorMessage(@NonNull Exception exception) {
+        Throwable cause = exception;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+
+        if (cause instanceof StorageException) {
+            int errorCode = ((StorageException) cause).getErrorCode();
+            if (errorCode == StorageException.ERROR_NOT_AUTHENTICATED) {
+                return "You need to sign in again before uploading a post image.";
+            }
+            if (errorCode == StorageException.ERROR_NOT_AUTHORIZED) {
+                return "Firebase Storage denied this upload. Check Storage rules or App Check for this app.";
+            }
+            if (errorCode == StorageException.ERROR_RETRY_LIMIT_EXCEEDED
+                    || errorCode == StorageException.ERROR_QUOTA_EXCEEDED) {
+                return "Image upload could not finish right now. Please try again in a moment.";
+            }
+            if (errorCode == StorageException.ERROR_CANCELED) {
+                return "Image upload was canceled before it finished.";
+            }
+        }
+
+        String message = cause.getMessage();
+        if (message != null) {
+            String normalizedMessage = message.toLowerCase(java.util.Locale.US);
+            if (normalizedMessage.contains("permission denied")) {
+                return "Firebase Storage denied this upload. Check Storage rules or App Check for this app.";
+            }
+            if (normalizedMessage.contains("network")) {
+                return "Image upload failed because the network connection was interrupted.";
+            }
+        }
+
+        return "Failed to upload image: " + exception.getClass().getSimpleName();
+    }
+
+    private void refreshAuthSessionIfPossible(@NonNull FirebaseUser currentUser) {
+        try {
+            GetTokenResult tokenResult = Tasks.await(currentUser.getIdToken(true));
+            if (tokenResult == null || tokenResult.getToken() == null || tokenResult.getToken().trim().isEmpty()) {
+                Log.w(TAG, "Firebase auth token refresh returned an empty token before post upload");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to refresh Firebase auth token before post upload; proceeding with current session", e);
         }
     }
 

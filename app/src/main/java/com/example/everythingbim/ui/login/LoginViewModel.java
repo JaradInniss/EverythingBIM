@@ -19,9 +19,7 @@ import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.NavigationCommand;
-import com.example.everythingbim.ui.utils.PasswordHash;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -132,67 +130,105 @@ public class LoginViewModel extends ViewModel {
                 ? selectedUserType.getValue()
                 : UserType.GENERAL;
 
+        if (selected == UserType.ADMIN) {
+            loginAdmin(usernameOrEmail, password);
+            return;
+        }
+
         String collection = (selected == UserType.BUSINESS) ? "businesses" : "users";
+        String emailField = (selected == UserType.BUSINESS) ? "businessEmail" : "email";
         Log.d("LoginViewModel", "Attempting login with usernameOrEmail: " + usernameOrEmail + ", collection: " + collection + ", userType: " + selected);
 
-        // First try to find by username
-        // Flag to track if login already succeeded via either query
-        final boolean[] loginSucceeded = {false};
-
-        // First try to find by username
         db.collection(collection)
                 .whereEqualTo("username", usernameOrEmail)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                        // Found by username - verify password
-                        loginSucceeded[0] = true;
-                        verifyPasswordAndLogin(task.getResult().getDocuments().get(0), password, selected);
-                    }
-                    // If not found, email fallback will be tried below
-                });
-
-        // Also try email fallback for login
-        String emailField = (selected == UserType.BUSINESS) ? "businessEmail" : "email";
-        Log.d("LoginViewModel", "Trying email fallback with field: " + emailField + ", collection: " + collection);
-        db.collection(collection)
-                .whereEqualTo(emailField, usernameOrEmail)
-                .get()
-                .addOnCompleteListener(task2 -> {
-                    if (loginSucceeded[0]) {
-                        isLoading.setValue(false);
+                        signInWithMatchedUser(task.getResult().getDocuments().get(0), password, selected);
                         return;
                     }
-                    isLoading.setValue(false);
-                    if (task2.isSuccessful()) {
-                        if (task2.getResult() != null && !task2.getResult().isEmpty()) {
-                            verifyPasswordAndLogin(task2.getResult().getDocuments().get(0), password, selected);
-                        } else {
-                            toastMessage.setValue("Invalid username/email or password");
-                        }
+
+                    db.collection(collection)
+                            .whereEqualTo(emailField, usernameOrEmail)
+                            .get()
+                            .addOnCompleteListener(emailTask -> {
+                                if (emailTask.isSuccessful()
+                                        && emailTask.getResult() != null
+                                        && !emailTask.getResult().isEmpty()) {
+                                    signInWithMatchedUser(emailTask.getResult().getDocuments().get(0), password, selected);
+                                } else if (emailTask.isSuccessful()) {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Invalid username/email or password");
+                                } else {
+                                    isLoading.setValue(false);
+                                    Log.e("LoginViewModel", "Email fallback query failed", emailTask.getException());
+                                    toastMessage.setValue("Login failed. Please try again.");
+                                }
+                            });
+                });
+    }
+
+    private void signInWithMatchedUser(DocumentSnapshot userDoc, String password, UserType selected) {
+        String emailField = (selected == UserType.BUSINESS) ? "businessEmail" : "email";
+        String email = userDoc.getString(emailField);
+        if (email == null || email.trim().isEmpty()) {
+            isLoading.setValue(false);
+            toastMessage.setValue("Login failed. Account email is missing.");
+            return;
+        }
+
+        auth.signInWithEmailAndPassword(email.trim(), password)
+                .addOnCompleteListener(authTask -> {
+                    if (authTask.isSuccessful()) {
+                        isLoading.setValue(false);
+                        String userTypeStr = (selected == UserType.BUSINESS)
+                                ? MainActivity.USER_TYPE_BUSINESS
+                                : MainActivity.USER_TYPE_GENERAL;
+                        saveAndNavigate(userTypeStr, userDoc.getId());
                     } else {
-                        Exception e2 = task2.getException();
-                        Log.e("LoginViewModel", "Email fallback query failed", e2);
-                        toastMessage.setValue("Login failed. Please try again.");
+                        isLoading.setValue(false);
+                        toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
                     }
                 });
     }
 
-    private void verifyPasswordAndLogin(DocumentSnapshot userDoc, String password, UserType selected) {
+    private void loginAdmin(String usernameOrEmail, String password) {
+        db.collection("admins")
+                .whereEqualTo("username", usernameOrEmail)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        verifyAdminPassword(task.getResult().getDocuments().get(0), password);
+                        return;
+                    }
+
+                    db.collection("admins")
+                            .whereEqualTo("email", usernameOrEmail)
+                            .get()
+                            .addOnCompleteListener(emailTask -> {
+                                if (emailTask.isSuccessful()
+                                        && emailTask.getResult() != null
+                                        && !emailTask.getResult().isEmpty()) {
+                                    verifyAdminPassword(emailTask.getResult().getDocuments().get(0), password);
+                                } else if (emailTask.isSuccessful()) {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Invalid username/email or password");
+                                } else {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Login failed. Please try again.");
+                                }
+                            });
+                });
+    }
+
+    private void verifyAdminPassword(DocumentSnapshot userDoc, String password) {
         String storedPassword = userDoc.getString("password");
-        if (storedPassword != null) {
-            // Check hashed password first, then fall back to plain text for backwards compatibility
-            boolean passwordMatches = PasswordHash.verify(password, storedPassword)
-                    || storedPassword.equals(password);
-            if (passwordMatches) {
-                String userId = userDoc.getId();
-                String userTypeStr = (selected == UserType.BUSINESS)
-                        ? MainActivity.USER_TYPE_BUSINESS
-                        : MainActivity.USER_TYPE_GENERAL;
-                saveAndNavigate(userTypeStr, userId);
-                return;
-            }
+        if (storedPassword != null && storedPassword.equals(password)) {
+            isLoading.setValue(false);
+            saveAndNavigate("admin", userDoc.getId());
+            return;
         }
+
         isLoading.setValue(false);
         toastMessage.setValue("Invalid username/email or password");
     }
