@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/view_posts"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@drawable/bg_main"
     tools:context=".ui.posts.ViewPost">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
+        android:layout_marginHorizontal="10dp"
         android:layout_marginVertical="15dp"
-        android:layout_marginHorizontal="10dp">
+        android:orientation="vertical">
 
-        <!-- Return Button -->
         <LinearLayout
             android:id="@+id/return_bttn"
             android:layout_width="wrap_content"
@@ -28,20 +26,22 @@
                 android:layout_width="20dp"
                 android:layout_height="26dp"
                 android:src="@drawable/ic_caret_left"
-                app:tint="@color/white"/>
+                app:tint="@color/white" />
 
             <TextView
+                style="@style/subheading_txt_style"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
-                android:text="Return"
-                style="@style/subheading_txt_style"/>
+                android:text="Return" />
 
         </LinearLayout>
 
         <androidx.core.widget.NestedScrollView
+            android:id="@+id/view_post_scroll"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:fillViewport="true">
 
             <LinearLayout
@@ -49,41 +49,38 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- User Info -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="10dp">
 
-                    <!-- User Profile Picture  -->
                     <androidx.cardview.widget.CardView
                         android:id="@+id/profile_pic_card"
                         android:layout_width="36dp"
                         android:layout_height="36dp"
+                        android:background="@color/white"
                         android:padding="10dp"
-                        app:cardCornerRadius="360dp"
-                        android:background="@color/white">
+                        app:cardCornerRadius="360dp">
 
                         <ImageView
                             android:id="@+id/viewpost_user_profile_pic"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:src="@drawable/jampuff"/>
+                            android:src="@drawable/jampuff" />
 
                     </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:id="@+id/viewpost_user_name"
+                        style="@style/white_medium_txt_style"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_toRightOf="@id/profile_pic_card"
-                        android:layout_marginLeft="10dp"
                         android:layout_centerVertical="true"
+                        android:layout_marginLeft="10dp"
+                        android:layout_toRightOf="@id/profile_pic_card"
                         android:text="Username"
-                        android:textSize="12sp"
-                        style="@style/white_medium_txt_style"/>
+                        android:textSize="12sp" />
 
-                    <!-- Report Post Button -->
                     <ImageView
                         android:id="@+id/report_post_bttn"
                         android:layout_width="20dp"
@@ -91,11 +88,10 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:src="@drawable/ic_flag_banner"
-                        app:tint="@color/pale_slate"/>
+                        app:tint="@color/pale_slate" />
 
                 </RelativeLayout>
 
-                <!-- Location Tag -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -105,20 +101,19 @@
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:src="@drawable/ic_pin_area"
-                        app:tint="@color/pale_slate"/>
+                        app:tint="@color/pale_slate" />
 
                     <TextView
                         android:id="@+id/viewpost_location"
+                        style="@style/white_small_txt_style"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="5dp"
                         android:text="Location"
-                        android:textColor="@color/pale_slate"
-                        style="@style/white_small_txt_style"/>
+                        android:textColor="@color/pale_slate" />
 
                 </LinearLayout>
 
-                <!-- Post Image -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="300dp"
@@ -128,11 +123,10 @@
                     <ImageView
                         android:id="@+id/viewpost_image"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"/>
+                        android:layout_height="match_parent" />
 
                 </androidx.cardview.widget.CardView>
 
-                <!-- Like and Comment Buttons -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -143,128 +137,95 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_heart"
-                        app:tint="@color/pale_slate"/>
+                        app:tint="@color/pale_slate" />
 
                     <TextView
                         android:id="@+id/viewpost_likes"
+                        style="@style/white_small_txt_style"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_toRightOf="@id/likes_icon"
-                        android:layout_marginLeft="4dp"
                         android:layout_centerVertical="true"
-                        android:text="45"
-                        style="@style/white_small_txt_style"/>
+                        android:layout_marginLeft="4dp"
+                        android:layout_toRightOf="@id/likes_icon"
+                        android:text="45" />
 
                     <ImageView
                         android:id="@+id/comments_icon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:layout_toRightOf="@id/viewpost_likes"
                         android:layout_marginLeft="20dp"
+                        android:layout_toRightOf="@id/viewpost_likes"
                         android:src="@drawable/ic_comment"
-                        app:tint="@color/pale_slate"/>
+                        app:tint="@color/pale_slate" />
 
                     <TextView
                         android:id="@+id/viewpost_comments"
+                        style="@style/white_small_txt_style"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_toRightOf="@id/comments_icon"
-                        android:layout_marginLeft="4dp"
                         android:layout_centerVertical="true"
-                        android:text="45"
-                        style="@style/white_small_txt_style"/>
+                        android:layout_marginLeft="4dp"
+                        android:layout_toRightOf="@id/comments_icon"
+                        android:text="45" />
 
                     <TextView
                         android:id="@+id/viewpost_upload_date"
+                        style="@style/white_small_txt_style"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:text="2 Wks Ago"
+                        android:textColor="@color/pale_slate" />
+
+                    <TextView
+                        android:id="@+id/view_tagged_users_bttn"
+                        style="@style/white_small_txt_style"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toLeftOf="@id/viewpost_upload_date"
+                        android:layout_marginRight="20dp"
+                        android:text="Tagged Users"
                         android:textColor="@color/pale_slate"
-                        style="@style/white_small_txt_style"/>
+                        android:visibility="gone" />
 
                 </RelativeLayout>
 
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/viewpost_tagged_users_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardCornerRadius="5dp">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/viewpost_tagged_users_rv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/prussian_blue"
+                        android:orientation="horizontal"
+                        tools:listitem="@layout/item_viewpost_user_tag" />
+
+                </androidx.cardview.widget.CardView>
+
                 <TextView
                     android:id="@+id/viewpost_caption"
+                    style="@style/white_small_txt_style"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="Lengthy caption I guess"
-                    style="@style/white_small_txt_style"/>
+                    android:text="Lengthy caption I guess" />
 
                 <TextView
+                    style="@style/white_small_txt_style"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:text="Comments"
-                    android:textSize="14sp"
                     android:textColor="@color/pale_slate"
-                    style="@style/white_small_txt_style"/>
-
-                <!-- New Comment Container -->
-                <LinearLayout
-                    android:id="@+id/write_review_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:paddingVertical="8dp"
-                    android:paddingHorizontal="10dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_rectangle_white">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/replying_to_username"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Re: User"
-                            style="@style/black_small_txt_style"/>
-
-                        <!-- New Review Input -->
-                        <EditText
-                            android:id="@+id/new_comment_input"
-                            android:layout_width="match_parent"
-                            android:layout_height="50dp"
-                            android:gravity="top|start"
-                            android:inputType="textMultiLine"
-                            style="@style/black_small_txt_style"
-                            android:background="@android:color/transparent"/>
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/submit_comment_bttn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dp"
-                        android:padding="10dp"
-                        android:text="Submit"
-                        android:textSize="14sp"
-                        style="@style/black_medium_txt_style"
-                        android:background="@drawable/bg_rectangle_gold"
-                        android:visibility="visible"/>
-
-                    <TextView
-                        android:id="@+id/submit_reply_bttn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dp"
-                        android:padding="10dp"
-                        android:text="Reply"
-                        android:textSize="14sp"
-                        style="@style/black_medium_txt_style"
-                        android:background="@drawable/bg_rectangle_gold"
-                        android:visibility="gone"/>
-
-                </LinearLayout>
-                <!-- New Comment Container [End] -->
+                    android:textSize="14sp" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/viewpost_comments_rv"
@@ -272,12 +233,79 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:nestedScrollingEnabled="false"
-                    tools:listitem="@layout/item_post_comment"/>
+                    tools:listitem="@layout/item_post_comment" />
 
             </LinearLayout>
 
         </androidx.core.widget.NestedScrollView>
 
+        <LinearLayout
+            android:id="@+id/write_review_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_rectangle_white"
+            android:gravity="center"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/replying_to_username"
+                    style="@style/black_small_txt_style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Re: User" />
+
+                <EditText
+                    android:id="@+id/new_comment_input"
+                    style="@style/black_small_txt_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/transparent"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/submit_comment_bttn"
+                style="@style/black_medium_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/bg_rectangle_gold"
+                android:padding="10dp"
+                android:text="Submit"
+                android:textSize="14sp"
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/submit_reply_bttn"
+                style="@style/black_medium_txt_style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/bg_rectangle_gold"
+                android:padding="10dp"
+                android:text="Reply"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
-</LinearLayout>
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="100dp"
+        layout="@layout/view_scroll_hint_overlay" />
+
+</FrameLayout>

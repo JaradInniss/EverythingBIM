@@ -3,17 +3,24 @@ package com.example.everythingbim.ui.posts;
 import android.app.Application;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.data.repository.PostRepository;
+import com.example.everythingbim.data.repository.UserRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +31,7 @@ import java.util.Map;
  */
 public class PostViewModel extends AndroidViewModel {
     private final PostRepository repository;
+    private final UserRepository userRepository;
     private final LiveData<List<PostEntity>> posts;
     private final LiveData<List<LocationEntity>> locations;
     private final MutableLiveData<String> filterType = new MutableLiveData<>("account");
@@ -31,20 +39,17 @@ public class PostViewModel extends AndroidViewModel {
     public PostViewModel(@NonNull Application application) {
         super(application);
         repository = new PostRepository(application);
+        userRepository = new UserRepository(application);
         posts = repository.getRandomizedPosts();
         locations = repository.getAllLocations();
-        
-        // Seed placeholder data if database is empty to ensure UI is populated during testing
+
         repository.seedDataIfEmpty();
     }
 
-
-     // Returns an observable list of randomized posts.
     public LiveData<List<PostEntity>> getPosts() {
         return posts;
     }
 
-    // Fetches a specific post by its ID.
     public LiveData<PostEntity> getPostById(long postId) {
         return repository.getPostById(postId);
     }
@@ -57,73 +62,127 @@ public class PostViewModel extends AndroidViewModel {
         return locations;
     }
 
-    // Returns the current search filter type (e.g., "account" or "location").
     public LiveData<String> getFilterType() {
         return filterType;
     }
 
-    // Updates the active search filter type.
     public void setFilterType(String type) {
         filterType.setValue(type);
     }
 
-    /**
-     * Retrieves comments for a post and transforms them into a hierarchical UI model structure.
-     * This method converts a flat list of comments from the database into a tree structure
-     * where replies are nested within their parent comments.
-     * 
-     * @param postId The ID of the post to get comments for.
-     * @return A LiveData list of top-level CommentUIModels, each containing its nested replies.
-     */
-    public LiveData<List<CommentUIModel>> getCommentsForPost(long postId) {
-        return Transformations.map(repository.getCommentsForPost(postId), comments -> {
-            if (comments == null) return new ArrayList<>();
-            
-            Map<Long, CommentUIModel> lookup = new HashMap<>();
-            List<CommentUIModel> topLevelComments = new ArrayList<>();
-
-            // First pass: Create UI models for all comments and store in a lookup map
-            for (CommentEntity comment : comments) {
-                lookup.put(comment.commentId, new CommentUIModel(comment));
+    public LiveData<List<UserEntity>> getTaggedUsersForPost(long postId) {
+        return Transformations.switchMap(repository.getPostById(postId), post -> {
+            if (post == null || post.taggedUserUids == null || post.taggedUserUids.isEmpty()) {
+                MutableLiveData<List<UserEntity>> empty = new MutableLiveData<>();
+                empty.setValue(Collections.emptyList());
+                return empty;
             }
-
-            // Second pass: Link replies to their parent comments to build the tree hierarchy
-            for (CommentEntity comment : comments) {
-                CommentUIModel uiModel = lookup.get(comment.commentId);
-                if (comment.parentCommentId == null) {
-                    // It's a top-level comment
-                    topLevelComments.add(uiModel);
-                } else {
-                    // It's a reply; find the parent in the lookup map and add it
-                    CommentUIModel parent = lookup.get(comment.parentCommentId);
-                    if (parent != null) {
-                        parent.addReply(uiModel);
-                    }
-                }
-            }
-            return topLevelComments;
+            return userRepository.getUsersByFirebaseUids(post.taggedUserUids);
         });
     }
 
-    /**
-     * Adds a new comment or reply to the database.
-     * 
-     * @param postId ID of the post.
-     * @param parentCommentId ID of the parent comment (null if top-level).
-     * @param authorName Name of the person commenting.
-     * @param parentAuthorName Name of the author being replied to (for display purposes).
-     * @param body The text content of the comment.
-     */
-    public void addComment(long postId, Long parentCommentId, String authorName, String parentAuthorName, String body) {
+    public LiveData<List<CommentUIModel>> getCommentsForPost(long postId) {
+        return Transformations.switchMap(repository.getPostById(postId), post -> {
+            MediatorLiveData<List<CommentUIModel>> result = new MediatorLiveData<>();
+            if (!hasSyncedFirestorePost(post)) {
+                result.setValue(Collections.emptyList());
+                return result;
+            }
+            LiveData<List<CommentEntity>> source = repository.getCommentsForPost(post.firestoreId);
+            result.addSource(source, comments -> result.setValue(buildCommentHierarchy(comments)));
+            return result;
+        });
+    }
+
+    @NonNull
+    private List<CommentUIModel> buildCommentHierarchy(@Nullable List<CommentEntity> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<Long, CommentUIModel> lookup = new HashMap<>();
+        List<CommentUIModel> topLevelComments = new ArrayList<>();
+
+        for (CommentEntity comment : comments) {
+            lookup.put(comment.commentId, new CommentUIModel(comment));
+        }
+
+        for (CommentEntity comment : comments) {
+            CommentUIModel uiModel = lookup.get(comment.commentId);
+            if (comment.parentCommentId == null) {
+                topLevelComments.add(uiModel);
+            } else {
+                CommentUIModel parent = lookup.get(comment.parentCommentId);
+                if (parent != null) {
+                    parent.addReply(uiModel);
+                }
+            }
+        }
+        return topLevelComments;
+    }
+
+    public LiveData<CommentEntity> addComment(@NonNull PostEntity post,
+                                              Long parentCommentId,
+                                              @NonNull String authorName,
+                                              @Nullable String authorUid,
+                                              @Nullable String parentAuthorName,
+                                              @NonNull String body) {
+        if (!hasSyncedFirestorePost(post)) {
+            MutableLiveData<CommentEntity> failure = new MutableLiveData<>();
+            failure.setValue(null);
+            return failure;
+        }
         CommentEntity comment = new CommentEntity(
-                postId,
+                post.postId,
                 parentCommentId,
                 authorName,
+                authorUid,
                 parentAuthorName,
                 body,
                 System.currentTimeMillis()
         );
-        repository.insertComment(comment);
+        return repository.addCommentToFirestore(post.firestoreId, comment);
     }
 
+    public LiveData<Boolean> isLikedByCurrentUser(long postId) {
+        return Transformations.switchMap(repository.getPostById(postId), post -> {
+            MediatorLiveData<Boolean> result = new MediatorLiveData<>();
+            if (!hasSyncedFirestorePost(post)) {
+                result.setValue(false);
+                return result;
+            }
+            FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+            if (current == null || current.getUid() == null) {
+                result.setValue(false);
+                return result;
+            }
+            LiveData<Boolean> source = repository.isLikedByCurrentUser(post.firestoreId, post.postId, current.getUid());
+            result.addSource(source, result::setValue);
+            return result;
+        });
+    }
+
+    public LiveData<Boolean> toggleLike(long postId) {
+        return Transformations.switchMap(repository.getPostById(postId), post -> {
+            MediatorLiveData<Boolean> result = new MediatorLiveData<>();
+            if (!hasSyncedFirestorePost(post)) {
+                result.setValue(false);
+                return result;
+            }
+            FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+            if (current == null || current.getUid() == null) {
+                result.setValue(false);
+                return result;
+            }
+            LiveData<Boolean> source = repository.toggleLike(post.firestoreId, post.postId, current.getUid());
+            result.addSource(source, result::setValue);
+            return result;
+        });
+    }
+
+    private boolean hasSyncedFirestorePost(PostEntity post) {
+        return post != null
+                && post.firestoreId != null
+                && !post.firestoreId.trim().isEmpty();
+    }
 }
