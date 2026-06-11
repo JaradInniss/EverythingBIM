@@ -28,6 +28,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
+    private static final String COLLECTION_ADMIN = "admin";
+    private static final String COLLECTION_ADMINS = "admins";
 
     private final FirebaseAuth auth;
     private final FirebaseFirestore db;
@@ -193,32 +195,11 @@ public class LoginViewModel extends ViewModel {
     }
 
     private void loginAdmin(String usernameOrEmail, String password) {
-        db.collection("admins")
-                .whereEqualTo("username", usernameOrEmail)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                        verifyAdminPassword(task.getResult().getDocuments().get(0), password);
-                        return;
-                    }
-
-                    db.collection("admins")
-                            .whereEqualTo("email", usernameOrEmail)
-                            .get()
-                            .addOnCompleteListener(emailTask -> {
-                                if (emailTask.isSuccessful()
-                                        && emailTask.getResult() != null
-                                        && !emailTask.getResult().isEmpty()) {
-                                    verifyAdminPassword(emailTask.getResult().getDocuments().get(0), password);
-                                } else if (emailTask.isSuccessful()) {
-                                    isLoading.setValue(false);
-                                    toastMessage.setValue("Invalid username/email or password");
-                                } else {
-                                    isLoading.setValue(false);
-                                    toastMessage.setValue("Login failed. Please try again.");
-                                }
-                            });
-                });
+        queryAdminByUsernameOrEmail(COLLECTION_ADMIN, usernameOrEmail, password, () ->
+                queryAdminByUsernameOrEmail(COLLECTION_ADMINS, usernameOrEmail, password, () -> {
+                    isLoading.setValue(false);
+                    toastMessage.setValue("Invalid username/email or password");
+                }));
     }
 
     private void verifyAdminPassword(DocumentSnapshot userDoc, String password) {
@@ -229,8 +210,53 @@ public class LoginViewModel extends ViewModel {
             return;
         }
 
+        String email = userDoc.getString("email");
+        if (email != null && !email.trim().isEmpty()) {
+            auth.signInWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener(authTask -> {
+                        isLoading.setValue(false);
+                        if (authTask.isSuccessful()) {
+                            saveAndNavigate("admin", userDoc.getId());
+                        } else {
+                            toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
+                        }
+                    });
+            return;
+        }
+
         isLoading.setValue(false);
         toastMessage.setValue("Invalid username/email or password");
+    }
+
+    private void queryAdminByUsernameOrEmail(@NonNull String collection,
+                                             @NonNull String usernameOrEmail,
+                                             @NonNull String password,
+                                             @NonNull Runnable onNotFound) {
+        db.collection(collection)
+                .whereEqualTo("username", usernameOrEmail)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        verifyAdminPassword(task.getResult().getDocuments().get(0), password);
+                        return;
+                    }
+
+                    db.collection(collection)
+                            .whereEqualTo("email", usernameOrEmail)
+                            .get()
+                            .addOnCompleteListener(emailTask -> {
+                                if (emailTask.isSuccessful()
+                                        && emailTask.getResult() != null
+                                        && !emailTask.getResult().isEmpty()) {
+                                    verifyAdminPassword(emailTask.getResult().getDocuments().get(0), password);
+                                } else if (emailTask.isSuccessful()) {
+                                    onNotFound.run();
+                                } else {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Login failed. Please try again.");
+                                }
+                            });
+                });
     }
 
     private String getFriendlyErrorMessage(Exception exception) {
@@ -269,8 +295,8 @@ public class LoginViewModel extends ViewModel {
                 : UserType.GENERAL;
 
         String[] collectionsToCheck = selected == UserType.ADMIN
-                ? new String[]{"admins", "users", "businesses"}
-                : new String[]{"users", "businesses", "admins"};
+                ? new String[]{COLLECTION_ADMIN, COLLECTION_ADMINS, "users", "businesses"}
+                : new String[]{"users", "businesses", COLLECTION_ADMIN, COLLECTION_ADMINS};
 
         fetchUserTypeFromCollections(userId, collectionsToCheck, 0);
     }
@@ -314,7 +340,7 @@ public class LoginViewModel extends ViewModel {
     }
 
     private String normalizeResolvedUserType(String rawUserType, String sourceCollection) {
-        if ("admins".equals(sourceCollection)) {
+        if (COLLECTION_ADMIN.equals(sourceCollection) || COLLECTION_ADMINS.equals(sourceCollection)) {
             return "admin";
         }
         if (rawUserType == null || rawUserType.trim().isEmpty()) {
