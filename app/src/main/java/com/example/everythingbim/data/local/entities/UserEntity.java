@@ -5,6 +5,8 @@ import androidx.room.PrimaryKey;
 
 import com.example.everythingbim.data.models.UserType;
 
+import java.util.Objects;
+
 
 // User Entity
 
@@ -19,6 +21,7 @@ public class UserEntity {
     public UserType userType;
     public boolean emailVerified;
     public long createdAt;
+    public String firebaseUid;
 
     public UserEntity(String username, String passwordHash, String email, UserType userType, boolean emailVerified, long createdAt) {
         this.username = username;
@@ -27,6 +30,9 @@ public class UserEntity {
         this.userType = userType;
         this.emailVerified = emailVerified;
         this.createdAt = createdAt;
+    }
+
+    public UserEntity() {
     }
 
     public long getUserId() {
@@ -83,5 +89,26 @@ public class UserEntity {
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getFirebaseUid() {
+        return firebaseUid;
+    }
+
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserEntity)) return false;
+        UserEntity that = (UserEntity) o;
+        return userId == that.userId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
     }
 }

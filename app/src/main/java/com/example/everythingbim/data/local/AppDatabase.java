@@ -8,20 +8,21 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import com.example.everythingbim.data.local.dao.CommentDao;
+import com.example.everythingbim.data.local.dao.LikeDao;
 import com.example.everythingbim.data.local.dao.LocationDao;
 import com.example.everythingbim.data.local.dao.MarkerDao;
 import com.example.everythingbim.data.local.dao.PostDao;
-import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.dao.ReportDao;
 import com.example.everythingbim.data.local.dao.UserDao;
 import com.example.everythingbim.data.local.entities.BusinessUserEntity;
+import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.example.everythingbim.data.local.entities.GeneralUserEntity;
+import com.example.everythingbim.data.local.entities.LikeEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
-import com.example.everythingbim.data.local.entities.CommentEntity;
-import com.example.everythingbim.data.local.entities.GeneralUserEntity;
-import com.example.everythingbim.data.local.entities.LikeEntity;
 import com.example.everythingbim.data.local.entities.ReportEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.Executors;
         UserEntity.class,
         GeneralUserEntity.class,
         BusinessUserEntity.class
-}, version = 8)
+}, version = 9)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final ExecutorService DATABASE_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -47,6 +48,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract MarkerDao markerDao();
     public abstract PostDao postDao();
     public abstract LocationDao locationDao();
+    public abstract LikeDao likeDao();
     public abstract CommentDao commentDao();
     public abstract ReportDao reportDao();
     public abstract UserDao userDao();

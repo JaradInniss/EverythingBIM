@@ -3,7 +3,9 @@ package com.example.everythingbim.data.local.dao;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import com.example.everythingbim.data.local.entities.PostEntity;
@@ -31,8 +33,18 @@ public interface PostDao {
      * @param post The PostEntity to insert.
      * @return The row ID of the newly inserted post.
      */
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insert(PostEntity post);
+
+    @Transaction
+    default long upsert(PostEntity post) {
+        long rowId = insert(post);
+        if (rowId == -1L) {
+            update(post);
+            return post.postId;
+        }
+        return rowId;
+    }
 
     @Update
     void update(PostEntity post);
@@ -62,4 +74,13 @@ public interface PostDao {
 
     @Query("SELECT * FROM posts WHERE authorId = :authorId")
     LiveData<List<PostEntity>> getPostsByUserId(long authorId);
+
+    @Query("SELECT * FROM posts WHERE authorUid = :authorUid")
+    LiveData<List<PostEntity>> getPostsByAuthorUid(String authorUid);
+
+    @Query("SELECT * FROM posts WHERE authorUid = :authorUid")
+    List<PostEntity> getPostsByAuthorUidSync(String authorUid);
+
+    @Query("UPDATE posts SET imageUrl = :imageUrl WHERE postId = :postId")
+    void updateImageUrl(long postId, String imageUrl);
 }

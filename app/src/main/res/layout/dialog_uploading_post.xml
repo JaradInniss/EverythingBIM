@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:cardCornerRadius="10dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="@color/pale_blue">
+
+            <ProgressBar
+                android:id="@+id/uploading_progress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/white" />
+
+            <TextView
+                android:id="@+id/uploading_message"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:text="Please wait a moment... Uploading post"
+                android:textAlignment="center"
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.2"
+                style="@style/white_medium_txt_style" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

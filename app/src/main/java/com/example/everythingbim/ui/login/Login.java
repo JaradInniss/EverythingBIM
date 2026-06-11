@@ -26,7 +26,6 @@ import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.ActivityLoginBinding;
 import com.example.everythingbim.ui.main.MainActivity;
-import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -34,29 +33,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
-    private static final String PREF_LOGIN_SCROLL_HINT_SEEN = "login_scroll_hint_seen";
 
     private LoginViewModel viewModel;
     private ActivityLoginBinding binding;
     private SharedPreferences sharedPreferences;
 
-    private ImageView generalUserIcon;
-    private ImageView businessUserIcon;
-    private TextView userTypeText;
-    private TextView createAccountOption;
-    private TextView generalUserText;
-    private TextView businessUserText;
+    private ImageView generalUserIcon, businessUserIcon;
+    private TextView userTypeText, createAccountOption, generalUserText, businessUserText;
     private Button loginBttn;
-    private TextInputEditText emailEditText;
-    private TextInputEditText passwordEditText;
+    private TextInputEditText usernameEditText, passwordEditText;
     private ProgressBar progressBar;
     private TextView errorTextView;
     private TextView adminAccessHint;
-    private LinearLayout generalUserContainer;
-    private LinearLayout businessUserContainer;
+    private LinearLayout generalUserContainer, businessUserContainer;
     private View userTypeSelection;
 
-    private final Handler handler = new Handler(android.os.Looper.getMainLooper());
+    private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +57,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         EdgeToEdge.enable(this);
         setContentView(binding.getRoot());
 
-        sharedPreferences = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE);
         viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         viewModel.setSharedPreferences(sharedPreferences);
 
@@ -78,27 +70,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        setupKeyboardInsets();
-    }
-
-    private void setupKeyboardInsets() {
-        int initialLeft = binding.loginScroll.getPaddingLeft();
-        int initialTop = binding.loginScroll.getPaddingTop();
-        int initialRight = binding.loginScroll.getPaddingRight();
-        int initialBottom = binding.loginScroll.getPaddingBottom();
-
-        KeyboardScrollHintHelper.attach(
-                binding.getRoot(),
-                binding.loginScroll,
-                binding.loginScroll,
-                PREF_LOGIN_SCROLL_HINT_SEEN,
-                keyboardExtraBottom -> binding.loginScroll.setPadding(
-                        initialLeft,
-                        initialTop,
-                        initialRight,
-                        initialBottom + keyboardExtraBottom
-                )
-        );
     }
 
     private void initViews() {
@@ -122,22 +93,10 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         loginBttn = binding.loginBttn;
         loginBttn.setOnClickListener(this);
 
-        emailEditText = binding.loginEmailEt;
+        usernameEditText = binding.loginUsernameEt;
         passwordEditText = binding.loginPasswordEt;
 
         progressBar = binding.loginProgressBar;
-
-        View.OnLongClickListener resetHintsListener = v -> {
-            KeyboardScrollHintHelper.resetAllHints(this);
-            Toast.makeText(this, "Scroll hints reset", Toast.LENGTH_SHORT).show();
-            return true;
-        };
-        binding.logo.setOnLongClickListener(resetHintsListener);
-        binding.titleTxt.setOnLongClickListener(v -> {
-            KeyboardScrollHintHelper.showPreview(binding.getRoot());
-            Toast.makeText(this, "Scroll hint preview", Toast.LENGTH_SHORT).show();
-            return true;
-        });
     }
 
     private void applyPreselectedUserType() {
@@ -219,13 +178,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             if (errors == null) {
                 TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                 errorTextView.setVisibility(View.GONE);
-                binding.tilLoginEmail.setError(null);
+                binding.tilLoginUsername.setError(null);
                 binding.tilLoginPassword.setError(null);
                 return;
             }
 
             HashMap<Integer, TextInputLayout> fieldMap = new HashMap<>();
-            fieldMap.put(R.id.login_email_et, binding.tilLoginEmail);
+            fieldMap.put(R.id.login_username_et, binding.tilLoginUsername);
             fieldMap.put(R.id.login_password_et, binding.tilLoginPassword);
 
             for (Map.Entry<Integer, String> entry : errors.entrySet()) {
@@ -233,9 +192,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 String error = entry.getValue();
 
                 TextInputLayout fieldLayout = fieldMap.get(fieldId);
-                if (fieldLayout == null) {
-                    continue;
-                }
+                if (fieldLayout == null) continue;
 
                 TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                 fieldLayout.setError(error);
@@ -275,9 +232,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     public void onClick(View view) {
         int id = view.getId();
         if (id == R.id.login_bttn) {
-            String email = emailEditText.getText().toString().trim();
+            String username = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
-            viewModel.onLoginClicked(email, password);
+            viewModel.onLoginClicked(username, password);
         } else if (id == R.id.general_user_container) {
             viewModel.setSelectedUserType(UserType.GENERAL);
         } else if (id == R.id.business_user_container) {

@@ -5,6 +5,8 @@ import androidx.room.ForeignKey;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+import com.google.firebase.firestore.Exclude;
+
 /**
  * Comment Entity representing a comment in the database.
  * Supports a hierarchical structure by referencing a parent comment ID.
@@ -30,7 +32,7 @@ import androidx.room.PrimaryKey;
         indices = {@Index("postId"), @Index("parentCommentId")}
 )
 public class CommentEntity {
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     public long commentId;
 
     public long postId;
@@ -48,18 +50,44 @@ public class CommentEntity {
     public String parentAuthorName;
     
     public String body;
-    
-    /**
-     * Creation timestamp of the comment.
-     */
-    public long timestamp;
 
-    public CommentEntity(long postId, Long parentCommentId, String authorName, String parentAuthorName, String body, long timestamp) {
+    public String authorUid;
+
+    public Long createdAt;
+
+    @Exclude
+    public String firestoreId;
+
+    public CommentEntity() {
+    }
+
+    public CommentEntity(long postId, Long parentCommentId, String authorName, String parentAuthorName, String body, Long createdAt) {
+        this(postId, parentCommentId, authorName, null, parentAuthorName, body, createdAt);
+    }
+
+    public CommentEntity(long postId,
+                         Long parentCommentId,
+                         String authorName,
+                         String authorUid,
+                         String parentAuthorName,
+                         String body,
+                         Long createdAt) {
         this.postId = postId;
         this.parentCommentId = parentCommentId;
         this.authorName = authorName;
+        this.authorUid = authorUid;
         this.parentAuthorName = parentAuthorName;
         this.body = body;
-        this.timestamp = timestamp;
+        this.createdAt = createdAt;
+    }
+
+    @Deprecated
+    public Long getTimestamp() {
+        return createdAt;
+    }
+
+    @Deprecated
+    public void setTimestamp(Long timestamp) {
+        this.createdAt = timestamp;
     }
 }
