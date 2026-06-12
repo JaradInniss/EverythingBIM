@@ -1,31 +1,50 @@
 package com.example.everythingbim.ui.posts;
 
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,27 +55,29 @@ import java.util.Locale;
  * Activity for viewing a single post in detail, including its comments and replies.
  * Handles adding new comments and replies with a nested UI.
  */
-
-
 public class ViewPost extends AppCompatActivity {
 
     ActivityViewPostBinding binding;
-    private ViewPostViewModel viewModel;
+    private PostViewModel viewModel;
     private CommentAdapter commentAdapter;
+    private ViewPostTagAdapter taggedUsersAdapter;
     private long postId;
-    private long authorId; // Store authorId for navigation
-    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-    private long lastObservedLocationId = -1;
+    private long lastObservedLocationId = -1L;
+
+    // The most recently observed post; used to add comments without
+    // re-resolving the firestoreId at click time.
+    private PostEntity currentPost;
 
     // State for managing replies
     private Long currentParentCommentId = null;
     private String currentParentAuthorName = null;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
-    private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon;
+    private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
     private EditText commentInput;
-    private RecyclerView commentsRv;
-    private LinearLayout returnBttn, userProfile;
+    private RecyclerView commentsRv, taggedUsersRv;
+    private LinearLayout returnBttn;
+    private CardView taggedUsersCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +94,8 @@ public class ViewPost extends AppCompatActivity {
             return;
         }
 
-        viewModel = new ViewModelProvider(this).get(ViewPostViewModel.class);
-
+        viewModel = new ViewModelProvider(this).get(PostViewModel.class);
+        
         // Handle window insets for edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(binding.viewPosts, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -107,11 +128,20 @@ public class ViewPost extends AppCompatActivity {
         replyingToUsername = binding.replyingToUsername;
         commentsRv = binding.viewpostCommentsRv;
 
-        userProfile = binding.viewpostUserProfile;
+        // Tagged users views
+        viewTaggedUsersBttn = binding.viewTaggedUsersBttn;
+        taggedUsersCard = binding.viewpostTaggedUsersCard;
+        taggedUsersRv = binding.viewpostTaggedUsersRv;
 
         // Set initial visibility for reply-related UI
         replyingToUsername.setVisibility(View.GONE);
         submitReplyBttn.setVisibility(View.GONE);
+
+        // Tagged-users card is hidden until the user taps the button.
+        // The button itself is shown/hidden by the tagged-users observer
+        // based on whether the post has any tagged users.
+        taggedUsersCard.setVisibility(View.GONE);
+        taggedUsersRv.setVisibility(View.GONE);
     }
 
     // Set up the RecyclerView for comments and handles reply button clicks.
@@ -129,7 +159,7 @@ public class ViewPost extends AppCompatActivity {
 
             replyingToUsername.setText("Re: @" + currentParentAuthorName);
             replyingToUsername.setVisibility(View.VISIBLE);
-
+            
             submitCommentBttn.setVisibility(View.GONE);
             submitReplyBttn.setVisibility(View.VISIBLE);
 
@@ -140,6 +170,35 @@ public class ViewPost extends AppCompatActivity {
                 imm.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
             }
         });
+
+        // Tagged users: horizontal list. We pass a click listener that
+        // navigates to the user profile, preferring the local Room id
+        // when available and falling back to the Firebase UID.
+        taggedUsersAdapter = new ViewPostTagAdapter(this::openTaggedUserProfile);
+        taggedUsersRv.setLayoutManager(new LinearLayoutManager(
+                this, LinearLayoutManager.HORIZONTAL, false));
+        taggedUsersRv.setAdapter(taggedUsersAdapter);
+        taggedUsersRv.setNestedScrollingEnabled(false);
+    }
+
+    /**
+     * Navigates to {@link ViewUserProfileActivity} for the given tagged user.
+     * Prefers the local Room {@code userId} (so any locally-cached profile
+     * data, including business tabs etc., keeps working); falls back to the
+     * Firebase UID when the user is not in the local cache (the activity
+     * supports both extras).
+     */
+    private void openTaggedUserProfile(@NonNull UserEntity user) {
+        Intent intent = new Intent(this, ViewUserProfileActivity.class);
+        if (user.userId > 0L) {
+            intent.putExtra("USER_ID", user.userId);
+        } else if (user.firebaseUid != null && !user.firebaseUid.isEmpty()) {
+            intent.putExtra("USER_UID", user.firebaseUid);
+        } else {
+            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivity(intent);
     }
 
     // Set up LiveData observers for post details and comments.
@@ -147,6 +206,7 @@ public class ViewPost extends AppCompatActivity {
         // Observe Post Details and populate the UI
         viewModel.getPostById(postId).observe(this, post -> {
             if (post != null) {
+                currentPost = post;
                 populatePostDetails(post);
             }
         });
@@ -160,6 +220,44 @@ public class ViewPost extends AppCompatActivity {
                 commentsCount.setText(String.valueOf(totalCount));
             }
         });
+
+        // Observe Tagged Users: the "view tagged users" button is shown
+        // only when the post has tagged users. The RecyclerView itself is
+        // toggled by the button click.
+        viewModel.getTaggedUsersForPost(postId).observe(this, this::renderTaggedUsers);
+
+        // Observe the current user's like state. Drives the heart tint.
+        viewModel.isLikedByCurrentUser(postId).observe(this, this::renderLikeState);
+    }
+
+    /**
+     * Updates the heart icon's tint based on whether the current user
+     * has liked the post. Red when liked, pale slate when not.
+     */
+    private void renderLikeState(Boolean isLiked) {
+        if (isLiked == null) return;
+        int tintRes = isLiked ? R.color.red : R.color.pale_slate;
+        likesIcon.setColorFilter(ContextCompat.getColor(this, tintRes));
+    }
+
+    /**
+     * Updates the "view tagged users" button visibility and pushes the
+     * resolved user list to the adapter. The card containing the
+     * RecyclerView is intentionally left alone here - it's controlled by
+     * the button's click listener so the user controls when it appears.
+     */
+    private void renderTaggedUsers(List<UserEntity> users) {
+        if (users == null || users.isEmpty()) {
+            viewTaggedUsersBttn.setVisibility(View.GONE);
+            taggedUsersAdapter.setTaggedUsers(new java.util.ArrayList<>());
+            // Hide the card too: nothing to show, even if the user
+            // expanded it before the tagged list emptied.
+            taggedUsersCard.setVisibility(View.GONE);
+            taggedUsersRv.setVisibility(View.GONE);
+            return;
+        }
+        viewTaggedUsersBttn.setVisibility(View.VISIBLE);
+        taggedUsersAdapter.setTaggedUsers(users);
     }
 
     // Calculates the total number of comments by summing top-level comments and all their replies.
@@ -173,45 +271,88 @@ public class ViewPost extends AppCompatActivity {
 
     // Populates the post UI elements with data from a PostEntity.
     private void populatePostDetails(PostEntity post) {
-        authorId = post.authorId;
-        username.setText(post.authorName);
+        username.setText(resolveAuthorLabel(post));
         caption.setText(post.caption);
-        location.setText(post.locationName); // Set initial text immediately
 
-        uploadDate.setText(DATE_FORMATTER.format(new Date(post.createdAt)));
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+        uploadDate.setText(sdf.format(new Date(post.createdAt)));
 
-        // Load the post image with error handling
+        // Like count: comes from the denormalized counter on the post
+        // document in Firestore. Null means the post hasn't been
+        // touched by a like yet, so default to 0.
+        int likeCount = post.likeCount != null ? post.likeCount : 0;
+        likes.setText(String.valueOf(likeCount));
+
+        // Load the post image
         Glide.with(this)
                 .load(post.imageUrl)
                 .placeholder(R.drawable.butterfly)
-                .error(R.drawable.butterfly)
                 .into(postImage);
 
         setupLocationTag(post.locationId);
     }
 
+    private String resolveAuthorLabel(PostEntity post) {
+        if (post.authorName != null && !post.authorName.trim().isEmpty()) {
+            return post.authorName.trim();
+        }
+        return "User " + post.authorId;
+    }
+
     private void setupLocationTag(long locationId) {
-        // Prevent multiple observers if the post data updates but location remains same
-        if (locationId == lastObservedLocationId) return;
+        if (locationId == lastObservedLocationId) {
+            return;
+        }
         lastObservedLocationId = locationId;
 
-        viewModel.getLocationById(locationId).observe(this, loc -> {
-            if (loc != null) {
-                binding.viewpostLocation.setText(loc.getName());
+        if (locationId <= 0L) {
+            binding.viewpostLocation.setText("Unknown location");
+            binding.viewpostLocation.setOnClickListener(null);
+            return;
+        }
 
-                binding.viewpostLocationTag.setOnClickListener(v -> {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.putExtra(MainActivity.EXTRA_OPEN_MAP, true);
+        viewModel.getLocationById(locationId).observe(this, this::bindLocationTag);
+    }
 
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, loc.getLocationId());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, loc.getLatitude());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, loc.getLongitude());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, loc.getName());
-                    intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, loc.getAddress());
+    private void bindLocationTag(LocationEntity locationEntity) {
+        if (locationEntity == null) {
+            binding.viewpostLocation.setText("Unknown location");
+            binding.viewpostLocation.setOnClickListener(null);
+            return;
+        }
 
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
-                });
+        binding.viewpostLocation.setText(locationEntity.name);
+        binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
+    }
+
+    private void openLocationOnMap(LocationEntity locationEntity) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, locationEntity.locationId);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, locationEntity.latitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, locationEntity.longitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, locationEntity.name);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, locationEntity.address);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+    }
+
+    private boolean isCurrentPostSynced() {
+        return currentPost != null
+                && currentPost.firestoreId != null
+                && !currentPost.firestoreId.trim().isEmpty();
+    }
+
+    private void showPostNotSyncedMessage() {
+        Toast.makeText(this, "This post is not synced yet", Toast.LENGTH_SHORT).show();
+    }
+
+    private <T> void observeOnce(@NonNull LiveData<T> liveData, @NonNull Observer<T> observer) {
+        liveData.observe(this, new Observer<T>() {
+            @Override
+            public void onChanged(T value) {
+                liveData.removeObserver(this);
+                observer.onChanged(value);
             }
         });
     }
@@ -221,116 +362,315 @@ public class ViewPost extends AppCompatActivity {
         // Back button functionality
         returnBttn.setOnClickListener(v -> finish());
 
-        // Navigate to view user profile
-        userProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ViewUserProfileActivity.class);
-            intent.putExtra("USER_ID", authorId);
-            startActivity(intent);
+        // Report button
+        reportBttn.setOnClickListener(v -> showReportDialog());
+
+        viewTaggedUsersBttn.setOnClickListener(v -> {
+            boolean show = taggedUsersCard.getVisibility() != View.VISIBLE;
+            taggedUsersCard.setVisibility(show ? View.VISIBLE : View.GONE);
+            taggedUsersRv.setVisibility(show ? View.VISIBLE : View.GONE);
         });
 
-        // Click listeners for direct children of userProfile (profile pic and username)
-        profilePic.setOnClickListener(v -> userProfile.performClick());
-        username.setOnClickListener(v -> userProfile.performClick());
-
+        // Like / unlike. Guarded for unauthenticated users.
+        likesIcon.setOnClickListener(v -> {
+            FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+            if (current == null || current.getUid() == null) {
+                Toast.makeText(this, "Sign in to like posts", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (currentPost == null) {
+                // Post not yet loaded; the like listener will catch up once it is.
+                return;
+            }
+            if (!isCurrentPostSynced()) {
+                showPostNotSyncedMessage();
+                return;
+            }
+            observeOnce(viewModel.toggleLike(postId), nowLiked -> {
+                if (nowLiked == null) {
+                    Toast.makeText(this, "Failed to update like", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
 
         // Submit a new top-level comment
         submitCommentBttn.setOnClickListener(v -> {
             String body = commentInput.getText().toString().trim();
-            if (!body.isEmpty()) {
-                viewModel.addComment(postId, null, "Current User", null, body);
-                commentInput.setText("");
-                Toast.makeText(this, "Comment added", Toast.LENGTH_SHORT).show();
-            } else {
+            if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
+                return;
             }
+            if (currentPost == null) {
+                Toast.makeText(this, "Loading post, please try again", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!isCurrentPostSynced()) {
+                showPostNotSyncedMessage();
+                return;
+            }
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+                Toast.makeText(this, "Sign in to comment", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            submitComment(currentPost, /*parentCommentId*/ null, /*parentAuthorName*/ null, body);
         });
 
         // Submit a reply to an existing comment
         submitReplyBttn.setOnClickListener(v -> {
             String body = commentInput.getText().toString().trim();
-            if (!body.isEmpty()) {
-                viewModel.addComment(postId, currentParentCommentId, "Current User", currentParentAuthorName, body);
-
-                // Reset UI to comment mode
-                commentInput.setText("");
-                currentParentCommentId = null;
-                currentParentAuthorName = null;
-                replyingToUsername.setVisibility(View.GONE);
-                submitReplyBttn.setVisibility(View.GONE);
-                submitCommentBttn.setVisibility(View.VISIBLE);
-                
-                Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
-            } else {
+            if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a reply", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
+            if (currentPost == null) {
+                Toast.makeText(this, "Loading post, please try again", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!isCurrentPostSynced()) {
+                showPostNotSyncedMessage();
+                return;
+            }
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+                Toast.makeText(this, "Sign in to reply", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
 
-        // Report Button
-        reportBttn.setOnClickListener(v -> {
-            showReportDialog();
+            // Reset UI to comment mode
+            commentInput.setText("");
+            currentParentCommentId = null;
+            currentParentAuthorName = null;
+            replyingToUsername.setVisibility(View.GONE);
+            submitReplyBttn.setVisibility(View.GONE);
+            submitCommentBttn.setVisibility(View.VISIBLE);
+
+            Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
         });
     }
 
+    // Report dialog reasons
+    private static final String[] POST_REPORT_REASONS = {
+        "Spam or fake engagement - bots,repetitive posting",
+        "Hate speech - targeting race,religion,gender,sexuality,disability,etc",
+        "Nudity or sexual content",
+        "Graphic violence/Gore",
+        "Dangerous or illegal activity - drugs,weapons,self-harm,eating disorder promotion",
+        "Intellectual property violation - copyright or trademark infringement",
+        "Impersonation - pretending to be someone else"
+    };
+
+    private static final String[] ACCOUNT_REPORT_REASONS = {
+        "Hacked account - reporting on behalf of someone else",
+        "Fake account or bot",
+        "Impersonating a real person or brand",
+        "Deceased person's account"
+    };
+
     private void showReportDialog() {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_report_post, null);
-        RadioGroup postReasonGroup = dialogView.findViewById(R.id.report_post_reason_group);
-        RadioGroup accountReasonGroup = dialogView.findViewById(R.id.report_account_reason_group);
-        EditText reportDescriptionEt = dialogView.findViewById(R.id.report_description_et);
-
-        // Set up dialog buttons
-        LinearLayout submitReportBttn = dialogView.findViewById(R.id.submit_report_bttn);
-        ImageView closeReportBttn = dialogView.findViewById(R.id.close_report_bttn);
-
-        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setView(dialogView)
-                .create();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        if (currentPost == null) {
+            Toast.makeText(this, "Loading post, please try again", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        dialog.show();
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_report_confirm);
 
-        android.view.Window window = dialog.getWindow();
+        Window window = dialog.getWindow();
         if (window != null) {
-            // Set width to 90% of screen width, height to wrap_content
-            int width = (int)(getResources().getDisplayMetrics().widthPixels * 0.90);
-            window.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
-
-            // Optional: Change gravity to center or bottom
-            window.setGravity(android.view.Gravity.CENTER);
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
         }
 
-        // Toggle logic for RadioGroups
-        postReasonGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId != -1) accountReasonGroup.clearCheck();
-        });
-        accountReasonGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId != -1) postReasonGroup.clearCheck();
-        });
+        // Get views
+        ImageView closeBtn = dialog.findViewById(R.id.close_report_bttn);
+        RadioGroup reportTypeGroup = dialog.findViewById(R.id.report_type_group);
+        Spinner reasonSpinner = dialog.findViewById(R.id.report_reason_spinner);
+        EditText descriptionEt = dialog.findViewById(R.id.report_description_et);
+        Button cancelBtn = dialog.findViewById(R.id.report_cancel_btn);
+        Button confirmBtn = dialog.findViewById(R.id.report_confirm_btn);
 
-        submitReportBttn.setOnClickListener(v -> {
-            int selectedPostId = postReasonGroup.getCheckedRadioButtonId();
-            int selectedAccountId = accountReasonGroup.getCheckedRadioButtonId();
+        // Setup spinner with reasons (default to POST_REASONS)
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                R.layout.spinner_item, POST_REPORT_REASONS);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        reasonSpinner.setAdapter(adapter);
 
-            if (selectedPostId != -1 || selectedAccountId != -1) {
-                int selectedId = (selectedPostId != -1) ? selectedPostId : selectedAccountId;
-                RadioButton radioButton = dialogView.findViewById(selectedId);
-                String reason = radioButton.getText().toString();
-                String description = reportDescriptionEt.getText().toString();
-
-                viewModel.reportPost(postId, 12345, reason, description);
-                Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            }
-            else {
-                Toast.makeText(this, "Please select a reason for reporting", Toast.LENGTH_LONG).show();
-            }
+        // Update spinner when report type changes
+        reportTypeGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean isPostReport = checkedId == R.id.report_type_post;
+            String[] reasons = isPostReport ? POST_REPORT_REASONS : ACCOUNT_REPORT_REASONS;
+            ArrayAdapter<String> newAdapter = new ArrayAdapter<>(this,
+                    R.layout.spinner_item, reasons);
+            newAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+            reasonSpinner.setAdapter(newAdapter);
         });
 
-        closeReportBttn.setOnClickListener(v -> {
-            reportDescriptionEt.setText("");
+        // Close button
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+
+        // Cancel button
+        cancelBtn.setOnClickListener(v -> dialog.dismiss());
+
+        // Confirm button
+        confirmBtn.setOnClickListener(v -> {
+            boolean isPostReport = reportTypeGroup.getCheckedRadioButtonId() == R.id.report_type_post;
+            String[] reasons = isPostReport ? POST_REPORT_REASONS : ACCOUNT_REPORT_REASONS;
+            String reason = reasons[reasonSpinner.getSelectedItemPosition()];
+            String description = descriptionEt.getText().toString().trim();
+
+            submitReport(isPostReport, reason, description);
             dialog.dismiss();
         });
+
+        dialog.show();
+    }
+
+    private void submitReport(boolean isPostReport, String reason, String description) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+
+        // Get current user info
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String reporterId = prefs.getString("userId", "");
+        String reporterType = prefs.getString("userType", "general");
+        // Get reporter's Firebase Auth UID for notifications
+        String reporterUid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+
+        java.util.Map<String, Object> reportData = new java.util.HashMap<>();
+        reportData.put("reportType", isPostReport ? "Post" : "Account");
+        reportData.put("reason", reason);
+        reportData.put("description", description);
+        reportData.put("reporterId", reporterId);
+        reportData.put("reporterUid", reporterUid != null ? reporterUid : "");
+        reportData.put("reporterType", reporterType);
+        reportData.put("status", "In Review");
+        reportData.put("read", false);
+        reportData.put("submittedAt", com.google.firebase.Timestamp.now());
+
+        if (isPostReport && currentPost != null) {
+            // Post report data
+            reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
+            reportData.put("reportedUserId", currentPost.authorId);
+            // Save authorUid (Firebase Auth UID) for notifications - this is the correct ID to use
+            reportData.put("reportedUserUid", currentPost.authorUid != null ? currentPost.authorUid : "");
+            reportData.put("postId", currentPost.firestoreId != null ? currentPost.firestoreId : String.valueOf(currentPost.postId));
+            reportData.put("postCaption", currentPost.caption != null ? currentPost.caption : "");
+            reportData.put("postImageUrl", currentPost.imageUrl != null ? currentPost.imageUrl : "");
+            reportData.put("postDate", currentPost.createdAt);
+        } else {
+            // Account report data - get from post author
+            if (currentPost != null) {
+                reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
+                reportData.put("reportedUserId", currentPost.authorId);
+                // Save authorUid (Firebase Auth UID) for notifications
+                reportData.put("reportedUserUid", currentPost.authorUid != null ? currentPost.authorUid : "");
+                reportData.put("accountId", currentPost.authorId);
+
+                // Use authorUid (Firebase Auth UID) to look up in Firestore, not authorId (Room PK)
+                final String authorUid;
+                if (currentPost.authorUid != null && !currentPost.authorUid.isEmpty()) {
+                    authorUid = currentPost.authorUid;
+                } else {
+                    // Fallback to using String.valueOf(authorId) if authorUid not available
+                    authorUid = String.valueOf(currentPost.authorId);
+                }
+
+                // Fetch account email from Firestore using authorUid
+                db.collection("users").document(authorUid).get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc != null && doc.exists()) {
+                                String email = doc.getString("email");
+                                if (email == null) email = doc.getString("businessEmail");
+                                reportData.put("contactInfo", email != null ? email : "Not available");
+                                reportData.put("userType", "general");
+                                saveReportToFirestore(db, reportData);
+                            } else {
+                                // Try businesses collection
+                                db.collection("businesses").document(authorUid).get()
+                                        .addOnSuccessListener(doc2 -> {
+                                            String email = doc2 != null && doc2.exists() ? doc2.getString("businessEmail") : null;
+                                            reportData.put("contactInfo", email != null ? email : "Not available");
+                                            reportData.put("userType", "business");
+                                            saveReportToFirestore(db, reportData);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            reportData.put("contactInfo", "Not available");
+                                            reportData.put("userType", "unknown");
+                                            saveReportToFirestore(db, reportData);
+                                        });
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            reportData.put("contactInfo", "Not available");
+                            reportData.put("userType", "unknown");
+                            saveReportToFirestore(db, reportData);
+                        });
+                return; // async operation, don't fall through
+            }
+        }
+
+        saveReportToFirestore(db, reportData);
+    }
+
+    private void saveReportToFirestore(FirebaseFirestore db, java.util.Map<String, Object> reportData) {
+        db.collection("reports").add(reportData)
+                .addOnSuccessListener(docRef -> {
+                    Toast.makeText(this, "Report submitted successfully", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to submit report: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * Resolves the current Firebase user and forwards the comment write
+     * to the ViewModel. We observe the resulting LiveData so we can show
+     * a toast on failure (the LiveData emits {@code null} on error).
+     */
+    private void submitComment(@NonNull PostEntity post,
+                               Long parentCommentId,
+                               String parentAuthorName,
+                               @NonNull String body) {
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current == null) return;
+        String authorUid = current.getUid();
+        String authorName = resolveCurrentUserName(current);
+        observeOnce(
+                viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, body),
+                persisted -> {
+                    if (persisted == null) {
+                        Toast.makeText(this, "Failed to add comment", Toast.LENGTH_SHORT).show();
+                    } else {
+                        commentInput.setText("");
+                        Toast.makeText(this,
+                                parentCommentId == null ? "Comment added" : "Reply added",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /**
+     * Mirrors the name resolution used by {@code CreatePostViewModel}:
+     * prefer the display name, fall back to the email prefix, and
+     * finally to a generic "User" placeholder.
+     */
+    private String resolveCurrentUserName(@NonNull FirebaseUser current) {
+        if (current.getDisplayName() != null && !current.getDisplayName().trim().isEmpty()) {
+            return current.getDisplayName().trim();
+        }
+        String email = current.getEmail();
+        if (email != null) {
+            int at = email.indexOf('@');
+            if (at > 0) {
+                return email.substring(0, at);
+            }
+            return email;
+        }
+        return "User";
     }
 }

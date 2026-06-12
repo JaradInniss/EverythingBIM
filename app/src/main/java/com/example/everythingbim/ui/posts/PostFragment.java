@@ -4,6 +4,17 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,48 +25,47 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
-
 import com.example.everythingbim.R;
-import com.example.everythingbim.data.local.entities.UserWithProfile;
+import com.example.everythingbim.data.local.entities.LocationEntity;
+import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
-
 public class PostFragment extends Fragment {
 
-    private ViewPostViewModel viewModel;
+    private PostViewModel viewModel;
     private PostAdapter adapter;
-    private UserSearchAdapter searchAdapter;
-    private ListView searchResultsList;
     private RecyclerView recyclerView;
     private LinearLayout createPostButton;
     private LinearLayout searchBar;
     private EditText searchEditText;
+    private ImageView searchButton;
     private CardView searchResultsCard;
+    private ListView searchResultsList;
     private TextView filterAccount;
     private TextView filterLocation;
+    private ArrayAdapter<String> searchResultsAdapter;
+    private final List<String> activeSearchResults = new ArrayList<>();
+    private final List<PostEntity> allPosts = new ArrayList<>();
+    private final List<LocationEntity> allLocations = new ArrayList<>();
 
     public PostFragment() {
-        // Required empty public constructor
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_post, container, false);
     }
 
@@ -63,33 +73,31 @@ public class PostFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize ViewModel
-        viewModel = new ViewModelProvider(this).get(ViewPostViewModel.class);
+        viewModel = new ViewModelProvider(this).get(PostViewModel.class);
 
-        // Find views by ID
         recyclerView = view.findViewById(R.id.posts_rv);
         createPostButton = view.findViewById(R.id.prev_bttn2);
         searchBar = view.findViewById(R.id.posts_search_bar);
         searchEditText = view.findViewById(R.id.posts_search_et);
+        searchButton = view.findViewById(R.id.posts_search_bttn);
         searchResultsCard = view.findViewById(R.id.posts_search_results_card);
         searchResultsList = view.findViewById(R.id.posts_search_results_list);
         filterAccount = view.findViewById(R.id.posts_search_filter_account);
         filterLocation = view.findViewById(R.id.posts_search_filter_location);
+
+        searchResultsAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, activeSearchResults);
+        searchResultsList.setAdapter(searchResultsAdapter);
 
         setupRecyclerView();
         setupObservers();
         setupListeners();
     }
 
-    /**
-     * Configures the RecyclerView with a GridLayoutManager and sets up the click listener for posts.
-     */
     private void setupRecyclerView() {
         adapter = new PostAdapter();
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3)); // 3 columns grid
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
 
-        // Handle post selection: navigate to ViewPost activity
         adapter.setOnPostClickListener(post -> {
             Intent intent = new Intent(getActivity(), ViewPost.class);
             intent.putExtra("POST_ID", post.postId);
@@ -97,52 +105,36 @@ public class PostFragment extends Fragment {
         });
     }
 
-    /**
-     * Observes LiveData from the ViewModel to update the UI when data changes.
-     */
     private void setupObservers() {
-        // Observe the list of posts
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
+            allPosts.clear();
             if (posts != null) {
-                adapter.setPosts(posts);
-            }
-        });
-
-        // Observe the current filter type (Account vs Location)
-        viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
-            updateFilterUI(type);
-        });
-
-        // Observe search input
-        searchEditText.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
-                String query = charSequence.toString();
-                if ("account".equals(viewModel.getFilterType().getValue())) {
-                    performUserSearch(query);
+                for (PostEntity post : posts) {
+                    if (isSyncedPost(post)) {
+                        allPosts.add(post);
+                    }
                 }
             }
+            applySearchAndSuggestions();
+        });
+
+        viewModel.getLocations().observe(getViewLifecycleOwner(), locations -> {
+            allLocations.clear();
+            if (locations != null) {
+                allLocations.addAll(locations);
+            }
+            applySearchAndSuggestions();
+        });
+
+        viewModel.getFilterType().observe(getViewLifecycleOwner(), type -> {
+            updateFilterUI(type);
+            applySearchAndSuggestions();
         });
     }
 
-    /**
-     * Sets up click listeners for the search bar, filter buttons, and create post button.
-     */
     private void setupListeners() {
-        // Navigate to create post screen
         createPostButton.setOnClickListener(v -> {
-            if (isGuestUser()) {
+            if (!isPostingAuthorized()) {
                 showAuthRequiredDialog();
                 return;
             }
@@ -150,67 +142,158 @@ public class PostFragment extends Fragment {
             startActivity(intent);
         });
 
-        // Handle account selection from search
-        searchResultsList.setOnItemClickListener((parent, view, position, id) -> {
-            if ("account".equals(viewModel.getFilterType().getValue())) {
-                UserWithProfile selected = (UserWithProfile) parent.getItemAtPosition(position);
-                Intent intent = new Intent(getActivity(), ViewUserProfileActivity.class);
-                intent.putExtra("USER_ID", selected.user.userId);
-                startActivity(intent);
-
-                // Cleanup UI
-                searchEditText.clearFocus();
-                searchResultsCard.setVisibility(View.GONE);
-            }
-        });
-
-        // Show search results when search bar gains focus
         searchEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
-                searchResultsCard.setVisibility(View.VISIBLE);
+                applySearchAndSuggestions();
             }
         });
 
-        // Show search results on click
-        searchEditText.setOnClickListener(v -> searchResultsCard.setVisibility(View.VISIBLE));
+        searchEditText.setOnClickListener(v -> applySearchAndSuggestions());
 
-        // Handle filter type selection
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                applySearchAndSuggestions();
+            }
+        });
+
         filterAccount.setOnClickListener(v -> viewModel.setFilterType("account"));
         filterLocation.setOnClickListener(v -> viewModel.setFilterType("location"));
+
+        searchButton.setOnClickListener(v -> {
+            applySearchAndSuggestions();
+            searchResultsCard.setVisibility(View.GONE);
+        });
+
+        searchResultsList.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = activeSearchResults.get(position);
+            searchEditText.setText(selected);
+            searchEditText.setSelection(selected.length());
+            applySearchAndSuggestions();
+            searchResultsCard.setVisibility(View.GONE);
+            searchEditText.clearFocus();
+        });
     }
 
-    /**
-     * Updates the visual state of the filter buttons based on the selected type.
-     * @param type The active filter type ("account" or "location").
-     */
     private void updateFilterUI(String type) {
         if ("account".equals(type)) {
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_active);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.white));
-            
+
             filterLocation.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterLocation.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         } else {
             filterLocation.setBackgroundResource(R.drawable.bg_search_filter_active);
             filterLocation.setTextColor(ContextCompat.getColor(getContext(), R.color.white));
-            
+
             filterAccount.setBackgroundResource(R.drawable.bg_search_filter_inactive);
             filterAccount.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         }
     }
 
-    /**
-     * Performs a search for users based on the provided query.
-     * @param query The search query.
-     */
-    private void performUserSearch(String query) {
-        viewModel.searchUsers(query).observe(getViewLifecycleOwner(), users -> {
-            if (users != null && "account".equals(viewModel.getFilterType().getValue())) {
-                searchAdapter = new UserSearchAdapter(getContext(), users);
-                searchResultsList.setAdapter(searchAdapter);
-                searchResultsCard.setVisibility(users.isEmpty() ? View.GONE : View.VISIBLE);
+    private void applySearchAndSuggestions() {
+        String query = searchEditText.getText() == null
+                ? ""
+                : searchEditText.getText().toString().trim();
+        boolean accountMode = "account".equals(viewModel.getFilterType().getValue());
+
+        adapter.setPosts(filterPosts(query, accountMode));
+        updateSuggestions(query, accountMode);
+    }
+
+    private List<PostEntity> filterPosts(String query, boolean accountMode) {
+        if (query.isEmpty()) {
+            return new ArrayList<>(allPosts);
+        }
+
+        String normalizedQuery = query.toLowerCase(Locale.US);
+        List<PostEntity> filtered = new ArrayList<>();
+        for (PostEntity post : allPosts) {
+            if (accountMode) {
+                String authorLabel = buildAuthorLabel(post.authorId);
+                if (authorLabel.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                    filtered.add(post);
+                }
+            } else {
+                String locationName = getLocationName(post.locationId);
+                if (locationName.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                    filtered.add(post);
+                }
             }
-        });
+        }
+        return filtered;
+    }
+
+    private void updateSuggestions(String query, boolean accountMode) {
+        activeSearchResults.clear();
+
+        if (!query.isEmpty()) {
+            String normalizedQuery = query.toLowerCase(Locale.US);
+            Set<String> uniqueSuggestions = new LinkedHashSet<>();
+
+            if (accountMode) {
+                for (PostEntity post : allPosts) {
+                    String authorLabel = buildAuthorLabel(post.authorId);
+                    if (authorLabel.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                        uniqueSuggestions.add(authorLabel);
+                    }
+                }
+            } else {
+                for (LocationEntity location : allLocations) {
+                    if (location == null || location.name == null) {
+                        continue;
+                    }
+                    if (location.name.toLowerCase(Locale.US).contains(normalizedQuery)) {
+                        uniqueSuggestions.add(location.name);
+                    }
+                }
+            }
+
+            activeSearchResults.addAll(uniqueSuggestions);
+        }
+
+        searchResultsAdapter.notifyDataSetChanged();
+        boolean shouldShow = searchEditText.hasFocus();
+        searchResultsCard.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+    }
+
+    private String buildAuthorLabel(long authorId) {
+        for (PostEntity post : allPosts) {
+            if (post.authorId == authorId && post.authorName != null && !post.authorName.trim().isEmpty()) {
+                return post.authorName.trim();
+            }
+        }
+        return "User " + authorId;
+    }
+
+    private String getLocationName(long locationId) {
+        for (LocationEntity location : allLocations) {
+            if (location != null && location.locationId == locationId) {
+                return location.name != null ? location.name : "Unknown location";
+            }
+        }
+        return "Unknown location";
+    }
+
+    private boolean isSyncedPost(@Nullable PostEntity post) {
+        return post != null
+                && post.firestoreId != null
+                && !post.firestoreId.trim().isEmpty();
+    }
+
+    private boolean isPostingAuthorized() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            return false;
+        }
+        return !isGuestUser();
     }
 
     private boolean isGuestUser() {

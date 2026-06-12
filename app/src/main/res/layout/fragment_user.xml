@@ -844,7 +844,7 @@
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical"
                                 android:layout_marginBottom="10dp">
-                                
+
                                 <com.google.android.material.textfield.TextInputLayout
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
@@ -871,63 +871,18 @@
                                     android:layout_height="match_parent"
                                     android:gravity="center"
                                     android:background="@drawable/bg_rectangle_pale_slate">
-                                    
+
                                     <ImageView
                                         android:id="@+id/general_user_edit_username_btn_iv"
                                         android:layout_width="25dp"
                                         android:layout_height="25dp"
                                         android:src="@drawable/ic_edit"/>
-                                    
-                                </LinearLayout>
-
-                            </LinearLayout>
-
-                            <!-- General User Edit Email Field -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:gravity="center_vertical"
-                                android:layout_marginBottom="10dp">
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:hint="Email"
-                                    android:layout_marginEnd="10dp"
-                                    style="@style/txtInputLayout_style">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/general_user_edit_email_et"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:inputType="textEmailAddress"
-                                        android:focusable="false"
-                                        android:clickable="false"
-                                        style="@style/txtInputEditText_style"/>
-
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <!-- General User Edit Email Button -->
-                                <LinearLayout
-                                    android:id="@+id/general_user_edit_email_btn"
-                                    android:layout_width="50dp"
-                                    android:layout_height="match_parent"
-                                    android:gravity="center"
-                                    android:background="@drawable/bg_rectangle_pale_slate">
-
-                                    <ImageView
-                                        android:id="@+id/general_user_edit_email_btn_iv"
-                                        android:layout_width="25dp"
-                                        android:layout_height="25dp"
-                                        android:src="@drawable/ic_edit"/>
 
                                 </LinearLayout>
 
                             </LinearLayout>
 
-                            <!-- General User Edit Password Field -->
+                            <!-- Password -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -1631,7 +1586,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:visibility="">
+                    android:visibility="gone">
 
                     <androidx.cardview.widget.CardView
                         android:id="@+id/business_user_settings_card"
@@ -1825,68 +1780,97 @@
 
                             </LinearLayout>
 
-                            <!-- Business User Edit Address Field -->
+                            <!-- Addresses Section Header -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical"
-                                android:layout_marginBottom="10dp">
+                                android:layout_marginBottom="12dp"
+                                android:layout_marginTop="4dp">
 
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:layout_width="0dp"
+                                <TextView
+                                    android:id="@+id/business_addresses_label"
+                                    android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:layout_marginEnd="10dp"
-                                    android:hint="Address"
-                                    style="@style/txtInputLayout_style">
+                                    android:text="Addresses"
+                                    android:textColor="@color/black"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
 
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/business_edit_address_et"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:inputType="textPostalAddress"
-                                        android:focusable="false"
-                                        android:clickable="false"
-                                        style="@style/txtInputEditText_style"/>
+                                <TextView
+                                    android:id="@+id/business_addresses_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:text="(0)"
+                                    android:textColor="@color/dim_grey"
+                                    android:textSize="12sp" />
 
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <!-- Business User Edit Address Button -->
-                                <LinearLayout
-                                    android:id="@+id/business_edit_address_btn"
-                                    android:layout_width="50dp"
-                                    android:layout_height="match_parent"
-                                    android:gravity="center"
-                                    android:background="@drawable/bg_rectangle_alice_blue">
-
-                                    <ImageView
-                                        android:id="@+id/business_edit_address_btn_iv"
-                                        android:layout_width="25dp"
-                                        android:layout_height="25dp"
-                                        android:src="@drawable/ic_edit"/>
-
-                                </LinearLayout>
+                                <TextView
+                                    android:id="@+id/business_view_all_addresses_tv"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="View All"
+                                    android:textColor="@color/persian_blue"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    android:padding="6dp"
+                                    android:clickable="true"
+                                    android:focusable="true" />
 
                             </LinearLayout>
 
-                            <!-- Add field button -->
-                            <LinearLayout
-                                android:id="@+id/business_add_field_btn"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:orientation="vertical"
-                                android:gravity="center"
-                                android:background="@drawable/bg_rectangle_blue"
-                                android:clickable="true"
-                                android:focusable="true">
+                            <!-- Scrollable Address Container -->
+                            <androidx.core.widget.NestedScrollView
+                                android:id="@+id/business_addresses_scroll"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:maxHeight="300dp"
+                                android:layout_marginBottom="8dp">
 
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:src="@drawable/ic_plus"
-                                    android:contentDescription="Add new field"
-                                    app:tint="@color/white" />
+                                <LinearLayout
+                                    android:id="@+id/business_addresses_container"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical" />
+
+                            </androidx.core.widget.NestedScrollView>
+
+                            <!-- Add New Address Button with Label -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginBottom="16dp">
+
+                                <LinearLayout
+                                    android:id="@+id/business_add_field_btn"
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:orientation="vertical"
+                                    android:gravity="center"
+                                    android:background="@drawable/bg_rectangle_blue"
+                                    android:clickable="true"
+                                    android:focusable="true">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:src="@drawable/ic_plus"
+                                        android:contentDescription="Add new address"
+                                        app:tint="@color/white" />
+
+                                </LinearLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:text="Add new address for this business"
+                                    android:textColor="@color/dim_grey"
+                                    android:textSize="12sp" />
 
                             </LinearLayout>
 

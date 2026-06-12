@@ -75,14 +75,6 @@
                     android:inputType="text"
                     android:maxLines="1"/>
 
-                <ProgressBar
-                    android:id="@+id/map_search_progress"
-                    style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="5dp"
-                    android:visibility="gone" />
-
                 <ImageView
                     android:layout_width="16dp"
                     android:layout_height="16dp"
@@ -90,6 +82,12 @@
                     android:src="@drawable/ic_magnifying_glass"
                     app:tint="@color/white"/>
 
+                <ProgressBar
+                    android:id="@+id/map_search_progress"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
             </LinearLayout>
 
         </LinearLayout>
@@ -558,6 +556,7 @@
                         android:layout_height="80dp"
                         android:layout_weight="1"
                         android:layout_marginTop="5dp"
+                        android:layout_marginRight="5dp"
                         android:gravity="top|start"
                         android:inputType="textMultiLine"
                         style="@style/black_small_txt_style"
@@ -570,43 +569,43 @@
 
                         <!-- Rating Stars Container -->
                         <LinearLayout
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center_horizontal">
 
                             <ImageView
                                 android:id="@+id/rating_star_1"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="4dp"
                                 android:src="@drawable/ic_star_outlined"/>
 
                             <ImageView
                                 android:id="@+id/rating_star_2"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="4dp"
                                 android:src="@drawable/ic_star_outlined"/>
 
                             <ImageView
                                 android:id="@+id/rating_star_3"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="4dp"
                                 android:src="@drawable/ic_star_outlined"/>
 
                             <ImageView
                                 android:id="@+id/rating_star_4"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="4dp"
                                 android:src="@drawable/ic_star_outlined"/>
 
                             <ImageView
                                 android:id="@+id/rating_star_5"
-                                android:layout_width="15dp"
-                                android:layout_height="15dp"
-                                android:layout_marginRight="2dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginRight="4dp"
                                 android:src="@drawable/ic_star_outlined"/>
                         </LinearLayout>
                         <!-- Rating Stars Container [End] -->
@@ -614,7 +613,7 @@
                         <!-- Submit Review Button -->
                         <LinearLayout
                             android:id="@+id/submit_review_bttn"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="15dp"
                             android:gravity="center"

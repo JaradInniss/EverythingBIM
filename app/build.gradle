@@ -52,12 +52,6 @@ android {
     androidResources {
         noCompress += 'tflite'
     }
-
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
-    }
 }
 
 dependencies {
@@ -67,47 +61,31 @@ dependencies {
     implementation libs.appcompat
     implementation libs.activity
     implementation libs.constraintlayout
-    
-    // Lifecycle
-    implementation libs.lifecycle.viewmodel
-    implementation libs.lifecycle.livedata
-    implementation libs.lifecycle.runtime
-    implementation libs.lifecycle.common
-
-    // Testing
     testImplementation libs.junit
-    testImplementation libs.robolectric
+    testImplementation 'org.robolectric:robolectric:4.14'
     testImplementation 'net.bytebuddy:byte-buddy:1.17.2'
     testImplementation 'org.mockito:mockito-core:5.14.2'
     testImplementation 'org.mockito:mockito-android:5.14.2'
-    testImplementation libs.androidx.test.core
-    testImplementation libs.androidx.fragment.testing
+    testImplementation 'androidx.test:core:1.5.0'
+    testImplementation 'androidx.fragment:fragment-testing:1.8.3'
     testImplementation 'androidx.test:runner:1.5.2'
     testImplementation 'androidx.test:rules:1.5.0'
-    testImplementation libs.ext.junit
-    testImplementation libs.arch.core.testing
-    
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
-    
-    // Firebase
+    implementation libs.lifecycle.viewmodel
+    implementation libs.lifecycle.livedata
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation 'com.google.firebase:firebase-appcheck-debug'
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
     implementation libs.firebase.firestore
     implementation libs.firebase.storage
-    
-    // Google Maps & Places
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1' // optional for user location
     implementation 'com.google.android.libraries.places:places:3.5.0'
     implementation 'com.google.android.gms:play-services-tasks:18.4.1'
-    
-    // ML & DB
     implementation 'org.tensorflow:tensorflow-lite:2.17.0'
     implementation "androidx.room:room-runtime:2.6.0"
     annotationProcessor "androidx.room:room-compiler:2.6.0"
-
     implementation libs.glide
 }

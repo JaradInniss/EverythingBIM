@@ -26,6 +26,9 @@ import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.FragmentHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +54,9 @@ public class HomeFragment extends Fragment {
     private Double lastKnownLatitude;
     private Double lastKnownLongitude;
     private SelectedImage pendingLocationVerificationImage;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+    private ListenerRegistration notificationListenerRegistration;
 
     public HomeFragment() {
     }
@@ -60,6 +66,8 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
         viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
         registerLaunchers();
     }
 
@@ -135,7 +143,11 @@ public class HomeFragment extends Fragment {
         binding.cameraOptBttn.setOnClickListener(v -> openCamera());
 
         binding.notificationBttn.setOnClickListener(v -> {
-            // Place code to navigate to NotificationsActivity
+            if (auth.getCurrentUser() == null) {
+                Toast.makeText(requireContext(), "Log in to view notifications.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startActivity(new Intent(requireContext(), NotificationsActivity.class));
         });
     }
 
@@ -300,6 +312,60 @@ public class HomeFragment extends Fragment {
             return path.substring(cut + 1);
         }
         return path;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        bindNotificationBadge();
+    }
+
+    @Override
+    public void onStop() {
+        if (notificationListenerRegistration != null) {
+            notificationListenerRegistration.remove();
+            notificationListenerRegistration = null;
+        }
+        super.onStop();
+    }
+
+    private void bindNotificationBadge() {
+        if (notificationListenerRegistration != null) {
+            notificationListenerRegistration.remove();
+            notificationListenerRegistration = null;
+        }
+
+        if (binding == null || auth.getCurrentUser() == null) {
+            updateNotificationBadge(0);
+            return;
+        }
+
+        notificationListenerRegistration = db.collection(UserNotificationHelper.COLLECTION_USER_NOTIFICATIONS)
+                .whereEqualTo("recipientUserId", auth.getCurrentUser().getUid())
+                .whereEqualTo("read", false)
+                .addSnapshotListener((snap, error) -> {
+                    if (binding == null) {
+                        return;
+                    }
+                    if (error != null || snap == null) {
+                        updateNotificationBadge(0);
+                        return;
+                    }
+                    updateNotificationBadge(snap.size());
+                });
+    }
+
+    private void updateNotificationBadge(int count) {
+        if (binding == null) {
+            return;
+        }
+        if (count <= 0) {
+            binding.notificationBadgeTv.setVisibility(View.GONE);
+            return;
+        }
+
+        binding.notificationBadgeTv.setVisibility(View.VISIBLE);
+        binding.notificationBadgeTv.setText(count > 99 ? "99+" : String.valueOf(count));
     }
 
     @Override

@@ -80,6 +80,24 @@ public class AdminFragment extends Fragment {
                 .commit();
     }
 
+    public void navigateToBizLocationDetail(String docId) {
+        AdminBizLocationDetailFragment detailFragment = AdminBizLocationDetailFragment.newInstance(docId);
+        getChildFragmentManager()
+                .beginTransaction()
+                .add(R.id.admin_fragment_container, detailFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void navigateToWatchList() {
+        AdminWatchListFragment watchListFragment = new AdminWatchListFragment();
+        getChildFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container, watchListFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     // Unified navigation for request details
     public void navigateToRequestDetail(String requestType, String docId) {
         if ("location".equals(requestType)) {
@@ -90,6 +108,8 @@ public class AdminFragment extends Fragment {
             navigateToDatasetSubmissionDetail(docId);
         } else if ("business_verification".equals(requestType)) {
             navigateToBizVerificationDetail(docId);
+        } else if ("business_location".equals(requestType)) {
+            navigateToBizLocationDetail(docId);
         }
     }
 

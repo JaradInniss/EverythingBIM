@@ -47,8 +47,20 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id")
     LiveData<LocationWithDetails> getLocationWithDetailsById(long id);
 
-    @Query("SELECT * FROM locations WHERE locationId = :id")
+    @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
+
+    /**
+     * Synchronous variant of {@link #getLocationById(long)} for use from
+     * background threads (e.g. inside a Firestore mirror that needs to
+     * check the cache before inserting a child row). MUST NOT be called
+     * from the main thread; Room enforces this.
+     *
+     * @return the {@link LocationEntity} with the given id, or
+     *         {@code null} if it isn't cached locally.
+     */
+    @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
+    LocationEntity getLocationByIdSync(long id);
 
     /**
      * Retrieves all locations stored in the database, including their associated details.
@@ -59,8 +71,8 @@ public interface LocationDao {
     @Query("SELECT * FROM locations")
     LiveData<List<LocationWithDetails>> getAllLocationsWithDetails();
 
-    @Query("SELECT * FROM locations WHERE name LIKE '%' || :query || '%'")
-    LiveData<List<LocationEntity>> searchLocations(String query);
+    @Query("SELECT * FROM locations")
+    LiveData<List<LocationEntity>> getAllLocations();
 
     /**
      * Inserts a new location or replaces an existing one if there's a conflict.

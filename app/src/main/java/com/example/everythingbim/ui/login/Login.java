@@ -43,7 +43,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private ImageView generalUserIcon, businessUserIcon;
     private TextView userTypeText, createAccountOption, generalUserText, businessUserText;
     private Button loginBttn;
-    private TextInputEditText emailEditText, passwordEditText;
+    private TextInputEditText usernameEditText, passwordEditText;
     private ProgressBar progressBar;
     private TextView errorTextView;
     private TextView adminAccessHint;
@@ -104,7 +104,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         loginBttn.setOnClickListener(this);
 
         // Edit Texts
-        emailEditText = binding.loginEmailEt;
+        usernameEditText = binding.loginUsernameEt;
         passwordEditText = binding.loginPasswordEt;
 
         // Progress Bar
@@ -125,7 +125,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     }
 
     private void setupObservers() {
-
+        
         // Observe user type selection (icons, texts, and background)
         viewModel.getSelectedUserType().observe(this, userType -> {
             if (userType == UserType.GENERAL) {
@@ -198,14 +198,14 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 // If errors are null, manually hide everything immediately
                 TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                 errorTextView.setVisibility(View.GONE);
-                binding.tilLoginEmail.setError(null);
+                binding.tilLoginUsername.setError(null);
                 binding.tilLoginPassword.setError(null);
                 return;
             }
 
             // Map IDs to Layouts: We create a temporary map to link the EditText IDs
             HashMap<Integer, TextInputLayout> fieldMap = new HashMap<>();
-            fieldMap.put(R.id.login_email_et, binding.tilLoginEmail);
+            fieldMap.put(R.id.login_username_et, binding.tilLoginUsername);
             fieldMap.put(R.id.login_password_et, binding.tilLoginPassword);
 
             // Iterate through errors: The ViewModel might return multiple errors at once
@@ -227,7 +227,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
                 // Delayed Disappearance: Create a timer to hide the error after 2 seconds
                 handler.postDelayed(() -> {
-
+                    
                     // Animate the views sliding back into their original places
                     TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
                     // Reset UI: Hide the error box and clear the red outlines/text from the field
@@ -258,14 +258,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         });
     }
 
-
     @Override
     public void onClick(View view) {
         int id = view.getId();
         if (id == R.id.login_bttn) {
-            String email = emailEditText.getText().toString().trim();
+            String username = usernameEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
-            viewModel.onLoginClicked(email, password);
+            viewModel.onLoginClicked(username, password);
         } else if (id == R.id.general_user_container) {
             viewModel.setSelectedUserType(UserType.GENERAL);
         } else if (id == R.id.business_user_container) {

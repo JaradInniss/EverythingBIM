@@ -225,6 +225,125 @@
 
         </LinearLayout>
 
+        <!-- Status filter row (In Review / Completed / Rejected) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp">
+
+            <!-- Status filter pills -->
+            <TextView
+                android:id="@+id/req_filter_status_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="@drawable/bg_search_filter_active"
+                android:textColor="@color/white"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/req_filter_status_in_review"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="In Review"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="@drawable/bg_biz_unread_pill"
+                android:textColor="@color/black"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/req_filter_status_completed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completed"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="@drawable/bg_biz_read_pill"
+                android:textColor="@color/black"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/req_filter_status_rejected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rejected"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="@drawable/bg_biz_read_pill"
+                android:textColor="@color/black"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <!-- Status legend (In Review / Completed / Rejected dots) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View android:layout_width="10dp" android:layout_height="10dp"
+                android:background="@drawable/bg_dot_light_blue"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="In Review"
+                android:textColor="@color/dim_grey"
+                android:textSize="11sp"
+                android:layout_marginEnd="12dp" />
+            <View android:layout_width="10dp" android:layout_height="10dp"
+                android:background="@drawable/bg_dot_green"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completed"
+                android:textColor="@color/dim_grey"
+                android:textSize="11sp"
+                android:layout_marginEnd="12dp" />
+            <View android:layout_width="10dp" android:layout_height="10dp"
+                android:background="@drawable/bg_dot_orange"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rejected"
+                android:textColor="@color/dim_grey"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- ══════════════════════════════════════

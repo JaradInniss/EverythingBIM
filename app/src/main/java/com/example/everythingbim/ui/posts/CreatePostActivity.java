@@ -3,6 +3,8 @@ package com.example.everythingbim.ui.posts;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -17,6 +19,8 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -24,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -42,10 +47,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.UserWithProfile;
 import com.example.everythingbim.data.models.SelectedImage;
 import com.example.everythingbim.databinding.ActivityCreatePostBinding;
+import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -53,6 +62,7 @@ import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,29 +72,37 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import com.example.everythingbim.ui.login.Login;
-import com.example.everythingbim.ui.main.MainActivity;
-import com.example.everythingbim.ui.registration.GeneralRegistration;
 
+/**
+ * Activity that lets the user create a new post: pick a location (via Google
+ * Places), attach an image (from camera or gallery), write a caption, and tag
+ * other users. On submit, the image is uploaded to Firebase Storage and the
+ * post document is written to Firestore.
+ */
 public class CreatePostActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private static final long SEARCH_DEBOUNCE_MS = 300L;
 
     private ActivityCreatePostBinding binding;
     private CreatePostViewModel viewModel;
-    private ActivityResultLauncher<String> galleryPickerLauncher;
-    private ActivityResultLauncher<String> galleryPermissionLauncher;
-    private ActivityResultLauncher<String> cameraPermissionLauncher;
-    private ActivityResultLauncher<Uri> cameraLauncher;
-    private AutocompleteSessionToken autocompleteSessionToken;
-    private final List<AutocompletePrediction> autocompletePredictions = new ArrayList<>();
 
     private Uri pendingCameraUri;
 
-    private LinearLayout returnBttn, submitPostBttn, searchBar, cameraOptionBttn, galleryOptionBttn;
-    private EditText searchEt, captionEt, userTagEt;
-    private CardView locationResultsCard, userResultsCard, imageContainer;
+    private ActivityResultLauncher<String> galleryPickerLauncher;
+    private ActivityResultLauncher<String> galleryPermissionLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private ActivityResultLauncher<Uri> takePictureLauncher;
+    private final List<AutocompletePrediction> autocompletePredictions = new ArrayList<>();
+
+    // UI Elements
+    private LinearLayout returnBttn, submitPostBttn, searchBar, cameraOptionBttn, galleryOptionBttn, clearPostContentBttn, uploadOptionsContainer;
+    private EditText searchEt, userTagEt, captionEt;
+    private TextView submitPostBttnText;
+    private CardView locationResultsCard, imageContainer, userResultsCard;
     private ListView locationResultsList, userResultsList;
     private RecyclerView tagsRecyclerView;
-    private ImageView uploadedImageView, uploadMethodIcon;
+    private ImageView uploadedImageView, submitPostBttnIcon, uploadMethodIcon;
+    private ProgressBar searchProgress;
 
     private LocationSearchAdapter locationAdapter;
     private UserSearchAdapter userSearchAdapter;
@@ -93,9 +111,10 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private final List<String> locationLabels = new ArrayList<>();
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private final Runnable pendingSearchRunnable = this::performSearch;
-    private ProgressBar searchProgress;
     private boolean suppressSearchTextChange;
-    private static final long SEARCH_DEBOUNCE_MS = 300L;
+    private AutocompleteSessionToken autocompleteSessionToken;
+    @Nullable
+    private AlertDialog uploadingDialog;
 
 
     @Override
@@ -109,11 +128,16 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.postsMain, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+            v.setPadding(systemBars.left,
+                    systemBars.top,
+                    systemBars.right,
+                    Math.max(systemBars.bottom, ime.bottom));
             return insets;
         });
 
-        if (isGuestUser()) {
+        if (!isPostingAuthorized()) {
             showAuthRequiredDialog();
             return;
         }
@@ -126,12 +150,37 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         initializePlacesClient();
     }
 
+    @Override
+    protected void onDestroy() {
+        // Avoid leaking the pending search callback across configuration changes.
+        searchHandler.removeCallbacks(pendingSearchRunnable);
+        // Dismiss the upload dialog if it's still showing. An AlertDialog
+        // holds a reference to the activity via its Window, so leaving it
+        // up across a configuration change (e.g. rotation) or after the
+        // activity is destroyed would cause a window leak.
+        dismissUploadingDialog();
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isPostingAuthorized()) {
+            showAuthRequiredDialog();
+        }
+    }
+
     private void setupViews() {
         returnBttn = binding.returnBttn;
         submitPostBttn = binding.submitPostBttn;
         searchBar = binding.searchBar;
         cameraOptionBttn = binding.cameraOptBttn;
         galleryOptionBttn = binding.galleryOptBttn;
+        clearPostContentBttn = binding.clearPostContentBttn;
+        uploadOptionsContainer = binding.uploadOptionsContainer;
+
+        submitPostBttnIcon = binding.submitPostBttnIcon;
+        submitPostBttnText = binding.submitPostBttnText;
 
         searchEt = binding.searchEt;
         captionEt = binding.captionEt;
@@ -147,6 +196,9 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         uploadMethodIcon = binding.imageUploadMethodIcon;
 
         searchProgress = binding.createpostSearchProgress;
+
+        // Clear button is hidden by default and toggled by field input.
+        clearPostContentBttn.setVisibility(View.GONE);
     }
 
     private void setupAdapters() {
@@ -157,20 +209,21 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         userResultsList.setAdapter(userSearchAdapter);
 
         userTagAdapter = new UserTagAdapter(user -> viewModel.removeTaggedUser(user));
-        tagsRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        tagsRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         tagsRecyclerView.setAdapter(userTagAdapter);
     }
 
     private void setupListeners() {
         returnBttn.setOnClickListener(this);
         submitPostBttn.setOnClickListener(this);
-        searchBar.setOnClickListener(this);
         cameraOptionBttn.setOnClickListener(this);
         galleryOptionBttn.setOnClickListener(this);
+        clearPostContentBttn.setOnClickListener(this);
+        searchBar.setOnClickListener(this);
 
         searchEt.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
             @Override
             public void afterTextChanged(Editable s) {
                 if (suppressSearchTextChange) return;
@@ -183,34 +236,50 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             }
         });
 
-        captionEt.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                viewModel.setCaption(s.toString());
+        searchEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                locationResultsCard.setVisibility(View.GONE);
             }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
-        userTagEt.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                viewModel.searchUsers(s.toString());
-            }
-            @Override public void afterTextChanged(Editable s) {}
         });
 
         locationResultsList.setOnItemClickListener((parent, view, position, id) -> {
             if (position < 0 || position >= autocompletePredictions.size()) return;
             AutocompletePrediction prediction = autocompletePredictions.get(position);
 
+            searchHandler.removeCallbacks(pendingSearchRunnable);
+
+            clearPredictions();
+
             suppressSearchTextChange = true;
-            searchEt.setText(prediction.getPrimaryText(null).toString());
-            suppressSearchTextChange = false;
+            try {
+                CharSequence primaryText = prediction.getPrimaryText(null);
+                if (primaryText != null) {
+                    searchEt.setText(primaryText.toString());
+                    searchEt.setSelection(searchEt.getText().length());
+                }
+            } finally {
+                suppressSearchTextChange = false;
+            }
 
             fetchSelectedPlace(prediction);
-            clearPredictions();
+        });
+
+        captionEt.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                viewModel.setCaption(s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+
+        userTagEt.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                viewModel.searchUsers(s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) { }
         });
 
         userResultsList.setOnItemClickListener((parent, view, position, id) -> {
@@ -224,20 +293,6 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void observeViewModel() {
-        viewModel.getUserSearchResults().observe(this, users -> {
-            userSearchAdapter.clear();
-            if (users != null && !users.isEmpty()) {
-                userSearchAdapter.addAll(users);
-                userResultsCard.setVisibility(View.VISIBLE);
-            } else {
-                userResultsCard.setVisibility(View.GONE);
-            }
-        });
-
-        viewModel.getTaggedUsers().observe(this, users -> {
-            userTagAdapter.setTaggedUsers(users);
-        });
-
         viewModel.getNavigationEvent().observe(this, selectedImage -> {
             if (selectedImage != null) {
                 handleSelectedImage(selectedImage);
@@ -250,63 +305,86 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             }
         });
 
-        viewModel.getIsPostValid().observe(this, isValid -> {
-            TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
-            if (isValid) {
-                binding.submitPostBttn.setBackgroundResource(R.drawable.bg_rectangle_gold);
-                binding.submitPostBttnIcon.setImageTintList(ContextCompat.getColorStateList(this, R.color.black));
-                binding.submitPostBttnText.setTextColor(ContextCompat.getColor(this, R.color.black));
+        viewModel.getImageUri().observe(this, uri -> {
+            if (uri != null) {
+                cameraOptionBttn.setVisibility(View.GONE);
+                galleryOptionBttn.setVisibility(View.GONE);
+                uploadOptionsContainer.setVisibility(View.GONE);
+                imageContainer.setVisibility(View.VISIBLE);
+                // Use Glide to handle content:// and file:// URIs consistently and
+                // to apply the same centerCrop styling we use elsewhere in the app.
+                Glide.with(this)
+                        .load(uri)
+                        .centerInside()
+                        .placeholder(R.drawable.butterfly)
+                        .into(uploadedImageView);
+                updateClearButtonVisibility();
             } else {
-                binding.submitPostBttn.setBackgroundResource(R.drawable.bg_rectangle_dim_grey);
-                binding.submitPostBttnIcon.setImageTintList(ContextCompat.getColorStateList(this, R.color.white));
-                binding.submitPostBttnText.setTextColor(ContextCompat.getColor(this, R.color.white));
+                cameraOptionBttn.setVisibility(View.VISIBLE);
+                galleryOptionBttn.setVisibility(View.VISIBLE);
+                uploadOptionsContainer.setVisibility(View.VISIBLE);
+                imageContainer.setVisibility(View.GONE);
             }
-            // Button is ALWAYS enabled so it can show Toast when invalid
+        });
+
+        viewModel.getIsPostValid().observe(this, isValid -> {
+            TransitionManager.beginDelayedTransition(binding.getRoot(), new AutoTransition());
+            updateShareButtonState();
+        });
+
+        viewModel.getIsSaving().observe(this, saving -> {
+            updateShareButtonState();
+            if (Boolean.TRUE.equals(saving)) {
+                showUploadingDialog();
+            } else {
+                dismissUploadingDialog();
+            }
+        });
+
+        viewModel.getTaggedUsers().observe(this, users -> {
+            userTagAdapter.setTaggedUsers(users);
+            updateClearButtonVisibility();
+        });
+
+        viewModel.getCaption().observe(this, value -> updateClearButtonVisibility());
+
+        viewModel.getUserSearchResults().observe(this, users -> {
+            userSearchAdapter.clear();
+            if (users != null) {
+                userSearchAdapter.addAll(users);
+            }
+            userSearchAdapter.notifyDataSetChanged();
+            boolean hasResults = users != null && !users.isEmpty();
+            boolean hasQuery = userTagEt.getText() != null
+                    && !userTagEt.getText().toString().trim().isEmpty();
+            userResultsCard.setVisibility(hasResults && hasQuery ? View.VISIBLE : View.GONE);
         });
 
         viewModel.getPostCreated().observe(this, created -> {
             if (created) {
+                dismissUploadingDialog();
                 Toast.makeText(this, "Post shared successfully!", Toast.LENGTH_SHORT).show();
                 finish();
-            }
-        });
-
-        viewModel.getIsSaving().observe(this, saving -> {
-            binding.submitPostBttn.setEnabled(!saving);
-        });
-
-        viewModel.getSelectedImageUri().observe(this, uri -> {
-            if (uri != null) {
-                cameraOptionBttn.setVisibility(View.GONE);
-                galleryOptionBttn.setVisibility(View.GONE);
-                imageContainer.setVisibility(View.VISIBLE);
-                uploadedImageView.setImageURI(uri);
-            } else {
-                cameraOptionBttn.setVisibility(View.VISIBLE);
-                galleryOptionBttn.setVisibility(View.VISIBLE);
-                imageContainer.setVisibility(View.GONE);
             }
         });
     }
 
     @Override
     public void onClick(View view) {
-        int bttnId = view.getId();
-
-        if (bttnId == R.id.return_bttn) {
+        int buttonId = view.getId();
+        if (buttonId == R.id.return_bttn) {
             finish();
-        }
-        else if (bttnId == R.id.submit_post_bttn) {
+        } else if (buttonId == R.id.submit_post_bttn) {
             handleShare();
-        }
-        else if (bttnId == R.id.search_bar) {
-            searchEt.requestFocus();
-        }
-        else if (bttnId == R.id.camera_opt_bttn) {
+        } else if (buttonId == R.id.camera_opt_bttn) {
             openCamera();
-        }
-        else if (bttnId == R.id.gallery_opt_bttn) {
+        } else if (buttonId == R.id.gallery_opt_bttn) {
             openGallery();
+        } else if (buttonId == R.id.search_bar) {
+            searchEt.requestFocus();
+        } else if (buttonId == R.id.clear_post_content_bttn) {
+            clearAllFields();
+            clearPostContentBttn.setVisibility(View.GONE);
         }
     }
 
@@ -319,31 +397,72 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         else {
             StringBuilder missingFields = new StringBuilder("Please fill out: ");
             boolean first = true;
-            if (viewModel.getLocation().getValue() == null) {
-                missingFields.append("Location");
+
+            if (viewModel.getCaption().getValue() == null
+                    || viewModel.getCaption().getValue().trim().isEmpty()) {
+                missingFields.append("Caption");
                 first = false;
             }
-            if (viewModel.getSelectedImageUri().getValue() == null) {
+
+            if (viewModel.getImageUri().getValue() == null) {
                 if (!first) missingFields.append(", ");
                 missingFields.append("Image");
                 first = false;
             }
-            if (viewModel.getCaption().getValue() == null || viewModel.getCaption().getValue().trim().isEmpty()) {
+
+            if (viewModel.getLocation().getValue() == null) {
                 if (!first) missingFields.append(", ");
-                missingFields.append("Caption");
+                missingFields.append("Location");
             }
 
             Toast.makeText(this, missingFields.toString(), Toast.LENGTH_LONG).show();
         }
     }
 
-    private void handleSelectedImage(@NonNull SelectedImage selectedImage) {
-        viewModel.setSelectedImageUri(selectedImage.getUri());
-        if (SelectedImage.SOURCE_CAMERA.equals(selectedImage.getSource())) {
-            binding.imageUploadMethodIcon.setImageResource(R.drawable.ic_camera);
-        } else {
-            binding.imageUploadMethodIcon.setImageResource(R.drawable.ic_images);
-        }
+    private void registerLaunchers() {
+        galleryPickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                this::handleGalleryResult
+        );
+
+        galleryPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        galleryPickerLauncher.launch("image/*");
+                    } else {
+                        Toast.makeText(this, "Gallery permission was denied.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        launchCameraCapture();
+                    } else {
+                        Toast.makeText(this, "Camera permission was denied.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        takePictureLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(),
+                success -> {
+                    if (success && pendingCameraUri != null) {
+                        // Route the camera URI through the same code path the gallery
+                        // uses so the upload-method icon gets set to the camera icon.
+                        viewModel.onImageSelected(new SelectedImage(
+                                pendingCameraUri,
+                                SelectedImage.SOURCE_CAMERA,
+                                pendingCameraUri.getLastPathSegment()
+                        ));
+                    } else {
+                        Toast.makeText(this, "Camera capture was cancelled.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
     }
 
     private void initializePlacesClient() {
@@ -386,9 +505,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         }
 
         showSearchLoading(true);
+
         FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
                 .setSessionToken(autocompleteSessionToken)
                 .setQuery(query)
+                .setCountries("BB")
                 .build();
 
         placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
@@ -414,7 +535,9 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME,
                 Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.RATING, Place.Field.TYPES);
 
-        FetchPlaceRequest request = FetchPlaceRequest.builder(prediction.getPlaceId(), fields).build();
+        FetchPlaceRequest request = FetchPlaceRequest.builder(prediction.getPlaceId(), fields)
+                .setSessionToken(autocompleteSessionToken)
+                .build();
         placesClient.fetchPlace(request).addOnSuccessListener(response -> {
             Place place = response.getPlace();
             viewModel.setLocationFromPlaces(place);
@@ -422,71 +545,13 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         });
     }
 
-    private void registerLaunchers() {
-        galleryPickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                this::handleGalleryResult
-        );
-
-        galleryPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        galleryPickerLauncher.launch("image/*");
-                    } else {
-                        viewModel.onSelectionError("Gallery permission was denied.");
-                    }
-                }
-        );
-
-        cameraPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        launchCameraCapture();
-                    } else {
-                        viewModel.onSelectionError("Camera permission was denied.");
-                    }
-                }
-        );
-
-        cameraLauncher = registerForActivityResult(
-                new ActivityResultContracts.TakePicture(),
-                success -> {
-                    if (success && pendingCameraUri != null) {
-                        viewModel.onImageSelected(new SelectedImage(
-                                pendingCameraUri,
-                                SelectedImage.SOURCE_CAMERA,
-                                "camera_capture.jpg"
-                        ));
-                    } else {
-                        viewModel.onSelectionError("Camera capture was cancelled.");
-                    }
-                }
-        );
-    }
-
-    private void handleGalleryResult(@Nullable Uri uri) {
-        if (uri == null) return;
-        viewModel.onImageSelected(new SelectedImage(
-                uri,
-                SelectedImage.SOURCE_GALLERY,
-                resolveDisplayName(uri)
-        ));
-    }
-
-    private String resolveDisplayName(@NonNull Uri uri) {
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        if (cursor != null && cursor.moveToFirst()) {
-            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-            if (nameIndex >= 0) {
-                String name = cursor.getString(nameIndex);
-                cursor.close();
-                return name;
-            }
-            cursor.close();
+    private void handleSelectedImage(@NonNull SelectedImage selectedImage) {
+        viewModel.setImageUri(selectedImage.getUri());
+        if (SelectedImage.SOURCE_CAMERA.equals(selectedImage.getSource())) {
+            uploadMethodIcon.setImageResource(R.drawable.ic_camera);
+        } else {
+            uploadMethodIcon.setImageResource(R.drawable.ic_images);
         }
-        return "image.jpg";
     }
 
     private void openGallery() {
@@ -499,8 +564,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void openCamera() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             launchCameraCapture();
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
@@ -512,16 +576,97 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             File photoFile = createImageFile();
             pendingCameraUri = FileProvider.getUriForFile(
                     this,
-                    this.getPackageName() + ".fileprovider",
+                    getPackageName() + ".fileprovider",
                     photoFile
             );
-            cameraLauncher.launch(pendingCameraUri);
+            takePictureLauncher.launch(pendingCameraUri);
         } catch (IOException exception) {
-            viewModel.onSelectionError("Unable to create a temporary image for camera capture.");
+            Toast.makeText(this, "Unable to prepare camera capture.", Toast.LENGTH_SHORT).show();
         }
     }
 
-    @Nullable
+    private void handleGalleryResult(Uri uri) {
+        if (uri == null) {
+            Toast.makeText(this, "No image was selected.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        viewModel.onImageSelected(new SelectedImage(
+                uri,
+                SelectedImage.SOURCE_GALLERY,
+                resolveDisplayName(uri)
+        ));
+    }
+
+    private void updateShareButtonState() {
+        boolean saving = Boolean.TRUE.equals(viewModel.getIsSaving().getValue());
+        boolean canPost = !saving && Boolean.TRUE.equals(viewModel.getIsPostValid().getValue());
+
+        if (canPost) {
+            submitPostBttn.setEnabled(true);
+            submitPostBttn.setBackgroundResource(R.drawable.bg_rectangle_gold);
+            submitPostBttnIcon.setImageTintList(ContextCompat.getColorStateList(this, R.color.black));
+            submitPostBttnText.setTextColor(ContextCompat.getColor(this, R.color.black));
+        } else {
+            submitPostBttn.setEnabled(false);
+            submitPostBttn.setBackgroundResource(R.drawable.bg_rectangle_dim_grey);
+            submitPostBttnIcon.setImageTintList(ContextCompat.getColorStateList(this, R.color.white));
+            submitPostBttnText.setTextColor(ContextCompat.getColor(this, R.color.white));
+        }
+    }
+
+    private void showUploadingDialog() {
+        if (uploadingDialog == null) {
+            View view = LayoutInflater.from(this).inflate(R.layout.dialog_uploading_post, null);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setView(view);
+            uploadingDialog = builder.create();
+            uploadingDialog.setCancelable(false);
+            uploadingDialog.setCanceledOnTouchOutside(false);
+        }
+        if (!isFinishing() && !isDestroyed() && !uploadingDialog.isShowing()) {
+            uploadingDialog.show();
+            if (uploadingDialog.getWindow() != null) {
+                uploadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                uploadingDialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                uploadingDialog.getWindow().setGravity(Gravity.CENTER);
+            }
+        }
+    }
+
+    private void dismissUploadingDialog() {
+        if (uploadingDialog != null && uploadingDialog.isShowing()) {
+            uploadingDialog.dismiss();
+        }
+    }
+
+    private void updateClearButtonVisibility() {
+        boolean hasCaption = viewModel.getCaption().getValue() != null
+                && !viewModel.getCaption().getValue().trim().isEmpty();
+        boolean hasImage = viewModel.getImageUri().getValue() != null;
+        boolean hasLocation = viewModel.getLocation().getValue() != null;
+        boolean hasTags = viewModel.getTaggedUsers().getValue() != null
+                && !viewModel.getTaggedUsers().getValue().isEmpty();
+        boolean hasSearch = searchEt != null
+                && searchEt.getText() != null
+                && !searchEt.getText().toString().trim().isEmpty();
+
+        boolean shouldShow = hasCaption || hasImage || hasLocation || hasTags || hasSearch;
+        TransitionManager.beginDelayedTransition((ViewGroup) clearPostContentBttn.getParent(), new AutoTransition());
+        clearPostContentBttn.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+    }
+
+    private void clearAllFields() {
+        searchEt.setText("");
+        captionEt.setText("");
+        userTagEt.setText("");
+        viewModel.resetDraft();
+        userResultsCard.setVisibility(View.GONE);
+        locationResultsCard.setVisibility(View.GONE);
+        autocompleteSessionToken = AutocompleteSessionToken.newInstance();
+        clearPredictions();
+        Toast.makeText(this, "Cleared", Toast.LENGTH_SHORT).show();
+    }
+
     private String getGalleryPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return Manifest.permission.READ_MEDIA_IMAGES;
@@ -529,10 +674,41 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         return Manifest.permission.READ_EXTERNAL_STORAGE;
     }
 
-    @NonNull
     private File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-        return File.createTempFile("bim_" + timeStamp + "_", ".jpg", this.getCacheDir());
+        return File.createTempFile("bim_post_" + timeStamp + "_", ".jpg", getCacheDir());
+    }
+
+    private String resolveDisplayName(Uri uri) {
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        if (cursor == null) {
+            return fallbackFileName(uri);
+        }
+
+        try {
+            if (cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (nameIndex >= 0) {
+                    return cursor.getString(nameIndex);
+                }
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return fallbackFileName(uri);
+    }
+
+    private String fallbackFileName(Uri uri) {
+        String lastSegment = uri.getLastPathSegment();
+        return lastSegment != null ? lastSegment : "selected_image";
+    }
+
+    private boolean isPostingAuthorized() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            return false;
+        }
+        return !isGuestUser();
     }
 
     private boolean isGuestUser() {

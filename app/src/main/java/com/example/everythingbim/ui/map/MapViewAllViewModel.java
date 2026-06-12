@@ -8,13 +8,15 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MapViewAllViewModel extends ViewModel {
 
     private final MutableLiveData<List<PostEntity>> posts = new MutableLiveData<>();
     private final MutableLiveData<List<ReviewEntity>> reviews = new MutableLiveData<>();
+    private final MutableLiveData<Set<Long>> likedPostIds = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Float> overallRating = new MutableLiveData<>(4.5f);
     private long locationId;
 
@@ -35,6 +37,10 @@ public class MapViewAllViewModel extends ViewModel {
         return reviews;
     }
 
+    public LiveData<Set<Long>> getLikedPostIds() {
+        return likedPostIds;
+    }
+
     public LiveData<Float> getOverallRating() {
         return overallRating;
     }
@@ -45,15 +51,16 @@ public class MapViewAllViewModel extends ViewModel {
             placeholderList.add(new PostEntity(
                     locationId,
                     "Sample Location",
-                    101,
-                    "Sample Author",
+                    101L,
+                    "TravelAddict",
                     "Sample post caption for post #" + (i + 1),
                     "https://picsum.photos/seed/" + (locationId + i) + "/400",
                     System.currentTimeMillis(),
-                    Collections.emptyList()
+                    new ArrayList<>()
             ));
         }
         posts.setValue(placeholderList);
+        likedPostIds.setValue(new HashSet<>());
     }
 
     private void loadReviewsPlaceholder() {

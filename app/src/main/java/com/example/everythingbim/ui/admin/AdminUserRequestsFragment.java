@@ -34,16 +34,21 @@ import com.example.everythingbim.R;
 public class AdminUserRequestsFragment extends Fragment {
 
     // ─── Bundle args ─────────────────────────
-    // Pass REQUEST_TYPE = "location", "info", or "dataset"
+    // Pass REQUEST_TYPE = "location", "info", "dataset", or "submissions"
     public static final String ARG_TYPE = "request_type";
 
     // ─── Read filter ─────────────────────────
     private enum ReadFilter { ALL, UNREAD, READ }
     private ReadFilter readFilter = ReadFilter.ALL;
 
+    // ─── Status filter ─────────────────────────
+    private enum StatusFilter { ALL, IN_REVIEW, COMPLETED, REJECTED }
+    private StatusFilter statusFilter = StatusFilter.ALL;
+
     // ─── Views ───────────────────────────────
     private EditText searchEt;
     private TextView filterAll, filterUnread, filterRead;
+    private TextView filterStatusAll, filterStatusInReview, filterStatusCompleted, filterStatusRejected;
     private TextView countTv;
     private RecyclerView recyclerView;
 
@@ -58,7 +63,8 @@ public class AdminUserRequestsFragment extends Fragment {
     private int currentLoadId = 0;
 
     // ─── Request type ─────────────────────────
-    private String requestType = "info"; // "info", "location", or "dataset"
+    private String requestType = "info"; // "info", "location", "dataset", or "submissions"
+    //private String requestType = "info"; // "info", "location", "dataset", "business_location"
 
     // ────────────────────────────────────────────────────────
     // FACTORY
@@ -94,16 +100,22 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll    = view.findViewById(R.id.req_filter_all);
         filterUnread = view.findViewById(R.id.req_filter_unread);
         filterRead   = view.findViewById(R.id.req_filter_read);
+        filterStatusAll = view.findViewById(R.id.req_filter_status_all);
+        filterStatusInReview = view.findViewById(R.id.req_filter_status_in_review);
+        filterStatusCompleted = view.findViewById(R.id.req_filter_status_completed);
+        filterStatusRejected = view.findViewById(R.id.req_filter_status_rejected);
         countTv      = view.findViewById(R.id.req_list_count_tv);
 
         // Update header labels based on type
         TextView sectionTitle = view.findViewById(R.id.req_list_section_title);
         if (requestType.equals("location")) {
             sectionTitle.setText("Add Location Requests");
+        } else if (requestType.equals("submissions")) {
+            sectionTitle.setText("Users' Submissions");
         } else if (requestType.equals("dataset")) {
             sectionTitle.setText("Dataset Image Submissions");
         } else {
-            sectionTitle.setText("Add Information Requests");
+            sectionTitle.setText("Information Requests");
         }
 
         // Back button
@@ -122,6 +134,12 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll.setOnClickListener(v -> { readFilter = ReadFilter.ALL; updatePills(); applyFilters(); });
         filterUnread.setOnClickListener(v -> { readFilter = ReadFilter.UNREAD; updatePills(); applyFilters(); });
         filterRead.setOnClickListener(v -> { readFilter = ReadFilter.READ; updatePills(); applyFilters(); });
+
+        // Status filter pills
+        filterStatusAll.setOnClickListener(v -> { statusFilter = StatusFilter.ALL; updateStatusPills(); applyFilters(); });
+        filterStatusInReview.setOnClickListener(v -> { statusFilter = StatusFilter.IN_REVIEW; updateStatusPills(); applyFilters(); });
+        filterStatusCompleted.setOnClickListener(v -> { statusFilter = StatusFilter.COMPLETED; updateStatusPills(); applyFilters(); });
+        filterStatusRejected.setOnClickListener(v -> { statusFilter = StatusFilter.REJECTED; updateStatusPills(); applyFilters(); });
 
         // Search
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -148,6 +166,11 @@ public class AdminUserRequestsFragment extends Fragment {
             listenerRegistration.remove();
         }
 
+        if ("submissions".equals(requestType)) {
+            loadCombinedSubmissions();
+            return;
+        }
+
         String collection = getCollectionName();
 
         listenerRegistration = db.collection(collection)
@@ -164,54 +187,65 @@ public class AdminUserRequestsFragment extends Fragment {
                     } else {
                         allItems.clear();
                         for (QueryDocumentSnapshot doc : snap) {
-                            String number = doc.contains("number")
-                                    ? "#" + doc.getLong("number")
-                                    : "#" + doc.getId().substring(0, 3).toUpperCase();
-                            String name = doc.getString("locationName") != null
-                                    ? doc.getString("locationName")
-                                    : doc.getString("title") != null
-                                    ? doc.getString("title") : "Request";
-                            String submittedBy = doc.getString("submittedByUsername") != null
-                                    ? doc.getString("submittedByUsername") : "User";
-                            boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
-                            Timestamp ts = doc.getTimestamp("createdAt");
-                            String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
-                                    Locale.getDefault()).format(ts.toDate()) : "";
-
-                            RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
-
-                            // Populate additional fields
-                            item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
-                            item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
-                            item.description = doc.getString("description") != null ? doc.getString("description") : "";
-                            item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
-                            item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
-                            item.imageUrl = doc.getString("imageUrl") != null ? doc.getString("imageUrl") : "";
-                            item.userNote = doc.getString("userNote") != null ? doc.getString("userNote") : "";
-
-                            Double lat = doc.getDouble("latitude");
-                            Double lng = doc.getDouble("longitude");
-                            if (lat != null && lng != null) {
-                                item.latitude = lat;
-                                item.longitude = lng;
-                                item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
-                            }
-
-                            // Business verification fields
-                            item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
-                            item.email = doc.getString("email") != null ? doc.getString("email") : "";
-                            item.address = doc.getString("address") != null ? doc.getString("address") : "";
-                            item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
-                            if (item.businessType.isEmpty()) {
-                                item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
-                            }
-
-                            allItems.add(item);
+                            allItems.add(buildRequestItem(doc, requestType));
                         }
                     }
                     applyFilters();
                     countTv.setText(String.valueOf(allItems.size()));
                 });
+    }
+
+    private void loadCombinedSubmissions() {
+        final int loadId = ++currentLoadId;
+        allItems.clear();
+        final List<RequestItem> combinedItems = new ArrayList<>();
+        final int[] remainingLoads = {2};
+        final boolean[] hadSuccess = {false};
+
+        com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot> listener =
+                (snap, error) -> {
+                    if (!isAdded() || getView() == null || loadId != currentLoadId) {
+                        return;
+                    }
+
+                    if (error == null && snap != null) {
+                        hadSuccess[0] = true;
+                        for (QueryDocumentSnapshot doc : snap) {
+                            String type = "dataset_image_submissions".equals(doc.getReference().getParent().getId())
+                                    ? "dataset"
+                                    : "info";
+                            combinedItems.add(buildRequestItem(doc, type));
+                        }
+                    }
+
+                    remainingLoads[0]--;
+                    if (remainingLoads[0] > 0) {
+                        return;
+                    }
+
+                    allItems.clear();
+                    if (!hadSuccess[0] || combinedItems.isEmpty()) {
+                        addPlaceholders();
+                    } else {
+                        combinedItems.sort((a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+                        allItems.addAll(combinedItems);
+                    }
+
+                    applyFilters();
+                    countTv.setText(String.valueOf(allItems.size()));
+                };
+
+        com.google.firebase.firestore.ListenerRegistration infoRegistration = db.collection("add_information_requests")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener(listener);
+        com.google.firebase.firestore.ListenerRegistration datasetRegistration = db.collection("dataset_image_submissions")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener(listener);
+
+        listenerRegistration = () -> {
+            infoRegistration.remove();
+            datasetRegistration.remove();
+        };
     }
 
     // Listener registration for cleanup
@@ -284,18 +318,42 @@ public class AdminUserRequestsFragment extends Fragment {
             allItems.add(item3);
         } else if (requestType.equals("dataset")) {
             RequestItem item1 = new RequestItem("#311","Unknown Waterfront Landmark","admin01@test.com","2026/05/31",false,"ph_dataset_311");
-            item1.status = "Pending Review";
+            item1.status = "In Review";
+            item1.requestType = "dataset";
             item1.description = "Low-confidence CNN result submitted for dataset review.";
             item1.reason = "User believes this landmark is not yet represented in the model.";
             allItems.add(item1);
 
             RequestItem item2 = new RequestItem("#310","Cricket Venue Detail Shot","admin01@test.com","2026/05/30",true,"ph_dataset_310");
-            item2.status = "Reviewed";
+            item2.status = "In Review";
+            item2.requestType = "dataset";
             item2.description = "Close-up venue photo shared to improve false-negative handling.";
             item2.reason = "Helpful candidate for future training data expansion.";
             allItems.add(item2);
+        } else if (requestType.equals("submissions")) {
+            RequestItem item1 = new RequestItem("#311","Unknown Waterfront Landmark","admin01@test.com","2026/05/31",false,"ph_dataset_311");
+            item1.status = "In Review";
+            item1.requestType = "dataset";
+            item1.createdAtMillis = 1748649600000L;
+            item1.description = "Low-confidence CNN result submitted for dataset review.";
+            item1.reason = "User believes this landmark is not yet represented in the model.";
+            allItems.add(item1);
+
+            RequestItem item2 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
+            item2.requestType = "info";
+            item2.createdAtMillis = 1739232000000L;
+            item2.locationName = "The Emancipation Statue";
+            item2.description = "Statue commemorating emancipation";
+            item2.placeType = "Monument";
+            item2.coordinates = "13.11332, -59.59877";
+            item2.latitude = 13.11332;
+            item2.longitude = -59.59877;
+            allItems.add(item2);
+
+            allItems.sort((a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
         } else {
             RequestItem item1 = new RequestItem("#88","The Emancipation Statue","User","2026/02/11",false,"ph_info_88");
+            item1.requestType = "info";
             item1.locationName = "The Emancipation Statue";
             item1.description = "Statue commemorating emancipation";
             item1.placeType = "Monument";
@@ -305,6 +363,7 @@ public class AdminUserRequestsFragment extends Fragment {
             allItems.add(item1);
 
             RequestItem item2 = new RequestItem("#87","Marton Gardens","User","2026/02/01",true,"ph_info_87");
+            item2.requestType = "info";
             item2.locationName = "Marton Gardens";
             item2.description = "Public garden and park";
             item2.placeType = "Park";
@@ -314,6 +373,7 @@ public class AdminUserRequestsFragment extends Fragment {
             allItems.add(item2);
 
             RequestItem item3 = new RequestItem("#86","St. George Parish Church","User","2026/01/28",true,"ph_info_86");
+            item3.requestType = "info";
             item3.locationName = "St. George Parish Church";
             item3.description = "Historic church building";
             item3.placeType = "Religious";
@@ -333,7 +393,56 @@ public class AdminUserRequestsFragment extends Fragment {
         if ("dataset".equals(requestType)) {
             return "dataset_image_submissions";
         }
+        if ("business_location".equals(requestType)) {
+            return "add_business_location_requests";
+        }
         return "add_information_requests";
+    }
+
+    private RequestItem buildRequestItem(QueryDocumentSnapshot doc, String type) {
+        String number = doc.contains("number")
+                ? "#" + doc.getLong("number")
+                : "#" + doc.getId().substring(0, 3).toUpperCase();
+        String name = doc.getString("locationName") != null
+                ? doc.getString("locationName")
+                : doc.getString("title") != null
+                ? doc.getString("title") : "Request";
+        String submittedBy = doc.getString("submittedByUsername") != null
+                ? doc.getString("submittedByUsername") : "User";
+        boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
+        Timestamp ts = doc.getTimestamp("createdAt");
+        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
+                Locale.getDefault()).format(ts.toDate()) : "";
+
+        RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
+        item.requestType = type;
+        item.createdAtMillis = ts != null ? ts.toDate().getTime() : 0L;
+
+        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+        item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
+        item.description = doc.getString("description") != null ? doc.getString("description") : "";
+        item.placeType = doc.getString("placeType") != null ? doc.getString("placeType") : "";
+        item.reason = doc.getString("reason") != null ? doc.getString("reason") : "";
+        item.imageUrl = doc.getString("imageUrl") != null ? doc.getString("imageUrl") : "";
+        item.userNote = doc.getString("userNote") != null ? doc.getString("userNote") : "";
+
+        Double lat = doc.getDouble("latitude");
+        Double lng = doc.getDouble("longitude");
+        if (lat != null && lng != null) {
+            item.latitude = lat;
+            item.longitude = lng;
+            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+        }
+
+        item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
+        item.email = doc.getString("email") != null ? doc.getString("email") : "";
+        item.address = doc.getString("address") != null ? doc.getString("address") : "";
+        item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("BusinessName") != null ? doc.getString("BusinessName") : "";
+        }
+
+        return item;
     }
 
     // ────────────────────────────────────────────────────────
@@ -349,6 +458,11 @@ public class AdminUserRequestsFragment extends Fragment {
             boolean effectivelyRead = isEffectivelyRead(item);
             if (readFilter == ReadFilter.UNREAD && effectivelyRead) continue;
             if (readFilter == ReadFilter.READ && !effectivelyRead) continue;
+
+            // Status filter
+            if (statusFilter == StatusFilter.IN_REVIEW && !"In Review".equals(item.status)) continue;
+            if (statusFilter == StatusFilter.COMPLETED && !"Completed".equals(item.status)) continue;
+            if (statusFilter == StatusFilter.REJECTED && !"Rejected".equals(item.status)) continue;
 
             // Search filter
             if (!query.isEmpty()) {
@@ -396,6 +510,39 @@ public class AdminUserRequestsFragment extends Fragment {
         }
     }
 
+    private void updateStatusPills() {
+        // Reset
+        filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusInReview.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusCompleted.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusRejected.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        int dark = getResources().getColor(R.color.black, null);
+        filterStatusAll.setTextColor(dark);
+        filterStatusInReview.setTextColor(dark);
+        filterStatusCompleted.setTextColor(dark);
+        filterStatusRejected.setTextColor(dark);
+
+        // Set active
+        switch (statusFilter) {
+            case ALL:
+                filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusAll.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case IN_REVIEW:
+                filterStatusInReview.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusInReview.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case COMPLETED:
+                filterStatusCompleted.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusCompleted.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case REJECTED:
+                filterStatusRejected.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusRejected.setTextColor(android.graphics.Color.WHITE);
+                break;
+        }
+    }
+
     // ────────────────────────────────────────────────────────
     // ADAPTER
     // ────────────────────────────────────────────────────────
@@ -424,11 +571,38 @@ public class AdminUserRequestsFragment extends Fragment {
             h.submittedBy.setText("Submitted By: " + item.submittedBy);
             h.date.setText(item.date);
 
+            String badgeType = "submissions".equals(requestType) ? item.requestType : requestType;
+            if ("info".equals(badgeType)) {
+                h.typeBadge.setVisibility(View.VISIBLE);
+                h.typeBadge.setText("Info Request");
+                h.typeBadge.setBackgroundResource(R.drawable.bg_submission_badge_info);
+                h.typeBadge.setTextColor(android.graphics.Color.WHITE);
+            } else if ("dataset".equals(badgeType)) {
+                h.typeBadge.setVisibility(View.VISIBLE);
+                h.typeBadge.setText("Dataset Image");
+                h.typeBadge.setBackgroundResource(R.drawable.bg_submission_badge_dataset);
+                h.typeBadge.setTextColor(android.graphics.Color.parseColor("#8B0000"));
+            } else {
+                h.typeBadge.setVisibility(View.GONE);
+            }
+
             // Dot - use effective read state (Firestore + local SharedPreferences)
             boolean effectivelyRead = isEffectivelyRead(item);
             h.dot.setBackgroundResource(effectivelyRead
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
+
+            // Status dot
+            String status = item.status;
+            if ("In Review".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+            } else if ("Completed".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+            } else if ("Rejected".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+            } else {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+            }
 
             h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
@@ -439,11 +613,13 @@ public class AdminUserRequestsFragment extends Fragment {
                 markAsRead(item.docId);
 
                 Fragment parentFrag = getParentFragment();
+                String detailType = "submissions".equals(requestType) ? item.requestType : requestType;
+
                 if (parentFrag instanceof AdminFragment) {
-                    ((AdminFragment) parentFrag).navigateToRequestDetail(requestType, item.docId);
+                    ((AdminFragment) parentFrag).navigateToRequestDetail(detailType, item.docId);
                 } else {
                     Fragment detail;
-                    if ("location".equals(requestType)) {
+                    if ("location".equals(detailType)) {
                         detail = AdminLocationRequestDetailsFragment.newInstance(
                                 item.docId,
                                 item.number,
@@ -458,7 +634,7 @@ public class AdminUserRequestsFragment extends Fragment {
                                 item.latitude,
                                 item.longitude
                         );
-                    } else if ("info".equals(requestType)) {
+                    } else if ("info".equals(detailType)) {
                         detail = AdminInfoRequestDetailFragment.newInstance(
                                 item.docId,
                                 item.number,
@@ -472,8 +648,21 @@ public class AdminUserRequestsFragment extends Fragment {
                                 item.latitude,
                                 item.longitude
                         );
-                    } else if ("dataset".equals(requestType)) {
+                    } else if ("dataset".equals(detailType)) {
                         detail = AdminDatasetSubmissionDetailFragment.newInstance(item.docId);
+                    } else if ("business_location".equals(requestType)) {
+                        detail = AdminBizLocationDetailFragment.newInstance(
+                                item.docId,
+                                item.number,
+                                item.status,
+                                item.date,
+                                item.submittedBy,
+                                item.locationName,
+                                item.placeType,
+                                item.coordinates,
+                                item.latitude,
+                                item.longitude
+                        );
                     } else {
                         detail = AdminBizVerificationDetailFragment.newInstance(
                                 item.docId,
@@ -504,13 +693,16 @@ public class AdminUserRequestsFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             View dot;
-            TextView number, title, submittedBy, date, viewBtn;
+            View statusDot;
+            TextView number, title, submittedBy, date, viewBtn, typeBadge;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
                 dot         = itemView.findViewById(R.id.user_req_dot);
+                statusDot   = itemView.findViewById(R.id.status_dot);
                 number      = itemView.findViewById(R.id.user_req_number);
                 title       = itemView.findViewById(R.id.user_req_title);
+                typeBadge   = itemView.findViewById(R.id.user_req_type_badge);
                 submittedBy = itemView.findViewById(R.id.user_req_submitted_by);
                 date        = itemView.findViewById(R.id.user_req_date);
                 viewBtn     = itemView.findViewById(R.id.user_req_view_btn);
@@ -523,6 +715,8 @@ public class AdminUserRequestsFragment extends Fragment {
         // Common fields
         String number, title, submittedBy, date, docId, status;
         boolean read;
+        String requestType;
+        long createdAtMillis;
 
         // Location & Info request fields
         String locationName, description, placeType, reason, coordinates;
@@ -538,6 +732,8 @@ public class AdminUserRequestsFragment extends Fragment {
             this.submittedBy = submittedBy; this.date = date;
             this.read = read; this.docId = docId;
             this.status = "In Review";
+            this.requestType = "info";
+            this.createdAtMillis = 0L;
             this.locationName = "";
             this.description = "";
             this.placeType = "";

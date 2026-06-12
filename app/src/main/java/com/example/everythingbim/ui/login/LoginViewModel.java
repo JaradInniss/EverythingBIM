@@ -20,7 +20,6 @@ import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.NavigationCommand;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -29,6 +28,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoginViewModel extends ViewModel {
+    private static final String COLLECTION_ADMIN = "admin";
+    private static final String COLLECTION_ADMINS = "admins";
 
     private final FirebaseAuth auth;
     private final FirebaseFirestore db;
@@ -39,6 +40,7 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HashMap<Integer, String>> errorFields = new MutableLiveData<>();
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
+
     private final SingleLiveEvent<String> toastMessage = new SingleLiveEvent<>();
 
     /**
@@ -93,12 +95,12 @@ public class LoginViewModel extends ViewModel {
     }
 
     // Validate fields and set error message if invalid
-    public void validateEmail(String email) {
-        if (email.isEmpty()) {
-            setErrorField(R.id.login_email_et, "Email Field Cannot Be Empty");
+    public void validateUsername(String username) {
+        if (username.isEmpty()) {
+            setErrorField(R.id.login_username_et, "Username Field Cannot Be Empty");
             return;
         }
-        setErrorField(R.id.login_email_et, null);
+        setErrorField(R.id.login_username_et, null);
     }
 
     public void validatePassword(String password) {
@@ -110,66 +112,181 @@ public class LoginViewModel extends ViewModel {
     }
 
     // Checks if form fields are valid
-    public boolean isFormValid(String email, String password) {
-        validateEmail(email);
+    public boolean isFormValid(String username, String password) {
+        validateUsername(username);
         validatePassword(password);
 
         return errorFields.getValue() == null;
     }
 
-    /*
-     * ORIGINAL BROKEN CODE - Commented out because Firebase Auth was never called
-     * Users were never authenticated, causing "permission denied" on all Firestore writes
-     * because request.auth was always null.
-     */
-    public void onLoginClicked(String email, String password) {
-        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
-        if (!isFormValid(email, password)) {
+    public void onLoginClicked(String usernameOrEmail, String password) {
+        Log.d("LoginViewModel", "isFormValid: "+isFormValid(usernameOrEmail, password));
+        if (!isFormValid(usernameOrEmail, password)) {
             return;
         }
 
-        // BYPASS Firebase Auth for testing - persist the selected role and open the matching shell.
+        isLoading.setValue(true);
+
+        // Determine which collection to query based on user type
         UserType selected = selectedUserType.getValue() != null
                 ? selectedUserType.getValue()
                 : UserType.GENERAL;
 
         if (selected == UserType.ADMIN) {
-            saveAndNavigate("admin", "");
-        } else if (selected == UserType.BUSINESS) {
-            saveAndNavigate(MainActivity.USER_TYPE_BUSINESS, "");
-        } else {
-            saveAndNavigate(MainActivity.USER_TYPE_GENERAL, "");
+            loginAdmin(usernameOrEmail, password);
+            return;
         }
+
+        String collection = (selected == UserType.BUSINESS) ? "businesses" : "users";
+        String emailField = (selected == UserType.BUSINESS) ? "businessEmail" : "email";
+        Log.d("LoginViewModel", "Attempting login with usernameOrEmail: " + usernameOrEmail + ", collection: " + collection + ", userType: " + selected);
+
+        db.collection(collection)
+                .whereEqualTo("username", usernameOrEmail)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        signInWithMatchedUser(task.getResult().getDocuments().get(0), password, selected);
+                        return;
+                    }
+
+                    db.collection(collection)
+                            .whereEqualTo(emailField, usernameOrEmail)
+                            .get()
+                            .addOnCompleteListener(emailTask -> {
+                                if (emailTask.isSuccessful()
+                                        && emailTask.getResult() != null
+                                        && !emailTask.getResult().isEmpty()) {
+                                    signInWithMatchedUser(emailTask.getResult().getDocuments().get(0), password, selected);
+                                } else if (emailTask.isSuccessful()) {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Invalid username/email or password");
+                                } else {
+                                    isLoading.setValue(false);
+                                    Log.e("LoginViewModel", "Email fallback query failed", emailTask.getException());
+                                    toastMessage.setValue("Login failed. Please try again.");
+                                }
+                            });
+                });
     }
 
+    private void signInWithMatchedUser(DocumentSnapshot userDoc, String password, UserType selected) {
+        String emailField = (selected == UserType.BUSINESS) ? "businessEmail" : "email";
+        String email = userDoc.getString(emailField);
+        if (email == null || email.trim().isEmpty()) {
+            isLoading.setValue(false);
+            toastMessage.setValue("Login failed. Account email is missing.");
+            return;
+        }
 
-//    public void onLoginClicked(String email, String password) {
-//        Log.d("LoginViewModel", "isFormValid: "+isFormValid(email, password));
-//        if (!isFormValid(email, password)) {
-//            return;
-//        }
-//
-//        isLoading.setValue(true);
-//
-//        auth.signInWithEmailAndPassword(email, password)
-//                .addOnCompleteListener(task -> {
-//                    isLoading.setValue(false);
-//
-//                    if (task.isSuccessful()) {
-//                        FirebaseUser firebaseUser = auth.getCurrentUser();
-//                        if (firebaseUser != null) {
-//                            fetchUserTypeAndNavigate(firebaseUser.getUid());
-//                        } else {
-//                            setErrorField(R.id.login_error, "User not found");
-//                        }
-//                    } else {
-//                        String errorMessage = task.getException() != null
-//                                ? task.getException().getMessage()
-//                                : "Login failed";
-//                        setErrorField(R.id.login_error, errorMessage);
-//                    }
-//                });
-//    }
+        auth.signInWithEmailAndPassword(email.trim(), password)
+                .addOnCompleteListener(authTask -> {
+                    if (authTask.isSuccessful()) {
+                        isLoading.setValue(false);
+                        String userTypeStr = (selected == UserType.BUSINESS)
+                                ? MainActivity.USER_TYPE_BUSINESS
+                                : MainActivity.USER_TYPE_GENERAL;
+                        saveAndNavigate(userTypeStr, userDoc.getId());
+                    } else {
+                        isLoading.setValue(false);
+                        toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
+                    }
+                });
+    }
+
+    private void loginAdmin(String usernameOrEmail, String password) {
+        queryAdminByUsernameOrEmail(COLLECTION_ADMIN, usernameOrEmail, password, () ->
+                queryAdminByUsernameOrEmail(COLLECTION_ADMINS, usernameOrEmail, password, () -> {
+                    isLoading.setValue(false);
+                    toastMessage.setValue("Invalid username/email or password");
+                }));
+    }
+
+    private void verifyAdminPassword(DocumentSnapshot userDoc, String password) {
+        String storedPassword = userDoc.getString("password");
+        if (storedPassword != null && storedPassword.equals(password)) {
+            isLoading.setValue(false);
+            saveAndNavigate("admin", userDoc.getId());
+            return;
+        }
+
+        String email = userDoc.getString("email");
+        if (email != null && !email.trim().isEmpty()) {
+            auth.signInWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener(authTask -> {
+                        isLoading.setValue(false);
+                        if (authTask.isSuccessful()) {
+                            saveAndNavigate("admin", userDoc.getId());
+                        } else {
+                            toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
+                        }
+                    });
+            return;
+        }
+
+        isLoading.setValue(false);
+        toastMessage.setValue("Invalid username/email or password");
+    }
+
+    private void queryAdminByUsernameOrEmail(@NonNull String collection,
+                                             @NonNull String usernameOrEmail,
+                                             @NonNull String password,
+                                             @NonNull Runnable onNotFound) {
+        db.collection(collection)
+                .whereEqualTo("username", usernameOrEmail)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        verifyAdminPassword(task.getResult().getDocuments().get(0), password);
+                        return;
+                    }
+
+                    db.collection(collection)
+                            .whereEqualTo("email", usernameOrEmail)
+                            .get()
+                            .addOnCompleteListener(emailTask -> {
+                                if (emailTask.isSuccessful()
+                                        && emailTask.getResult() != null
+                                        && !emailTask.getResult().isEmpty()) {
+                                    verifyAdminPassword(emailTask.getResult().getDocuments().get(0), password);
+                                } else if (emailTask.isSuccessful()) {
+                                    onNotFound.run();
+                                } else {
+                                    isLoading.setValue(false);
+                                    toastMessage.setValue("Login failed. Please try again.");
+                                }
+                            });
+                });
+    }
+
+    private String getFriendlyErrorMessage(Exception exception) {
+        if (exception == null) return "Login failed. Please try again.";
+
+        String message = exception.getMessage();
+        if (message == null) return "Login failed. Please try again.";
+
+        // Firebase Auth error messages that are not user-friendly
+        if (message.contains("INVALID_LOGIN_CREDENTIALS") || message.contains("ERROR_INVALID_CREDENTIAL")) {
+            return "Invalid email or password";
+        } else if (message.contains("user-not-found") || message.contains("ERROR_USER_NOT_FOUND")) {
+            return "No account found with this email";
+        } else if (message.contains("wrong-password") || message.contains("ERROR_WRONG_PASSWORD")) {
+            return "Incorrect password";
+        } else if (message.contains("too-many-requests") || message.contains("TOO_MANY_ATTEMPTS")) {
+            return "Too many failed attempts. Please try again later.";
+        } else if (message.contains("user-disabled") || message.contains("USER_DISABLED")) {
+            return "This account has been disabled";
+        } else if (message.contains("invalid-email")) {
+            return "Invalid email address";
+        } else if (message.contains("operation-not-allowed") || message.contains("OPERATION_NOT_ALLOWED")) {
+            return "Email/password login is not enabled";
+        } else if (message.contains("network")) {
+            return "Network error. Please check your connection.";
+        }
+
+        // Return a cleaned up version of the original message
+        return message;
+    }
 
     private void fetchUserTypeAndNavigate(String userId) {
         isLoading.setValue(true);
@@ -178,8 +295,8 @@ public class LoginViewModel extends ViewModel {
                 : UserType.GENERAL;
 
         String[] collectionsToCheck = selected == UserType.ADMIN
-                ? new String[]{"admins", "users", "businesses"}
-                : new String[]{"users", "businesses", "admins"};
+                ? new String[]{COLLECTION_ADMIN, COLLECTION_ADMINS, "users", "businesses"}
+                : new String[]{"users", "businesses", COLLECTION_ADMIN, COLLECTION_ADMINS};
 
         fetchUserTypeFromCollections(userId, collectionsToCheck, 0);
     }
@@ -189,7 +306,7 @@ public class LoginViewModel extends ViewModel {
                                               int index) {
         if (index >= collectionsToCheck.length) {
             isLoading.setValue(false);
-            setErrorField(R.id.login_error, "User document not found");
+            toastMessage.setValue("User document not found");
             return;
         }
 
@@ -198,10 +315,7 @@ public class LoginViewModel extends ViewModel {
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
                         isLoading.setValue(false);
-                        String error = task.getException() != null
-                                ? task.getException().getMessage()
-                                : "Failed to fetch user data";
-                        setErrorField(R.id.login_error, error);
+                        toastMessage.setValue("Failed to fetch user data");
                         return;
                     }
 
@@ -216,7 +330,7 @@ public class LoginViewModel extends ViewModel {
                             saveAndNavigate(resolvedUserType, userId);
                         } else {
                             isLoading.setValue(false);
-                            setErrorField(R.id.login_error, "User type not found");
+                            toastMessage.setValue("User type not found");
                         }
                         return;
                     }
@@ -226,7 +340,7 @@ public class LoginViewModel extends ViewModel {
     }
 
     private String normalizeResolvedUserType(String rawUserType, String sourceCollection) {
-        if ("admins".equals(sourceCollection)) {
+        if (COLLECTION_ADMIN.equals(sourceCollection) || COLLECTION_ADMINS.equals(sourceCollection)) {
             return "admin";
         }
         if (rawUserType == null || rawUserType.trim().isEmpty()) {
@@ -244,10 +358,14 @@ public class LoginViewModel extends ViewModel {
 
     private void saveAndNavigate(String userType, String userId) {
         if (sharedPreferences != null) {
-            sharedPreferences.edit().putString("userType", userType).apply();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("userType", userType);
+            editor.putString("userId", userId);
+            editor.apply();
         }
         Bundle extras = new Bundle();
         extras.putString("userType", userType);
+        extras.putString("userId", userId);
         if ("admin".equals(userType)) {
             navigationEvent.setValue(new NavigationCommand(AdminActivity.class, extras));
         } else {

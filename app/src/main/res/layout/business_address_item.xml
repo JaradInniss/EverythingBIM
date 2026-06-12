@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="10dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="@color/light_grey"
+        app:boxStrokeWidth="1dp"
+        app:boxStrokeWidthFocused="2dp"
+        app:hintTextColor="@color/light_grey"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_rectangle_dim_grey">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/business_address_item_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPostalAddress"
+            android:textSize="15sp"
+            android:padding="10dp"
+            android:background="@android:color/transparent"
+            android:focusable="false"
+            android:clickable="false" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <ImageButton
+        android:id="@+id/business_address_edit_btn"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_edit"
+        android:background="@drawable/bg_rectangle_edit_btn"
+        android:contentDescription="Edit address"
+        android:clickable="true"
+        android:focusable="true"
+        app:tint="@color/black" />
+
+</LinearLayout>

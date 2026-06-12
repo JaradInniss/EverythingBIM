@@ -42,8 +42,6 @@ public class LocationEntity {
         this.address = address;
     }
 
-    // Getters and setters for all fields
-
     public long getLocationId() {
         return locationId;
     }

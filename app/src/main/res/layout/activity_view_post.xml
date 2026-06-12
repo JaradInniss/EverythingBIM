@@ -55,40 +55,33 @@
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="10dp">
 
-                    <LinearLayout
-                        android:id="@+id/viewpost_user_profile"
+                    <!-- User Profile Picture  -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/profile_pic_card"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:padding="10dp"
+                        app:cardCornerRadius="360dp"
+                        android:background="@color/white">
+
+                        <ImageView
+                            android:id="@+id/viewpost_user_profile_pic"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/jampuff"/>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:id="@+id/viewpost_user_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center">
-
-                        <!-- User Profile Picture  -->
-                        <androidx.cardview.widget.CardView
-                            android:id="@+id/profile_pic_card"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:padding="10dp"
-                            app:cardCornerRadius="360dp"
-                            android:background="@color/white">
-
-                            <ImageView
-                                android:id="@+id/viewpost_user_profile_pic"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:src="@drawable/jampuff"/>
-
-                        </androidx.cardview.widget.CardView>
-
-                        <TextView
-                            android:id="@+id/viewpost_user_name"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginLeft="10dp"
-                            android:text="Username"
-                            android:textSize="12sp"
-                            style="@style/white_medium_txt_style"/>
-
-                    </LinearLayout>
+                        android:layout_toRightOf="@id/profile_pic_card"
+                        android:layout_marginLeft="10dp"
+                        android:layout_centerVertical="true"
+                        android:text="Username"
+                        android:textSize="12sp"
+                        style="@style/white_medium_txt_style"/>
 
                     <!-- Report Post Button -->
                     <ImageView
@@ -104,7 +97,6 @@
 
                 <!-- Location Tag -->
                 <LinearLayout
-                    android:id="@+id/viewpost_location_tag"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical">
@@ -151,6 +143,9 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_heart"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
                         app:tint="@color/pale_slate"/>
 
                     <TextView
@@ -159,8 +154,8 @@
                         android:layout_height="wrap_content"
                         android:layout_toRightOf="@id/likes_icon"
                         android:layout_marginLeft="4dp"
-                        android:layout_centerVertical="true"
-                        android:text="45"
+                        android:layout_marginTop="5dp"
+                        android:text=""
                         style="@style/white_small_txt_style"/>
 
                     <ImageView
@@ -176,21 +171,51 @@
                         android:id="@+id/viewpost_comments"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
                         android:layout_toRightOf="@id/comments_icon"
                         android:layout_marginLeft="4dp"
-                        android:layout_centerVertical="true"
-                        android:text="45"
+                        android:text=""
                         style="@style/white_small_txt_style"/>
 
                     <TextView
                         android:id="@+id/viewpost_upload_date"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
                         android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
                         android:text="2 Wks Ago"
                         android:textColor="@color/pale_slate"
                         style="@style/white_small_txt_style"/>
+
+                    <ImageView
+                        android:id="@+id/view_tagged_users_bttn"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_toLeftOf="@id/viewpost_upload_date"
+                        android:layout_marginRight="20dp"
+                        android:src="@drawable/ic_user"
+                        android:visibility="gone"
+                        app:tint="@color/pale_slate"/>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/viewpost_tagged_users_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="5dp"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone"
+                        android:layout_below="@id/likes_icon">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/viewpost_tagged_users_rv"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            tools:listitem="@layout/item_viewpost_user_tag"
+                            android:background="@color/prussian_blue"/>
+
+                    </androidx.cardview.widget.CardView>
+
 
                 </RelativeLayout>
 
