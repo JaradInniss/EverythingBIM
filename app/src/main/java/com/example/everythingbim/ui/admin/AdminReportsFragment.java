@@ -200,7 +200,7 @@ public class AdminReportsFragment extends Fragment {
         }
 
         listenerRegistration = db.collection("reports")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .orderBy("submittedAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         // Show placeholder on error
@@ -227,31 +227,44 @@ public class AdminReportsFragment extends Fragment {
                     } else {
                         allReports.clear();
                         for (QueryDocumentSnapshot doc : snapshot) {
-                            String id       = doc.getId().substring(0, 3).toUpperCase();
-                            String title    = doc.getString("title");
-                            String type     = doc.getString("type");
-                            String severity = doc.getString("severity");
-                            String docId    = doc.getId();
-                            boolean read    = Boolean.TRUE.equals(doc.getBoolean("read"));
+                            String docId = doc.getId();
+                            String id = docId.substring(0, Math.min(3, docId.length())).toUpperCase();
 
-                            com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                            // Read fields saved by ViewPost.submitReport()
+                            String reportType = doc.getString("reportType");  // "Post" or "Account"
+                            String reason = doc.getString("reason");         // "Spam", "Hacked account", etc.
+
+                            // Build title and derive severity
+                            String title = (reportType != null ? reportType : "Report") + " - " + (reason != null ? reason : "Unknown");
+                            String severity = deriveSeverity(reason);
+                            String type = reportType != null ? reportType : "Post";
+
+                            // Read date from submittedAt (Timestamp)
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("submittedAt");
                             String date = ts != null
-                                    ? new java.text.SimpleDateFormat("yyyy/MM/dd",
-                                    java.util.Locale.getDefault()).format(ts.toDate())
+                                    ? new java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault()).format(ts.toDate())
                                     : "";
 
-                            String number = doc.contains("number")
-                                    ? "#" + doc.getLong("number")
-                                    : "#" + id;
+                            // Read additional fields for detail view
+                            String reportedUser = doc.getString("reportedUser") != null ? doc.getString("reportedUser") : "";
+                            String caption = doc.getString("postCaption") != null ? doc.getString("postCaption") : "";
+                            String imageUrl = doc.getString("postImageUrl") != null ? doc.getString("postImageUrl") : "";
+                            String status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+
+                            boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
 
                             allReports.add(new Report(
-                                    number,
-                                    title   != null ? title    : "Report",
-                                    type    != null ? type     : "Post",
-                                    severity != null ? severity : "Minor",
+                                    "#" + id,
+                                    title,
+                                    type,
+                                    severity,
                                     date,
                                     read,
-                                    doc.getId()
+                                    docId,
+                                    reportedUser,
+                                    caption,
+                                    imageUrl,
+                                    status
                             ));
                         }
                     }
@@ -262,6 +275,24 @@ public class AdminReportsFragment extends Fragment {
 
     // Listener registration for cleanup
     private com.google.firebase.firestore.ListenerRegistration listenerRegistration;
+
+    // Derive severity from report reason
+    private String deriveSeverity(String reason) {
+        if (reason == null) return "Minor";
+        switch (reason) {
+            case "Hacked account":
+                return "Major";
+            case "Dangerous activities":
+            case "Hate speech":
+            case "Sexual content":
+                return "Major";
+            case "Offensive behaviour":
+                return "Moderate";
+            case "Spam":
+            default:
+                return "Minor";
+        }
+    }
 
     @Override
     public void onDestroyView() {

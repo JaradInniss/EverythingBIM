@@ -221,6 +221,7 @@
 
                     <!-- ── Post Content section ─────── -->
                     <TextView
+                        android:id="@+id/report_detail_content_header"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Post Content:"
@@ -257,8 +258,9 @@
 
                     </LinearLayout>
 
-                    <!-- Posted date -->
+                    <!-- Posted date - for Post reports -->
                     <LinearLayout
+                        android:id="@+id/report_detail_post_date_layout"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -284,8 +286,9 @@
 
                     </LinearLayout>
 
-                    <!-- Caption label -->
+                    <!-- Caption label - for Post reports -->
                     <TextView
+                        android:id="@+id/report_detail_caption_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Caption:"
@@ -310,6 +313,7 @@
 
                     <!-- Image label -->
                     <TextView
+                        android:id="@+id/report_detail_image_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Image"
@@ -327,6 +331,70 @@
                         android:background="@drawable/bg_admin_field"
                         android:contentDescription="Post image"
                         android:layout_marginBottom="16dp" />
+
+                    <!-- Account Info section - for Account reports -->
+                    <LinearLayout
+                        android:id="@+id/report_detail_account_info_layout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <!-- User Type -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="User Type:  "
+                                android:textColor="@color/black"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/roboto_medium" />
+
+                            <TextView
+                                android:id="@+id/report_detail_user_type"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="General"
+                                android:textColor="@color/black"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+
+                        <!-- Contact Info -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Contact:  "
+                                android:textColor="@color/black"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/roboto_medium" />
+
+                            <TextView
+                                android:id="@+id/report_detail_contact"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="user@email.com"
+                                android:textColor="@color/black"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/roboto_medium" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
 
                     <!-- Divider -->
                     <View

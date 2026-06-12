@@ -1,12 +1,22 @@
 package com.example.everythingbim.ui.posts;
 
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +44,7 @@ import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -351,6 +362,9 @@ public class ViewPost extends AppCompatActivity {
         // Back button functionality
         returnBttn.setOnClickListener(v -> finish());
 
+        // Report button
+        reportBttn.setOnClickListener(v -> showReportDialog());
+
         viewTaggedUsersBttn.setOnClickListener(v -> {
             boolean show = taggedUsersCard.getVisibility() != View.VISIBLE;
             taggedUsersCard.setVisibility(show ? View.VISIBLE : View.GONE);
@@ -432,6 +446,153 @@ public class ViewPost extends AppCompatActivity {
 
             Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    // Report dialog reasons
+    private static final String[] REPORT_REASONS = {
+        "Spam or fake engagement",
+        "Hacked account",
+        "Sexual content",
+        "Offensive behaviour",
+        "Dangerous activities",
+        "Hate speech"
+    };
+
+    private void showReportDialog() {
+        if (currentPost == null) {
+            Toast.makeText(this, "Loading post, please try again", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_report_confirm);
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = android.view.Gravity.CENTER;
+            window.setAttributes(params);
+        }
+
+        // Get views
+        ImageView closeBtn = dialog.findViewById(R.id.close_report_bttn);
+        RadioGroup reportTypeGroup = dialog.findViewById(R.id.report_type_group);
+        Spinner reasonSpinner = dialog.findViewById(R.id.report_reason_spinner);
+        Button cancelBtn = dialog.findViewById(R.id.report_cancel_btn);
+        Button confirmBtn = dialog.findViewById(R.id.report_confirm_btn);
+
+        // Setup spinner with reasons
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                R.layout.spinner_item, REPORT_REASONS);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        reasonSpinner.setAdapter(adapter);
+
+        // Close button
+        closeBtn.setOnClickListener(v -> dialog.dismiss());
+
+        // Cancel button
+        cancelBtn.setOnClickListener(v -> dialog.dismiss());
+
+        // Confirm button
+        confirmBtn.setOnClickListener(v -> {
+            boolean isPostReport = reportTypeGroup.getCheckedRadioButtonId() == R.id.report_type_post;
+            String reason = REPORT_REASONS[reasonSpinner.getSelectedItemPosition()];
+
+            submitReport(isPostReport, reason);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void submitReport(boolean isPostReport, String reason) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Get current user info
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String reporterId = prefs.getString("userId", "");
+        String reporterType = prefs.getString("userType", "general");
+
+        java.util.Map<String, Object> reportData = new java.util.HashMap<>();
+        reportData.put("reportType", isPostReport ? "Post" : "Account");
+        reportData.put("reason", reason);
+        reportData.put("reporterId", reporterId);
+        reportData.put("reporterType", reporterType);
+        reportData.put("status", "In Review");
+        reportData.put("submittedAt", com.google.firebase.Timestamp.now());
+
+        if (isPostReport && currentPost != null) {
+            // Post report data
+            reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
+            reportData.put("reportedUserId", currentPost.authorId);
+            reportData.put("postId", currentPost.firestoreId != null ? currentPost.firestoreId : String.valueOf(currentPost.postId));
+            reportData.put("postCaption", currentPost.caption != null ? currentPost.caption : "");
+            reportData.put("postImageUrl", currentPost.imageUrl != null ? currentPost.imageUrl : "");
+            reportData.put("postDate", currentPost.createdAt);
+        } else {
+            // Account report data - get from post author
+            if (currentPost != null) {
+                reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
+                reportData.put("reportedUserId", currentPost.authorId);
+                reportData.put("accountId", currentPost.authorId);
+
+                // Use authorUid (Firebase Auth UID) to look up in Firestore, not authorId (Room PK)
+                final String authorUid;
+                if (currentPost.authorUid != null && !currentPost.authorUid.isEmpty()) {
+                    authorUid = currentPost.authorUid;
+                } else {
+                    // Fallback to using String.valueOf(authorId) if authorUid not available
+                    authorUid = String.valueOf(currentPost.authorId);
+                }
+
+                // Fetch account email from Firestore using authorUid
+                db.collection("users").document(authorUid).get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc != null && doc.exists()) {
+                                String email = doc.getString("email");
+                                if (email == null) email = doc.getString("businessEmail");
+                                reportData.put("contactInfo", email != null ? email : "Not available");
+                                reportData.put("userType", "general");
+                                saveReportToFirestore(db, reportData);
+                            } else {
+                                // Try businesses collection
+                                db.collection("businesses").document(authorUid).get()
+                                        .addOnSuccessListener(doc2 -> {
+                                            String email = doc2 != null && doc2.exists() ? doc2.getString("businessEmail") : null;
+                                            reportData.put("contactInfo", email != null ? email : "Not available");
+                                            reportData.put("userType", "business");
+                                            saveReportToFirestore(db, reportData);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            reportData.put("contactInfo", "Not available");
+                                            reportData.put("userType", "unknown");
+                                            saveReportToFirestore(db, reportData);
+                                        });
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            reportData.put("contactInfo", "Not available");
+                            reportData.put("userType", "unknown");
+                            saveReportToFirestore(db, reportData);
+                        });
+                return; // async operation, don't fall through
+            }
+        }
+
+        saveReportToFirestore(db, reportData);
+    }
+
+    private void saveReportToFirestore(FirebaseFirestore db, java.util.Map<String, Object> reportData) {
+        db.collection("reports").add(reportData)
+                .addOnSuccessListener(docRef -> {
+                    Toast.makeText(this, "Report submitted successfully", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to submit report: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     /**

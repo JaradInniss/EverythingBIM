@@ -28,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 import com.example.everythingbim.ActivityLogger;
@@ -56,9 +57,16 @@ public class AdminReportDetailFragment extends Fragment {
     private TextView userTv;
     private TextView postDateTv;
     private TextView captionTv;
+    private TextView contentHeaderTv;
+    private TextView captionLabelTv;
+    private TextView imageLabelTv;
+    private TextView userTypeTv;
+    private TextView contactTv;
     private ImageView postImage;
     private Spinner actionSpinner;
     private Button submitBtn;
+    private View postDateLayout;
+    private View accountInfoLayout;
 
     // ─── State ───────────────────────────────
     private String selectedAction = "";
@@ -91,7 +99,6 @@ public class AdminReportDetailFragment extends Fragment {
     private static final String ACTION_ESCALATE_LAW = "Escalate to Law Enforcement";
     private static final String ACTION_CRISIS_REFERRAL = "Refer to Crisis Intervention";
     private static final String ACTION_WATCHLIST = "Flag for Watch-List Monitoring";
-    private static final String ACTION_NOTIFY_URGENT = "Notify Reporter (Urgent Action)";
     private static final String ACTION_CASE_NOTES_MAJOR = "Add Case Notes";
 
     // MODERATE: Serious but non-emergency
@@ -104,7 +111,6 @@ public class AdminReportDetailFragment extends Fragment {
     private static final String ACTION_MISINFO_LABEL = "Add Misinformation Label";
     private static final String ACTION_REQUEST_EDIT = "Request Content Edit/Removal";
     private static final String ACTION_DISMISS_BORDERLINE = "Dismiss (Borderline Report)";
-    private static final String ACTION_NOTIFY_OUTCOME = "Notify Reporter of Outcome";
     private static final String ACTION_CASE_NOTES_MOD = "Add Case Notes";
 
     // MINOR: Low-severity/automation-friendly
@@ -114,7 +120,6 @@ public class AdminReportDetailFragment extends Fragment {
     private static final String ACTION_AUTO_WARN = "Issue Automated Warning";
     private static final String ACTION_MARK_BOT = "Mark as Bot/Satire Account";
     private static final String ACTION_MERGE_DUPLICATES = "Merge Duplicate Reports";
-    private static final String ACTION_NOTIFY_NO_VIOLATION = "Notify Reporter (No Violation Found)";
 
     // CROSS-CATEGORY: Any severity
     private static final String ACTION_VIEW_HISTORY = "View Full Report History";
@@ -136,7 +141,6 @@ public class AdminReportDetailFragment extends Fragment {
             ACTION_ESCALATE_LAW,
             ACTION_CRISIS_REFERRAL,
             ACTION_WATCHLIST,
-            ACTION_NOTIFY_URGENT,
             ACTION_CASE_NOTES_MAJOR,
             // MODERATE
             "━━ MODERATE ━━",
@@ -149,7 +153,6 @@ public class AdminReportDetailFragment extends Fragment {
             ACTION_MISINFO_LABEL,
             ACTION_REQUEST_EDIT,
             ACTION_DISMISS_BORDERLINE,
-            ACTION_NOTIFY_OUTCOME,
             ACTION_CASE_NOTES_MOD,
             // MINOR
             "━━ MINOR ━━",
@@ -159,7 +162,6 @@ public class AdminReportDetailFragment extends Fragment {
             ACTION_AUTO_WARN,
             ACTION_MARK_BOT,
             ACTION_MERGE_DUPLICATES,
-            ACTION_NOTIFY_NO_VIOLATION,
             // CROSS-CATEGORY
             "━━ ACTIONS ━━",
             ACTION_VIEW_HISTORY,
@@ -240,6 +242,15 @@ public class AdminReportDetailFragment extends Fragment {
         actionSpinner = view.findViewById(R.id.report_detail_action_spinner);
         submitBtn    = view.findViewById(R.id.report_detail_submit_btn);
 
+        // New views for content switching
+        contentHeaderTv = view.findViewById(R.id.report_detail_content_header);
+        captionLabelTv = view.findViewById(R.id.report_detail_caption_label);
+        imageLabelTv = view.findViewById(R.id.report_detail_image_label);
+        postDateLayout = view.findViewById(R.id.report_detail_post_date_layout);
+        accountInfoLayout = view.findViewById(R.id.report_detail_account_info_layout);
+        userTypeTv = view.findViewById(R.id.report_detail_user_type);
+        contactTv = view.findViewById(R.id.report_detail_contact);
+
         // Back button
         view.findViewById(R.id.report_detail_back_btn).setOnClickListener(v ->
                 getParentFragmentManager().popBackStack());
@@ -263,11 +274,8 @@ public class AdminReportDetailFragment extends Fragment {
     // ────────────────────────────────────────────────────────
 
     private void loadReportData() {
-        // If we have cached title, display it directly (came from list with full data)
-        // Otherwise fetch from Firestore using docId (came from activity log)
-        if (cachedTitle != null && !cachedTitle.isEmpty()) {
-            displayCachedData();
-        } else if (!docId.isEmpty()) {
+        // Always fetch from Firestore to get complete/accurate data including postDate
+        if (!docId.isEmpty()) {
             fetchReportFromFirestore();
         }
     }
@@ -312,32 +320,79 @@ public class AdminReportDetailFragment extends Fragment {
                                 : "#" + id;
 
                         numberTv.setText("Report " + number);
-                        severityBadge.setText(doc.getString("severity") != null
-                                ? doc.getString("severity").toUpperCase() : "Minor");
-                        applySeverityBadgeColor(doc.getString("severity"));
+
+                        // Derive severity from reason (ViewPost doesn't save severity explicitly)
+                        String reason = doc.getString("reason");
+                        String severity = deriveSeverity(reason);
+                        severityBadge.setText(severity.toUpperCase());
+                        applySeverityBadgeColor(severity);
                         statusTv.setText(doc.getString("status") != null
                                 ? doc.getString("status") : "In Review");
                         applyStatusColor(doc.getString("status"));
 
-                        com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                        com.google.firebase.Timestamp ts = doc.getTimestamp("submittedAt");
                         String date = ts != null
                                 ? new java.text.SimpleDateFormat("yyyy/MM/dd",
                                 java.util.Locale.getDefault()).format(ts.toDate())
                                 : "";
                         dateTv.setText("Submitted: " + date);
 
-                        typeTv.setText(doc.getString("type") != null
-                                ? doc.getString("type") : "Post");
-                        issueTv.setText(doc.getString("title") != null
-                                ? doc.getString("title") : "Report");
+                        // Build title from reportType and reason
+                        String reportType = doc.getString("reportType");
+                        boolean isPostReport = "Post".equalsIgnoreCase(reportType);
+                        String title = (reportType != null ? reportType : "Report") + " - " + (reason != null ? reason : "Unknown");
+                        typeTv.setText(reportType != null ? reportType : "Post");
+                        issueTv.setText(title);
                         userTv.setText(doc.getString("reportedUser") != null
                                 ? doc.getString("reportedUser") : "");
-                        captionTv.setText(doc.getString("caption") != null
-                                ? doc.getString("caption") : "");
 
-                        String imageUrl = doc.getString("imageUrl");
-                        if (imageUrl != null && !imageUrl.isEmpty()) {
-                            loadImageFromStorage(imageUrl);
+                        // Switch UI based on report type
+                        if (isPostReport) {
+                            // Show Post-specific fields
+                            contentHeaderTv.setText("Post Content:");
+                            postDateLayout.setVisibility(View.VISIBLE);
+                            captionLabelTv.setVisibility(View.VISIBLE);
+                            captionTv.setVisibility(View.VISIBLE);
+                            imageLabelTv.setVisibility(View.VISIBLE);
+                            postImage.setVisibility(View.VISIBLE);
+                            accountInfoLayout.setVisibility(View.GONE);
+
+                            // Populate post fields
+                            captionTv.setText(doc.getString("postCaption") != null
+                                    ? doc.getString("postCaption") : "");
+
+                            // Load post date if available (stored as long timestamp millis)
+                            Long postDateMillis = doc.getLong("postDate");
+                            if (postDateMillis != null && postDateMillis > 0) {
+                                String postDateStr = new java.text.SimpleDateFormat("yyyy/MM/dd",
+                                        java.util.Locale.getDefault()).format(new Date(postDateMillis));
+                                postDateTv.setText(postDateStr);
+                            } else {
+                                postDateTv.setText("N/A");
+                            }
+
+                            String imageUrl = doc.getString("postImageUrl");
+                            if (imageUrl != null && !imageUrl.isEmpty()) {
+                                loadImageFromStorage(imageUrl);
+                            } else {
+                                postImage.setImageDrawable(null);
+                            }
+                        } else {
+                            // Show Account-specific fields
+                            contentHeaderTv.setText("Account Info:");
+                            postDateLayout.setVisibility(View.GONE);
+                            captionLabelTv.setVisibility(View.GONE);
+                            captionTv.setVisibility(View.GONE);
+                            imageLabelTv.setVisibility(View.GONE);
+                            postImage.setVisibility(View.GONE);
+                            accountInfoLayout.setVisibility(View.VISIBLE);
+
+                            // Populate account fields
+                            String userType = doc.getString("userType");
+                            userTypeTv.setText(userType != null ? capitalizeFirst(userType) : "General");
+
+                            String contactInfo = doc.getString("contactInfo");
+                            contactTv.setText(contactInfo != null ? contactInfo : "Not available");
                         }
                     } else {
                         issueTv.setText("Report not found");
@@ -347,6 +402,11 @@ public class AdminReportDetailFragment extends Fragment {
                     if (!isUiActive()) return;
                     issueTv.setText("Error loading report");
                 });
+    }
+
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     // ────────────────────────────────────────────────────────
@@ -368,6 +428,24 @@ public class AdminReportDetailFragment extends Fragment {
                 severityBadge.setBackgroundResource(R.drawable.bg_severity_badge_yellow);
                 severityBadge.setTextColor(android.graphics.Color.parseColor("#09090b"));
                 break;
+        }
+    }
+
+    // Derive severity from report reason
+    private String deriveSeverity(String reason) {
+        if (reason == null) return "Minor";
+        switch (reason) {
+            case "Hacked account":
+                return "Major";
+            case "Dangerous activities":
+            case "Hate speech":
+            case "Sexual content":
+                return "Major";
+            case "Offensive behaviour":
+                return "Moderate";
+            case "Spam":
+            default:
+                return "Minor";
         }
     }
 
