@@ -1,172 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dialog_keyboard_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="20dp"
     android:background="@drawable/bg_border_rectangle_space_indigo">
 
-    <!-- Header -->
-    <LinearLayout
+    <ScrollView
+        android:id="@+id/dialog_report_confirm_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="12dp">
+        android:fillViewport="true">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Report"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:fontFamily="@font/roboto_medium" />
-
-        <ImageView
-            android:id="@+id/close_report_bttn"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_close"
-            app:tint="@color/white"
-            android:contentDescription="Close" />
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginBottom="16dp"
-        android:background="@color/pale_slate" />
-
-    <!-- Question -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Are you sure you want to report this?"
-        android:textSize="15sp"
-        android:textColor="@color/white"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Report Type Selection -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="What are you reporting?"
-        android:textSize="14sp"
-        android:textColor="@color/pale_slate"
-        android:layout_marginBottom="8dp" />
-
-    <RadioGroup
-        android:id="@+id/report_type_group"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <RadioButton
-            android:id="@+id/report_type_post"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Post"
-            android:textColor="@color/white"
-            android:buttonTint="@color/gold"
-            android:checked="true" />
-
-        <RadioButton
-            android:id="@+id/report_type_account"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:text="Account"
-            android:textColor="@color/white"
-            android:buttonTint="@color/gold" />
-    </RadioGroup>
-
-    <!-- Reason Dropdown -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Reason for reporting:"
-        android:textSize="14sp"
-        android:textColor="@color/pale_slate"
-        android:layout_marginBottom="8dp" />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@drawable/bg_rectangle_white"
-        android:layout_marginBottom="20dp">
-
-        <Spinner
-            android:id="@+id/report_reason_spinner"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@null"
-            android:paddingStart="12dp"
-            android:paddingEnd="36dp"
-            android:popupBackground="@color/white"
-            android:dropDownWidth="match_parent" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="12dp"
-            android:src="@drawable/icon_caret_down"
-            app:tint="@color/dark_grey"
-            android:contentDescription="@null" />
-    </RelativeLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
 
-    <!-- Report Description -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Report description (Optional)"
-        android:textSize="14sp"
-        android:textColor="@color/pale_slate"
-        android:layout_marginBottom="8dp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Report"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:fontFamily="@font/roboto_medium" />
 
-    <EditText
-        android:id="@+id/report_description_et"
+                <ImageView
+                    android:id="@+id/close_report_bttn"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/white"
+                    android:contentDescription="Close" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:background="@color/pale_slate" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Are you sure you want to report this?"
+                android:textSize="15sp"
+                android:textColor="@color/white"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="What are you reporting?"
+                android:textSize="14sp"
+                android:textColor="@color/pale_slate"
+                android:layout_marginBottom="8dp" />
+
+            <RadioGroup
+                android:id="@+id/report_type_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <RadioButton
+                    android:id="@+id/report_type_post"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Post"
+                    android:textColor="@color/white"
+                    android:buttonTint="@color/gold"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/report_type_account"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:text="Account"
+                    android:textColor="@color/white"
+                    android:buttonTint="@color/gold" />
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reason for reporting:"
+                android:textSize="14sp"
+                android:textColor="@color/pale_slate"
+                android:layout_marginBottom="8dp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_rectangle_white"
+                android:layout_marginBottom="20dp">
+
+                <Spinner
+                    android:id="@+id/report_reason_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="36dp"
+                    android:popupBackground="@color/white"
+                    android:dropDownWidth="match_parent" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/icon_caret_down"
+                    app:tint="@color/dark_grey"
+                    android:contentDescription="@null" />
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report description (Optional)"
+                android:textSize="14sp"
+                android:textColor="@color/pale_slate"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/report_description_et"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="@drawable/bg_rectangle_white"
+                android:padding="10dp"
+                android:gravity="top"
+                android:inputType="textMultiLine"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="20dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/report_cancel_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="No"
+                    android:textColor="@color/black"
+                    android:background="@drawable/bg_border_rectangle_alice_blue_2"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/report_confirm_btn"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Yes"
+                    android:textColor="@color/dark"
+                    android:background="@drawable/bg_rectangle_gold"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@drawable/bg_rectangle_white"
-        android:padding="10dp"
-        android:gravity="top"
-        android:inputType="textMultiLine"
-        android:textSize="14sp"
-        android:textColor="@color/black"
-        android:layout_marginBottom="20dp" />
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
-    <!-- Yes/No Buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/report_cancel_btn"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:text="No"
-            android:textColor="@color/black"
-            android:background="@drawable/bg_border_rectangle_alice_blue_2"
-            android:layout_marginEnd="8dp" />
-
-        <Button
-            android:id="@+id/report_confirm_btn"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:text="Yes"
-            android:textColor="@color/dark"
-            android:background="@drawable/bg_rectangle_gold"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

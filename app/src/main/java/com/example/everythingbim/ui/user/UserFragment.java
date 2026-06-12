@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +28,7 @@ import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,10 +37,18 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.everythingbim.ui.utils.PasswordHash;
 
 public class UserFragment extends Fragment {
+    private static final String PREF_USER_GENERAL_SCROLL_HINT_SEEN = "user_general_scroll_hint_seen";
+    private static final String PREF_USER_BUSINESS_SCROLL_HINT_SEEN = "user_business_scroll_hint_seen";
+    private static final String PREF_USER_PASSWORD_DIALOG_SCROLL_HINT_SEEN = "user_password_dialog_scroll_hint_seen";
+    private static final String PREF_USER_DESCRIPTION_DIALOG_SCROLL_HINT_SEEN = "user_description_dialog_scroll_hint_seen";
 
     private View layoutGuestUser;
     private View layoutGeneralUser;
     private View layoutBusinessUser;
+    private ScrollView generalScrollView;
+    private ScrollView businessScrollView;
+    private int generalKeyboardExtraBottom = 0;
+    private int businessKeyboardExtraBottom = 0;
 
     private View generalContentSubmissions;
     private View generalContentMyProfile;
@@ -66,6 +77,8 @@ public class UserFragment extends Fragment {
         layoutGuestUser = view.findViewById(R.id.layout_guest_user);
         layoutGeneralUser = view.findViewById(R.id.layout_general_user);
         layoutBusinessUser = view.findViewById(R.id.layout_business_user);
+        generalScrollView = view.findViewById(R.id.general_user_scroll);
+        businessScrollView = view.findViewById(R.id.business_user_scroll);
 
         generalContentSubmissions = view.findViewById(R.id.general_content_submissions);
         generalContentMyProfile = view.findViewById(R.id.general_content_my_profile);
@@ -83,54 +96,56 @@ public class UserFragment extends Fragment {
         businessIndMyProfile = view.findViewById(R.id.business_tab_my_profile_indicator);
         businessIndSettings = view.findViewById(R.id.business_tab_settings_indicator);
 
-        switchUserLayout(getUserType());
+        String currentUserType = getUserType();
+        switchUserLayout(currentUserType);
+        setupKeyboardHints(view);
         setupGeneralUserTabs(view);
         setupBusinessUserTabs(view);
 
-        view.findViewById(R.id.general_user_btnLogout).setOnClickListener(v -> performLogout());
-        view.findViewById(R.id.btnLogout).setOnClickListener(v -> performLogout());
-        view.findViewById(R.id.general_replay_tour_btn).setOnClickListener(v -> replayTour());
-        view.findViewById(R.id.business_replay_tour_btn).setOnClickListener(v -> replayTour());
+        setClickIfPresent(view, R.id.general_user_btnLogout, v -> performLogout());
+        setClickIfPresent(view, R.id.btnLogout, v -> performLogout());
+        setClickIfPresent(view, R.id.general_replay_tour_btn, v -> replayTour());
+        setClickIfPresent(view, R.id.business_replay_tour_btn, v -> replayTour());
 
-        view.findViewById(R.id.guest_login_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.guest_login_btn, v ->
                 startActivity(new Intent(requireContext(), Login.class)));
-        view.findViewById(R.id.guest_register_general_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.guest_register_general_btn, v ->
                 startActivity(new Intent(requireContext(), GeneralRegistration.class)));
-        view.findViewById(R.id.guest_register_business_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.guest_register_business_btn, v ->
                 startActivity(new Intent(requireContext(), BusinessRegistration.class)));
-        view.findViewById(R.id.guest_admin_access_btn).setOnClickListener(v -> {
+        setClickIfPresent(view, R.id.guest_admin_access_btn, v -> {
             Intent intent = new Intent(requireContext(), Login.class);
             intent.putExtra("preselectedUserType", UserType.ADMIN.name());
             startActivity(intent);
         });
-        view.findViewById(R.id.guest_replay_tour_btn).setOnClickListener(v -> replayTour());
+        setClickIfPresent(view, R.id.guest_replay_tour_btn, v -> replayTour());
 
-        view.findViewById(R.id.locreq_new_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.locreq_new_btn, v ->
                 navigateTo(new AddLocationRequestFragment()));
-        view.findViewById(R.id.locreq_view_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.locreq_view_btn, v ->
                 navigateTo(new ViewAddLocationRequestFragment()));
-        view.findViewById(R.id.locreq_view_btn_2).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.locreq_view_btn_2, v ->
                 navigateTo(new ViewCompletedLocationRequestFragment()));
 
-        view.findViewById(R.id.inforeq_new_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.inforeq_new_btn, v ->
                 navigateTo(new AddInformationRequestFragment()));
-        view.findViewById(R.id.inforeq_view_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.inforeq_view_btn, v ->
                 navigateTo(new ViewAddInformationRequestFragment()));
-        view.findViewById(R.id.inforeq_view_btn_2).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.inforeq_view_btn_2, v ->
                 navigateTo(new ViewCompletedInformationRequestFragment()));
 
-        view.findViewById(R.id.accver_view_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.accver_view_btn, v ->
                 navigateTo(new ViewAccountVerificationRequestFragment()));
-        view.findViewById(R.id.accver_view_btn_2).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.accver_view_btn_2, v ->
                 navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
 
-        view.findViewById(R.id.addloc_view_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.addloc_view_btn, v ->
                 navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
 
-        view.findViewById(R.id.addloc_view_btn_2).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.addloc_view_btn_2, v ->
                 navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
 
-        view.findViewById(R.id.business_add_field_btn).setOnClickListener(v ->
+        setClickIfPresent(view, R.id.business_add_field_btn, v ->
                 navigateTo(new AddBusinessLocationRequestFragment()));
 
         setupEditToggle(view, R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn);
@@ -145,16 +160,64 @@ public class UserFragment extends Fragment {
         // Load user profile data into settings fields
         loadUserProfileData(view);
 
-        // Load addresses on main screen
-        loadAddressesOnMainScreen(view);
+        if (MainActivity.USER_TYPE_BUSINESS.equals(currentUserType)) {
+            loadAddressesOnMainScreen(view);
 
-        // Setup business category click to edit
-        TextView categoryTv = view.findViewById(R.id.business_category_tv);
-        if (categoryTv != null) {
-            categoryTv.setOnClickListener(v -> showCategoryDialog());
+            TextView categoryTv = view.findViewById(R.id.business_category_tv);
+            if (categoryTv != null) {
+                categoryTv.setOnClickListener(v -> showCategoryDialog());
+            }
         }
 
         return view;
+    }
+
+    private void setupKeyboardHints(View root) {
+        if (generalScrollView != null) {
+            int initialLeft = generalScrollView.getPaddingLeft();
+            int initialTop = generalScrollView.getPaddingTop();
+            int initialRight = generalScrollView.getPaddingRight();
+            int initialBottom = generalScrollView.getPaddingBottom();
+
+            KeyboardScrollHintHelper.attach(
+                    root,
+                    generalScrollView,
+                    generalScrollView,
+                    PREF_USER_GENERAL_SCROLL_HINT_SEEN,
+                    keyboardExtraBottom -> {
+                        generalKeyboardExtraBottom = keyboardExtraBottom;
+                        generalScrollView.setPadding(
+                                initialLeft,
+                                initialTop,
+                                initialRight,
+                                initialBottom + keyboardExtraBottom
+                        );
+                    }
+            );
+        }
+
+        if (businessScrollView != null) {
+            int initialLeft = businessScrollView.getPaddingLeft();
+            int initialTop = businessScrollView.getPaddingTop();
+            int initialRight = businessScrollView.getPaddingRight();
+            int initialBottom = businessScrollView.getPaddingBottom();
+
+            KeyboardScrollHintHelper.attach(
+                    root,
+                    businessScrollView,
+                    businessScrollView,
+                    PREF_USER_BUSINESS_SCROLL_HINT_SEEN,
+                    keyboardExtraBottom -> {
+                        businessKeyboardExtraBottom = keyboardExtraBottom;
+                        businessScrollView.setPadding(
+                                initialLeft,
+                                initialTop,
+                                initialRight,
+                                initialBottom + keyboardExtraBottom
+                        );
+                    }
+            );
+        }
     }
 
     private void performLogout() {
@@ -188,35 +251,50 @@ public class UserFragment extends Fragment {
     private void setupGeneralUserTabs(View view) {
         switchGeneralTab(0);
 
-        view.findViewById(R.id.general_tab_submissions).setOnClickListener(v -> switchGeneralTab(0));
-        view.findViewById(R.id.general_tab_my_profile).setOnClickListener(v -> switchGeneralTab(1));
-        view.findViewById(R.id.general_tab_settings).setOnClickListener(v -> switchGeneralTab(2));
+        setClickIfPresent(view, R.id.general_tab_submissions, v -> switchGeneralTab(0));
+        setClickIfPresent(view, R.id.general_tab_my_profile, v -> switchGeneralTab(1));
+        setClickIfPresent(view, R.id.general_tab_settings, v -> switchGeneralTab(2));
     }
 
     private void switchGeneralTab(int tab) {
-        generalContentSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
-        generalContentMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
-        generalContentSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
-        generalIndSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
-        generalIndMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
-        generalIndSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+        setVisibleIfPresent(generalContentSubmissions, tab == 0);
+        setVisibleIfPresent(generalContentMyProfile, tab == 1);
+        setVisibleIfPresent(generalContentSettings, tab == 2);
+        setVisibleIfPresent(generalIndSubmissions, tab == 0);
+        setVisibleIfPresent(generalIndMyProfile, tab == 1);
+        setVisibleIfPresent(generalIndSettings, tab == 2);
     }
 
     private void setupBusinessUserTabs(View view) {
         switchBusinessTab(0);
 
-        view.findViewById(R.id.business_tab_submissions).setOnClickListener(v -> switchBusinessTab(0));
-        view.findViewById(R.id.business_tab_my_profile).setOnClickListener(v -> switchBusinessTab(1));
-        view.findViewById(R.id.business_tab_settings).setOnClickListener(v -> switchBusinessTab(2));
+        setClickIfPresent(view, R.id.business_tab_submissions, v -> switchBusinessTab(0));
+        setClickIfPresent(view, R.id.business_tab_my_profile, v -> switchBusinessTab(1));
+        setClickIfPresent(view, R.id.business_tab_settings, v -> switchBusinessTab(2));
+    }
+
+    private void setClickIfPresent(View root, int viewId, View.OnClickListener listener) {
+        View target = root.findViewById(viewId);
+        if (target != null) {
+            target.setOnClickListener(listener);
+        } else {
+            android.util.Log.w("UserFragment", "Missing expected view id: " + getResources().getResourceEntryName(viewId));
+        }
     }
 
     private void switchBusinessTab(int tab) {
-        businessContentSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
-        businessContentMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
-        businessContentSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
-        businessIndSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
-        businessIndMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
-        businessIndSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+        setVisibleIfPresent(businessContentSubmissions, tab == 0);
+        setVisibleIfPresent(businessContentMyProfile, tab == 1);
+        setVisibleIfPresent(businessContentSettings, tab == 2);
+        setVisibleIfPresent(businessIndSubmissions, tab == 0);
+        setVisibleIfPresent(businessIndMyProfile, tab == 1);
+        setVisibleIfPresent(businessIndSettings, tab == 2);
+    }
+
+    private void setVisibleIfPresent(View target, boolean visible) {
+        if (target != null) {
+            target.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     public void showReplayTourLocation() {
@@ -292,6 +370,7 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
+            scrollFieldAboveKeyboard(field);
             // Blue background, white icon
             button.setBackgroundResource(R.drawable.bg_rectangle_blue);
             button.setImageTintList(android.content.res.ColorStateList.valueOf(
@@ -342,6 +421,117 @@ public class UserFragment extends Fragment {
         }
     }
 
+    private void scrollFieldAboveKeyboard(View anchorView) {
+        ScrollView targetScroll = getActiveUserScrollView(anchorView);
+        int keyboardExtraBottom = targetScroll == businessScrollView
+                ? businessKeyboardExtraBottom
+                : generalKeyboardExtraBottom;
+
+        if (targetScroll == null) {
+            return;
+        }
+
+        targetScroll.post(() -> {
+            if (keyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            targetScroll.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = targetScroll.getHeight() - keyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                targetScroll.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    @Nullable
+    private ScrollView getActiveUserScrollView(View target) {
+        if (target == null) {
+            return null;
+        }
+        if (layoutBusinessUser != null && layoutBusinessUser.getVisibility() == View.VISIBLE) {
+            return businessScrollView;
+        }
+        if (layoutGeneralUser != null && layoutGeneralUser.getVisibility() == View.VISIBLE) {
+            return generalScrollView;
+        }
+        return null;
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * requireContext().getResources().getDisplayMetrics().density);
+    }
+
+    private void setupDialogKeyboardHints(Dialog dialog, ScrollView dialogScrollView, String prefKey) {
+        if (dialog == null || dialogScrollView == null) {
+            return;
+        }
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        if (dialogRoot == null) {
+            return;
+        }
+        final int[] keyboardExtraBottom = {0};
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                prefKey,
+                extraBottom -> {
+                    keyboardExtraBottom[0] = extraBottom;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                },
+                null);
+        dialogScrollView.setTag(R.id.scroll_hint_overlay_host, keyboardExtraBottom);
+    }
+
+    private void bindDialogFocusScroll(@Nullable TextInputEditText editText,
+                                       @Nullable ScrollView dialogScrollView,
+                                       @Nullable View anchorView) {
+        if (editText == null || dialogScrollView == null) {
+            return;
+        }
+        editText.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollDialogAnchorAboveKeyboard(dialogScrollView, anchorView != null ? anchorView : v);
+            }
+        });
+    }
+
+    private void scrollDialogAnchorAboveKeyboard(@Nullable ScrollView dialogScrollView,
+                                                 @Nullable View anchorView) {
+        if (dialogScrollView == null || anchorView == null) {
+            return;
+        }
+        dialogScrollView.post(() -> {
+            Rect anchorRect = new Rect();
+            Rect scrollRect = new Rect();
+            anchorView.getDrawingRect(anchorRect);
+            dialogScrollView.offsetDescendantRectToMyCoords(anchorView, anchorRect);
+            dialogScrollView.getDrawingRect(scrollRect);
+            Object keyboardTag = dialogScrollView.getTag(R.id.scroll_hint_overlay_host);
+            int keyboardExtraBottom = 0;
+            if (keyboardTag instanceof int[]) {
+                keyboardExtraBottom = ((int[]) keyboardTag)[0];
+            }
+            int visibleBottom = scrollRect.bottom - keyboardExtraBottom - dpToPx(24);
+            if (anchorRect.bottom > visibleBottom) {
+                int delta = anchorRect.bottom - visibleBottom;
+                dialogScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
     private void openPasswordDialog() {
         android.util.Log.d("UserFragment", "Opening password dialog immediately");
         SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
@@ -367,6 +557,12 @@ public class UserFragment extends Fragment {
         TextView errorTv = dialog.findViewById(R.id.dialog_password_error_tv);
         Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
         ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_change_password_scroll);
+
+        setupDialogKeyboardHints(dialog, dialogScrollView, PREF_USER_PASSWORD_DIALOG_SCROLL_HINT_SEEN);
+        bindDialogFocusScroll(currentPasswordEt, dialogScrollView, currentPasswordEt);
+        bindDialogFocusScroll(newPasswordEt, dialogScrollView, newPasswordEt);
+        bindDialogFocusScroll(reenterPasswordEt, dialogScrollView, saveBtn);
 
         saveBtn.setOnClickListener(v -> {
             String current = currentPasswordEt.getText() != null ? currentPasswordEt.getText().toString() : "";
@@ -460,6 +656,10 @@ public class UserFragment extends Fragment {
         TextInputEditText descriptionEt = dialog.findViewById(R.id.dialog_description_et);
         Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
         ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_business_description_scroll);
+
+        setupDialogKeyboardHints(dialog, dialogScrollView, PREF_USER_DESCRIPTION_DIALOG_SCROLL_HINT_SEEN);
+        bindDialogFocusScroll(descriptionEt, dialogScrollView, saveBtn);
 
         if (titleTv != null) titleTv.setText("Business Description");
         if (descriptionEt != null) descriptionEt.setText(currentDesc);
@@ -587,6 +787,12 @@ public class UserFragment extends Fragment {
         TextView errorTv = dialog.findViewById(R.id.dialog_password_error_tv);
         Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
         ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_change_password_scroll);
+
+        setupDialogKeyboardHints(dialog, dialogScrollView, PREF_USER_PASSWORD_DIALOG_SCROLL_HINT_SEEN);
+        bindDialogFocusScroll(currentPasswordEt, dialogScrollView, currentPasswordEt);
+        bindDialogFocusScroll(newPasswordEt, dialogScrollView, newPasswordEt);
+        bindDialogFocusScroll(reenterPasswordEt, dialogScrollView, saveBtn);
 
         saveBtn.setOnClickListener(v -> {
             String current = currentPasswordEt.getText() != null ? currentPasswordEt.getText().toString() : "";
@@ -638,6 +844,10 @@ public class UserFragment extends Fragment {
         TextView titleTv = dialog.findViewById(R.id.dialog_title);
         Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
         ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_business_description_scroll);
+
+        setupDialogKeyboardHints(dialog, dialogScrollView, PREF_USER_DESCRIPTION_DIALOG_SCROLL_HINT_SEEN);
+        bindDialogFocusScroll(descriptionEt, dialogScrollView, saveBtn);
 
         if (descriptionEt != null && currentValue != null) {
             descriptionEt.setText(currentValue);
@@ -794,6 +1004,10 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
         TextInputEditText addressEt = dialog.findViewById(R.id.dialog_description_et);
         Button saveBtn = dialog.findViewById(R.id.dialog_save_btn);
         ImageButton closeBtn = dialog.findViewById(R.id.dialog_close_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_business_description_scroll);
+
+        setupDialogKeyboardHints(dialog, dialogScrollView, PREF_USER_DESCRIPTION_DIALOG_SCROLL_HINT_SEEN);
+        bindDialogFocusScroll(addressEt, dialogScrollView, saveBtn);
 
         if (titleTv != null) titleTv.setText("Edit Address");
         if (addressEt != null) addressEt.setText(currentAddress);

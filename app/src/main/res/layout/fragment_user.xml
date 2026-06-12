@@ -262,6 +262,7 @@
 
         <!-- Tab Content -->
         <ScrollView
+            android:id="@+id/general_user_scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/alice_blue">
@@ -994,6 +995,7 @@
 
         <!-- Tab Content -->
         <ScrollView
+            android:id="@+id/business_user_scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -1539,5 +1541,12 @@
         </ScrollView>
 
     </LinearLayout>
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </RelativeLayout>

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +50,7 @@ import com.example.everythingbim.data.models.MarkerDetails;
 import com.example.everythingbim.databinding.FragmentMapBinding;
 import com.example.everythingbim.ui.home.NearbySavedLocation;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -98,6 +101,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final long SEARCH_DEBOUNCE_MS = 300L;
+    private static final String PREF_MAP_REVIEW_SCROLL_HINT_SEEN = KeyboardScrollHintHelper.PREF_MAP_SCROLL_HINT_SEEN;
 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService routeExecutor = Executors.newSingleThreadExecutor();
@@ -133,8 +137,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn, writeReviewBttn, writeReviewContainer, submitReviewBttn, directionsButton;
     private HorizontalScrollView imagesField, reviewsField, postsField;
     private RelativeLayout detailsHeader;
+    private ScrollView detailsScrollView;
     private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
     private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5;
+    private int currentKeyboardExtraBottom;
 
     private ArrayAdapter<String> searchResultsAdapter;
 
@@ -171,6 +177,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         View view = binding.getRoot();
 
         bindViews(view);
+        setupKeyboardHints(view);
         setupSearchUi();
         setUpObservers();
         observeFocusedSavedLocation();
@@ -224,6 +231,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         // Relative Layout
         detailsHeader = binding.detailsPeekHeader;
+        detailsScrollView = binding.mapDetailsScroll;
 
         // Text View
         barbadosText = binding.mapBarbadosTv;
@@ -260,6 +268,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         searchInput = binding.mapSearchInput;
         overviewInput = binding.mapOverviewInput;
         newReviewInput = binding.newReviewInput;
+        newReviewInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                mapViewModel.setDetailsUIState(MapDetailsState.FULL);
+                scrollDetailsAnchorAboveKeyboard(submitReviewBttn != null ? submitReviewBttn : v);
+            }
+        });
         newReviewInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
@@ -270,6 +284,52 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 mapViewModel.setReviewBody(s.toString());
             }
         });
+    }
+
+    private void setupKeyboardHints(View root) {
+        KeyboardScrollHintHelper.attach(
+                root,
+                root,
+                detailsScrollView,
+                PREF_MAP_REVIEW_SCROLL_HINT_SEEN,
+                extraBottom -> {
+                    currentKeyboardExtraBottom = extraBottom;
+                    if (detailsScrollView == null) {
+                        return;
+                    }
+                    detailsScrollView.setPadding(
+                            detailsScrollView.getPaddingLeft(),
+                            detailsScrollView.getPaddingTop(),
+                            detailsScrollView.getPaddingRight(),
+                            extraBottom);
+                    detailsScrollView.setClipToPadding(false);
+                },
+                () -> detailsContainer != null
+                        && detailsContainer.getVisibility() == View.VISIBLE
+                        && writeReviewContainer != null
+                        && writeReviewContainer.getVisibility() == View.VISIBLE);
+    }
+
+    private void scrollDetailsAnchorAboveKeyboard(@Nullable View anchorView) {
+        if (detailsScrollView == null || anchorView == null) {
+            return;
+        }
+        detailsScrollView.post(() -> {
+            Rect anchorRect = new Rect();
+            Rect scrollRect = new Rect();
+            anchorView.getDrawingRect(anchorRect);
+            detailsScrollView.offsetDescendantRectToMyCoords(anchorView, anchorRect);
+            detailsScrollView.getDrawingRect(scrollRect);
+
+            int visibleBottom = scrollRect.bottom - currentKeyboardExtraBottom - dpToPx(24);
+            if (anchorRect.bottom > visibleBottom) {
+                detailsScrollView.smoothScrollBy(0, anchorRect.bottom - visibleBottom);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * requireContext().getResources().getDisplayMetrics().density);
     }
 
     @Override
@@ -700,10 +760,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             writeReviewBttn.setVisibility(View.GONE);
             writeReviewContainer.setVisibility(View.VISIBLE);
             mapViewModel.resetReviewForm();
+            if (newReviewInput != null) {
+                newReviewInput.requestFocus();
+                scrollDetailsAnchorAboveKeyboard(submitReviewBttn);
+            }
         } else {
             writeReviewBttn.setVisibility(View.VISIBLE);
             writeReviewContainer.setVisibility(View.GONE);
             mapViewModel.resetReviewForm();
+            if (newReviewInput != null) {
+                newReviewInput.clearFocus();
+            }
+            hideKeyboard();
         }
     }
 
