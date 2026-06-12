@@ -449,13 +449,21 @@ public class ViewPost extends AppCompatActivity {
     }
 
     // Report dialog reasons
-    private static final String[] REPORT_REASONS = {
-        "Spam or fake engagement",
-        "Hacked account",
-        "Sexual content",
-        "Offensive behaviour",
-        "Dangerous activities",
-        "Hate speech"
+    private static final String[] POST_REPORT_REASONS = {
+        "Spam or fake engagement - bots,repetitive posting",
+        "Hate speech - targeting race,religion,gender,sexuality,disability,etc",
+        "Nudity or sexual content",
+        "Graphic violence/Gore",
+        "Dangerous or illegal activity - drugs,weapons,self-harm,eating disorder promotion",
+        "Intellectual property violation - copyright or trademark infringement",
+        "Impersonation - pretending to be someone else"
+    };
+
+    private static final String[] ACCOUNT_REPORT_REASONS = {
+        "Hacked account - reporting on behalf of someone else",
+        "Fake account or bot",
+        "Impersonating a real person or brand",
+        "Deceased person's account"
     };
 
     private void showReportDialog() {
@@ -481,14 +489,25 @@ public class ViewPost extends AppCompatActivity {
         ImageView closeBtn = dialog.findViewById(R.id.close_report_bttn);
         RadioGroup reportTypeGroup = dialog.findViewById(R.id.report_type_group);
         Spinner reasonSpinner = dialog.findViewById(R.id.report_reason_spinner);
+        EditText descriptionEt = dialog.findViewById(R.id.report_description_et);
         Button cancelBtn = dialog.findViewById(R.id.report_cancel_btn);
         Button confirmBtn = dialog.findViewById(R.id.report_confirm_btn);
 
-        // Setup spinner with reasons
+        // Setup spinner with reasons (default to POST_REASONS)
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                R.layout.spinner_item, REPORT_REASONS);
+                R.layout.spinner_item, POST_REPORT_REASONS);
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         reasonSpinner.setAdapter(adapter);
+
+        // Update spinner when report type changes
+        reportTypeGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean isPostReport = checkedId == R.id.report_type_post;
+            String[] reasons = isPostReport ? POST_REPORT_REASONS : ACCOUNT_REPORT_REASONS;
+            ArrayAdapter<String> newAdapter = new ArrayAdapter<>(this,
+                    R.layout.spinner_item, reasons);
+            newAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+            reasonSpinner.setAdapter(newAdapter);
+        });
 
         // Close button
         closeBtn.setOnClickListener(v -> dialog.dismiss());
@@ -499,16 +518,18 @@ public class ViewPost extends AppCompatActivity {
         // Confirm button
         confirmBtn.setOnClickListener(v -> {
             boolean isPostReport = reportTypeGroup.getCheckedRadioButtonId() == R.id.report_type_post;
-            String reason = REPORT_REASONS[reasonSpinner.getSelectedItemPosition()];
+            String[] reasons = isPostReport ? POST_REPORT_REASONS : ACCOUNT_REPORT_REASONS;
+            String reason = reasons[reasonSpinner.getSelectedItemPosition()];
+            String description = descriptionEt.getText().toString().trim();
 
-            submitReport(isPostReport, reason);
+            submitReport(isPostReport, reason, description);
             dialog.dismiss();
         });
 
         dialog.show();
     }
 
-    private void submitReport(boolean isPostReport, String reason) {
+    private void submitReport(boolean isPostReport, String reason, String description) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseAuth auth = FirebaseAuth.getInstance();
 
@@ -522,6 +543,7 @@ public class ViewPost extends AppCompatActivity {
         java.util.Map<String, Object> reportData = new java.util.HashMap<>();
         reportData.put("reportType", isPostReport ? "Post" : "Account");
         reportData.put("reason", reason);
+        reportData.put("description", description);
         reportData.put("reporterId", reporterId);
         reportData.put("reporterUid", reporterUid != null ? reporterUid : "");
         reportData.put("reporterType", reporterType);

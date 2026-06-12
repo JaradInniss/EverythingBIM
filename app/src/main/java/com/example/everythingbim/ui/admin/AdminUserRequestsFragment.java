@@ -41,9 +41,14 @@ public class AdminUserRequestsFragment extends Fragment {
     private enum ReadFilter { ALL, UNREAD, READ }
     private ReadFilter readFilter = ReadFilter.ALL;
 
+    // ─── Status filter ─────────────────────────
+    private enum StatusFilter { ALL, IN_REVIEW, COMPLETED, REJECTED }
+    private StatusFilter statusFilter = StatusFilter.ALL;
+
     // ─── Views ───────────────────────────────
     private EditText searchEt;
     private TextView filterAll, filterUnread, filterRead;
+    private TextView filterStatusAll, filterStatusInReview, filterStatusCompleted, filterStatusRejected;
     private TextView countTv;
     private RecyclerView recyclerView;
 
@@ -95,6 +100,10 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll    = view.findViewById(R.id.req_filter_all);
         filterUnread = view.findViewById(R.id.req_filter_unread);
         filterRead   = view.findViewById(R.id.req_filter_read);
+        filterStatusAll = view.findViewById(R.id.req_filter_status_all);
+        filterStatusInReview = view.findViewById(R.id.req_filter_status_in_review);
+        filterStatusCompleted = view.findViewById(R.id.req_filter_status_completed);
+        filterStatusRejected = view.findViewById(R.id.req_filter_status_rejected);
         countTv      = view.findViewById(R.id.req_list_count_tv);
 
         // Update header labels based on type
@@ -125,6 +134,12 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll.setOnClickListener(v -> { readFilter = ReadFilter.ALL; updatePills(); applyFilters(); });
         filterUnread.setOnClickListener(v -> { readFilter = ReadFilter.UNREAD; updatePills(); applyFilters(); });
         filterRead.setOnClickListener(v -> { readFilter = ReadFilter.READ; updatePills(); applyFilters(); });
+
+        // Status filter pills
+        filterStatusAll.setOnClickListener(v -> { statusFilter = StatusFilter.ALL; updateStatusPills(); applyFilters(); });
+        filterStatusInReview.setOnClickListener(v -> { statusFilter = StatusFilter.IN_REVIEW; updateStatusPills(); applyFilters(); });
+        filterStatusCompleted.setOnClickListener(v -> { statusFilter = StatusFilter.COMPLETED; updateStatusPills(); applyFilters(); });
+        filterStatusRejected.setOnClickListener(v -> { statusFilter = StatusFilter.REJECTED; updateStatusPills(); applyFilters(); });
 
         // Search
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -444,6 +459,11 @@ public class AdminUserRequestsFragment extends Fragment {
             if (readFilter == ReadFilter.UNREAD && effectivelyRead) continue;
             if (readFilter == ReadFilter.READ && !effectivelyRead) continue;
 
+            // Status filter
+            if (statusFilter == StatusFilter.IN_REVIEW && !"In Review".equals(item.status)) continue;
+            if (statusFilter == StatusFilter.COMPLETED && !"Completed".equals(item.status)) continue;
+            if (statusFilter == StatusFilter.REJECTED && !"Rejected".equals(item.status)) continue;
+
             // Search filter
             if (!query.isEmpty()) {
                 boolean matches = item.number.toLowerCase().contains(query)
@@ -486,6 +506,39 @@ public class AdminUserRequestsFragment extends Fragment {
             case READ:
                 filterRead.setBackgroundResource(R.drawable.bg_search_filter_active);
                 filterRead.setTextColor(android.graphics.Color.WHITE);
+                break;
+        }
+    }
+
+    private void updateStatusPills() {
+        // Reset
+        filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusInReview.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusCompleted.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusRejected.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        int dark = getResources().getColor(R.color.black, null);
+        filterStatusAll.setTextColor(dark);
+        filterStatusInReview.setTextColor(dark);
+        filterStatusCompleted.setTextColor(dark);
+        filterStatusRejected.setTextColor(dark);
+
+        // Set active
+        switch (statusFilter) {
+            case ALL:
+                filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusAll.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case IN_REVIEW:
+                filterStatusInReview.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusInReview.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case COMPLETED:
+                filterStatusCompleted.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusCompleted.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case REJECTED:
+                filterStatusRejected.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusRejected.setTextColor(android.graphics.Color.WHITE);
                 break;
         }
     }
@@ -538,6 +591,18 @@ public class AdminUserRequestsFragment extends Fragment {
             h.dot.setBackgroundResource(effectivelyRead
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
+
+            // Status dot
+            String status = item.status;
+            if ("In Review".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+            } else if ("Completed".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+            } else if ("Rejected".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+            } else {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+            }
 
             h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
@@ -628,11 +693,13 @@ public class AdminUserRequestsFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             View dot;
+            View statusDot;
             TextView number, title, submittedBy, date, viewBtn, typeBadge;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
                 dot         = itemView.findViewById(R.id.user_req_dot);
+                statusDot   = itemView.findViewById(R.id.status_dot);
                 number      = itemView.findViewById(R.id.user_req_number);
                 title       = itemView.findViewById(R.id.user_req_title);
                 typeBadge   = itemView.findViewById(R.id.user_req_type_badge);

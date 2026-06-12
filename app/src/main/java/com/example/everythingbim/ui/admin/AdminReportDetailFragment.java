@@ -65,11 +65,13 @@ public class AdminReportDetailFragment extends Fragment {
     private TextView imageLabelTv;
     private TextView userTypeTv;
     private TextView contactTv;
+    private TextView descriptionTv;
     private ImageView postImage;
     private Spinner actionSpinner;
     private Button submitBtn;
     private View postDateLayout;
     private View accountInfoLayout;
+    private View descriptionLayout;
 
     // ─── State ───────────────────────────────
     private String selectedAction = "";
@@ -253,6 +255,8 @@ public class AdminReportDetailFragment extends Fragment {
         accountInfoLayout = view.findViewById(R.id.report_detail_account_info_layout);
         userTypeTv = view.findViewById(R.id.report_detail_user_type);
         contactTv = view.findViewById(R.id.report_detail_contact);
+        descriptionTv = view.findViewById(R.id.report_detail_description);
+        descriptionLayout = view.findViewById(R.id.report_detail_description_layout);
 
         // Back button
         view.findViewById(R.id.report_detail_back_btn).setOnClickListener(v ->
@@ -309,6 +313,9 @@ public class AdminReportDetailFragment extends Fragment {
         if (cachedImageUrl != null && !cachedImageUrl.isEmpty()) {
             loadImageFromStorage(cachedImageUrl);
         }
+
+        descriptionTv.setText("");
+        descriptionLayout.setVisibility(View.GONE);
     }
 
     private void fetchReportFromFirestore() {
@@ -348,6 +355,15 @@ public class AdminReportDetailFragment extends Fragment {
                         issueTv.setText(title);
                         userTv.setText(doc.getString("reportedUser") != null
                                 ? doc.getString("reportedUser") : "");
+
+                        // Description (optional field)
+                        String description = doc.getString("description");
+                        if (description != null && !description.isEmpty()) {
+                            descriptionTv.setText(description);
+                            descriptionLayout.setVisibility(View.VISIBLE);
+                        } else {
+                            descriptionLayout.setVisibility(View.GONE);
+                        }
 
                         // Switch UI based on report type
                         if (isPostReport) {

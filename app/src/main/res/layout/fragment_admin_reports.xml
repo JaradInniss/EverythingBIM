@@ -144,13 +144,14 @@
 
         </LinearLayout>
 
-        <!-- Unread / Read legend -->
+        <!-- Read Status / Report Status legend -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
+            <!-- Read Status -->
             <View
                 android:layout_width="10dp"
                 android:layout_height="10dp"
@@ -176,6 +177,60 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Read"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="14dp" />
+
+            <!-- Separator -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:background="@color/white"
+                android:alpha="0.3"
+                android:layout_marginEnd="14dp" />
+
+            <!-- Report Status -->
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/bg_dot_light_blue"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="In Review"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="14dp" />
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/bg_dot_green"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completed"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginEnd="14dp" />
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/bg_dot_orange"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rejected"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:fontFamily="@font/roboto_medium" />
@@ -351,7 +406,59 @@
 
             </RadioGroup>
 
-            <!-- ── Report Status (Read/Unread) ─── -->
+            <!-- ── Read Status (Read/Unread) ─── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Read Status:"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                android:fontFamily="@font/roboto_medium"
+                android:layout_marginBottom="6dp"
+                android:layout_marginTop="10dp" />
+
+            <RadioGroup
+                android:id="@+id/filter_read_status_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <RadioButton
+                    android:id="@+id/filter_read_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="All"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_read_unread"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Unread"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_read_read"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Read"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:buttonTint="@color/persian_blue" />
+
+            </RadioGroup>
+
+            <!-- ── Report Status (In Review, Completed, Rejected) ─── -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -381,10 +488,10 @@
                     android:buttonTint="@color/persian_blue" />
 
                 <RadioButton
-                    android:id="@+id/filter_status_unread"
+                    android:id="@+id/filter_status_in_review"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Unread"
+                    android:text="In Review"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:fontFamily="@font/roboto_medium"
@@ -392,10 +499,21 @@
                     android:buttonTint="@color/persian_blue" />
 
                 <RadioButton
-                    android:id="@+id/filter_status_read"
+                    android:id="@+id/filter_status_completed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Read"
+                    android:text="Completed"
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:layout_marginEnd="16dp"
+                    android:buttonTint="@color/persian_blue" />
+
+                <RadioButton
+                    android:id="@+id/filter_status_rejected"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rejected"
                     android:textColor="@color/black"
                     android:textSize="13sp"
                     android:fontFamily="@font/roboto_medium"

@@ -38,7 +38,8 @@ public class AdminReportsFragment extends Fragment {
     private TextView countTv;
     private RadioGroup typeGroup;
     private RadioGroup severityGroup;
-    private RadioGroup statusGroup;
+    private RadioGroup readStatusGroup;  // Read/Unread filter
+    private RadioGroup statusGroup;       // Report status filter (In Review/Completed/Rejected)
 
     // Adapter + data
     private AdminReportsAdapter adapter;
@@ -48,7 +49,8 @@ public class AdminReportsFragment extends Fragment {
     // Active filters
     private String activeType     = null; // "Post" | "Account" | null
     private String activeSeverity = null; // "Minor" | "Moderate" | "Major" | null
-    private String activeStatus   = null; // "Read" | "Unread" | null
+    private String activeReadStatus = null; // "Read" | "Unread" | null
+    private String activeStatus   = null; // "In Review" | "Completed" | "Rejected" | null
 
     // Firebase
     private FirebaseFirestore db;
@@ -78,6 +80,7 @@ public class AdminReportsFragment extends Fragment {
         countTv      = view.findViewById(R.id.reports_count_tv);
         typeGroup     = view.findViewById(R.id.filter_type_group);
         severityGroup = view.findViewById(R.id.filter_severity_group);
+        readStatusGroup = view.findViewById(R.id.filter_read_status_group);
         statusGroup   = view.findViewById(R.id.filter_status_group);
 
         // Setup RecyclerView
@@ -123,9 +126,20 @@ public class AdminReportsFragment extends Fragment {
 
         statusGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.filter_status_all)    activeStatus = null;
-            else if (checkedId == R.id.filter_status_unread) activeStatus = "Unread";
-            else if (checkedId == R.id.filter_status_read)   activeStatus = "Read";
+            else if (checkedId == R.id.filter_status_in_review) activeStatus = "In Review";
+            else if (checkedId == R.id.filter_status_completed) activeStatus = "Completed";
+            else if (checkedId == R.id.filter_status_rejected) activeStatus = "Rejected";
             else activeStatus = null;
+            applyFilters();
+            toggleFilterCard(false);
+        });
+
+        // Read Status filter (Read/Unread)
+        readStatusGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.filter_read_all)    activeReadStatus = null;
+            else if (checkedId == R.id.filter_read_unread) activeReadStatus = "Unread";
+            else if (checkedId == R.id.filter_read_read)   activeReadStatus = "Read";
+            else activeReadStatus = null;
             applyFilters();
             toggleFilterCard(false);
         });
@@ -173,12 +187,15 @@ public class AdminReportsFragment extends Fragment {
             if (activeSeverity != null
                     && !r.getSeverity().equalsIgnoreCase(activeSeverity)) continue;
 
-            // Status filter (Read/Unread)
-            if (activeStatus != null) {
+            // Read Status filter (Read/Unread)
+            if (activeReadStatus != null) {
                 boolean isRead = isEffectivelyRead(r);
-                if (activeStatus.equals("Read") && !isRead) continue;
-                if (activeStatus.equals("Unread") && isRead) continue;
+                if (activeReadStatus.equals("Read") && !isRead) continue;
+                if (activeReadStatus.equals("Unread") && isRead) continue;
             }
+
+            // Report Status filter (In Review/Completed/Rejected)
+            if (activeStatus != null && !r.getStatus().equalsIgnoreCase(activeStatus)) continue;
 
             displayedReports.add(r);
         }
@@ -186,13 +203,14 @@ public class AdminReportsFragment extends Fragment {
         adapter.notifyDataSetChanged();
         countTv.setText(String.valueOf(displayedReports.size()));
 
-        // Show active filter tag (format: "Severity, Type, Status")
+        // Show active filter tag (format: "Severity, Type, Read Status, Report Status")
         String severityLabel = activeSeverity != null ? activeSeverity : "All";
         String typeLabel = activeType != null ? activeType : "All";
-        String statusLabel = activeStatus != null ? activeStatus : "All";
-        String activeLabel = severityLabel + ", " + typeLabel + ", " + statusLabel;
+        String readLabel = activeReadStatus != null ? activeReadStatus : "All";
+        String reportLabel = activeStatus != null ? activeStatus : "All";
+        String activeLabel = severityLabel + ", " + typeLabel + ", " + readLabel + ", " + reportLabel;
 
-        if (activeType != null || activeSeverity != null || activeStatus != null) {
+        if (activeType != null || activeSeverity != null || activeReadStatus != null || activeStatus != null) {
             filterTag.setText(activeLabel);
             filterTag.setVisibility(View.VISIBLE);
         } else {
@@ -428,6 +446,18 @@ public class AdminReportsFragment extends Fragment {
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
 
+            // Status dot
+            String status = r.getStatus();
+            if ("In Review".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+            } else if ("Completed".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+            } else if ("Rejected".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+            } else {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+            }
+
             // View button colour - use effective read state
             h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
@@ -458,16 +488,18 @@ public class AdminReportsFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             View dot;
+            View statusDot;
             TextView number, title, severity, date, viewBtn;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
-                dot      = itemView.findViewById(R.id.report_dot);
-                number   = itemView.findViewById(R.id.report_number);
-                title    = itemView.findViewById(R.id.report_title);
-                severity = itemView.findViewById(R.id.report_severity);
-                date     = itemView.findViewById(R.id.report_date);
-                viewBtn  = itemView.findViewById(R.id.report_view_btn);
+                dot        = itemView.findViewById(R.id.report_dot);
+                statusDot  = itemView.findViewById(R.id.status_dot);
+                number     = itemView.findViewById(R.id.report_number);
+                title      = itemView.findViewById(R.id.report_title);
+                severity   = itemView.findViewById(R.id.report_severity);
+                date       = itemView.findViewById(R.id.report_date);
+                viewBtn    = itemView.findViewById(R.id.report_view_btn);
             }
         }
     }
