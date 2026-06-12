@@ -1,8 +1,5 @@
 package com.example.everythingbim.ui.home;
 
-import static com.example.everythingbim.ui.home.LandmarkRepository.PARLIAMENT_LATITUDE;
-import static com.example.everythingbim.ui.home.LandmarkRepository.PARLIAMENT_LONGITUDE;
-
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,6 +47,8 @@ import java.util.UUID;
 public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBottomSheet.NearbyActionsListener {
     private static final int NEARBY_PAGE_SIZE = 5;
     private static final String TAG = "AIIdentifier";
+    private static final String PREFS_NEARBY = "nearby_prefs";
+    private static final String PREF_SELECTED_RADIUS_METERS = "selected_radius_meters";
     private static final String COLLECTION_DATASET_SUBMISSIONS = "dataset_image_submissions";
     private static final String STORAGE_DATASET_SUBMISSIONS = "dataset_submissions";
     public static final String EXTRA_IMAGE_URI = "image_uri";
@@ -73,6 +72,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private boolean gpsAvailable;
     private Double userLatitude;
     private Double userLongitude;
+    private int currentNearbyRadiusMeters = 1000;
     private boolean datasetSubmissionInProgress;
     private boolean autoOpenDatasetSubmissionPending;
     private FirebaseAuth auth;
@@ -90,6 +90,9 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
+        currentNearbyRadiusMeters = getSharedPreferences(PREFS_NEARBY, MODE_PRIVATE)
+                .getInt(PREF_SELECTED_RADIUS_METERS, 1000);
+        viewModel.updateNearbyRadius(currentNearbyRadiusMeters);
 
         setupWindowInsets();
         setupViews();
@@ -109,7 +112,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         binding.returnBttn.setOnClickListener(v -> finish());
         binding.reuploadBttn.setOnClickListener(v -> finish());
         binding.openNearbyBttn.setOnClickListener(v -> openNearbySheet());
-        binding.viewOnMapBttn.setOnClickListener(v -> openParliamentOnMap());
+        binding.viewOnMapBttn.setOnClickListener(v -> openCurrentLandmarkOnMap());
         binding.addToDatasetBttn.setOnClickListener(v -> promptDatasetSubmission());
 
         nearbyLocationsAdapter = new NearbyLocationsAdapter(location -> openNearbySheet());
@@ -208,8 +211,12 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                             state.getDetail() != null ? state.getDetail() : state.getLandmark().getDescription());
                     currentNearbyLocations.clear();
                     currentNearbyLocations.addAll(state.getNearbyLocations());
-                    selectedRouteLocations.clear();
+                    if (state.getNearbyRadiusMeters() != null && state.getNearbyRadiusMeters() > 0) {
+                        currentNearbyRadiusMeters = state.getNearbyRadiusMeters();
+                    }
+                    reconcileSelectedRouteLocations();
                     updateNearbyPreview();
+                    syncOpenNearbySheet();
                     binding.positiveResultContainer.setVisibility(View.VISIBLE);
                     binding.negativeResultContainer.setVisibility(View.GONE);
                     binding.negativeConfidenceRow.setVisibility(View.GONE);
@@ -277,6 +284,30 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private void updateNearbyPreview() {
         int previewCount = Math.min(currentNearbyLocations.size(), NEARBY_PAGE_SIZE);
         nearbyLocationsAdapter.submitList(new ArrayList<>(currentNearbyLocations.subList(0, previewCount)));
+        binding.openNearbyBttn.setText("Explore Nearby (" + formatRadius(currentNearbyRadiusMeters) + ")");
+    }
+
+    private void reconcileSelectedRouteLocations() {
+        LinkedHashMap<Long, NearbySavedLocation> preservedSelections = new LinkedHashMap<>();
+        for (NearbySavedLocation location : currentNearbyLocations) {
+            if (selectedRouteLocations.containsKey(location.getLocationId())) {
+                preservedSelections.put(location.getLocationId(), location);
+            }
+        }
+        selectedRouteLocations.clear();
+        selectedRouteLocations.putAll(preservedSelections);
+    }
+
+    private void syncOpenNearbySheet() {
+        androidx.fragment.app.Fragment fragment = getSupportFragmentManager()
+                .findFragmentByTag("nearby_locations_sheet");
+        if (fragment instanceof NearbyLocationsBottomSheet) {
+            ((NearbyLocationsBottomSheet) fragment).updateContent(
+                    new ArrayList<>(currentNearbyLocations),
+                    new ArrayList<>(selectedRouteLocations.keySet()),
+                    currentNearbyRadiusMeters
+            );
+        }
     }
 
     private void openNearbySheet() {
@@ -289,22 +320,23 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
                 new ArrayList<>(selectedRouteLocations.keySet()),
                 currentLandmark != null ? currentLandmark.getDisplayName() : null,
                 currentLandmark != null ? currentLandmark.getLatitude() : 0d,
-                currentLandmark != null ? currentLandmark.getLongitude() : 0d
+                currentLandmark != null ? currentLandmark.getLongitude() : 0d,
+                currentNearbyRadiusMeters
         );
         bottomSheet.setActionsListener(this);
         bottomSheet.show(getSupportFragmentManager(), "nearby_locations_sheet");
     }
 
-    private void openParliamentOnMap() {
+    private void openCurrentLandmarkOnMap() {
         if (currentLandmark == null) {
             return;
         }
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, PARLIAMENT_LATITUDE);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, PARLIAMENT_LONGITUDE);
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, "Barbados Parliament Buildings");
-        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "Broad Street/Rickett Street, Bridgetown");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, currentLandmark.getLatitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, currentLandmark.getLongitude());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, currentLandmark.getDisplayName());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, currentLandmark.getMapSubtitle());
         startActivity(intent);
     }
 
@@ -369,6 +401,25 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, location.getName());
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, location.getAddress());
         startActivity(intent);
+    }
+
+    @Override
+    public void onRadiusSelected(int radiusMeters) {
+        currentNearbyRadiusMeters = radiusMeters;
+        getSharedPreferences(PREFS_NEARBY, MODE_PRIVATE)
+                .edit()
+                .putInt(PREF_SELECTED_RADIUS_METERS, radiusMeters)
+                .apply();
+        updateNearbyPreview();
+        viewModel.updateNearbyRadius(radiusMeters);
+    }
+
+    @NonNull
+    private String formatRadius(int meters) {
+        if (meters >= 1000) {
+            return String.format(java.util.Locale.US, "%.0f km", meters / 1000f);
+        }
+        return meters + " m";
     }
 
     private void promptDatasetSubmission() {
