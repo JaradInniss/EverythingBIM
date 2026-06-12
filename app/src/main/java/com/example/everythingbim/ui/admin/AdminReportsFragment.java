@@ -71,6 +71,7 @@ public class AdminReportsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.reports_recycler);
         searchEt     = view.findViewById(R.id.reports_search_et);
         filterBtn    = view.findViewById(R.id.reports_filter_btn);
+        View watchlistBtn = view.findViewById(R.id.reports_watchlist_btn);
         filterCard   = view.findViewById(R.id.reports_filter_card);
         filterScrim  = view.findViewById(R.id.reports_filter_scrim);
         filterTag    = view.findViewById(R.id.reports_filter_tag);
@@ -89,6 +90,13 @@ public class AdminReportsFragment extends Fragment {
 
         // Filter button
         filterBtn.setOnClickListener(v -> toggleFilterCard(true));
+
+        // Watchlist button - navigate to watch list screen
+        watchlistBtn.setOnClickListener(v -> {
+            if (getParentFragment() instanceof AdminFragment) {
+                ((AdminFragment) getParentFragment()).navigateToWatchList();
+            }
+        });
 
         // Scrim dismisses the filter card without applying
         filterScrim.setOnClickListener(v -> toggleFilterCard(false));

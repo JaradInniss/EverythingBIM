@@ -90,7 +90,7 @@ public class AdminHomeFragment extends Fragment {
     private static final String COLLECTION_INFO = "add_information_requests";
     private static final String COLLECTION_LOCATION = "add_location_requests";
     private static final String COLLECTION_DATASET = "dataset_image_submissions";
-    private static final String COLLECTION_REPORTS = "add_reports";
+    private static final String COLLECTION_REPORTS = "reports";
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -654,11 +654,11 @@ public class AdminHomeFragment extends Fragment {
                     updateNotificationBadge();
                 });
 
-        // Reports
+        // Reports - only count where read=false explicitly
         db.collection(COLLECTION_REPORTS)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    int count = countUnreadSince(snap, reportsTs, ReadStateManager.KEY_LAST_READ_REPORTS);
+                    int count = countUnreadReports(snap, reportsTs);
                     unreadReportsCount = count;
                     updateReportsCount(count, 0);
                     updateDotVisibility(dotReports, count > 0);
@@ -670,6 +670,36 @@ public class AdminHomeFragment extends Fragment {
                     updateDotVisibility(dotReports, false);
                     updateNotificationBadge();
                 });
+    }
+
+    /**
+     * Counts reports where read=false explicitly.
+     * Reports use 'read' field where false=unread, true=read.
+     * Only counts items with read=false AND created after lastReadTs.
+     */
+    private int countUnreadReports(QuerySnapshot snap, long lastReadTs) {
+        int count = 0;
+        if (snap == null) return 0;
+        Context ctx = getContext();
+        if (ctx == null) return 0; // Fragment detached, don't update count
+        Set<String> localReadIds = ReadStateManager.getReadRequestIds(ctx);
+
+        for (DocumentSnapshot doc : snap.getDocuments()) {
+            // Skip if individually marked as read in SharedPreferences
+            if (localReadIds.contains(doc.getId())) continue;
+
+            // Only count if read is explicitly false
+            Boolean read = doc.getBoolean("read");
+            if (!Boolean.FALSE.equals(read)) continue;  // Skip if read is true or null
+
+            // Only count items created at or after lastReadTimestamp (if timestamp > 0)
+            if (lastReadTs > 0) {
+                com.google.firebase.Timestamp submittedAt = doc.getTimestamp("submittedAt");
+                if (submittedAt != null && submittedAt.toDate().getTime() < lastReadTs) continue;
+            }
+            count++;
+        }
+        return count;
     }
 
     /**

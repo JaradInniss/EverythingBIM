@@ -510,24 +510,31 @@ public class ViewPost extends AppCompatActivity {
 
     private void submitReport(boolean isPostReport, String reason) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseAuth auth = FirebaseAuth.getInstance();
 
         // Get current user info
         SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
         String reporterId = prefs.getString("userId", "");
         String reporterType = prefs.getString("userType", "general");
+        // Get reporter's Firebase Auth UID for notifications
+        String reporterUid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
 
         java.util.Map<String, Object> reportData = new java.util.HashMap<>();
         reportData.put("reportType", isPostReport ? "Post" : "Account");
         reportData.put("reason", reason);
         reportData.put("reporterId", reporterId);
+        reportData.put("reporterUid", reporterUid != null ? reporterUid : "");
         reportData.put("reporterType", reporterType);
         reportData.put("status", "In Review");
+        reportData.put("read", false);
         reportData.put("submittedAt", com.google.firebase.Timestamp.now());
 
         if (isPostReport && currentPost != null) {
             // Post report data
             reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
             reportData.put("reportedUserId", currentPost.authorId);
+            // Save authorUid (Firebase Auth UID) for notifications - this is the correct ID to use
+            reportData.put("reportedUserUid", currentPost.authorUid != null ? currentPost.authorUid : "");
             reportData.put("postId", currentPost.firestoreId != null ? currentPost.firestoreId : String.valueOf(currentPost.postId));
             reportData.put("postCaption", currentPost.caption != null ? currentPost.caption : "");
             reportData.put("postImageUrl", currentPost.imageUrl != null ? currentPost.imageUrl : "");
@@ -537,6 +544,8 @@ public class ViewPost extends AppCompatActivity {
             if (currentPost != null) {
                 reportData.put("reportedUser", currentPost.authorName != null ? currentPost.authorName : "User " + currentPost.authorId);
                 reportData.put("reportedUserId", currentPost.authorId);
+                // Save authorUid (Firebase Auth UID) for notifications
+                reportData.put("reportedUserUid", currentPost.authorUid != null ? currentPost.authorUid : "");
                 reportData.put("accountId", currentPost.authorId);
 
                 // Use authorUid (Firebase Auth UID) to look up in Firestore, not authorId (Room PK)

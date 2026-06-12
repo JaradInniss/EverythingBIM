@@ -29,9 +29,12 @@ import com.google.firebase.storage.FirebaseStorage;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import com.example.everythingbim.ActivityLogger;
+import com.example.everythingbim.ui.home.UserNotificationHelper;
 
 public class AdminReportDetailFragment extends Fragment {
 
@@ -493,9 +496,12 @@ public class AdminReportDetailFragment extends Fragment {
 
             @Override
             public boolean isEnabled(int position) {
-                // Disable header items (positions 1, 12, 25, 34)
+                // Disable header items: Select Action, -- MAJOR --, -- MODERATE --, -- MINOR --, -- ACTIONS --
                 if (position == 0) return false; // "Select Action"
-                if (position == 1 || position == 12 || position == 25 || position == 34) return false;
+                if (position == 1) return false;  // "━━ MAJOR ━━"
+                if (position == 10) return false; // "━━ MODERATE ━━"
+                if (position == 21) return false; // "━━ MINOR ━━"
+                if (position == 28) return false; // "━━ ACTIONS ━━"
                 return true;
             }
 
@@ -504,7 +510,7 @@ public class AdminReportDetailFragment extends Fragment {
                                         @NonNull ViewGroup parent) {
                 View v = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) v;
-                if (position == 0 || position == 1 || position == 12 || position == 25 || position == 34) {
+                if (position == 0 || position == 1 || position == 10 || position == 21 || position == 28) {
                     // Header items - gray and bold style
                     tv.setTextColor(android.graphics.Color.GRAY);
                     tv.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -523,7 +529,7 @@ public class AdminReportDetailFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 // Header positions are disabled - reset to first valid if selected
-                if (pos == 0 || pos == 1 || pos == 12 || pos == 25 || pos == 34) {
+                if (pos == 0 || pos == 1 || pos == 10 || pos == 21 || pos == 28) {
                     actionSpinner.setSelection(0);
                     selectedAction = "";
                     return;
@@ -547,14 +553,31 @@ public class AdminReportDetailFragment extends Fragment {
         }
         if (docId.isEmpty()) return;
 
-        // ADD THIS LOG:
-        Log.d(TAG, "submitAction - docId: " + docId + ", auth: " +
-                (FirebaseAuth.getInstance().getCurrentUser() != null ?
-                        FirebaseAuth.getInstance().getCurrentUser().getEmail() : "NOT LOGGED IN"));
-
         submitBtn.setEnabled(false);
         submitBtn.setText(getString(R.string.processing));
 
+        // Handle special actions that require additional processing
+        if (ACTION_REMOVE_IMMEDIATE.equals(selectedAction)) {
+            handleRemoveContentImmediately();
+            return;
+        } else if (ACTION_WATCHLIST.equals(selectedAction)) {
+            handleFlagForWatchList();
+            return;
+        } else if (ACTION_WARN_1ST.equals(selectedAction)) {
+            handleIssueWarning();
+            return;
+        } else if (ACTION_REQUEST_EDIT.equals(selectedAction)) {
+            handleRequestEditRemoval();
+            return;
+        } else if (ACTION_DISMISS_NO_ACTION.equals(selectedAction)) {
+            handleDismissReport();
+            return;
+        } else if (ACTION_REMOVE_SPAM.equals(selectedAction)) {
+            handleRemoveSpamContent();
+            return;
+        }
+
+        // Standard action - just update report status
         db.collection("reports").document(docId)
                 .update(
                         "status", "Completed",
@@ -563,9 +586,616 @@ public class AdminReportDetailFragment extends Fragment {
                 )
                 .addOnSuccessListener(v -> {
                     if (!isUiActive()) return;
-                    // Log the completion activity
                     activityLogger.logCompletion(ActivityLogger.TYPE_REPORT, cachedTitle, docId);
                     showToast("Action submitted: " + selectedAction);
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed: " + e.getMessage());
+                });
+    }
+
+    // Handle Remove Content Immediately action - deletes post and notifies both parties
+    private void handleRemoveContentImmediately() {
+        // First fetch the report to get post details
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reportType = doc.getString("reportType");
+                        // postId is stored as a String (Firestore ID) but might be saved differently
+                        String postId = doc.getString("postId");
+                        // reportedUserUid is the Firebase Auth UID of the post creator
+                        String authorUid = doc.getString("reportedUserUid");
+                        String reporterId = doc.getString("reporterId");
+                        String reporterUid = doc.getString("reporterUid");  // Firebase Auth UID for reporter
+
+                        // For post reports, delete the post from Firestore
+                        if ("Post".equals(reportType) && postId != null && !postId.isEmpty()) {
+                            db.collection("posts").document(postId)
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d(TAG, "Post deleted: " + postId);
+                                        // Notify post creator
+                                        notifyContentRemoved(authorUid, reporterUid, reporterId, postId, true);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e(TAG, "Failed to delete post", e);
+                                        // Still mark report as complete and notify
+                                        notifyContentRemoved(authorUid, reporterUid, reporterId, postId, false);
+                                    });
+                        } else {
+                            // For account reports, just notify
+                            notifyContentRemoved(authorUid, reporterUid, reporterId, null, false);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Notify both the content creator and the reporter about content removal
+    private void notifyContentRemoved(String authorUid, String reporterUid, String reporterId, String postId, boolean postDeleted) {
+        String notificationType = "content_removed";
+
+        // Notify the content creator - authorUid is the Firebase Auth UID (reportedUserUid)
+        if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
+            final String creatorMessage;
+            if (postDeleted) {
+                creatorMessage = "Your post has been removed for violating community guidelines.";
+            } else {
+                creatorMessage = "Your account has been flagged for review. Please contact support if you believe this is an error.";
+            }
+
+            // Use authorUid directly as Firebase Auth UID (reportedUserUid)
+            UserNotificationHelper.createNotification(
+                    db, authorUid, notificationType,
+                    "Content Removed",
+                    creatorMessage,
+                    postId,
+                    "posts"
+            );
+        }
+        // Also notify reporter regardless of outcome
+        notifyReporter(reporterUid, reporterId, postId, postDeleted);
+    }
+
+    // Notify the reporter that their report was actioned
+    private void notifyReporter(String reporterUid, String reporterId, String postId, boolean wasRemoved) {
+        String message;
+        if (wasRemoved) {
+            message = "Thank you for your report. The content you reported has been removed for violating community guidelines.";
+        } else {
+            message = "Thank you for your report. We've reviewed the content and taken appropriate action.";
+        }
+
+        // Use reporterUid directly if available (new reports), otherwise use reporterId lookup (legacy)
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    postId,
+                    "posts"
+            );
+            completeReportAction(ACTION_REMOVE_IMMEDIATE);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_REMOVE_IMMEDIATE);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        postId,
+                                        "posts"
+                                );
+                            }
+                            completeReportAction(ACTION_REMOVE_IMMEDIATE);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter", e);
+                            completeReportAction(ACTION_REMOVE_IMMEDIATE);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_REMOVE_IMMEDIATE);
+            }
+        }
+    }
+
+    // Handle Flag for Watch-List Monitoring action
+    private void handleFlagForWatchList() {
+        // First fetch the report to get account details
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reportType = doc.getString("reportType");
+                        // accountId and reportedUserId are stored as numbers in Firestore
+                        // Use get("fieldName") and convert to handle both String and Number types
+                        Object accountIdObj = doc.get("accountId");
+                        Object reportedUserIdObj = doc.get("reportedUserId");
+                        String reporterId = doc.getString("reporterId");
+                        String reporterUid = doc.getString("reporterUid");  // Firebase Auth UID for reporter
+                        String userType = doc.getString("userType");
+                        // reportedUserUid is the Firebase Auth UID of the account being reported
+                        String reportedUserUid = doc.getString("reportedUserUid");
+
+                        // Convert accountId - handle both String and Number
+                        String accountId = accountIdObj != null ? String.valueOf(accountIdObj) : null;
+                        // Convert reportedUserId (this is the authorId for the reported user)
+                        String reportedUserId = reportedUserIdObj != null ? String.valueOf(reportedUserIdObj) : null;
+
+                        // Add to watch list
+                        addToWatchList(accountId, reportedUserId, userType, docId);
+
+                        // Notify both parties - use Firebase Auth UIDs directly
+                        notifyWatchListFlagged(reportedUserUid, reporterUid, reporterId, accountId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Handle Issue Formal Warning (1st) action - sends warning notification to creator and notifies reporter
+    private void handleIssueWarning() {
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reportType = doc.getString("reportType");
+                        String postId = doc.getString("postId");
+                        String authorUid = doc.getString("reportedUserUid");
+                        String reporterId = doc.getString("reporterId");
+                        String reporterUid = doc.getString("reporterUid");
+
+                        // Notify the content creator about the warning
+                        notifyFormalWarning(authorUid, reporterUid, reporterId, postId, reportType);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Notify content creator about formal warning
+    private void notifyFormalWarning(String authorUid, String reporterUid, String reporterId, String postId, String reportType) {
+        if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
+            String message = "You have received a formal warning for violating our community guidelines. Please review our policies to avoid further action.";
+            UserNotificationHelper.createNotification(
+                    db, authorUid, "formal_warning",
+                    "Formal Warning Issued",
+                    message,
+                    postId,
+                    "posts"
+            );
+        }
+        notifyReporterWarning(reporterUid, reporterId, postId);
+    }
+
+    // Notify reporter that their report resulted in a warning
+    private void notifyReporterWarning(String reporterUid, String reporterId, String postId) {
+        String message = "Thank you for your report. The account has been issued a formal warning.";
+
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    postId,
+                    "posts"
+            );
+            completeReportAction(ACTION_WARN_1ST);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_WARN_1ST);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        postId,
+                                        "posts"
+                                );
+                            }
+                            completeReportAction(ACTION_WARN_1ST);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter for warning", e);
+                            completeReportAction(ACTION_WARN_1ST);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_WARN_1ST);
+            }
+        }
+    }
+
+    // Handle Request Content Edit/Removal action - sends edit/removal request to creator and notifies reporter
+    private void handleRequestEditRemoval() {
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reportType = doc.getString("reportType");
+                        String postId = doc.getString("postId");
+                        String authorUid = doc.getString("reportedUserUid");
+                        String reporterId = doc.getString("reporterId");
+                        String reporterUid = doc.getString("reporterUid");
+
+                        // Notify the content creator about the edit/removal request
+                        notifyEditRemovalRequest(authorUid, reporterUid, reporterId, postId, reportType);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Notify content creator about edit/removal request
+    private void notifyEditRemovalRequest(String authorUid, String reporterUid, String reporterId, String postId, String reportType) {
+        if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
+            String message = "Your content has been flagged for review. Please edit or remove the content that violates our community guidelines.";
+            UserNotificationHelper.createNotification(
+                    db, authorUid, "content_edit_request",
+                    "Action Required: Edit or Remove Content",
+                    message,
+                    postId,
+                    "posts"
+            );
+        }
+        notifyReporterEditRequest(reporterUid, reporterId, postId);
+    }
+
+    // Notify reporter that their report resulted in an edit/removal request
+    private void notifyReporterEditRequest(String reporterUid, String reporterId, String postId) {
+        String message = "Thank you for your report. The content owner has been requested to edit or remove the content.";
+
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    postId,
+                    "posts"
+            );
+            completeReportAction(ACTION_REQUEST_EDIT);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_REQUEST_EDIT);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        postId,
+                                        "posts"
+                                );
+                            }
+                            completeReportAction(ACTION_REQUEST_EDIT);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter for edit request", e);
+                            completeReportAction(ACTION_REQUEST_EDIT);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_REQUEST_EDIT);
+            }
+        }
+    }
+
+    // Handle Dismiss Report (No Action Needed) - notifies reporter that report was dismissed
+    private void handleDismissReport() {
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reporterUid = doc.getString("reporterUid");
+                        String reporterId = doc.getString("reporterId");
+                        String postId = doc.getString("postId");
+
+                        // Notify reporter about dismissal
+                        notifyReportDismissed(reporterUid, reporterId, postId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Notify reporter that their report was dismissed
+    private void notifyReportDismissed(String reporterUid, String reporterId, String postId) {
+        String message = "Thank you for your report. After review, we found that no action is needed at this time.";
+
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    postId,
+                    "posts"
+            );
+            completeReportAction(ACTION_DISMISS_NO_ACTION);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_DISMISS_NO_ACTION);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        postId,
+                                        "posts"
+                                );
+                            }
+                            completeReportAction(ACTION_DISMISS_NO_ACTION);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter for dismissal", e);
+                            completeReportAction(ACTION_DISMISS_NO_ACTION);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_DISMISS_NO_ACTION);
+            }
+        }
+    }
+
+    // Handle Remove Content (Spam/Fake Engagement) - deletes post and notifies both parties
+    private void handleRemoveSpamContent() {
+        db.collection("reports").document(docId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isUiActive()) return;
+                    if (doc.exists()) {
+                        String reportType = doc.getString("reportType");
+                        String postId = doc.getString("postId");
+                        String authorUid = doc.getString("reportedUserUid");
+                        String reporterId = doc.getString("reporterId");
+                        String reporterUid = doc.getString("reporterUid");
+
+                        // For post reports, delete the post from Firestore
+                        if ("Post".equals(reportType) && postId != null && !postId.isEmpty()) {
+                            db.collection("posts").document(postId)
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d(TAG, "Spam post deleted: " + postId);
+                                        notifySpamContentRemoved(authorUid, reporterUid, reporterId, postId, true);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e(TAG, "Failed to delete spam post", e);
+                                        notifySpamContentRemoved(authorUid, reporterUid, reporterId, postId, false);
+                                    });
+                        } else {
+                            // For account reports, just notify
+                            notifySpamContentRemoved(authorUid, reporterUid, reporterId, null, false);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isUiActive()) return;
+                    submitBtn.setEnabled(true);
+                    submitBtn.setText("SUBMIT");
+                    showToast("Failed to process action: " + e.getMessage());
+                });
+    }
+
+    // Notify both the content creator and the reporter about spam content removal
+    private void notifySpamContentRemoved(String authorUid, String reporterUid, String reporterId, String postId, boolean postDeleted) {
+        // Notify the content creator
+        if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
+            final String creatorMessage;
+            if (postDeleted) {
+                creatorMessage = "Your post has been removed for violating our spam and fake engagement policies.";
+            } else {
+                creatorMessage = "Your account has been flagged for spam/fake engagement. Please review our policies.";
+            }
+
+            UserNotificationHelper.createNotification(
+                    db, authorUid, "spam_content_removed",
+                    "Content Removed",
+                    creatorMessage,
+                    postId,
+                    "posts"
+            );
+        }
+        notifyReporterSpamRemoval(reporterUid, reporterId, postId, postDeleted);
+    }
+
+    // Notify the reporter that their report resulted in spam content removal
+    private void notifyReporterSpamRemoval(String reporterUid, String reporterId, String postId, boolean wasRemoved) {
+        String message;
+        if (wasRemoved) {
+            message = "Thank you for your report. The spam content you reported has been removed.";
+        } else {
+            message = "Thank you for your report. We've reviewed the content and taken appropriate action.";
+        }
+
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    postId,
+                    "posts"
+            );
+            completeReportAction(ACTION_REMOVE_SPAM);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_REMOVE_SPAM);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        postId,
+                                        "posts"
+                                );
+                            }
+                            completeReportAction(ACTION_REMOVE_SPAM);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter for spam removal", e);
+                            completeReportAction(ACTION_REMOVE_SPAM);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_REMOVE_SPAM);
+            }
+        }
+    }
+
+    // Add account to watch-list collection
+    private void addToWatchList(String accountId, String userId, String userType, String relatedReportId) {
+        Map<String, Object> watchListEntry = new HashMap<>();
+        watchListEntry.put("userId", userId);  // This is authorId (long)
+        watchListEntry.put("accountId", accountId);
+        watchListEntry.put("userType", userType != null ? userType : "general");
+        watchListEntry.put("relatedReportId", relatedReportId);
+        watchListEntry.put("addedAt", com.google.firebase.Timestamp.now());
+        watchListEntry.put("addedBy", FirebaseAuth.getInstance().getCurrentUser() != null ?
+                FirebaseAuth.getInstance().getCurrentUser().getUid() : "admin");
+
+        db.collection("watch_list").add(watchListEntry)
+                .addOnSuccessListener(ref -> Log.d(TAG, "Added to watch list: " + ref.getId()))
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to add to watch list", e));
+    }
+
+    // Notify both the account owner and the reporter about watch-list flagging
+    private void notifyWatchListFlagged(String authorUid, String reporterUid, String reporterId, String accountId) {
+        // Notify the account owner - authorUid is the Firebase Auth UID (reportedUserUid)
+        if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
+            UserNotificationHelper.createNotification(
+                    db, authorUid, "account_watchlisted",
+                    "Account Under Review",
+                    "Your account has been flagged for monitoring. Please review our community guidelines.",
+                    accountId,
+                    "users"
+            );
+        }
+        notifyReporterWatchList(reporterUid, reporterId, accountId);
+    }
+
+    // Notify the reporter that their report resulted in watch-list flagging
+    private void notifyReporterWatchList(String reporterUid, String reporterId, String accountId) {
+        String message = "Thank you for your report. The account you reported has been flagged for monitoring.";
+
+        // Use reporterUid directly if available (new reports), otherwise use reporterId lookup (legacy)
+        if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
+            UserNotificationHelper.createNotification(
+                    db, reporterUid, "report_actioned",
+                    "Report Update",
+                    message,
+                    accountId,
+                    "users"
+            );
+            completeReportAction(ACTION_WATCHLIST);
+        } else {
+            // Fallback: look up reporter by userId field using reporterId (local Room user ID)
+            if (reporterId == null || reporterId.isEmpty()) {
+                completeReportAction(ACTION_WATCHLIST);
+                return;
+            }
+            try {
+                Long reporterIdLong = Long.parseLong(reporterId);
+                db.collection("users").whereEqualTo("userId", reporterIdLong).get()
+                        .addOnSuccessListener(userDocs -> {
+                            if (!userDocs.isEmpty()) {
+                                String uid = userDocs.getDocuments().get(0).getId();
+                                UserNotificationHelper.createNotification(
+                                        db, uid, "report_actioned",
+                                        "Report Update",
+                                        message,
+                                        accountId,
+                                        "users"
+                                );
+                            }
+                            completeReportAction(ACTION_WATCHLIST);
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Failed to notify reporter for watch list", e);
+                            completeReportAction(ACTION_WATCHLIST);
+                        });
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid reporterId format: " + reporterId, e);
+                completeReportAction(ACTION_WATCHLIST);
+            }
+        }
+    }
+
+    // Complete the report action and go back
+    private void completeReportAction(String action) {
+        db.collection("reports").document(docId)
+                .update(
+                        "status", "Completed",
+                        "adminAction", action,
+                        "resolvedAt", com.google.firebase.Timestamp.now()
+                )
+                .addOnSuccessListener(v -> {
+                    if (!isUiActive()) return;
+                    activityLogger.logCompletion(ActivityLogger.TYPE_REPORT, cachedTitle, docId);
+                    showToast("Action completed: " + action);
                     requireActivity().getSupportFragmentManager().popBackStack();
                 })
                 .addOnFailureListener(e -> {
