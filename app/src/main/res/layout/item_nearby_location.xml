@@ -3,20 +3,24 @@
     android:layout_width="wrap_content"
     android:layout_height="30dp"
     android:orientation="horizontal"
-    android:paddingTop="5dp"
-    android:paddingBottom="5dp"
-    android:paddingRight="15dp"
-    android:paddingLeft="15dp"
-    android:background="@drawable/bg_border_pill_gold"
+    android:paddingVertical="5dp"
+    android:paddingHorizontal="15dp"
+    android:layout_marginRight="10dp"
+    android:background="@drawable/bg_pill_gold"
     android:gravity="center">
+
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginRight="8dp"
+        android:src="@drawable/ic_map_pin"/>
 
     <TextView
         android:id="@+id/nearby_attraction_item_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Lloyde Erskin"
-        android:fontFamily="@font/roboto_medium"
-        android:textSize="12sp"
-        android:textColor="@color/prussian_blue"/>
+        style="@style/black_medium_txt_style"
+        android:textSize="12sp"/>
 
 </LinearLayout>

@@ -55,7 +55,7 @@
 
     <style name="txtInputLayout_style">
         <item name="android:fontFamily">@font/roboto_regular</item>
-        <item name="android:background">@drawable/bg_rectangle_white</item>
+        <item name="android:background">@drawable/bg_rectangle_alice_blue</item>
         <item name="boxBackgroundMode">outline</item>
         <item name="android:padding">5dp</item>
         <item name="android:textColorHint">@color/dark</item>
@@ -70,7 +70,7 @@
         <item name="android:fontFamily">@font/roboto_regular</item>
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">@color/black</item>
-        <item name="android:padding">10dp</item>
+        <item name="android:padding">8dp</item>
         <item name="android:background">@android:color/transparent</item>
     </style>
 

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -78,7 +79,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TextView closeButton = view.findViewById(R.id.nearby_sheet_close_button);
+        ImageView closeButton = view.findViewById(R.id.nearby_sheet_close_button);
         titleView = view.findViewById(R.id.nearby_sheet_title);
         selectedCountView = view.findViewById(R.id.nearby_sheet_selected_count);
         seeMoreButton = view.findViewById(R.id.nearby_sheet_see_more_button);

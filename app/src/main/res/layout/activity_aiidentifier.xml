@@ -219,7 +219,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        tools:listitem="@layout/item_nearby_location"/>
 
                 </HorizontalScrollView>
 
@@ -237,12 +238,11 @@
                     android:layout_height="36dp"
                     android:layout_weight="1"
                     android:layout_marginRight="6dp"
-                    android:background="@drawable/bg_border_rectangle_gold"
+                    android:background="@drawable/bg_rectangle_prussian_blue"
                     android:gravity="center"
                     android:text="Explore Nearby"
-                    android:textColor="@color/prussian_blue"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/roboto_bold" />
+                    android:fontFamily="@font/roboto_bold"
+                    style="@style/white_small_txt_style"/>
 
                 <TextView
                     android:id="@+id/view_on_map_bttn"

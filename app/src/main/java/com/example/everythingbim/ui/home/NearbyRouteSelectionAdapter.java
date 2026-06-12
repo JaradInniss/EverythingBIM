@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -64,8 +65,8 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
         private final TextView nameView;
         private final TextView descriptionView;
         private final TextView distanceView;
-        private final TextView addButton;
-        private final TextView removeButton;
+        private final LinearLayout addButton;
+        private final LinearLayout removeButton;
 
         RouteLocationViewHolder(@NonNull View itemView) {
             super(itemView);

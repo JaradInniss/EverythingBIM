@@ -21,15 +21,11 @@
             android:textSize="18sp"
             android:fontFamily="@font/roboto_bold" />
 
-        <TextView
+        <ImageView
             android:id="@+id/nearby_sheet_close_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_border_rectangle_gold"
-            android:gravity="center"
-            android:text="X"
-            android:textColor="@color/prussian_blue"
-            android:textStyle="bold" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_close"/>
     </LinearLayout>
 
     <TextView
@@ -77,8 +73,8 @@
         android:id="@+id/nearby_sheet_external_route_button"
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/bg_border_rectangle_gold"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_rectangle_gold"
         android:gravity="center"
         android:text="Open in Google Maps"
         android:textColor="@color/prussian_blue"

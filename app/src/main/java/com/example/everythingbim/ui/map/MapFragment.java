@@ -907,8 +907,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             routePoints.add(stopLatLng);
 
             float markerHue = index == routePreviewLocations.size() - 1
-                    ? BitmapDescriptorFactory.HUE_RED
-                    : BitmapDescriptorFactory.HUE_ORANGE;
+                    ? getResources().getColor(R.color.space_indigo)
+                    : getResources().getColor(R.color.true_cobalt);
             String markerTitle = (index + 1) + ". " + stop.getName();
             String markerSnippet = index == routePreviewLocations.size() - 1
                     ? "Destination | " + stop.getDistanceLabel()
@@ -944,12 +944,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         routePreviewOutlinePolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(16f)
+                .width(12f)
                 .color(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
 
         routePreviewPolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(9f)
+                .width(6f)
                 .color(ContextCompat.getColor(requireContext(), R.color.space_indigo)));
     }
 
