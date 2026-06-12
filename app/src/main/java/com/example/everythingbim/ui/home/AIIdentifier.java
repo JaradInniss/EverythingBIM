@@ -9,9 +9,12 @@ import android.text.InputType;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -31,6 +34,7 @@ import com.example.everythingbim.ui.admin.AdminNotificationHelper;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -51,6 +55,7 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
     private static final String PREF_SELECTED_RADIUS_METERS = "selected_radius_meters";
     private static final String COLLECTION_DATASET_SUBMISSIONS = "dataset_image_submissions";
     private static final String STORAGE_DATASET_SUBMISSIONS = "dataset_submissions";
+    private static final String PREF_DATASET_NOTE_SCROLL_HINT_SEEN = "dataset_note_scroll_hint_seen";
     public static final String EXTRA_IMAGE_URI = "image_uri";
     public static final String EXTRA_IMAGE_SOURCE = "image_source";
     public static final String EXTRA_DISPLAY_NAME = "display_name";
@@ -448,16 +453,40 @@ public class AIIdentifier extends AppCompatActivity implements NearbyLocationsBo
         container.setPadding(padding, padding / 2, padding, 0);
         container.addView(noteInput);
 
-        new AlertDialog.Builder(this)
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+        scrollView.addView(container);
+
+        FrameLayout dialogRoot = new FrameLayout(this);
+        dialogRoot.addView(scrollView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT));
+        LayoutInflater.from(this).inflate(R.layout.view_scroll_hint_overlay, dialogRoot, true);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Send Image For Review")
                 .setMessage("We'll send this image and the current recognition details to the admin/development team for review.")
-                .setView(container)
+                .setView(dialogRoot)
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Send", (dialog, which) ->
+                .setPositiveButton("Send", (dialogInterface, which) ->
                         submitDatasetImage(noteInput.getText() != null
                                 ? noteInput.getText().toString().trim()
                                 : ""))
                 .show();
+
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                noteInput,
+                scrollView,
+                PREF_DATASET_NOTE_SCROLL_HINT_SEEN,
+                bottomInset -> {
+                    scrollView.setClipToPadding(false);
+                    scrollView.setPadding(
+                            scrollView.getPaddingLeft(),
+                            scrollView.getPaddingTop(),
+                            scrollView.getPaddingRight(),
+                            bottomInset);
+                });
     }
 
     private void submitDatasetImage(@NonNull String userNote) {

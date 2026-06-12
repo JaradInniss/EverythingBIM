@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +30,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -42,6 +45,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -56,6 +60,8 @@ import java.util.Locale;
  * Handles adding new comments and replies with a nested UI.
  */
 public class ViewPost extends AppCompatActivity {
+    private static final String PREF_VIEW_POST_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_VIEW_POST_SCROLL_HINT_SEEN;
 
     ActivityViewPostBinding binding;
     private PostViewModel viewModel;
@@ -71,6 +77,7 @@ public class ViewPost extends AppCompatActivity {
     // State for managing replies
     private Long currentParentCommentId = null;
     private String currentParentAuthorName = null;
+    private boolean isSubmittingComment = false;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
     private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
@@ -78,6 +85,8 @@ public class ViewPost extends AppCompatActivity {
     private RecyclerView commentsRv, taggedUsersRv;
     private LinearLayout returnBttn;
     private CardView taggedUsersCard;
+    private NestedScrollView viewPostScrollView;
+    private int currentKeyboardExtraBottom;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +136,7 @@ public class ViewPost extends AppCompatActivity {
         submitReplyBttn = binding.submitReplyBttn;
         replyingToUsername = binding.replyingToUsername;
         commentsRv = binding.viewpostCommentsRv;
+        viewPostScrollView = binding.viewPostScroll;
 
         // Tagged users views
         viewTaggedUsersBttn = binding.viewTaggedUsersBttn;
@@ -142,6 +152,9 @@ public class ViewPost extends AppCompatActivity {
         // based on whether the post has any tagged users.
         taggedUsersCard.setVisibility(View.GONE);
         taggedUsersRv.setVisibility(View.GONE);
+
+        setupKeyboardInsets();
+        setupFocusedFieldScroll();
     }
 
     // Set up the RecyclerView for comments and handles reply button clicks.
@@ -165,6 +178,7 @@ public class ViewPost extends AppCompatActivity {
 
             // Focus input and show keyboard
             commentInput.requestFocus();
+            scrollCommentComposerAboveKeyboard();
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
@@ -357,6 +371,62 @@ public class ViewPost extends AppCompatActivity {
         });
     }
 
+    private void setupKeyboardInsets() {
+        int initialLeft = viewPostScrollView.getPaddingLeft();
+        int initialTop = viewPostScrollView.getPaddingTop();
+        int initialRight = viewPostScrollView.getPaddingRight();
+        int initialBottom = viewPostScrollView.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.viewPosts,
+                viewPostScrollView,
+                viewPostScrollView,
+                PREF_VIEW_POST_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    viewPostScrollView.setClipToPadding(false);
+                    viewPostScrollView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
+    }
+
+    private void setupFocusedFieldScroll() {
+        commentInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollCommentComposerAboveKeyboard();
+            }
+        });
+    }
+
+    private void scrollCommentComposerAboveKeyboard() {
+        viewPostScrollView.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            binding.writeReviewContainer.getDrawingRect(rect);
+            viewPostScrollView.offsetDescendantRectToMyCoords(binding.writeReviewContainer, rect);
+
+            int visibleHeight = viewPostScrollView.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                viewPostScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
     // Sets up click listeners for the return button and comment submission buttons
     private void setupListeners() {
         // Back button functionality
@@ -395,6 +465,9 @@ public class ViewPost extends AppCompatActivity {
 
         // Submit a new top-level comment
         submitCommentBttn.setOnClickListener(v -> {
+            if (isSubmittingComment) {
+                return;
+            }
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
@@ -417,6 +490,9 @@ public class ViewPost extends AppCompatActivity {
 
         // Submit a reply to an existing comment
         submitReplyBttn.setOnClickListener(v -> {
+            if (isSubmittingComment) {
+                return;
+            }
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a reply", Toast.LENGTH_SHORT).show();
@@ -435,16 +511,6 @@ public class ViewPost extends AppCompatActivity {
                 return;
             }
             submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
-
-            // Reset UI to comment mode
-            commentInput.setText("");
-            currentParentCommentId = null;
-            currentParentAuthorName = null;
-            replyingToUsername.setVisibility(View.GONE);
-            submitReplyBttn.setVisibility(View.GONE);
-            submitCommentBttn.setVisibility(View.VISIBLE);
-
-            Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -492,6 +558,23 @@ public class ViewPost extends AppCompatActivity {
         EditText descriptionEt = dialog.findViewById(R.id.report_description_et);
         Button cancelBtn = dialog.findViewById(R.id.report_cancel_btn);
         Button confirmBtn = dialog.findViewById(R.id.report_confirm_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_report_confirm_scroll);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "view_post_report_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
 
         // Setup spinner with reasons (default to POST_REASONS)
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -637,21 +720,40 @@ public class ViewPost extends AppCompatActivity {
                                @NonNull String body) {
         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
         if (current == null) return;
+        setCommentSubmissionInProgress(true);
         String authorUid = current.getUid();
         String authorName = resolveCurrentUserName(current);
         observeOnce(
                 viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, body),
                 persisted -> {
+                    setCommentSubmissionInProgress(false);
                     if (persisted == null) {
                         Toast.makeText(this, "Failed to add comment", Toast.LENGTH_SHORT).show();
                     } else {
                         commentInput.setText("");
+                        resetReplyMode();
                         Toast.makeText(this,
                                 parentCommentId == null ? "Comment added" : "Reply added",
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
         );
+    }
+
+    private void setCommentSubmissionInProgress(boolean inProgress) {
+        isSubmittingComment = inProgress;
+        submitCommentBttn.setEnabled(!inProgress);
+        submitReplyBttn.setEnabled(!inProgress);
+        submitCommentBttn.setAlpha(inProgress ? 0.6f : 1f);
+        submitReplyBttn.setAlpha(inProgress ? 0.6f : 1f);
+    }
+
+    private void resetReplyMode() {
+        currentParentCommentId = null;
+        currentParentAuthorName = null;
+        replyingToUsername.setVisibility(View.GONE);
+        submitReplyBttn.setVisibility(View.GONE);
+        submitCommentBttn.setVisibility(View.VISIBLE);
     }
 
     /**

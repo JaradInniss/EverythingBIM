@@ -186,6 +186,7 @@
          CONTENT AREA — all states live here
     ══════════════════════════════════════ -->
     <ScrollView
+        android:id="@+id/users_content_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/general_legend"
@@ -730,5 +731,12 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </RelativeLayout>

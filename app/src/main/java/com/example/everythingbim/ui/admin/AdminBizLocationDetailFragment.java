@@ -32,6 +32,7 @@ import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.ui.home.UserNotificationHelper;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -342,6 +343,22 @@ public class AdminBizLocationDetailFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         EditText reasonEt = dialog.findViewById(R.id.dialog_reject_reason_et);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        android.widget.ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_confirm_reject_scroll);
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "admin_business_location_reject_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
         dialog.findViewById(R.id.dialog_reject_yes).setOnClickListener(v -> {
             String reason = reasonEt.getText().toString().trim();
             if (reason.isEmpty()) { reasonEt.setError("Please enter a reason"); return; }

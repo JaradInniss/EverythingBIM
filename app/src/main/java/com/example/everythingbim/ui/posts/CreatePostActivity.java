@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.graphics.Rect;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -28,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,6 +57,7 @@ import com.example.everythingbim.databinding.ActivityCreatePostBinding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -82,6 +85,8 @@ import java.util.Locale;
 public class CreatePostActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final long SEARCH_DEBOUNCE_MS = 300L;
+    private static final String PREF_CREATE_POST_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_CREATE_POST_SCROLL_HINT_SEEN;
 
     private ActivityCreatePostBinding binding;
     private CreatePostViewModel viewModel;
@@ -103,6 +108,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private RecyclerView tagsRecyclerView;
     private ImageView uploadedImageView, submitPostBttnIcon, uploadMethodIcon;
     private ProgressBar searchProgress;
+    private ScrollView createPostScrollView;
 
     private LocationSearchAdapter locationAdapter;
     private UserSearchAdapter userSearchAdapter;
@@ -113,6 +119,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private final Runnable pendingSearchRunnable = this::performSearch;
     private boolean suppressSearchTextChange;
     private AutocompleteSessionToken autocompleteSessionToken;
+    private int currentKeyboardExtraBottom;
     @Nullable
     private AlertDialog uploadingDialog;
 
@@ -128,12 +135,10 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.postsMain, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-
             v.setPadding(systemBars.left,
                     systemBars.top,
                     systemBars.right,
-                    Math.max(systemBars.bottom, ime.bottom));
+                    systemBars.bottom);
             return insets;
         });
 
@@ -196,9 +201,13 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         uploadMethodIcon = binding.imageUploadMethodIcon;
 
         searchProgress = binding.createpostSearchProgress;
+        createPostScrollView = binding.createPostScroll;
 
         // Clear button is hidden by default and toggled by field input.
         clearPostContentBttn.setVisibility(View.GONE);
+
+        setupKeyboardInsets();
+        setupFocusedFieldScroll();
     }
 
     private void setupAdapters() {
@@ -233,12 +242,6 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
                     return;
                 }
                 searchHandler.postDelayed(pendingSearchRunnable, SEARCH_DEBOUNCE_MS);
-            }
-        });
-
-        searchEt.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                locationResultsCard.setVisibility(View.GONE);
             }
         });
 
@@ -290,6 +293,72 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
                 userResultsCard.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = createPostScrollView.getPaddingLeft();
+        int initialTop = createPostScrollView.getPaddingTop();
+        int initialRight = createPostScrollView.getPaddingRight();
+        int initialBottom = createPostScrollView.getPaddingBottom();
+
+        LayoutInflater.from(this).inflate(R.layout.view_scroll_hint_overlay, binding.postsMain, true);
+
+        KeyboardScrollHintHelper.attach(
+                binding.postsMain,
+                createPostScrollView,
+                createPostScrollView,
+                PREF_CREATE_POST_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    createPostScrollView.setClipToPadding(false);
+                    createPostScrollView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
+    }
+
+    private void setupFocusedFieldScroll() {
+        bindFocusScroll(searchEt, searchEt);
+        bindFocusScroll(captionEt, captionEt);
+        bindFocusScroll(userTagEt, userTagEt);
+    }
+
+    private void bindFocusScroll(View focusedView, View anchorView) {
+        focusedView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollAnchorAboveKeyboard(anchorView);
+            } else if (focusedView == searchEt) {
+                locationResultsCard.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private void scrollAnchorAboveKeyboard(View anchorView) {
+        createPostScrollView.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            createPostScrollView.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = createPostScrollView.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                createPostScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void observeViewModel() {

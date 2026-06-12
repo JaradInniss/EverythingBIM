@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/map_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -304,6 +305,7 @@
         </RelativeLayout>
 
         <ScrollView
+            android:id="@+id/map_details_scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="10dp">
@@ -756,5 +758,12 @@
 
     </LinearLayout>
     <!-- Map Location Details Container [End] -->
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </FrameLayout>

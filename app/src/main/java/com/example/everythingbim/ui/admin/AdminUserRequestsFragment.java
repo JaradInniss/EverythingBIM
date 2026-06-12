@@ -30,8 +30,11 @@ import java.util.Locale;
 import java.util.Set;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 public class AdminUserRequestsFragment extends Fragment {
+    private static final String PREF_ADMIN_USER_REQUESTS_SCROLL_HINT_SEEN =
+            "admin_user_requests_scroll_hint_seen";
 
     // ─── Bundle args ─────────────────────────
     // Pass REQUEST_TYPE = "location", "info", "dataset", "submissions", or "business_location"
@@ -124,6 +127,7 @@ public class AdminUserRequestsFragment extends Fragment {
         recyclerView.addItemDecoration(
                 new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
         recyclerView.setAdapter(adapter);
+        setupKeyboardHints(view);
 
         // Filter pills
         filterAll.setOnClickListener(v -> { readFilter = ReadFilter.ALL; updatePills(); applyFilters(); });
@@ -143,6 +147,25 @@ public class AdminUserRequestsFragment extends Fragment {
 
         loadData();
         return view;
+    }
+
+    private void setupKeyboardHints(View root) {
+        KeyboardScrollHintHelper.attach(
+                root,
+                root,
+                recyclerView,
+                PREF_ADMIN_USER_REQUESTS_SCROLL_HINT_SEEN,
+                extraBottom -> {
+                    if (recyclerView == null) {
+                        return;
+                    }
+                    recyclerView.setPadding(
+                            recyclerView.getPaddingLeft(),
+                            recyclerView.getPaddingTop(),
+                            recyclerView.getPaddingRight(),
+                            extraBottom);
+                    recyclerView.setClipToPadding(false);
+                });
     }
 
     // ────────────────────────────────────────────────────────

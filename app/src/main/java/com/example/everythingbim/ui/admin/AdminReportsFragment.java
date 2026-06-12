@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -27,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminReportsFragment extends Fragment {
+    private static final String PREF_ADMIN_REPORTS_SCROLL_HINT_SEEN =
+            "admin_reports_scroll_hint_seen";
 
     // Views
     private RecyclerView recyclerView;
@@ -90,6 +93,7 @@ public class AdminReportsFragment extends Fragment {
         recyclerView.addItemDecoration(
                 new DividerItemDecoration(requireContext(),
                         DividerItemDecoration.VERTICAL));
+        setupKeyboardHints(view);
 
         // Filter button
         filterBtn.setOnClickListener(v -> toggleFilterCard(true));
@@ -158,6 +162,25 @@ public class AdminReportsFragment extends Fragment {
         loadReports();
 
         return view;
+    }
+
+    private void setupKeyboardHints(View root) {
+        KeyboardScrollHintHelper.attach(
+                root,
+                root,
+                recyclerView,
+                PREF_ADMIN_REPORTS_SCROLL_HINT_SEEN,
+                extraBottom -> {
+                    if (recyclerView == null) {
+                        return;
+                    }
+                    recyclerView.setPadding(
+                            recyclerView.getPaddingLeft(),
+                            recyclerView.getPaddingTop(),
+                            recyclerView.getPaddingRight(),
+                            extraBottom);
+                    recyclerView.setClipToPadding(false);
+                });
     }
 
     // Filter card toggle
