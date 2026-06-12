@@ -38,7 +38,8 @@ public class AdminReportsFragment extends Fragment {
     private TextView countTv;
     private RadioGroup typeGroup;
     private RadioGroup severityGroup;
-    private RadioGroup statusGroup;
+    private RadioGroup readStatusGroup;  // Read/Unread filter
+    private RadioGroup statusGroup;       // Report status filter (In Review/Completed/Rejected)
 
     // Adapter + data
     private AdminReportsAdapter adapter;
@@ -48,7 +49,8 @@ public class AdminReportsFragment extends Fragment {
     // Active filters
     private String activeType     = null; // "Post" | "Account" | null
     private String activeSeverity = null; // "Minor" | "Moderate" | "Major" | null
-    private String activeStatus   = null; // "Read" | "Unread" | null
+    private String activeReadStatus = null; // "Read" | "Unread" | null
+    private String activeStatus   = null; // "In Review" | "Completed" | "Rejected" | null
 
     // Firebase
     private FirebaseFirestore db;
@@ -71,12 +73,14 @@ public class AdminReportsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.reports_recycler);
         searchEt     = view.findViewById(R.id.reports_search_et);
         filterBtn    = view.findViewById(R.id.reports_filter_btn);
+        View watchlistBtn = view.findViewById(R.id.reports_watchlist_btn);
         filterCard   = view.findViewById(R.id.reports_filter_card);
         filterScrim  = view.findViewById(R.id.reports_filter_scrim);
         filterTag    = view.findViewById(R.id.reports_filter_tag);
         countTv      = view.findViewById(R.id.reports_count_tv);
         typeGroup     = view.findViewById(R.id.filter_type_group);
         severityGroup = view.findViewById(R.id.filter_severity_group);
+        readStatusGroup = view.findViewById(R.id.filter_read_status_group);
         statusGroup   = view.findViewById(R.id.filter_status_group);
 
         // Setup RecyclerView
@@ -89,6 +93,13 @@ public class AdminReportsFragment extends Fragment {
 
         // Filter button
         filterBtn.setOnClickListener(v -> toggleFilterCard(true));
+
+        // Watchlist button - navigate to watch list screen
+        watchlistBtn.setOnClickListener(v -> {
+            if (getParentFragment() instanceof AdminFragment) {
+                ((AdminFragment) getParentFragment()).navigateToWatchList();
+            }
+        });
 
         // Scrim dismisses the filter card without applying
         filterScrim.setOnClickListener(v -> toggleFilterCard(false));
@@ -115,9 +126,20 @@ public class AdminReportsFragment extends Fragment {
 
         statusGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.filter_status_all)    activeStatus = null;
-            else if (checkedId == R.id.filter_status_unread) activeStatus = "Unread";
-            else if (checkedId == R.id.filter_status_read)   activeStatus = "Read";
+            else if (checkedId == R.id.filter_status_in_review) activeStatus = "In Review";
+            else if (checkedId == R.id.filter_status_completed) activeStatus = "Completed";
+            else if (checkedId == R.id.filter_status_rejected) activeStatus = "Rejected";
             else activeStatus = null;
+            applyFilters();
+            toggleFilterCard(false);
+        });
+
+        // Read Status filter (Read/Unread)
+        readStatusGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.filter_read_all)    activeReadStatus = null;
+            else if (checkedId == R.id.filter_read_unread) activeReadStatus = "Unread";
+            else if (checkedId == R.id.filter_read_read)   activeReadStatus = "Read";
+            else activeReadStatus = null;
             applyFilters();
             toggleFilterCard(false);
         });
@@ -165,12 +187,15 @@ public class AdminReportsFragment extends Fragment {
             if (activeSeverity != null
                     && !r.getSeverity().equalsIgnoreCase(activeSeverity)) continue;
 
-            // Status filter (Read/Unread)
-            if (activeStatus != null) {
+            // Read Status filter (Read/Unread)
+            if (activeReadStatus != null) {
                 boolean isRead = isEffectivelyRead(r);
-                if (activeStatus.equals("Read") && !isRead) continue;
-                if (activeStatus.equals("Unread") && isRead) continue;
+                if (activeReadStatus.equals("Read") && !isRead) continue;
+                if (activeReadStatus.equals("Unread") && isRead) continue;
             }
+
+            // Report Status filter (In Review/Completed/Rejected)
+            if (activeStatus != null && !r.getStatus().equalsIgnoreCase(activeStatus)) continue;
 
             displayedReports.add(r);
         }
@@ -178,13 +203,14 @@ public class AdminReportsFragment extends Fragment {
         adapter.notifyDataSetChanged();
         countTv.setText(String.valueOf(displayedReports.size()));
 
-        // Show active filter tag (format: "Severity, Type, Status")
+        // Show active filter tag (format: "Severity, Type, Read Status, Report Status")
         String severityLabel = activeSeverity != null ? activeSeverity : "All";
         String typeLabel = activeType != null ? activeType : "All";
-        String statusLabel = activeStatus != null ? activeStatus : "All";
-        String activeLabel = severityLabel + ", " + typeLabel + ", " + statusLabel;
+        String readLabel = activeReadStatus != null ? activeReadStatus : "All";
+        String reportLabel = activeStatus != null ? activeStatus : "All";
+        String activeLabel = severityLabel + ", " + typeLabel + ", " + readLabel + ", " + reportLabel;
 
-        if (activeType != null || activeSeverity != null || activeStatus != null) {
+        if (activeType != null || activeSeverity != null || activeReadStatus != null || activeStatus != null) {
             filterTag.setText(activeLabel);
             filterTag.setVisibility(View.VISIBLE);
         } else {
@@ -200,7 +226,7 @@ public class AdminReportsFragment extends Fragment {
         }
 
         listenerRegistration = db.collection("reports")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .orderBy("submittedAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         // Show placeholder on error
@@ -227,31 +253,44 @@ public class AdminReportsFragment extends Fragment {
                     } else {
                         allReports.clear();
                         for (QueryDocumentSnapshot doc : snapshot) {
-                            String id       = doc.getId().substring(0, 3).toUpperCase();
-                            String title    = doc.getString("title");
-                            String type     = doc.getString("type");
-                            String severity = doc.getString("severity");
-                            String docId    = doc.getId();
-                            boolean read    = Boolean.TRUE.equals(doc.getBoolean("read"));
+                            String docId = doc.getId();
+                            String id = docId.substring(0, Math.min(3, docId.length())).toUpperCase();
 
-                            com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                            // Read fields saved by ViewPost.submitReport()
+                            String reportType = doc.getString("reportType");  // "Post" or "Account"
+                            String reason = doc.getString("reason");         // "Spam", "Hacked account", etc.
+
+                            // Build title and derive severity
+                            String title = (reportType != null ? reportType : "Report") + " - " + (reason != null ? reason : "Unknown");
+                            String severity = deriveSeverity(reason);
+                            String type = reportType != null ? reportType : "Post";
+
+                            // Read date from submittedAt (Timestamp)
+                            com.google.firebase.Timestamp ts = doc.getTimestamp("submittedAt");
                             String date = ts != null
-                                    ? new java.text.SimpleDateFormat("yyyy/MM/dd",
-                                    java.util.Locale.getDefault()).format(ts.toDate())
+                                    ? new java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault()).format(ts.toDate())
                                     : "";
 
-                            String number = doc.contains("number")
-                                    ? "#" + doc.getLong("number")
-                                    : "#" + id;
+                            // Read additional fields for detail view
+                            String reportedUser = doc.getString("reportedUser") != null ? doc.getString("reportedUser") : "";
+                            String caption = doc.getString("postCaption") != null ? doc.getString("postCaption") : "";
+                            String imageUrl = doc.getString("postImageUrl") != null ? doc.getString("postImageUrl") : "";
+                            String status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+
+                            boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
 
                             allReports.add(new Report(
-                                    number,
-                                    title   != null ? title    : "Report",
-                                    type    != null ? type     : "Post",
-                                    severity != null ? severity : "Minor",
+                                    "#" + id,
+                                    title,
+                                    type,
+                                    severity,
                                     date,
                                     read,
-                                    doc.getId()
+                                    docId,
+                                    reportedUser,
+                                    caption,
+                                    imageUrl,
+                                    status
                             ));
                         }
                     }
@@ -262,6 +301,24 @@ public class AdminReportsFragment extends Fragment {
 
     // Listener registration for cleanup
     private com.google.firebase.firestore.ListenerRegistration listenerRegistration;
+
+    // Derive severity from report reason
+    private String deriveSeverity(String reason) {
+        if (reason == null) return "Minor";
+        switch (reason) {
+            case "Hacked account":
+                return "Major";
+            case "Dangerous activities":
+            case "Hate speech":
+            case "Sexual content":
+                return "Major";
+            case "Offensive behaviour":
+                return "Moderate";
+            case "Spam":
+            default:
+                return "Minor";
+        }
+    }
 
     @Override
     public void onDestroyView() {
@@ -389,6 +446,18 @@ public class AdminReportsFragment extends Fragment {
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
 
+            // Status dot
+            String status = r.getStatus();
+            if ("In Review".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+            } else if ("Completed".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+            } else if ("Rejected".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+            } else {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+            }
+
             // View button colour - use effective read state
             h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
@@ -419,16 +488,18 @@ public class AdminReportsFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             View dot;
+            View statusDot;
             TextView number, title, severity, date, viewBtn;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
-                dot      = itemView.findViewById(R.id.report_dot);
-                number   = itemView.findViewById(R.id.report_number);
-                title    = itemView.findViewById(R.id.report_title);
-                severity = itemView.findViewById(R.id.report_severity);
-                date     = itemView.findViewById(R.id.report_date);
-                viewBtn  = itemView.findViewById(R.id.report_view_btn);
+                dot        = itemView.findViewById(R.id.report_dot);
+                statusDot  = itemView.findViewById(R.id.status_dot);
+                number     = itemView.findViewById(R.id.report_number);
+                title      = itemView.findViewById(R.id.report_title);
+                severity   = itemView.findViewById(R.id.report_severity);
+                date       = itemView.findViewById(R.id.report_date);
+                viewBtn    = itemView.findViewById(R.id.report_view_btn);
             }
         }
     }

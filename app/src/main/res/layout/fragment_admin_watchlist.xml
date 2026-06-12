@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".AdminWatchListFragment">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:id="@+id/watchlist_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/prussian_blue"
+        android:paddingStart="10dp"
+        android:paddingEnd="16dp"
+        android:layout_alignParentTop="true">
+
+        <ImageButton
+            android:id="@+id/watchlist_back_btn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_caret_left"
+            android:background="@android:color/transparent"
+            android:contentDescription="Go back"
+            app:tint="@color/white"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Watch List"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium"
+            android:gravity="center" />
+
+        <!-- Spacer to balance the back button -->
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+
+    </LinearLayout>
+
+    <!-- Header info -->
+    <LinearLayout
+        android:id="@+id/watchlist_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/persian_blue"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="14dp"
+        android:layout_below="@id/watchlist_toolbar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monitored Accounts"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Accounts flagged for review and monitoring"
+            android:textColor="@color/light_grey"
+            android:textSize="12sp"
+            android:fontFamily="@font/roboto_medium" />
+
+        <!-- Count -->
+        <TextView
+            android:id="@+id/watchlist_count_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 accounts"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/roboto_medium"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+    <!-- Watch List RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/watchlist_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/watchlist_header"
+        android:padding="10dp"
+        android:clipToPadding="false"
+        android:background="@color/gray" />
+
+    <!-- Empty state -->
+    <LinearLayout
+        android:id="@+id/watchlist_empty_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/icon_watchlist"
+            app:tint="@color/dark_grey"
+            android:contentDescription="Empty"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No accounts on watch list"
+            android:textColor="@color/dark_grey"
+            android:textSize="16sp"
+            android:fontFamily="@font/roboto_medium" />
+
+    </LinearLayout>
+
+</RelativeLayout>

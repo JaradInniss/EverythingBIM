@@ -43,9 +43,8 @@ public class PostEntity {
     public String locationFirestoreId;
 
     /**
-     * Firestore document id for this post. Excluded from Room persistence.
+     * Firestore document id for this post. Used for Firestore operations.
      */
-    @Exclude
     public String firestoreId;
 
     /**
