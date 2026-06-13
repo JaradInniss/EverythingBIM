@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.user.UserFragment"
-    android:background="@color/white">
+    android:background="@color/true_cobalt">
 
     <!-- ==================== GUEST USER LAYOUT ==================== -->
     <LinearLayout
@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:background="@color/prussian_blue"
         android:gravity="center_horizontal"
         android:padding="24dp"
         android:visibility="gone">
@@ -104,7 +105,7 @@
                         android:layout_height="20dp"
                         android:layout_marginRight="10dp"
                         android:src="@drawable/ic_user"
-                        android:tint="@color/white"/>
+                        app:tint="@color/white" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -129,7 +130,7 @@
                         android:layout_height="20dp"
                         android:layout_marginRight="10dp"
                         android:src="@drawable/ic_storefront"
-                        android:tint="@color/white"/>
+                        app:tint="@color/white" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -172,6 +173,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
+        android:background="@color/white"
         android:orientation="vertical"
         android:visibility="gone">
 
@@ -715,7 +717,7 @@
                                 android:gravity="center_vertical"
                                 android:layout_marginBottom="16dp"
                                 android:padding="4dp"
-                                android:background="@drawable/bg_rectangle_pale_slate">
+                                android:background="@drawable/bg_rectangle_alice_blue">
 
                                 <com.google.android.material.textfield.TextInputLayout
                                     android:layout_width="0dp"
@@ -744,7 +746,7 @@
                                     android:layout_width="50dp"
                                     android:layout_height="50dp"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_rectangle_pale_slate">
+                                    android:background="@drawable/bg_rectangle_alice_blue">
 
                                     <ImageView
                                         android:id="@+id/general_user_edit_bio_btn_iv"
@@ -870,7 +872,7 @@
                                     android:layout_width="50dp"
                                     android:layout_height="match_parent"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_rectangle_pale_slate">
+                                    android:background="@drawable/bg_rectangle_alice_blue">
 
                                     <ImageView
                                         android:id="@+id/general_user_edit_username_btn_iv"
@@ -915,7 +917,7 @@
                                     android:layout_width="50dp"
                                     android:layout_height="match_parent"
                                     android:gravity="center"
-                                    android:background="@drawable/bg_rectangle_pale_slate">
+                                    android:background="@drawable/bg_rectangle_alice_blue">
 
                                     <ImageView
                                         android:id="@+id/general_user_edit_password_btn_iv"
@@ -1011,7 +1013,7 @@
                                     android:layout_height="20dp"
                                     android:layout_marginRight="10dp"
                                     android:src="@drawable/icon_sign_out"
-                                    android:tint="@color/white"/>
+                                     app:tint="@color/white" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -1037,7 +1039,7 @@
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
         android:orientation="vertical"
-        android:visibility=""
+        android:visibility="gone"
         android:background="@color/white">
 
         <!-- Dashboard Header -->
@@ -1640,6 +1642,51 @@
                                 android:layout_marginBottom="20dp"
                                 android:background="@color/dim_grey"/>
 
+                            <!-- Business User Edit Username Field -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginBottom="10dp">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="10dp"
+                                    android:hint="Username"
+                                    style="@style/txtInputLayout_style">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/business_edit_username_et"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="text"
+                                        android:focusable="false"
+                                        android:clickable="false"
+                                        style="@style/txtInputEditText_style"/>
+
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <!-- Business User Edit Username Button -->
+                                <LinearLayout
+                                    android:id="@+id/business_edit_username_btn"
+                                    android:layout_width="50dp"
+                                    android:layout_height="match_parent"
+                                    android:gravity="center"
+                                    android:background="@drawable/bg_rectangle_alice_blue">
+
+                                    <ImageView
+                                        android:id="@+id/business_edit_username_btn_iv"
+                                        android:layout_width="25dp"
+                                        android:layout_height="25dp"
+                                        android:src="@drawable/ic_edit"/>
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
                             <!-- Business User Edit Email Field -->
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -1958,7 +2005,7 @@
                                     android:layout_height="20dp"
                                     android:layout_marginRight="10dp"
                                     android:src="@drawable/icon_sign_out"
-                                    android:tint="@color/white"/>
+                                    app:tint="@color/white" />
 
                                 <TextView
                                     android:layout_width="wrap_content"

@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.map;
 
 import android.Manifest;
+import android.graphics.Color;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -984,9 +985,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             LatLng stopLatLng = new LatLng(stop.getLatitude(), stop.getLongitude());
             routePoints.add(stopLatLng);
 
-            float markerHue = index == routePreviewLocations.size() - 1
-                    ? getResources().getColor(R.color.space_indigo)
-                    : getResources().getColor(R.color.true_cobalt);
+            int markerColor = index == routePreviewLocations.size() - 1
+                    ? ContextCompat.getColor(requireContext(), R.color.space_indigo)
+                    : ContextCompat.getColor(requireContext(), R.color.periwinkle);
+            float[] hsv = new float[3];
+            Color.colorToHSV(markerColor, hsv);
+            float markerHue = hsv[0];
+
             String markerTitle = (index + 1) + ". " + stop.getName();
             String markerSnippet = index == routePreviewLocations.size() - 1
                     ? "Destination | " + stop.getDistanceLabel()

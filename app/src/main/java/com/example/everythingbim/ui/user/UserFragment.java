@@ -54,6 +54,7 @@ public class UserFragment extends Fragment {
 
     private TextView guestAdminAccessBtn, guestReplayTourBtn;
 
+    private LinearLayout generalSubmissionsTab, generalMyProfileTab, generalSettingsTab, businessSubmissionsTab, businessMyProfileTab, businessSettingsTab;
     private LinearLayout generalUserLogOutBtn, generalReplayTourBtn, businessUserLogOutBtn, businessReplayTourBtn, guestRegisterGeneralBtn, guestRegisterBusinessBtn;
     private LinearLayout newLocationReqBtn, viewLocationReqBtn, viewCompletedLocationReqBtn;
     private LinearLayout newInformationReqBtn, viewInformationReqBtn, viewCompletedInformationReqBtn;
@@ -85,13 +86,11 @@ public class UserFragment extends Fragment {
         switchUserLayout(getUserType());
 
         setupEditToggle(binding.getRoot(), R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn, R.id.general_user_edit_username_btn_iv);
-        setupEditToggle(binding.getRoot(), R.id.general_user_edit_email_et, R.id.general_user_edit_email_btn, R.id.general_user_edit_email_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn, R.id.general_user_edit_password_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.general_user_bio_et, R.id.general_user_edit_bio_btn, R.id.general_user_edit_bio_btn_iv);
 
         setupEditToggle(binding.getRoot(), R.id.business_edit_email_et, R.id.business_edit_email_btn, R.id.business_edit_email_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_edit_password_et, R.id.business_edit_password_btn, R.id.business_edit_password_btn_iv);
-        setupEditToggle(binding.getRoot(), R.id.business_edit_address_et, R.id.business_edit_address_btn, R.id.business_edit_address_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_edit_desc_et, R.id.business_edit_desc_btn, R.id.business_edit_desc_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_user_bio_et, R.id.business_user_edit_bio_btn, R.id.business_user_edit_bio_btn_iv);
 
@@ -103,6 +102,14 @@ public class UserFragment extends Fragment {
         layoutGeneralUser = binding.layoutGeneralUser;
         layoutBusinessUser = binding.layoutBusinessUser;
 
+        generalSubmissionsTab = binding.generalTabSubmissions;
+        generalMyProfileTab = binding.generalTabMyProfile;
+        generalSettingsTab = binding.generalTabSettings;
+
+        businessSubmissionsTab = binding.businessTabSubmissions;
+        businessMyProfileTab = binding.businessTabMyProfile;
+        businessSettingsTab = binding.businessTabSettings;
+
         generalContentSubmissions = binding.generalContentSubmissions;
         generalContentMyProfile = binding.generalContentMyProfile;
         generalContentSettings = binding.generalContentSettings;
@@ -111,13 +118,13 @@ public class UserFragment extends Fragment {
         businessContentMyProfile = binding.businessContentMyProfile;
         businessContentSettings = binding.businessContentSettings;
 
-        generalIndSubmissions = binding.generalTabSubmissions;
-        generalIndMyProfile = binding.generalTabMyProfile;
-        generalIndSettings = binding.generalTabSettings;
+        generalIndSubmissions = binding.generalTabSubmissionsIndicator;
+        generalIndMyProfile = binding.generalTabMyProfileIndicator;
+        generalIndSettings = binding.generalTabSettingsIndicator;
 
-        businessIndSubmissions = binding.businessTabSubmissions;
-        businessIndMyProfile = binding.businessTabMyProfile;
-        businessIndSettings = binding.businessTabSettings;
+        businessIndSubmissions = binding.businessTabSubmissionsIndicator;
+        businessIndMyProfile = binding.businessTabMyProfileIndicator;
+        businessIndSettings = binding.businessTabSettingsIndicator;
 
         // Buttons
         generalUserLogOutBtn = binding.generalUserBtnLogout;
@@ -249,15 +256,16 @@ public class UserFragment extends Fragment {
     private void setupGeneralUserTabs(View view) {
         switchGeneralTab(0);
 
-        generalIndSubmissions.setOnClickListener(v -> switchGeneralTab(0));
-        generalIndMyProfile.setOnClickListener(v -> switchGeneralTab(1));
-        generalIndSettings.setOnClickListener(v -> switchGeneralTab(2));
+        generalSubmissionsTab.setOnClickListener(v -> switchGeneralTab(0));
+        generalMyProfileTab.setOnClickListener(v -> switchGeneralTab(1));
+        generalSettingsTab.setOnClickListener(v -> switchGeneralTab(2));
     }
 
     private void switchGeneralTab(int tab) {
         generalContentSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
         generalContentMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
         generalContentSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+
         generalIndSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
         generalIndMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
         generalIndSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
@@ -266,9 +274,9 @@ public class UserFragment extends Fragment {
     private void setupBusinessUserTabs(View view) {
         switchBusinessTab(0);
 
-        businessIndSubmissions.setOnClickListener(v -> switchBusinessTab(0));
-        businessIndMyProfile.setOnClickListener(v -> switchBusinessTab(1));
-        businessIndSettings.setOnClickListener(v -> switchBusinessTab(2));
+        businessSubmissionsTab.setOnClickListener(v -> switchBusinessTab(0));
+        businessMyProfileTab.setOnClickListener(v -> switchBusinessTab(1));
+        businessSettingsTab.setOnClickListener(v -> switchBusinessTab(2));
     }
 
     private void switchBusinessTab(int tab) {
@@ -297,8 +305,6 @@ public class UserFragment extends Fragment {
         }
         ImageView icon = root.findViewById(iconId);
 
-        button.setOnClickListener(v -> toggleFieldEdit(field, button, icon));
-
         // Special handling for password and description - open dialog immediately
         if (fieldId == R.id.business_edit_password_et || fieldId == R.id.general_user_edit_password_et) {
             button.setOnClickListener(v -> openPasswordDialog());
@@ -310,10 +316,10 @@ public class UserFragment extends Fragment {
         }
 
         // Normal behavior for other fields
-        button.setOnClickListener(v -> toggleFieldEdit(field, button, fieldId));
+        button.setOnClickListener(v -> toggleFieldEdit(field, button, icon, fieldId));
     }
 
-    private void toggleFieldEdit(TextInputEditText field, LinearLayout button, ImageView icon) {
+    private void toggleFieldEdit(TextInputEditText field, LinearLayout button, ImageView icon, int fieldId) {
         // TextInputLayout is the direct parent of TextInputEditText
         ViewParent parent = field.getParent();
         android.util.Log.d("UserFragment", "direct parent=" + (parent != null ? parent.getClass().getName() : "null"));
@@ -354,6 +360,7 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
+
             // Blue background, white icon
             button.setBackgroundResource(R.drawable.bg_rectangle_blue);
             icon.setImageTintList(android.content.res.ColorStateList.valueOf(
@@ -363,6 +370,7 @@ public class UserFragment extends Fragment {
             if (fieldLayout != null) {
                 fieldLayout.setBackgroundResource(R.drawable.bg_border_rectangle_alice_blue_2);
             }
+
         } else {
             // Exiting edit mode - retrieve original value from tag (set when entering edit mode)
             String storedOriginal = (String) field.getTag();
@@ -375,35 +383,26 @@ public class UserFragment extends Fragment {
                             requireActivity().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(field.getWindowToken(), 0);
 
-            // Reset button appearance
-            button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
-            button.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
-            ));
-            if (finalFieldLayout != null) {
-                finalFieldLayout.setBoxStrokeColor(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
-                );
-            }
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
+
             // Grey background, black icon
-            button.setBackgroundResource(R.drawable.bg_rectangle_pale_slate);
+            button.setBackgroundResource(R.drawable.bg_rectangle_alice_blue);
             icon.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
             ));
             // Reset field outline to grey
             if (fieldLayout != null) {
-                fieldLayout.setBackgroundResource(R.drawable.bg_rectangle_pale_slate);
+                fieldLayout.setBackgroundResource(R.drawable.bg_rectangle_alice_blue);
             }
 
             // Check if value actually changed (for email/bio fields)
             if (!newValue.equals(trimmedOriginal)) {
                 android.util.Log.d("UserFragment", "Value changed - showing dialog");
                 showFieldDialog(fieldId, newValue,
-                    () -> saveField(fieldId, newValue),
-                    () -> resetFieldToOriginal(field, button, finalFieldLayout, trimmedOriginal));
+                        () -> saveField(fieldId, newValue),
+                        () -> resetFieldToOriginal(field, button, icon, finalFieldLayout, trimmedOriginal));
             } else {
                 // No change - just reset UI without dialog
                 android.util.Log.d("UserFragment", "No change - no dialog");
@@ -545,9 +544,9 @@ public class UserFragment extends Fragment {
         dialog.show();
     }
 
-    private void resetFieldToOriginal(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout, String originalValue) {
+    private void resetFieldToOriginal(TextInputEditText field, LinearLayout button, ImageView icon,TextInputLayout fieldLayout, String originalValue) {
         field.setText(originalValue);
-        resetField(field, button, fieldLayout);
+        resetField(field, button, icon, fieldLayout);
     }
 
     private String getFieldName(int fieldId) {
@@ -725,43 +724,43 @@ public class UserFragment extends Fragment {
             onCancel.run();
         });
 
-return dialog;
+        return dialog;
     }
 
-private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
-        final Dialog dialog = new Dialog(requireContext());
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_confirm_field_change);
+    private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+            final Dialog dialog = new Dialog(requireContext());
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.setContentView(R.layout.dialog_confirm_field_change);
 
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawableResource(android.R.color.transparent);
-            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            WindowManager.LayoutParams params = window.getAttributes();
-            params.gravity = android.view.Gravity.CENTER;
-            window.setAttributes(params);
-        }
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setBackgroundDrawableResource(android.R.color.transparent);
+                window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                WindowManager.LayoutParams params = window.getAttributes();
+                params.gravity = android.view.Gravity.CENTER;
+                window.setAttributes(params);
+            }
 
-        TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
-        TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
-        Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
-        Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
+            TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
+            TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
+            Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
+            Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
 
-        String fieldName = getFieldName(fieldId);
-        if (titleTv != null) titleTv.setText("Confirm " + fieldName + " Change?");
-        if (messageTv != null) messageTv.setText("Update " + fieldName.toLowerCase() + " to:\n\n" + currentValue);
+            String fieldName = getFieldName(fieldId);
+            if (titleTv != null) titleTv.setText("Confirm " + fieldName + " Change?");
+            if (messageTv != null) messageTv.setText("Update " + fieldName.toLowerCase() + " to:\n\n" + currentValue);
 
-        yesBtn.setOnClickListener(v -> {
-            dialog.dismiss();
-            onSave.run();
-        });
+            yesBtn.setOnClickListener(v -> {
+                dialog.dismiss();
+                onSave.run();
+            });
 
-        noBtn.setOnClickListener(v -> {
-            dialog.dismiss();
-            onCancel.run();
-        });
+            noBtn.setOnClickListener(v -> {
+                dialog.dismiss();
+                onCancel.run();
+            });
 
-        return dialog;
+            return dialog;
     }
 
     private String getAddressFromObject(Object addressObj) {
@@ -1056,12 +1055,12 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
             });
     }
 
-    private void resetField(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout) {
+    private void resetField(TextInputEditText field, LinearLayout button, ImageView icon, TextInputLayout fieldLayout) {
         field.setFocusable(false);
         field.setFocusableInTouchMode(false);
         field.setClickable(false);
         button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
-        button.setImageTintList(android.content.res.ColorStateList.valueOf(
+        icon.setImageTintList(android.content.res.ColorStateList.valueOf(
                 androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
         ));
         if (fieldLayout != null) {
