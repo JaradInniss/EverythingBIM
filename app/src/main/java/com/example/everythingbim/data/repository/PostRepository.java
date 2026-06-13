@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.everythingbim.data.local.AppDatabase;
@@ -113,6 +114,7 @@ public class PostRepository {
                     for (DocumentSnapshot doc : value.getDocuments()) {
                         PostEntity post = mapPostFromFirestore(doc);
                         if (post == null) continue;
+                        queuePortableLocationBackfill(post, doc.getReference());
                         posts.add(post);
                     }
 
@@ -233,6 +235,7 @@ public class PostRepository {
                     for (DocumentSnapshot doc : value.getDocuments()) {
                         PostEntity post = mapPostFromFirestore(doc);
                         if (post == null) continue;
+                        queuePortableLocationBackfill(post, doc.getReference());
                         posts.add(post);
                     }
                     // Mirror into Room so offline reads (e.g. ViewPost's
@@ -380,6 +383,72 @@ public class PostRepository {
         return map;
     }
 
+    private void queuePortableLocationBackfill(@NonNull PostEntity post,
+                                               @NonNull com.google.firebase.firestore.DocumentReference postRef) {
+        executorService.execute(() -> backfillPortableLocationFieldsIfMissing(post, postRef));
+    }
+
+    private void backfillPortableLocationFieldsIfMissing(@NonNull PostEntity post,
+                                                         @NonNull com.google.firebase.firestore.DocumentReference postRef) {
+        if (hasPortableCoordinates(post) && hasText(post.locationAddress)) {
+            return;
+        }
+
+        LocationEntity candidate = null;
+        if (post.locationId > 0L) {
+            candidate = locationDao.getLocationByIdSync(post.locationId);
+        }
+        if (!hasValidCoordinates(candidate) && hasText(post.locationName)) {
+            candidate = locationDao.getResolvedLocationByNameSync(post.locationName.trim());
+        }
+        if (!hasValidCoordinates(candidate) && hasText(post.locationName)) {
+            candidate = locationDao.getResolvedLocationByNameLooseSync(post.locationName.trim());
+        }
+        if (!hasValidCoordinates(candidate)) {
+            return;
+        }
+
+        boolean changed = false;
+        if (!hasPortableCoordinates(post)) {
+            post.locationLatitude = candidate.latitude;
+            post.locationLongitude = candidate.longitude;
+            changed = true;
+        }
+        if (!hasText(post.locationAddress) && hasText(candidate.address)) {
+            post.locationAddress = candidate.address;
+            changed = true;
+        }
+        if (!hasText(post.locationName) && hasText(candidate.name)) {
+            post.locationName = candidate.name;
+            changed = true;
+        }
+        if (!changed) {
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        if (post.locationLatitude != null) {
+            updates.put("locationLatitude", post.locationLatitude);
+        }
+        if (post.locationLongitude != null) {
+            updates.put("locationLongitude", post.locationLongitude);
+        }
+        if (hasText(post.locationAddress)) {
+            updates.put("locationAddress", post.locationAddress);
+        }
+        if (hasText(post.locationName)) {
+            updates.put("locationName", post.locationName);
+        }
+        if (updates.isEmpty()) {
+            return;
+        }
+
+        postRef.update(updates)
+                .addOnFailureListener(error -> Log.w(TAG,
+                        "Failed to backfill portable location fields for post " + postRef.getId(),
+                        error));
+    }
+
     @androidx.annotation.Nullable
     private PostEntity mapPostFromFirestore(@NonNull DocumentSnapshot doc) {
         try {
@@ -454,7 +523,19 @@ public class PostRepository {
             liveData.setValue(null);
             return liveData;
         }
-        return locationDao.getResolvedLocationByName(locationName.trim());
+        String normalizedName = locationName.trim();
+        MediatorLiveData<LocationEntity> result = new MediatorLiveData<>();
+        LiveData<LocationEntity> exact = locationDao.getResolvedLocationByName(normalizedName);
+        LiveData<LocationEntity> loose = locationDao.getResolvedLocationByNameLoose(normalizedName);
+
+        result.addSource(exact, location -> {
+            if (hasValidCoordinates(location)) {
+                result.setValue(location);
+            } else {
+                result.addSource(loose, looseLocation -> result.setValue(looseLocation));
+            }
+        });
+        return result;
     }
 
     @androidx.annotation.Nullable
@@ -463,6 +544,21 @@ public class PostRepository {
             return ((Number) value).doubleValue();
         }
         return null;
+    }
+
+    private boolean hasPortableCoordinates(@NonNull PostEntity post) {
+        return post.locationLatitude != null
+                && post.locationLongitude != null
+                && (post.locationLatitude != 0.0d || post.locationLongitude != 0.0d);
+    }
+
+    private boolean hasValidCoordinates(@androidx.annotation.Nullable LocationEntity location) {
+        return location != null
+                && (location.latitude != 0.0d || location.longitude != 0.0d);
+    }
+
+    private boolean hasText(@androidx.annotation.Nullable String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public LiveData<List<LocationEntity>> getAllLocations() {

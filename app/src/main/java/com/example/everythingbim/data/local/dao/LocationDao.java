@@ -50,8 +50,29 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
 
-    @Query("SELECT * FROM locations WHERE name = :name AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
+    @Query("SELECT * FROM locations WHERE lower(trim(name)) = lower(trim(:name)) AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
     LiveData<LocationEntity> getResolvedLocationByName(String name);
+
+    @Query("SELECT * FROM locations WHERE lower(trim(name)) = lower(trim(:name)) AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
+    LocationEntity getResolvedLocationByNameSync(String name);
+
+    @Query("SELECT * FROM locations " +
+            "WHERE (latitude != 0 OR longitude != 0) " +
+            "AND (" +
+            "lower(name) LIKE '%' || lower(trim(:name)) || '%' " +
+            "OR lower(trim(:name)) LIKE '%' || lower(name) || '%'" +
+            ") " +
+            "ORDER BY locationId DESC LIMIT 1")
+    LiveData<LocationEntity> getResolvedLocationByNameLoose(String name);
+
+    @Query("SELECT * FROM locations " +
+            "WHERE (latitude != 0 OR longitude != 0) " +
+            "AND (" +
+            "lower(name) LIKE '%' || lower(trim(:name)) || '%' " +
+            "OR lower(trim(:name)) LIKE '%' || lower(name) || '%'" +
+            ") " +
+            "ORDER BY locationId DESC LIMIT 1")
+    LocationEntity getResolvedLocationByNameLooseSync(String name);
 
     /**
      * Synchronous variant of {@link #getLocationById(long)} for use from
