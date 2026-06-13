@@ -131,11 +131,7 @@ public class PostFragment extends Fragment {
         viewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
             allPosts.clear();
             if (posts != null) {
-                for (PostEntity post : posts) {
-                    if (isSyncedPost(post)) {
-                        allPosts.add(post);
-                    }
-                }
+                allPosts.addAll(posts);
             }
             applySearchAndSuggestions();
         });
@@ -309,13 +305,6 @@ public class PostFragment extends Fragment {
         }
         return "Unknown location";
     }
-
-    private boolean isSyncedPost(@Nullable PostEntity post) {
-        return post != null
-                && post.firestoreId != null
-                && !post.firestoreId.trim().isEmpty();
-    }
-
     private boolean isPostingAuthorized() {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             return false;

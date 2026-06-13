@@ -71,6 +71,8 @@ public class ViewPost extends AppCompatActivity {
     private long postId;
     private long lastObservedLocationId = -1L;
     private String lastObservedLocationName = null;
+    private LiveData<LocationEntity> fallbackLocationLiveData;
+    private Observer<LocationEntity> fallbackLocationObserver;
 
     // The most recently observed post; used to add comments without
     // re-resolving the firestoreId at click time.
@@ -328,6 +330,7 @@ public class ViewPost extends AppCompatActivity {
         }
 
         if (hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            clearFallbackLocationObserver();
             String label = normalizedLocationName != null && !normalizedLocationName.isEmpty()
                     ? normalizedLocationName
                     : "Saved location";
@@ -347,6 +350,7 @@ public class ViewPost extends AppCompatActivity {
 
     private void bindLocationTag(@NonNull PostEntity post, @Nullable LocationEntity locationEntity) {
         if (hasValidCoordinates(locationEntity)) {
+            clearFallbackLocationObserver();
             binding.viewpostLocation.setText(locationEntity.name);
             binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
             return;
@@ -358,12 +362,11 @@ public class ViewPost extends AppCompatActivity {
         }
 
         binding.viewpostLocation.setText(post.locationName.trim());
-        observeOnce(viewModel.getResolvedLocationByName(post.locationName), fallbackLocation -> {
+        observeFallbackLocation(post, fallbackLocation -> {
             if (hasValidCoordinates(fallbackLocation)) {
                 binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(fallbackLocation));
             } else {
-                binding.viewpostLocation.setOnClickListener(v ->
-                        Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show());
+                binding.viewpostLocation.setOnClickListener(v -> openLocationOnMapByName(post.locationName));
             }
         });
     }
@@ -398,6 +401,10 @@ public class ViewPost extends AppCompatActivity {
 
     private void openLocationOnMap(@NonNull PostEntity post) {
         if (!hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            if (post.locationName != null && !post.locationName.trim().isEmpty()) {
+                openLocationOnMapByName(post.locationName);
+                return;
+            }
             Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -414,6 +421,22 @@ public class ViewPost extends AppCompatActivity {
                         : "Saved location");
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE,
                 post.locationAddress != null ? post.locationAddress : "");
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+    }
+
+    private void openLocationOnMapByName(@Nullable String locationName) {
+        if (locationName == null || locationName.trim().isEmpty()) {
+            Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, 0d);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, 0d);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, locationName.trim());
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, "");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
@@ -436,6 +459,22 @@ public class ViewPost extends AppCompatActivity {
                 observer.onChanged(value);
             }
         });
+    }
+
+    private void observeFallbackLocation(@NonNull PostEntity post,
+                                         @NonNull Observer<LocationEntity> observer) {
+        clearFallbackLocationObserver();
+        fallbackLocationLiveData = viewModel.getResolvedLocationByName(post.locationName);
+        fallbackLocationObserver = observer;
+        fallbackLocationLiveData.observe(this, fallbackLocationObserver);
+    }
+
+    private void clearFallbackLocationObserver() {
+        if (fallbackLocationLiveData != null && fallbackLocationObserver != null) {
+            fallbackLocationLiveData.removeObserver(fallbackLocationObserver);
+        }
+        fallbackLocationLiveData = null;
+        fallbackLocationObserver = null;
     }
 
     private void setupKeyboardInsets() {
@@ -579,6 +618,12 @@ public class ViewPost extends AppCompatActivity {
             }
             submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        clearFallbackLocationObserver();
+        super.onDestroy();
     }
 
     // Report dialog reasons
