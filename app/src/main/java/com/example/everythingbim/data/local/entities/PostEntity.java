@@ -37,7 +37,7 @@ public class PostEntity {
     public long postId;
 
     /**
-     * Firestore document id for the location (if applicable). Excluded from Room persistence.
+     * Stable Firestore document id for the location (if applicable).
      */
     @Exclude
     public String locationFirestoreId;
@@ -55,6 +55,10 @@ public class PostEntity {
 
     public long locationId;
     public String locationName;
+    public Double locationLatitude;
+    public Double locationLongitude;
+    public String locationAddress;
+    public String locationPlaceId;
     public long authorId;
     public String authorName;
     public String caption;
@@ -129,5 +133,17 @@ public class PostEntity {
         this.imageUrl = imageUrl;
         this.createdAt = createdAt;
         this.taggedUserUids = taggedUserUids;
+    }
+
+    public void setPortableLocationSnapshot(Double latitude,
+                                            Double longitude,
+                                            String address,
+                                            String placeId,
+                                            String firestoreId) {
+        this.locationLatitude = latitude;
+        this.locationLongitude = longitude;
+        this.locationAddress = address;
+        this.locationPlaceId = placeId;
+        this.locationFirestoreId = firestoreId;
     }
 }

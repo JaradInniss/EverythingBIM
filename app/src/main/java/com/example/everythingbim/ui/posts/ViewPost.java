@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
@@ -69,6 +70,7 @@ public class ViewPost extends AppCompatActivity {
     private ViewPostTagAdapter taggedUsersAdapter;
     private long postId;
     private long lastObservedLocationId = -1L;
+    private String lastObservedLocationName = null;
 
     // The most recently observed post; used to add comments without
     // re-resolving the firestoreId at click time.
@@ -300,7 +302,7 @@ public class ViewPost extends AppCompatActivity {
         // Load the post image
         ImageReferenceLoader.loadInto(postImage, post.imageUrl, R.drawable.butterfly);
 
-        setupLocationTag(post.locationId);
+        setupLocationTag(post);
     }
 
     private String resolveAuthorLabel(PostEntity post) {
@@ -310,30 +312,76 @@ public class ViewPost extends AppCompatActivity {
         return "User " + post.authorId;
     }
 
-    private void setupLocationTag(long locationId) {
-        if (locationId == lastObservedLocationId) {
+    private void setupLocationTag(@NonNull PostEntity post) {
+        String normalizedLocationName = post.locationName != null ? post.locationName.trim() : null;
+        if (post.locationId == lastObservedLocationId
+                && ((normalizedLocationName == null && lastObservedLocationName == null)
+                || (normalizedLocationName != null && normalizedLocationName.equals(lastObservedLocationName)))) {
             return;
         }
-        lastObservedLocationId = locationId;
+        lastObservedLocationId = post.locationId;
+        lastObservedLocationName = normalizedLocationName;
 
-        if (locationId <= 0L) {
-            binding.viewpostLocation.setText("Unknown location");
-            binding.viewpostLocation.setOnClickListener(null);
+        if ((normalizedLocationName == null || normalizedLocationName.isEmpty()) && post.locationId <= 0L) {
+            showUnknownLocationTag();
             return;
         }
 
-        viewModel.getLocationById(locationId).observe(this, this::bindLocationTag);
+        if (hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            String label = normalizedLocationName != null && !normalizedLocationName.isEmpty()
+                    ? normalizedLocationName
+                    : "Saved location";
+            binding.viewpostLocation.setText(label);
+            binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(post));
+            return;
+        }
+
+        if (post.locationId > 0L) {
+            viewModel.getLocationById(post.locationId).observe(this, locationEntity ->
+                    bindLocationTag(post, locationEntity));
+            return;
+        }
+
+        bindLocationTag(post, null);
     }
 
-    private void bindLocationTag(LocationEntity locationEntity) {
-        if (locationEntity == null) {
-            binding.viewpostLocation.setText("Unknown location");
-            binding.viewpostLocation.setOnClickListener(null);
+    private void bindLocationTag(@NonNull PostEntity post, @Nullable LocationEntity locationEntity) {
+        if (hasValidCoordinates(locationEntity)) {
+            binding.viewpostLocation.setText(locationEntity.name);
+            binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
             return;
         }
 
-        binding.viewpostLocation.setText(locationEntity.name);
-        binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
+        if (post.locationName == null || post.locationName.trim().isEmpty()) {
+            showUnknownLocationTag();
+            return;
+        }
+
+        binding.viewpostLocation.setText(post.locationName.trim());
+        observeOnce(viewModel.getResolvedLocationByName(post.locationName), fallbackLocation -> {
+            if (hasValidCoordinates(fallbackLocation)) {
+                binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(fallbackLocation));
+            } else {
+                binding.viewpostLocation.setOnClickListener(v ->
+                        Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void showUnknownLocationTag() {
+        binding.viewpostLocation.setText("Unknown location");
+        binding.viewpostLocation.setOnClickListener(null);
+    }
+
+    private boolean hasValidCoordinates(@Nullable LocationEntity locationEntity) {
+        return locationEntity != null
+                && (locationEntity.latitude != 0.0d || locationEntity.longitude != 0.0d);
+    }
+
+    private boolean hasValidCoordinates(@Nullable Double latitude, @Nullable Double longitude) {
+        return latitude != null
+                && longitude != null
+                && (latitude != 0.0d || longitude != 0.0d);
     }
 
     private void openLocationOnMap(LocationEntity locationEntity) {
@@ -344,6 +392,28 @@ public class ViewPost extends AppCompatActivity {
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, locationEntity.longitude);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, locationEntity.name);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, locationEntity.address);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+    }
+
+    private void openLocationOnMap(@NonNull PostEntity post) {
+        if (!hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        if (post.locationId > 0L) {
+            intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, post.locationId);
+        }
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, post.locationLatitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, post.locationLongitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME,
+                post.locationName != null && !post.locationName.trim().isEmpty()
+                        ? post.locationName.trim()
+                        : "Saved location");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE,
+                post.locationAddress != null ? post.locationAddress : "");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }

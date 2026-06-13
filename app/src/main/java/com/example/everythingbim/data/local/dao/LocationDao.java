@@ -50,6 +50,9 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
 
+    @Query("SELECT * FROM locations WHERE name = :name AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
+    LiveData<LocationEntity> getResolvedLocationByName(String name);
+
     /**
      * Synchronous variant of {@link #getLocationById(long)} for use from
      * background threads (e.g. inside a Firestore mirror that needs to

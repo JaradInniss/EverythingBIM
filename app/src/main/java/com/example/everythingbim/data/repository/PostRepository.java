@@ -147,7 +147,13 @@ public class PostRepository {
                 // even when this is the first time we're seeing this
                 // location (e.g. a brand-new post referencing a
                 // not-yet-cached location).
-                ensureLocationExists(post.locationId, post.locationName);
+                ensureLocationExists(
+                        post.locationId,
+                        post.locationName,
+                        post.locationLatitude,
+                        post.locationLongitude,
+                        post.locationAddress
+                );
                 // Use upsert (not insert) so a re-snapshot of the same
                 // post doesn't fail with UNIQUE constraint. The previous
                 // INSERT-OR-REPLACE could fail on the DELETE step of the
@@ -167,19 +173,24 @@ public class PostRepository {
      * (if known), and zeroed coordinates so the foreign key is satisfied
      * and the row can be replaced later with the real one.
      */
-    private void ensureLocationExists(long locationId, @androidx.annotation.Nullable String fallbackName) {
+    private void ensureLocationExists(long locationId,
+                                      @androidx.annotation.Nullable String fallbackName,
+                                      @androidx.annotation.Nullable Double fallbackLatitude,
+                                      @androidx.annotation.Nullable Double fallbackLongitude,
+                                      @androidx.annotation.Nullable String fallbackAddress) {
         if (locationId <= 0L) return;
         if (locationDao.getLocationByIdSync(locationId) != null) return;
         LocationEntity placeholder = new LocationEntity(
                 fallbackName != null && !fallbackName.isEmpty() ? fallbackName : "Unknown location",
-                0.0, 0.0,
+                fallbackLatitude != null ? fallbackLatitude : 0.0,
+                fallbackLongitude != null ? fallbackLongitude : 0.0,
                 0f,
                 false,
                 "firestore-mirror",
                 "",
                 "",
                 "",
-                ""
+                fallbackAddress != null ? fallbackAddress : ""
         );
         // Pre-set the id so it matches the post's locationId reference.
         placeholder.setLocationId(locationId);
@@ -264,7 +275,13 @@ public class PostRepository {
                             // UNIQUE constraint violation, and so the FK to
                             // locations is satisfied via ensureLocationExists
                             // before the row is written.
-                            ensureLocationExists(post.locationId, post.locationName);
+                            ensureLocationExists(
+                                    post.locationId,
+                                    post.locationName,
+                                    post.locationLatitude,
+                                    post.locationLongitude,
+                                    post.locationAddress
+                            );
                             postDao.upsert(post);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to cache new post in Room", e);
@@ -315,7 +332,13 @@ public class PostRepository {
                             // streamed into the cache yet would fail with
                             // "FOREIGN KEY constraint failed" the first
                             // time the createPost callback runs.
-                            ensureLocationExists(post.locationId, post.locationName);
+                            ensureLocationExists(
+                                    post.locationId,
+                                    post.locationName,
+                                    post.locationLatitude,
+                                    post.locationLongitude,
+                                    post.locationAddress
+                            );
                             postDao.upsert(post);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to cache new post in Room", e);
@@ -344,6 +367,11 @@ public class PostRepository {
         map.put("createdAt", post.createdAt);
         map.put("locationId", post.locationId);
         map.put("locationName", post.locationName);
+        map.put("locationLatitude", post.locationLatitude);
+        map.put("locationLongitude", post.locationLongitude);
+        map.put("locationAddress", post.locationAddress);
+        map.put("locationPlaceId", post.locationPlaceId);
+        map.put("locationFirestoreId", post.locationFirestoreId);
         map.put("taggedUserUids", post.taggedUserUids);
         // Initialise the denormalized like counter so the post has a
         // starting value of 0; subsequent increments/decrements are
@@ -358,6 +386,11 @@ public class PostRepository {
             Long locationId = doc.getLong("locationId");
             Long authorId = doc.getLong("authorId");
             String locationName = doc.getString("locationName");
+            Double locationLatitude = getNullableDouble(doc.get("locationLatitude"));
+            Double locationLongitude = getNullableDouble(doc.get("locationLongitude"));
+            String locationAddress = doc.getString("locationAddress");
+            String locationPlaceId = doc.getString("locationPlaceId");
+            String locationFirestoreId = doc.getString("locationFirestoreId");
             String authorName = doc.getString("authorName");
             String authorUid = doc.getString("authorUid");
             String caption = doc.getString("caption");
@@ -380,6 +413,13 @@ public class PostRepository {
             );
             post.firestoreId = doc.getId();
             post.postId = stableLongFromString(doc.getId());
+            post.setPortableLocationSnapshot(
+                    locationLatitude,
+                    locationLongitude,
+                    locationAddress,
+                    locationPlaceId,
+                    locationFirestoreId
+            );
             Long likeCount = doc.getLong("likeCount");
             post.likeCount = likeCount != null ? likeCount.intValue() : 0;
             Long commentCount = doc.getLong("commentCount");
@@ -406,6 +446,23 @@ public class PostRepository {
 
     public LiveData<LocationEntity> getLocationById(long locationId) {
         return locationDao.getLocationById(locationId);
+    }
+
+    public LiveData<LocationEntity> getResolvedLocationByName(@androidx.annotation.Nullable String locationName) {
+        if (locationName == null || locationName.trim().isEmpty()) {
+            androidx.lifecycle.MutableLiveData<LocationEntity> liveData = new androidx.lifecycle.MutableLiveData<>();
+            liveData.setValue(null);
+            return liveData;
+        }
+        return locationDao.getResolvedLocationByName(locationName.trim());
+    }
+
+    @androidx.annotation.Nullable
+    private Double getNullableDouble(@androidx.annotation.Nullable Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return null;
     }
 
     public LiveData<List<LocationEntity>> getAllLocations() {
