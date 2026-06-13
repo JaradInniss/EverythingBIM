@@ -67,6 +67,10 @@ public class PostViewModel extends AndroidViewModel {
         return repository.getLocationById(locationId);
     }
 
+    public LiveData<LocationEntity> getResolvedLocationByName(@Nullable String locationName) {
+        return repository.getResolvedLocationByName(locationName);
+    }
+
     /**
      * LiveData that emits the list of users tagged in the given post, fetched
      * from Firestore by their Firebase UIDs ({@link PostEntity#taggedUserUids}).

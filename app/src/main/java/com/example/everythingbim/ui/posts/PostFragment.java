@@ -247,7 +247,7 @@ public class PostFragment extends Fragment {
                     filtered.add(post);
                 }
             } else {
-                String locationName = getLocationName(post.locationId);
+                String locationName = getLocationName(post);
                 if (locationName.toLowerCase(Locale.US).contains(normalizedQuery)) {
                     filtered.add(post);
                 }
@@ -298,11 +298,14 @@ public class PostFragment extends Fragment {
         return "User " + authorId;
     }
 
-    private String getLocationName(long locationId) {
+    private String getLocationName(@NonNull PostEntity post) {
         for (LocationEntity location : allLocations) {
-            if (location != null && location.locationId == locationId) {
+            if (location != null && location.locationId == post.locationId) {
                 return location.name != null ? location.name : "Unknown location";
             }
+        }
+        if (post.locationName != null && !post.locationName.trim().isEmpty()) {
+            return post.locationName.trim();
         }
         return "Unknown location";
     }

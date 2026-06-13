@@ -664,6 +664,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                     }
 
                     LocationEntity location = item.location;
+                    boolean hasValidCoordinates = location.latitude != 0.0d || location.longitude != 0.0d;
+                    if (!hasValidCoordinates) {
+                        // Keep any coordinates passed in from the post snapshot instead of
+                        // overriding them with a placeholder Room row.
+                        return;
+                    }
+
                     externalFocusLatLng = new LatLng(location.latitude, location.longitude);
                     externalFocusTitle = location.name != null ? location.name : "Saved location";
                     externalFocusSubtitle = location.address != null ? location.address : "";
