@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Transaction;
+import androidx.room.Update;
 
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.LocationWithDetails;
@@ -49,6 +50,15 @@ public interface LocationDao {
 
     @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
+
+    @Query("SELECT * FROM locations WHERE locationFirestoreId = :firestoreId LIMIT 1")
+    LiveData<LocationEntity> getLocationByFirestoreId(String firestoreId);
+
+    @Query("SELECT * FROM locations WHERE locationFirestoreId = :firestoreId LIMIT 1")
+    LocationEntity getLocationByFirestoreIdSync(String firestoreId);
+
+    @Query("SELECT * FROM locations WHERE lower(trim(name)) = lower(trim(:name)) LIMIT 1")
+    LocationEntity getLocationByNameSync(String name);
 
     @Query("SELECT * FROM locations WHERE lower(trim(name)) = lower(trim(:name)) AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
     LiveData<LocationEntity> getResolvedLocationByName(String name);
@@ -98,6 +108,9 @@ public interface LocationDao {
     @Query("SELECT * FROM locations")
     LiveData<List<LocationEntity>> getAllLocations();
 
+    @Query("SELECT * FROM locations WHERE isActive = 1")
+    LiveData<List<LocationEntity>> getActiveLocations();
+
     @Query("SELECT * FROM locations")
     List<LocationEntity> getAllLocationsSync();
 
@@ -109,6 +122,33 @@ public interface LocationDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(LocationEntity location);
+
+    @Update
+    void update(LocationEntity location);
+
+    @Transaction
+    default long upsertCanonical(LocationEntity location) {
+        if (location.locationFirestoreId != null && !location.locationFirestoreId.trim().isEmpty()) {
+            LocationEntity existingByFirestoreId =
+                    getLocationByFirestoreIdSync(location.locationFirestoreId.trim());
+            if (existingByFirestoreId != null) {
+                location.locationId = existingByFirestoreId.locationId;
+                update(location);
+                return location.locationId;
+            }
+        }
+
+        if (location.name != null && !location.name.trim().isEmpty()) {
+            LocationEntity existingByName = getLocationByNameSync(location.name.trim());
+            if (existingByName != null) {
+                location.locationId = existingByName.locationId;
+                update(location);
+                return location.locationId;
+            }
+        }
+
+        return insert(location);
+    }
 
     @Query("UPDATE locations SET imageUrl = :imageUrl WHERE locationId = :locationId")
     void updateImageUrl(long locationId, String imageUrl);
