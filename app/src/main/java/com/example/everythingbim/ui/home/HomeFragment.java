@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
@@ -43,8 +42,7 @@ public class HomeFragment extends Fragment {
 
     private Uri pendingCameraUri;
 
-    private ActivityResultLauncher<String> galleryPickerLauncher;
-    private ActivityResultLauncher<String> galleryPermissionLauncher;
+    private ActivityResultLauncher<String[]> galleryPickerLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<String> locationPermissionLauncher;
     private ActivityResultLauncher<Uri> takePictureLauncher;
@@ -81,19 +79,8 @@ public class HomeFragment extends Fragment {
 
     private void registerLaunchers() {
         galleryPickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
+                new ActivityResultContracts.OpenDocument(),
                 this::handleGalleryResult
-        );
-
-        galleryPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        galleryPickerLauncher.launch("image/*");
-                    } else {
-                        viewModel.onSelectionError("Gallery permission was denied.");
-                    }
-                }
         );
 
         cameraPermissionLauncher = registerForActivityResult(
@@ -193,12 +180,11 @@ public class HomeFragment extends Fragment {
 
     private void openGallery() {
         refreshLocationContext();
-        String permission = getGalleryPermission();
-        if (permission == null || ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
-            galleryPickerLauncher.launch("image/*");
-        } else {
-            galleryPermissionLauncher.launch(permission);
-        }
+        launchGalleryPicker();
+    }
+
+    private void launchGalleryPicker() {
+        galleryPickerLauncher.launch(new String[]{"image/*"});
     }
 
     private void openCamera() {
@@ -225,18 +211,16 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    @Nullable
-    private String getGalleryPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return Manifest.permission.READ_MEDIA_IMAGES;
-        }
-        return Manifest.permission.READ_EXTERNAL_STORAGE;
-    }
-
     private void handleGalleryResult(@Nullable Uri uri) {
         if (uri == null) {
             viewModel.onSelectionError("No image was selected.");
             return;
+        }
+        final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        try {
+            requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+        } catch (SecurityException ignored) {
+            // Some providers do not support persistable permissions.
         }
 
         viewModel.onImageSelected(new SelectedImage(

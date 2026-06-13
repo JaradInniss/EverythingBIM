@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,18 +21,22 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.everythingbim.ui.login.Login;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 
 import com.example.everythingbim.R;
 
 public class AdminSettingsFragment extends Fragment {
+    private static final String PREF_ADMIN_SETTINGS_SCROLL_HINT_SEEN = "admin_settings_scroll_hint_seen";
 
     // UI components
     private ImageButton editUsernameBtn, editEmailBtn, editPasswordBtn, eyeBtn;
     private LinearLayout usernameContainer, emailContainer;
     private RelativeLayout passwordContainer;
     private TextInputEditText usernameField, emailField, passwordField;
+    private ScrollView settingsScrollView;
+    private int currentKeyboardExtraBottom = 0;
 
     // Edit state flags
     private boolean isEditingUsername = false;
@@ -48,6 +54,7 @@ public class AdminSettingsFragment extends Fragment {
 
         // Initialize views
         initViews(root);
+        setupKeyboardInsets(root);
         setupEditButtons();
         setupPasswordToggle();
 
@@ -63,6 +70,7 @@ public class AdminSettingsFragment extends Fragment {
         usernameContainer = root.findViewById(R.id.username_container);
         emailContainer = root.findViewById(R.id.email_container);
         passwordContainer = root.findViewById(R.id.password_container);
+        settingsScrollView = root.findViewById(R.id.admin_settings_scroll);
 
         usernameField = root.findViewById(R.id.admin_username_et);
         emailField = root.findViewById(R.id.admin_email_et);
@@ -71,6 +79,33 @@ public class AdminSettingsFragment extends Fragment {
         // Logout button
         View logoutBtn = root.findViewById(R.id.admin_logout_btn);
         logoutBtn.setOnClickListener(v -> performLogout());
+    }
+
+    private void setupKeyboardInsets(View root) {
+        if (settingsScrollView == null) {
+            return;
+        }
+
+        int initialLeft = settingsScrollView.getPaddingLeft();
+        int initialTop = settingsScrollView.getPaddingTop();
+        int initialRight = settingsScrollView.getPaddingRight();
+        int initialBottom = settingsScrollView.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                root,
+                settingsScrollView,
+                settingsScrollView,
+                PREF_ADMIN_SETTINGS_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    settingsScrollView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
     }
 
     private void performLogout() {
@@ -151,6 +186,7 @@ public class AdminSettingsFragment extends Fragment {
             textField.setFocusableInTouchMode(true);
             textField.setClickable(true);
             textField.requestFocus();
+            scrollAnchorAboveKeyboard(fieldContainer);
 
             // Show keyboard
             InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -175,6 +211,34 @@ public class AdminSettingsFragment extends Fragment {
         }
         // Flip the state after the operation
         toggleState.run();
+    }
+
+    private void scrollAnchorAboveKeyboard(View anchorView) {
+        if (settingsScrollView == null) {
+            return;
+        }
+
+        settingsScrollView.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            settingsScrollView.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = settingsScrollView.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                settingsScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * requireContext().getResources().getDisplayMetrics().density);
     }
 
     private void setupPasswordToggle() {

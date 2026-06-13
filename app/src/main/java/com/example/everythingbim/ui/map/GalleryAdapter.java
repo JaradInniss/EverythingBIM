@@ -9,9 +9,9 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +43,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.GalleryV
         PostEntity post = postList.get(position);
 
         // Use Glide to load the image efficiently
-        Glide.with(context)
-                .load(post.imageUrl)
-                .placeholder(R.color.dim_grey) // Gray placeholder while loading
-                .centerCrop()
-                .into(holder.imageView);
+        ImageReferenceLoader.loadInto(holder.imageView, post.imageUrl, R.drawable.ic_images);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {

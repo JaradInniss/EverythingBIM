@@ -31,6 +31,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.home.UserNotificationHelper;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -70,6 +72,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
     private String cachedCoordinates = "";
     private double cachedLatitude = 0.0;
     private double cachedLongitude = 0.0;
+    private String cachedRecipientUserId = "";
     private boolean dataFromBundle = false;
 
     // ─── Map ─────────────────────────────────
@@ -272,6 +275,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
                     String submittedBy = doc.getString("userId");
                     submittedByTv.setText("Submitted By: " + (submittedBy != null ? submittedBy : "User"));
                     cachedSubmittedBy = submittedBy != null ? submittedBy : "";
+                    cachedRecipientUserId = submittedBy != null ? submittedBy : "";
 
                     String locationName = nvl(doc.getString("locationName"));
                     locationNameTv.setText(locationName);
@@ -339,6 +343,22 @@ public class AdminBizLocationDetailFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         EditText reasonEt = dialog.findViewById(R.id.dialog_reject_reason_et);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        android.widget.ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_confirm_reject_scroll);
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "admin_business_location_reject_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
         dialog.findViewById(R.id.dialog_reject_yes).setOnClickListener(v -> {
             String reason = reasonEt.getText().toString().trim();
             if (reason.isEmpty()) { reasonEt.setError("Please enter a reason"); return; }
@@ -381,6 +401,19 @@ public class AdminBizLocationDetailFragment extends Fragment {
                                     "resolvedBy", getAdminId())
                             .addOnSuccessListener(v -> {
                                 activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
+                                UserNotificationHelper.createNotification(
+                                        db,
+                                        firstNonEmpty(cachedRecipientUserId, userId),
+                                        UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                                        "Business Location Request Update",
+                                        "Your business location request for " + firstNonEmpty(cachedLocationName, locationName, "this location") + " was accepted.",
+                                        "Accepted",
+                                        docId,
+                                        "add_business_location_requests",
+                                        UserNotificationHelper.TARGET_COMPLETED_LOCATION_TO_ADDRESS,
+                                        UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                                        firstNonEmpty(cachedLocationName, locationName, "Business Location Request")
+                                );
                                 Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
                                 applyAcceptedState(todayStr(), "Administrator");
 
@@ -466,6 +499,19 @@ public class AdminBizLocationDetailFragment extends Fragment {
                         "rejectionReason", reason)
                 .addOnSuccessListener(v -> {
                     activityLogger.logRejection(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
+                    UserNotificationHelper.createNotification(
+                            db,
+                            cachedRecipientUserId,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            "Business Location Request Update",
+                            "Your business location request for " + firstNonEmpty(cachedLocationName, "this location") + " was rejected.",
+                            "Rejected",
+                            docId,
+                            "add_business_location_requests",
+                            UserNotificationHelper.TARGET_COMPLETED_LOCATION_TO_ADDRESS,
+                            UserNotificationHelper.TYPE_LOCATION_REQUEST,
+                            firstNonEmpty(cachedLocationName, "Business Location Request")
+                    );
                     Toast.makeText(getContext(), "Request Rejected", Toast.LENGTH_SHORT).show();
                     applyRejectedState(todayStr(), "Administrator", reason);
                 })
@@ -536,6 +582,14 @@ public class AdminBizLocationDetailFragment extends Fragment {
     }
 
     private String nvl(String s) { return s != null ? s : ""; }
+    private String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
     private String fmt(Timestamp ts) { return ts != null
             ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate())
             : todayStr(); }

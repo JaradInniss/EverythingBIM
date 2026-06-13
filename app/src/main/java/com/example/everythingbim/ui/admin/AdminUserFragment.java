@@ -15,8 +15,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import android.widget.ScrollView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -28,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class AdminUserFragment extends Fragment {
+    private static final String PREF_ADMIN_USER_SCROLL_HINT_SEEN =
+            "admin_user_scroll_hint_seen";
 
     // ─── Bundle args ─────────────────────────
     public static final String ARG_INITIAL_TAB = "initial_tab";
@@ -73,6 +77,7 @@ public class AdminUserFragment extends Fragment {
     private TextView filterIdPill, filterUsernamePill;
     private LinearLayout generalContent, businessContent;
     private View generalLegend;
+    private ScrollView contentScrollView;
 
     // General lists
     private LinearLayout generalLocReqContainer;
@@ -80,10 +85,10 @@ public class AdminUserFragment extends Fragment {
 
     // Business lists
     private LinearLayout businessVerReqContainer;
+    private LinearLayout businessLocVerReqContainer;
     private TextView bizFilterAll, bizFilterUnread, bizFilterRead;
 
     // Business Location lists
-    private LinearLayout businessLocVerReqContainer;
     private TextView bizLocFilterAll, bizLocFilterUnread, bizLocFilterRead;
 
     // ─── Firebase ────────────────────────────
@@ -116,6 +121,7 @@ public class AdminUserFragment extends Fragment {
         btnBusiness = view.findViewById(R.id.business_user_container);
         searchEt    = view.findViewById(R.id.users_search_et);
         headerTitle = view.findViewById(R.id.users_header_title);
+        contentScrollView = view.findViewById(R.id.users_content_scroll);
 
         // Bind search card
         searchResultsCard      = view.findViewById(R.id.users_search_results_card);
@@ -134,6 +140,7 @@ public class AdminUserFragment extends Fragment {
 
         // Bind business containers
         businessVerReqContainer = view.findViewById(R.id.business_verreq_container);
+        businessLocVerReqContainer = view.findViewById(R.id.business_locverreq_container);
         bizFilterAll    = view.findViewById(R.id.biz_filter_all);
         bizFilterUnread = view.findViewById(R.id.biz_filter_unread);
         bizFilterRead   = view.findViewById(R.id.biz_filter_read);
@@ -146,6 +153,7 @@ public class AdminUserFragment extends Fragment {
 
         // Default — both panels hidden until a tab is clicked
         setTabState(Tab.NONE);
+        setupKeyboardHints(view);
 
         // Check if an initial tab was passed (from home screen card click)
         if (getArguments() != null) {
@@ -186,6 +194,13 @@ public class AdminUserFragment extends Fragment {
                         .beginTransaction()
                         .add(R.id.admin_fragment_container,
                                 AdminUserRequestsFragment.newInstance("submissions"))
+                        .addToBackStack(null).commit());
+
+        view.findViewById(R.id.business_locverreq_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("business_location"))
                         .addToBackStack(null).commit());
 
         // ── Search text watcher ───────────────
@@ -272,6 +287,25 @@ public class AdminUserFragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void setupKeyboardHints(View root) {
+        KeyboardScrollHintHelper.attach(
+                root,
+                root,
+                contentScrollView,
+                PREF_ADMIN_USER_SCROLL_HINT_SEEN,
+                extraBottom -> {
+                    if (contentScrollView == null) {
+                        return;
+                    }
+                    contentScrollView.setPadding(
+                            contentScrollView.getPaddingLeft(),
+                            contentScrollView.getPaddingTop(),
+                            contentScrollView.getPaddingRight(),
+                            extraBottom);
+                    contentScrollView.setClipToPadding(false);
+                });
     }
 
     // ────────────────────────────────────────────────────────
@@ -531,6 +565,7 @@ public class AdminUserFragment extends Fragment {
         // Clear lists at the START before any Firestore calls
         allBizUsers.clear();
         allBizVerReqs.clear();
+        allBizLocVerReqs.clear();
 
         // Load business users for search
         db.collection("businesses")
@@ -1151,6 +1186,12 @@ public class AdminUserFragment extends Fragment {
         item.email = doc.getString("email") != null ? doc.getString("email") : "";
         item.address = doc.getString("address") != null ? doc.getString("address") : "";
         item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("type") != null ? doc.getString("type") : "";
+        }
+        if (item.businessType.isEmpty()) {
+            item.businessType = doc.getString("businessCategory") != null ? doc.getString("businessCategory") : "";
+        }
 
         return item;
     }

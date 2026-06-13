@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
         UserEntity.class,
         GeneralUserEntity.class,
         BusinessUserEntity.class
-}, version = 10)
+}, version = 11)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final ExecutorService DATABASE_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -81,6 +81,16 @@ public abstract class AppDatabase extends RoomDatabase {
             // hash still includes the new likeCount / commentCount
             // columns, so dropping + recreating is the safe path.
             db.execSQL("DROP TABLE IF EXISTS `posts`");
+        }
+    };
+
+    private static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationLatitude` REAL");
+            db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationLongitude` REAL");
+            db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationAddress` TEXT");
+            db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationPlaceId` TEXT");
         }
     };
 
@@ -152,7 +162,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     wipeLegacyDatabaseIfNeeded(appContext);
                     INSTANCE = Room.databaseBuilder(appContext,
                                     AppDatabase.class, "app_database")
-                            .addMigrations(MIGRATION_9_10)
+                            .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
                             .addCallback(new Callback() {
                                 @Override
                                 public void onCreate(@NonNull androidx.sqlite.db.SupportSQLiteDatabase db) {

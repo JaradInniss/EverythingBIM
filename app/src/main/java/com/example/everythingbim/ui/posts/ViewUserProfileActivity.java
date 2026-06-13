@@ -20,6 +20,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.example.everythingbim.data.local.entities.UserWithProfile;
 import com.example.everythingbim.data.models.RequestReportStatus;
 import com.example.everythingbim.data.models.UserType;
@@ -120,6 +121,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         postReasonGroup.setVisibility(View.GONE);
         RadioGroup accountReasonGroup = dialogView.findViewById(R.id.report_account_reason_group);
         EditText reportDescriptionEt = dialogView.findViewById(R.id.report_description_et);
+        androidx.core.widget.NestedScrollView dialogScrollView = dialogView.findViewById(R.id.dialog_report_post_scroll);
 
         // Set up dialog buttons
         LinearLayout submitReportBttn = dialogView.findViewById(R.id.submit_report_bttn);
@@ -144,6 +146,21 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
             // Optional: Change gravity to center or bottom
             window.setGravity(android.view.Gravity.CENTER);
         }
+
+        KeyboardScrollHintHelper.attach(
+                dialogView,
+                dialogView,
+                dialogScrollView,
+                "view_profile_report_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
 
 
         submitReportBttn.setOnClickListener(v -> {

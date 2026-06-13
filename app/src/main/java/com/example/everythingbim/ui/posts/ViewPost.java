@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,25 +17,27 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
@@ -42,6 +45,8 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.ImageReferenceLoader;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -56,6 +61,8 @@ import java.util.Locale;
  * Handles adding new comments and replies with a nested UI.
  */
 public class ViewPost extends AppCompatActivity {
+    private static final String PREF_VIEW_POST_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_VIEW_POST_SCROLL_HINT_SEEN;
 
     ActivityViewPostBinding binding;
     private PostViewModel viewModel;
@@ -63,6 +70,7 @@ public class ViewPost extends AppCompatActivity {
     private ViewPostTagAdapter taggedUsersAdapter;
     private long postId;
     private long lastObservedLocationId = -1L;
+    private String lastObservedLocationName = null;
 
     // The most recently observed post; used to add comments without
     // re-resolving the firestoreId at click time.
@@ -71,6 +79,7 @@ public class ViewPost extends AppCompatActivity {
     // State for managing replies
     private Long currentParentCommentId = null;
     private String currentParentAuthorName = null;
+    private boolean isSubmittingComment = false;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
     private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
@@ -78,6 +87,8 @@ public class ViewPost extends AppCompatActivity {
     private RecyclerView commentsRv, taggedUsersRv;
     private LinearLayout returnBttn;
     private CardView taggedUsersCard;
+    private NestedScrollView viewPostScrollView;
+    private int currentKeyboardExtraBottom;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +138,7 @@ public class ViewPost extends AppCompatActivity {
         submitReplyBttn = binding.submitReplyBttn;
         replyingToUsername = binding.replyingToUsername;
         commentsRv = binding.viewpostCommentsRv;
+        viewPostScrollView = binding.viewPostScroll;
 
         // Tagged users views
         viewTaggedUsersBttn = binding.viewTaggedUsersBttn;
@@ -142,6 +154,9 @@ public class ViewPost extends AppCompatActivity {
         // based on whether the post has any tagged users.
         taggedUsersCard.setVisibility(View.GONE);
         taggedUsersRv.setVisibility(View.GONE);
+
+        setupKeyboardInsets();
+        setupFocusedFieldScroll();
     }
 
     // Set up the RecyclerView for comments and handles reply button clicks.
@@ -165,6 +180,7 @@ public class ViewPost extends AppCompatActivity {
 
             // Focus input and show keyboard
             commentInput.requestFocus();
+            scrollCommentComposerAboveKeyboard();
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
@@ -284,12 +300,9 @@ public class ViewPost extends AppCompatActivity {
         likes.setText(String.valueOf(likeCount));
 
         // Load the post image
-        Glide.with(this)
-                .load(post.imageUrl)
-                .placeholder(R.drawable.butterfly)
-                .into(postImage);
+        ImageReferenceLoader.loadInto(postImage, post.imageUrl, R.drawable.butterfly);
 
-        setupLocationTag(post.locationId);
+        setupLocationTag(post);
     }
 
     private String resolveAuthorLabel(PostEntity post) {
@@ -299,30 +312,76 @@ public class ViewPost extends AppCompatActivity {
         return "User " + post.authorId;
     }
 
-    private void setupLocationTag(long locationId) {
-        if (locationId == lastObservedLocationId) {
+    private void setupLocationTag(@NonNull PostEntity post) {
+        String normalizedLocationName = post.locationName != null ? post.locationName.trim() : null;
+        if (post.locationId == lastObservedLocationId
+                && ((normalizedLocationName == null && lastObservedLocationName == null)
+                || (normalizedLocationName != null && normalizedLocationName.equals(lastObservedLocationName)))) {
             return;
         }
-        lastObservedLocationId = locationId;
+        lastObservedLocationId = post.locationId;
+        lastObservedLocationName = normalizedLocationName;
 
-        if (locationId <= 0L) {
-            binding.viewpostLocation.setText("Unknown location");
-            binding.viewpostLocation.setOnClickListener(null);
+        if ((normalizedLocationName == null || normalizedLocationName.isEmpty()) && post.locationId <= 0L) {
+            showUnknownLocationTag();
             return;
         }
 
-        viewModel.getLocationById(locationId).observe(this, this::bindLocationTag);
+        if (hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            String label = normalizedLocationName != null && !normalizedLocationName.isEmpty()
+                    ? normalizedLocationName
+                    : "Saved location";
+            binding.viewpostLocation.setText(label);
+            binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(post));
+            return;
+        }
+
+        if (post.locationId > 0L) {
+            viewModel.getLocationById(post.locationId).observe(this, locationEntity ->
+                    bindLocationTag(post, locationEntity));
+            return;
+        }
+
+        bindLocationTag(post, null);
     }
 
-    private void bindLocationTag(LocationEntity locationEntity) {
-        if (locationEntity == null) {
-            binding.viewpostLocation.setText("Unknown location");
-            binding.viewpostLocation.setOnClickListener(null);
+    private void bindLocationTag(@NonNull PostEntity post, @Nullable LocationEntity locationEntity) {
+        if (hasValidCoordinates(locationEntity)) {
+            binding.viewpostLocation.setText(locationEntity.name);
+            binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
             return;
         }
 
-        binding.viewpostLocation.setText(locationEntity.name);
-        binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(locationEntity));
+        if (post.locationName == null || post.locationName.trim().isEmpty()) {
+            showUnknownLocationTag();
+            return;
+        }
+
+        binding.viewpostLocation.setText(post.locationName.trim());
+        observeOnce(viewModel.getResolvedLocationByName(post.locationName), fallbackLocation -> {
+            if (hasValidCoordinates(fallbackLocation)) {
+                binding.viewpostLocation.setOnClickListener(v -> openLocationOnMap(fallbackLocation));
+            } else {
+                binding.viewpostLocation.setOnClickListener(v ->
+                        Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void showUnknownLocationTag() {
+        binding.viewpostLocation.setText("Unknown location");
+        binding.viewpostLocation.setOnClickListener(null);
+    }
+
+    private boolean hasValidCoordinates(@Nullable LocationEntity locationEntity) {
+        return locationEntity != null
+                && (locationEntity.latitude != 0.0d || locationEntity.longitude != 0.0d);
+    }
+
+    private boolean hasValidCoordinates(@Nullable Double latitude, @Nullable Double longitude) {
+        return latitude != null
+                && longitude != null
+                && (latitude != 0.0d || longitude != 0.0d);
     }
 
     private void openLocationOnMap(LocationEntity locationEntity) {
@@ -333,6 +392,28 @@ public class ViewPost extends AppCompatActivity {
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, locationEntity.longitude);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME, locationEntity.name);
         intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE, locationEntity.address);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+    }
+
+    private void openLocationOnMap(@NonNull PostEntity post) {
+        if (!hasValidCoordinates(post.locationLatitude, post.locationLongitude)) {
+            Toast.makeText(this, "This post's saved location could not be resolved on the map yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_OPEN_MAP_FOCUS, true);
+        if (post.locationId > 0L) {
+            intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LOCATION_ID, post.locationId);
+        }
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LATITUDE, post.locationLatitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_LONGITUDE, post.locationLongitude);
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_NAME,
+                post.locationName != null && !post.locationName.trim().isEmpty()
+                        ? post.locationName.trim()
+                        : "Saved location");
+        intent.putExtra(MainActivity.EXTRA_MAP_FOCUS_SUBTITLE,
+                post.locationAddress != null ? post.locationAddress : "");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
@@ -355,6 +436,62 @@ public class ViewPost extends AppCompatActivity {
                 observer.onChanged(value);
             }
         });
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = viewPostScrollView.getPaddingLeft();
+        int initialTop = viewPostScrollView.getPaddingTop();
+        int initialRight = viewPostScrollView.getPaddingRight();
+        int initialBottom = viewPostScrollView.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.viewPosts,
+                viewPostScrollView,
+                viewPostScrollView,
+                PREF_VIEW_POST_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    viewPostScrollView.setClipToPadding(false);
+                    viewPostScrollView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
+    }
+
+    private void setupFocusedFieldScroll() {
+        commentInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollCommentComposerAboveKeyboard();
+            }
+        });
+    }
+
+    private void scrollCommentComposerAboveKeyboard() {
+        viewPostScrollView.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            binding.writeReviewContainer.getDrawingRect(rect);
+            viewPostScrollView.offsetDescendantRectToMyCoords(binding.writeReviewContainer, rect);
+
+            int visibleHeight = viewPostScrollView.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                viewPostScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     // Sets up click listeners for the return button and comment submission buttons
@@ -395,6 +532,9 @@ public class ViewPost extends AppCompatActivity {
 
         // Submit a new top-level comment
         submitCommentBttn.setOnClickListener(v -> {
+            if (isSubmittingComment) {
+                return;
+            }
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a comment", Toast.LENGTH_SHORT).show();
@@ -417,6 +557,9 @@ public class ViewPost extends AppCompatActivity {
 
         // Submit a reply to an existing comment
         submitReplyBttn.setOnClickListener(v -> {
+            if (isSubmittingComment) {
+                return;
+            }
             String body = commentInput.getText().toString().trim();
             if (body.isEmpty()) {
                 Toast.makeText(this, "Please enter a reply", Toast.LENGTH_SHORT).show();
@@ -435,16 +578,6 @@ public class ViewPost extends AppCompatActivity {
                 return;
             }
             submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
-
-            // Reset UI to comment mode
-            commentInput.setText("");
-            currentParentCommentId = null;
-            currentParentAuthorName = null;
-            replyingToUsername.setVisibility(View.GONE);
-            submitReplyBttn.setVisibility(View.GONE);
-            submitCommentBttn.setVisibility(View.VISIBLE);
-
-            Toast.makeText(this, "Reply added", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -492,6 +625,23 @@ public class ViewPost extends AppCompatActivity {
         EditText descriptionEt = dialog.findViewById(R.id.report_description_et);
         Button cancelBtn = dialog.findViewById(R.id.report_cancel_btn);
         Button confirmBtn = dialog.findViewById(R.id.report_confirm_btn);
+        ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_report_confirm_scroll);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "view_post_report_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
 
         // Setup spinner with reasons (default to POST_REASONS)
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -637,21 +787,40 @@ public class ViewPost extends AppCompatActivity {
                                @NonNull String body) {
         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
         if (current == null) return;
+        setCommentSubmissionInProgress(true);
         String authorUid = current.getUid();
         String authorName = resolveCurrentUserName(current);
         observeOnce(
                 viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, body),
                 persisted -> {
+                    setCommentSubmissionInProgress(false);
                     if (persisted == null) {
                         Toast.makeText(this, "Failed to add comment", Toast.LENGTH_SHORT).show();
                     } else {
                         commentInput.setText("");
+                        resetReplyMode();
                         Toast.makeText(this,
                                 parentCommentId == null ? "Comment added" : "Reply added",
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
         );
+    }
+
+    private void setCommentSubmissionInProgress(boolean inProgress) {
+        isSubmittingComment = inProgress;
+        submitCommentBttn.setEnabled(!inProgress);
+        submitReplyBttn.setEnabled(!inProgress);
+        submitCommentBttn.setAlpha(inProgress ? 0.6f : 1f);
+        submitReplyBttn.setAlpha(inProgress ? 0.6f : 1f);
+    }
+
+    private void resetReplyMode() {
+        currentParentCommentId = null;
+        currentParentAuthorName = null;
+        replyingToUsername.setVisibility(View.GONE);
+        submitReplyBttn.setVisibility(View.GONE);
+        submitCommentBttn.setVisibility(View.VISIBLE);
     }
 
     /**

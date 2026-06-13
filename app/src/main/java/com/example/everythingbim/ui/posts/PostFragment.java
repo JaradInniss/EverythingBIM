@@ -31,6 +31,7 @@ import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ import java.util.Set;
  * Fragment that displays a grid of posts and provides search/filtering functionality.
  */
 public class PostFragment extends Fragment {
+    private static final String PREF_POST_SEARCH_SCROLL_HINT_SEEN = "post_search_scroll_hint_seen";
 
     private PostViewModel viewModel;
     private PostAdapter adapter;
@@ -97,6 +99,26 @@ public class PostFragment extends Fragment {
         adapter = new PostAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
+        int initialLeft = recyclerView.getPaddingLeft();
+        int initialTop = recyclerView.getPaddingTop();
+        int initialRight = recyclerView.getPaddingRight();
+        int initialBottom = recyclerView.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                requireView(),
+                searchEditText,
+                recyclerView,
+                PREF_POST_SEARCH_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    recyclerView.setClipToPadding(false);
+                    recyclerView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
 
         adapter.setOnPostClickListener(post -> {
             Intent intent = new Intent(getActivity(), ViewPost.class);
@@ -145,6 +167,8 @@ public class PostFragment extends Fragment {
         searchEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 applySearchAndSuggestions();
+            } else {
+                searchResultsCard.setVisibility(View.GONE);
             }
         });
 
@@ -223,7 +247,7 @@ public class PostFragment extends Fragment {
                     filtered.add(post);
                 }
             } else {
-                String locationName = getLocationName(post.locationId);
+                String locationName = getLocationName(post);
                 if (locationName.toLowerCase(Locale.US).contains(normalizedQuery)) {
                     filtered.add(post);
                 }
@@ -274,11 +298,14 @@ public class PostFragment extends Fragment {
         return "User " + authorId;
     }
 
-    private String getLocationName(long locationId) {
+    private String getLocationName(@NonNull PostEntity post) {
         for (LocationEntity location : allLocations) {
-            if (location != null && location.locationId == locationId) {
+            if (location != null && location.locationId == post.locationId) {
                 return location.name != null ? location.name : "Unknown location";
             }
+        }
+        if (post.locationName != null && !post.locationName.trim().isEmpty()) {
+            return post.locationName.trim();
         }
         return "Unknown location";
     }

@@ -27,6 +27,7 @@ public class LandmarkRepository {
                 "parliament",
                 "Barbados Parliament Buildings",
                 "Historic neo-Gothic government buildings in Bridgetown and among Barbados' most recognizable civic landmarks.",
+                "Broad Street/Rickett Street, Bridgetown",
                 PARLIAMENT_LATITUDE,
                 PARLIAMENT_LONGITUDE,
                 PARLIAMENT_NEARBY_RADIUS_METERS
@@ -36,6 +37,7 @@ public class LandmarkRepository {
                 "kensington",
                 "Kensington Oval",
                 "A famous Bridgetown cricket ground and one of Barbados' best-known sporting venues.",
+                "Fontabelle, St. Michael, Barbados",
                 13.1000d,
                 -59.6160d,
                 KENSINGTON_NEARBY_RADIUS_METERS
@@ -45,6 +47,7 @@ public class LandmarkRepository {
                 "cathedral",
                 "St. Michael's Cathedral",
                 "A major Anglican cathedral in Bridgetown known for its long history and distinctive architecture.",
+                "St. Michael's Row, Bridgetown, Barbados",
                 13.0979d,
                 -59.6105d,
                 0

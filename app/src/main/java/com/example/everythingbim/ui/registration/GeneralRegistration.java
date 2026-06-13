@@ -5,6 +5,7 @@ import com.example.everythingbim.databinding.GeneralRegisForm1Binding;
 import com.example.everythingbim.databinding.GeneralRegisForm2Binding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
+import android.graphics.Rect;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +48,9 @@ import java.util.Map;
 
 public class GeneralRegistration extends AppCompatActivity implements View.OnClickListener {
 
+    private static final String PREF_GENERAL_REG_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_GENERAL_REG_SCROLL_HINT_SEEN;
+
     private GeneralRegViewModel viewModel;
     private ActivityGeneralRegistrationBinding binding;
     private GeneralRegisForm1Binding form1Binding;
@@ -73,6 +78,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     // Variables
     private static final int TOTAL_PAGES = 2;
     private final Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private int currentKeyboardExtraBottom = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +100,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
         initViews();
         setupObservers();
+        setupKeyboardInsets();
 
         // Set Window Insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -101,6 +108,74 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.generalRegistrationScroll.getPaddingLeft();
+        int initialTop = binding.generalRegistrationScroll.getPaddingTop();
+        int initialRight = binding.generalRegistrationScroll.getPaddingRight();
+        int initialBottom = binding.generalRegistrationScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.generalRegistrationScroll,
+                binding.generalRegistrationScroll,
+                PREF_GENERAL_REG_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    binding.generalRegistrationScroll.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
+    }
+
+    private void setupFocusedFieldScroll() {
+        bindFocusScroll(form1Binding.registerUsernameEt, form1Binding.registerUsernameEt);
+        bindFocusScroll(form1Binding.registerEmailEt, form1Binding.registerEmailEt);
+        bindFocusScroll(form1Binding.registerPasswordEt, form1Binding.registerPasswordEt);
+        bindFocusScroll(form1Binding.registerRepasswordEt, form1Binding.nextBttn);
+
+        bindFocusScroll(form2Binding.digit1, form2Binding.submitBttn);
+        bindFocusScroll(form2Binding.digit2, form2Binding.submitBttn);
+        bindFocusScroll(form2Binding.digit3, form2Binding.submitBttn);
+        bindFocusScroll(form2Binding.digit4, form2Binding.submitBttn);
+        bindFocusScroll(form2Binding.digit5, form2Binding.submitBttn);
+    }
+
+    private void bindFocusScroll(View focusedView, View anchorView) {
+        focusedView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollAnchorAboveKeyboard(anchorView);
+            }
+        });
+    }
+
+    private void scrollAnchorAboveKeyboard(View anchorView) {
+        binding.generalRegistrationScroll.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            binding.generalRegistrationScroll.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = binding.generalRegistrationScroll.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                binding.generalRegistrationScroll.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void initViews() {
@@ -143,6 +218,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
         // Auto‑advance and backspace logic
         setDigitAutoAdvance();
+        setupFocusedFieldScroll();
     }
 
     private void setupObservers() {

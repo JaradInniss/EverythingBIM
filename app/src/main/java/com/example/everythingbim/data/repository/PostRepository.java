@@ -55,6 +55,11 @@ public class PostRepository {
     private static final String COLLECTION_COMMENTS = "comments";
     private static final String COLLECTION_LIKES = "likes";
     private static final String TARGET_TYPE_POST = "POST";
+    private static final String LOCAL_HARRISONS_CAVE_IMAGE = "harrisons_cave.jpg";
+    private static final String LOCAL_BATHSHEBA_IMAGE = "bathsheba.jpg";
+    private static final String LEGACY_BATHSHEBA_LOCATION_IMAGE = "bathsheba_beach";
+    private static final String LEGACY_HARRISONS_CAVE_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg";
+    private static final String LEGACY_BATHSHEBA_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg";
 
     private final PostDao postDao;
     private final CommentDao commentDao;
@@ -142,7 +147,13 @@ public class PostRepository {
                 // even when this is the first time we're seeing this
                 // location (e.g. a brand-new post referencing a
                 // not-yet-cached location).
-                ensureLocationExists(post.locationId, post.locationName);
+                ensureLocationExists(
+                        post.locationId,
+                        post.locationName,
+                        post.locationLatitude,
+                        post.locationLongitude,
+                        post.locationAddress
+                );
                 // Use upsert (not insert) so a re-snapshot of the same
                 // post doesn't fail with UNIQUE constraint. The previous
                 // INSERT-OR-REPLACE could fail on the DELETE step of the
@@ -162,19 +173,24 @@ public class PostRepository {
      * (if known), and zeroed coordinates so the foreign key is satisfied
      * and the row can be replaced later with the real one.
      */
-    private void ensureLocationExists(long locationId, @androidx.annotation.Nullable String fallbackName) {
+    private void ensureLocationExists(long locationId,
+                                      @androidx.annotation.Nullable String fallbackName,
+                                      @androidx.annotation.Nullable Double fallbackLatitude,
+                                      @androidx.annotation.Nullable Double fallbackLongitude,
+                                      @androidx.annotation.Nullable String fallbackAddress) {
         if (locationId <= 0L) return;
         if (locationDao.getLocationByIdSync(locationId) != null) return;
         LocationEntity placeholder = new LocationEntity(
                 fallbackName != null && !fallbackName.isEmpty() ? fallbackName : "Unknown location",
-                0.0, 0.0,
+                fallbackLatitude != null ? fallbackLatitude : 0.0,
+                fallbackLongitude != null ? fallbackLongitude : 0.0,
                 0f,
                 false,
                 "firestore-mirror",
                 "",
                 "",
                 "",
-                ""
+                fallbackAddress != null ? fallbackAddress : ""
         );
         // Pre-set the id so it matches the post's locationId reference.
         placeholder.setLocationId(locationId);
@@ -259,7 +275,13 @@ public class PostRepository {
                             // UNIQUE constraint violation, and so the FK to
                             // locations is satisfied via ensureLocationExists
                             // before the row is written.
-                            ensureLocationExists(post.locationId, post.locationName);
+                            ensureLocationExists(
+                                    post.locationId,
+                                    post.locationName,
+                                    post.locationLatitude,
+                                    post.locationLongitude,
+                                    post.locationAddress
+                            );
                             postDao.upsert(post);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to cache new post in Room", e);
@@ -310,7 +332,13 @@ public class PostRepository {
                             // streamed into the cache yet would fail with
                             // "FOREIGN KEY constraint failed" the first
                             // time the createPost callback runs.
-                            ensureLocationExists(post.locationId, post.locationName);
+                            ensureLocationExists(
+                                    post.locationId,
+                                    post.locationName,
+                                    post.locationLatitude,
+                                    post.locationLongitude,
+                                    post.locationAddress
+                            );
                             postDao.upsert(post);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to cache new post in Room", e);
@@ -339,6 +367,11 @@ public class PostRepository {
         map.put("createdAt", post.createdAt);
         map.put("locationId", post.locationId);
         map.put("locationName", post.locationName);
+        map.put("locationLatitude", post.locationLatitude);
+        map.put("locationLongitude", post.locationLongitude);
+        map.put("locationAddress", post.locationAddress);
+        map.put("locationPlaceId", post.locationPlaceId);
+        map.put("locationFirestoreId", post.locationFirestoreId);
         map.put("taggedUserUids", post.taggedUserUids);
         // Initialise the denormalized like counter so the post has a
         // starting value of 0; subsequent increments/decrements are
@@ -353,6 +386,11 @@ public class PostRepository {
             Long locationId = doc.getLong("locationId");
             Long authorId = doc.getLong("authorId");
             String locationName = doc.getString("locationName");
+            Double locationLatitude = getNullableDouble(doc.get("locationLatitude"));
+            Double locationLongitude = getNullableDouble(doc.get("locationLongitude"));
+            String locationAddress = doc.getString("locationAddress");
+            String locationPlaceId = doc.getString("locationPlaceId");
+            String locationFirestoreId = doc.getString("locationFirestoreId");
             String authorName = doc.getString("authorName");
             String authorUid = doc.getString("authorUid");
             String caption = doc.getString("caption");
@@ -375,6 +413,13 @@ public class PostRepository {
             );
             post.firestoreId = doc.getId();
             post.postId = stableLongFromString(doc.getId());
+            post.setPortableLocationSnapshot(
+                    locationLatitude,
+                    locationLongitude,
+                    locationAddress,
+                    locationPlaceId,
+                    locationFirestoreId
+            );
             Long likeCount = doc.getLong("likeCount");
             post.likeCount = likeCount != null ? likeCount.intValue() : 0;
             Long commentCount = doc.getLong("commentCount");
@@ -401,6 +446,23 @@ public class PostRepository {
 
     public LiveData<LocationEntity> getLocationById(long locationId) {
         return locationDao.getLocationById(locationId);
+    }
+
+    public LiveData<LocationEntity> getResolvedLocationByName(@androidx.annotation.Nullable String locationName) {
+        if (locationName == null || locationName.trim().isEmpty()) {
+            androidx.lifecycle.MutableLiveData<LocationEntity> liveData = new androidx.lifecycle.MutableLiveData<>();
+            liveData.setValue(null);
+            return liveData;
+        }
+        return locationDao.getResolvedLocationByName(locationName.trim());
+    }
+
+    @androidx.annotation.Nullable
+    private Double getNullableDouble(@androidx.annotation.Nullable Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return null;
     }
 
     public LiveData<List<LocationEntity>> getAllLocations() {
@@ -743,11 +805,10 @@ public class PostRepository {
                         101L,
                         "TravelAddict",
                         "Explored the beautiful Harrison's Cave today! Nature is amazing. #Barbados #BIM",
-                        "https://upload.wikimedia.org/wikipedia/commons/b/b5/Harrison%27s_Cave_Barbados_2.jpg",
+                        LOCAL_HARRISONS_CAVE_IMAGE,
                         System.currentTimeMillis() - 86400000,
                         new ArrayList<>()
                 ));
-
                 // Top-level comments
                 long c1 = commentDao.insert(new CommentEntity(postId, null, "TravelAddict", null, "This place looks incredible! Is it easy to get there?", System.currentTimeMillis() - 70000000));
                 long c2 = commentDao.insert(new CommentEntity(postId, null, "LocalGuide", null, "Best time to visit is early morning to avoid the crowds.", System.currentTimeMillis() - 60000000));
@@ -769,7 +830,7 @@ public class PostRepository {
                         "Admin",
                         "Scenic east-coast beach famous for its rock formations and surf culture.",
                         "beach",
-                        "bathsheba_beach",
+                        "bathsheba",
                         "Bathsheba, St. Joseph, Barbados"
                 ));
                 postDao.insert(new PostEntity(
@@ -778,11 +839,77 @@ public class PostRepository {
                         102L,
                         "IslandExplorer",
                         "Sunset at Bathsheba. The rock formations are unlike anything else.",
-                        "https://upload.wikimedia.org/wikipedia/commons/9/90/Bathsheba_Barbados.jpg",
+                        LOCAL_BATHSHEBA_IMAGE,
                         System.currentTimeMillis() - 172800000,
                         new ArrayList<>()
                 ));
             }
+
+            repairSeededPostImages();
+            repairSampleLocationImages();
         });
+    }
+
+    private void repairSeededPostImages() {
+        for (PostEntity post : postDao.getAllPostsSync()) {
+            String correctedImageRef = getCorrectedImageRef(post);
+            if (correctedImageRef == null || correctedImageRef.equals(post.imageUrl)) {
+                continue;
+            }
+            postDao.updateImageUrl(post.postId, correctedImageRef);
+        }
+    }
+
+    private void repairSampleLocationImages() {
+        for (LocationEntity location : locationDao.getAllLocationsSync()) {
+            String correctedImageRef = getCorrectedLocationImageRef(location);
+            if (correctedImageRef == null || correctedImageRef.equals(location.imageUrl)) {
+                continue;
+            }
+            locationDao.updateImageUrl(location.locationId, correctedImageRef);
+        }
+    }
+
+    private String getCorrectedImageRef(PostEntity post) {
+        if (post == null) {
+            return null;
+        }
+
+        if (LEGACY_HARRISONS_CAVE_IMAGE.equals(post.imageUrl) || containsIgnoreCase(post.caption, "Harrison's Cave")) {
+            return LOCAL_HARRISONS_CAVE_IMAGE;
+        }
+
+        if (LEGACY_BATHSHEBA_IMAGE.equals(post.imageUrl) || containsIgnoreCase(post.caption, "Bathsheba")) {
+            return LOCAL_BATHSHEBA_IMAGE;
+        }
+
+        return null;
+    }
+
+    private String getCorrectedLocationImageRef(LocationEntity location) {
+        if (location == null) {
+            return null;
+        }
+
+        if (containsIgnoreCase(location.name, "Harrison's Cave")) {
+            return LOCAL_HARRISONS_CAVE_IMAGE;
+        }
+
+        if (containsIgnoreCase(location.name, "Bathsheba")) {
+            if (LEGACY_BATHSHEBA_LOCATION_IMAGE.equals(location.imageUrl)
+                    || location.imageUrl == null
+                    || location.imageUrl.trim().isEmpty()
+                    || !LOCAL_BATHSHEBA_IMAGE.equals(location.imageUrl)) {
+                return LOCAL_BATHSHEBA_IMAGE;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean containsIgnoreCase(String text, String query) {
+        return text != null
+                && query != null
+                && text.toLowerCase(java.util.Locale.US).contains(query.toLowerCase(java.util.Locale.US));
     }
 }

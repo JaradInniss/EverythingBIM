@@ -283,6 +283,13 @@ public class NotificationsActivity extends AppCompatActivity {
             return;
         }
 
+        if (UserNotificationHelper.TARGET_COMPLETED_LOCATION_TO_ADDRESS.equals(item.targetScreen)) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_VIEW_COMPLETED_LOCATION_TO_ADDRESS_REQUESTS);
+            startActivity(intent);
+            return;
+        }
+
         if (UserNotificationHelper.TARGET_COMPLETED_BUSINESS_VERIFICATION.equals(item.targetScreen)) {
             Intent intent = new Intent(this, MainActivity.class);
             intent.putExtra(MainActivity.EXTRA_PENDING_ACTION, MainActivity.ACTION_VIEW_COMPLETED_ACCOUNT_VERIFICATION_REQUESTS);

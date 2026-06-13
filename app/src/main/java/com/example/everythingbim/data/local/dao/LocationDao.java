@@ -50,6 +50,9 @@ public interface LocationDao {
     @Query("SELECT * FROM locations WHERE locationId = :id LIMIT 1")
     LiveData<LocationEntity> getLocationById(long id);
 
+    @Query("SELECT * FROM locations WHERE name = :name AND (latitude != 0 OR longitude != 0) ORDER BY locationId DESC LIMIT 1")
+    LiveData<LocationEntity> getResolvedLocationByName(String name);
+
     /**
      * Synchronous variant of {@link #getLocationById(long)} for use from
      * background threads (e.g. inside a Firestore mirror that needs to
@@ -74,6 +77,9 @@ public interface LocationDao {
     @Query("SELECT * FROM locations")
     LiveData<List<LocationEntity>> getAllLocations();
 
+    @Query("SELECT * FROM locations")
+    List<LocationEntity> getAllLocationsSync();
+
     /**
      * Inserts a new location or replaces an existing one if there's a conflict.
      * 
@@ -82,6 +88,10 @@ public interface LocationDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(LocationEntity location);
+
+    @Query("UPDATE locations SET imageUrl = :imageUrl WHERE locationId = :locationId")
+    void updateImageUrl(long locationId, String imageUrl);
+
     @Transaction
     @Query("SELECT * FROM locations")
     List<LocationWithDetails> getAllLocationsWithDetailsList();

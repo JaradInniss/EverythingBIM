@@ -322,6 +322,13 @@ public class CreatePostViewModel extends AndroidViewModel {
                     System.currentTimeMillis(),
                     taggedUids
             );
+            newPost.setPortableLocationSnapshot(
+                    currentLocation.getLatitude(),
+                    currentLocation.getLongitude(),
+                    currentLocation.getAddress(),
+                    null,
+                    null
+            );
             newPost.likeCount = 0;
 
             // Write to Firestore via a one-shot callback. The callback fires on

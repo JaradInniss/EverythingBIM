@@ -8,10 +8,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 
 import java.util.ArrayList;
@@ -84,30 +82,7 @@ public class NearbyRouteSelectionAdapter extends RecyclerView.Adapter<NearbyRout
             nameView.setText(location.getName());
             descriptionView.setText(location.getDescriptionOrFallback());
             distanceView.setText(location.getDistanceLabel());
-
-            if (location.getImageUrl() != null && !location.getImageUrl().trim().isEmpty()) {
-                int drawableResId = itemView.getResources().getIdentifier(
-                        location.getImageUrl(),
-                        "drawable",
-                        itemView.getContext().getPackageName()
-                );
-
-                if (drawableResId != 0) {
-                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    Glide.with(imageView)
-                            .load(drawableResId)
-                            .placeholder(R.drawable.ic_images)
-                            .error(R.drawable.ic_images)
-                            .centerCrop()
-                            .into(imageView);
-                } else {
-                    imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                    imageView.setImageDrawable(ContextCompat.getDrawable(itemView.getContext(), R.drawable.ic_images));
-                }
-            } else {
-                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                imageView.setImageDrawable(ContextCompat.getDrawable(itemView.getContext(), R.drawable.ic_images));
-            }
+            NearbyLocationImageHelper.loadInto(imageView, location.getImageUrl());
 
             addButton.setVisibility(isSelected ? View.GONE : View.VISIBLE);
             removeButton.setVisibility(isSelected ? View.VISIBLE : View.GONE);

@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Rect;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
@@ -27,6 +28,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -44,6 +46,7 @@ import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.utils.FileAdapter;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -81,6 +84,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class AddBusinessLocationRequestFragment extends Fragment {
+    private static final String PREF_ADD_LOCATION_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_ADD_LOCATION_SCROLL_HINT_SEEN;
 
     // ─── Map ────────────────────────────────────
     private MapView mapView;
@@ -96,6 +101,7 @@ public class AddBusinessLocationRequestFragment extends Fragment {
     private ListView searchResultsList;
     private Spinner placeTypeSpinner;
     private Button submitBtn;
+    private ScrollView formScrollView;
     private RecyclerView imgIconContainer;
     private FileAdapter imageAdapter;
 
@@ -108,6 +114,7 @@ public class AddBusinessLocationRequestFragment extends Fragment {
     private static final long SEARCH_DEBOUNCE_MS = 300L;
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private final Runnable pendingSearchRunnable = this::performSearch;
+    private int currentKeyboardExtraBottom = 0;
 
     // ─── Form values ─────────────────────────────
     private String selectedPlaceType = "";
@@ -179,6 +186,7 @@ public class AddBusinessLocationRequestFragment extends Fragment {
         initializePlacesClient();
 
         // Bind views
+        formScrollView      = view.findViewById(R.id.addbizlocreq_container);
         locationSearchEt  = view.findViewById(R.id.search_et);
         locationNameEt    = view.findViewById(R.id.location_name_et);
         searchResultsList = view.findViewById(R.id.search_results_list);
@@ -232,8 +240,82 @@ public class AddBusinessLocationRequestFragment extends Fragment {
 
         setupPlaceTypeSpinner();
         setupMap(view, savedInstanceState);
+        setupKeyboardInsets(view);
+        setupFocusedFieldScroll();
 
         return view;
+    }
+
+    private void setupKeyboardInsets(View root) {
+        if (formScrollView == null) {
+            return;
+        }
+
+        int initialLeft = formScrollView.getPaddingLeft();
+        int initialTop = formScrollView.getPaddingTop();
+        int initialRight = formScrollView.getPaddingRight();
+        int initialBottom = formScrollView.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                root,
+                formScrollView,
+                formScrollView,
+                PREF_ADD_LOCATION_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    formScrollView.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                },
+                () -> searchResultsList == null || searchResultsList.getVisibility() != View.VISIBLE
+        );
+    }
+
+    private void setupFocusedFieldScroll() {
+        bindFocusScroll(locationSearchEt, locationSearchEt);
+        bindFocusScroll(locationNameEt, submitBtn);
+    }
+
+    private void bindFocusScroll(View focusedView, View anchorView) {
+        if (focusedView == null || anchorView == null) {
+            return;
+        }
+        focusedView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollAnchorAboveKeyboard(anchorView);
+            }
+        });
+    }
+
+    private void scrollAnchorAboveKeyboard(View anchorView) {
+        if (formScrollView == null) {
+            return;
+        }
+
+        formScrollView.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            formScrollView.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = formScrollView.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                formScrollView.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * requireContext().getResources().getDisplayMetrics().density);
     }
 
     private boolean isGuestUser() {
@@ -657,9 +739,12 @@ public class AddBusinessLocationRequestFragment extends Fragment {
         List<String> imageUrls = new ArrayList<>();
         List<com.google.android.gms.tasks.Task<Uri>> uploadTasks = new ArrayList<>();
 
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
-        String userId = prefs.getString("userId", "anon");
+        String userId = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getUid() : null;
+        if (userId == null || userId.trim().isEmpty()) {
+            submissionFailed("Please sign in again before submitting a request.");
+            return;
+        }
 
         for (File file : selectedImages) {
             StorageReference ref = storage.getReference()
@@ -693,9 +778,12 @@ public class AddBusinessLocationRequestFragment extends Fragment {
     }
 
     private void saveRequestToFirestore(String locationName, List<String> imageUrls) {
-        SharedPreferences prefs = requireActivity()
-                .getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
-        String userId = prefs.getString("userId", "anonymous");
+        String userId = auth.getCurrentUser() != null
+                ? auth.getCurrentUser().getUid() : null;
+        if (userId == null || userId.trim().isEmpty()) {
+            submissionFailed("Please sign in again before submitting a request.");
+            return;
+        }
 
         Map<String, Object> request = new HashMap<>();
         request.put("userId",        userId);

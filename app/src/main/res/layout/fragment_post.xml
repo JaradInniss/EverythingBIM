@@ -203,4 +203,10 @@
 
     </LinearLayout>
 
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        layout="@layout/view_scroll_hint_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 </FrameLayout>

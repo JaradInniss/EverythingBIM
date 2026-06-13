@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,6 +49,7 @@ import com.example.everythingbim.databinding.BusinessRegisForm4Binding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.utils.FileAdapter;
+import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -67,6 +69,8 @@ import android.widget.Spinner;
 public class BusinessRegistration extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "BusinessRegistration";
+    private static final String PREF_BUSINESS_REG_SCROLL_HINT_SEEN =
+            KeyboardScrollHintHelper.PREF_BUSINESS_REG_SCROLL_HINT_SEEN;
     private BusinessRegViewModel viewModel;
     private ActivityBusinessRegistrationBinding binding;
     private BusinessRegisForm1Binding form1Binding;
@@ -102,6 +106,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
     private ImageView checkIcon, warningIcon;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private int currentKeyboardExtraBottom = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,12 +125,36 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         initViews();
         setupObservers();
+        setupKeyboardInsets();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void setupKeyboardInsets() {
+        int initialLeft = binding.businessRegistrationScroll.getPaddingLeft();
+        int initialTop = binding.businessRegistrationScroll.getPaddingTop();
+        int initialRight = binding.businessRegistrationScroll.getPaddingRight();
+        int initialBottom = binding.businessRegistrationScroll.getPaddingBottom();
+
+        KeyboardScrollHintHelper.attach(
+                binding.getRoot(),
+                binding.businessRegistrationScroll,
+                binding.businessRegistrationScroll,
+                PREF_BUSINESS_REG_SCROLL_HINT_SEEN,
+                keyboardExtraBottom -> {
+                    currentKeyboardExtraBottom = keyboardExtraBottom;
+                    binding.businessRegistrationScroll.setPadding(
+                            initialLeft,
+                            initialTop,
+                            initialRight,
+                            initialBottom + keyboardExtraBottom
+                    );
+                }
+        );
     }
 
     private void initViews() {
@@ -211,6 +240,67 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         // Auto‑advance and backspace handling
         setDigitAutoAdvance();
+        setupFocusedFieldScroll();
+        updateSubmitButtonState(false);
+    }
+
+    private void updateSubmitButtonState(boolean isSubmitting) {
+        if (submitBttn == null) {
+            return;
+        }
+        submitBttn.setEnabled(!isSubmitting);
+        submitBttn.setText(isSubmitting ? "Processing..." : "SUBMIT");
+        submitBttn.setAlpha(isSubmitting ? 0.7f : 1f);
+    }
+
+    private void setupFocusedFieldScroll() {
+        bindFocusScroll(form1Binding.businessRegisterUsernameEt, form1Binding.businessRegisterUsernameEt);
+        bindFocusScroll(form1Binding.businessRegisterEmailEt, form1Binding.businessRegisterEmailEt);
+        bindFocusScroll(form1Binding.businessRegisterPasswordEt, form1Binding.businessRegisterPasswordEt);
+        bindFocusScroll(form1Binding.businessRegisterRepasswordEt, form1Binding.nextBttn1);
+
+        bindFocusScroll(form2Binding.digit1, form2Binding.nextBttn2);
+        bindFocusScroll(form2Binding.digit2, form2Binding.nextBttn2);
+        bindFocusScroll(form2Binding.digit3, form2Binding.nextBttn2);
+        bindFocusScroll(form2Binding.digit4, form2Binding.nextBttn2);
+        bindFocusScroll(form2Binding.digit5, form2Binding.nextBttn2);
+
+        bindFocusScroll(form3Binding.registerBusinessNameEt, form3Binding.registerBusinessNameEt);
+        bindFocusScroll(form3Binding.registerContactNumberEt, form3Binding.registerContactNumberEt);
+        bindFocusScroll(form3Binding.registerBusinessAddressEt, form3Binding.registerBusinessAddressEt);
+        bindFocusScroll(form3Binding.registerBusinessDescriptionEt, form3Binding.nextBttn3);
+    }
+
+    private void bindFocusScroll(View focusedView, View anchorView) {
+        focusedView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollAnchorAboveKeyboard(anchorView);
+            }
+        });
+    }
+
+    private void scrollAnchorAboveKeyboard(View anchorView) {
+        binding.businessRegistrationScroll.post(() -> {
+            if (currentKeyboardExtraBottom <= 0) {
+                return;
+            }
+
+            Rect rect = new Rect();
+            anchorView.getDrawingRect(rect);
+            binding.businessRegistrationScroll.offsetDescendantRectToMyCoords(anchorView, rect);
+
+            int visibleHeight = binding.businessRegistrationScroll.getHeight() - currentKeyboardExtraBottom;
+            int desiredBottomMargin = dpToPx(24);
+            int targetBottom = visibleHeight - desiredBottomMargin;
+            int delta = rect.bottom - targetBottom;
+            if (delta > 0) {
+                binding.businessRegistrationScroll.smoothScrollBy(0, delta);
+            }
+        });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void setupBusinessTypeDropdown() {
@@ -367,11 +457,10 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         viewModel.getIsLoading().observe(this, isLoading -> {
             if (isLoading) {
                 progressBar.setVisibility(View.VISIBLE);
-                submitBttn.setEnabled(false);
             } else {
                 progressBar.setVisibility(View.GONE);
-                submitBttn.setEnabled(true);
             }
+            updateSubmitButtonState(Boolean.TRUE.equals(isLoading));
         });
 
         // Observe error messages
@@ -385,6 +474,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         // Navigation
         viewModel.getNavigationEvent().observe(this, destination -> {
             if (destination != null) {
+                Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(BusinessRegistration.this, destination);
                 String pendingAction = getIntent().getStringExtra(MainActivity.EXTRA_PENDING_ACTION);
                 if (pendingAction != null && destination.equals(Login.class)) {
@@ -669,11 +759,13 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         } else if (id == R.id.prev_bttn1 || id == R.id.prev_bttn2 || id == R.id.prev_bttn3) {
             viewModel.prevPage();
         } else if (id == R.id.submit_bttn) {
+            updateSubmitButtonState(true);
             String email = businessEmailEt.getText().toString().trim();
             String password = passwordEt.getText().toString().trim();
             String confirm = rePasswordEt.getText().toString().trim();
 
             if (!password.equals(confirm)) {
+                updateSubmitButtonState(false);
                 Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
                 return;
             }

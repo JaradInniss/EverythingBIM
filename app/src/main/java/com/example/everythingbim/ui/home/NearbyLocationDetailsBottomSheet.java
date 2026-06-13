@@ -9,9 +9,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -74,25 +71,6 @@ public class NearbyLocationDetailsBottomSheet extends BottomSheetDialogFragment 
     }
 
     private void bindImage(@NonNull ImageView imageView, @NonNull NearbySavedLocation location) {
-        if (location.getImageUrl() != null && !location.getImageUrl().trim().isEmpty()) {
-            int drawableResId = imageView.getResources().getIdentifier(
-                    location.getImageUrl(),
-                    "drawable",
-                    requireContext().getPackageName()
-            );
-            if (drawableResId != 0) {
-                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                Glide.with(imageView)
-                        .load(drawableResId)
-                        .placeholder(R.drawable.ic_images)
-                        .error(R.drawable.ic_images)
-                        .centerCrop()
-                        .into(imageView);
-                return;
-            }
-        }
-
-        imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        imageView.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_images));
+        NearbyLocationImageHelper.loadInto(imageView, location.getImageUrl());
     }
 }

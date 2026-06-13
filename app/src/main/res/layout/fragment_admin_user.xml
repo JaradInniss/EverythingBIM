@@ -186,6 +186,7 @@
          CONTENT AREA — all states live here
     ══════════════════════════════════════ -->
     <ScrollView
+        android:id="@+id/users_content_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/general_legend"
@@ -586,7 +587,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Business Location Verification Requests"
+                            android:text="Business Location Requests"
                             android:textColor="@color/white"
                             android:textSize="13sp"
                             android:textStyle="bold"
@@ -596,7 +597,7 @@
                             android:id="@+id/business_locverreq_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
+                            android:text="0 -"
                             android:textColor="@color/dim_grey"
                             android:textSize="12sp"
                             android:fontFamily="@font/roboto_medium"
@@ -730,5 +731,12 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <include
+        android:id="@+id/scroll_hint_overlay_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="96dp"
+        layout="@layout/view_scroll_hint_overlay" />
 
 </RelativeLayout>

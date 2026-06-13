@@ -8,9 +8,9 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.PostEntity;
+import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,11 +57,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         PostEntity post = posts.get(position);
         
         // Load the post image using Glide
-        Glide.with(holder.imageView.getContext())
-                .load(post.imageUrl)
-                .placeholder(R.drawable.bg_main)
-                .centerCrop()
-                .into(holder.imageView);
+        ImageReferenceLoader.loadInto(holder.imageView, post.imageUrl, R.drawable.bg_main);
         
         // Set click listener for the entire item view
         holder.itemView.setOnClickListener(v -> {

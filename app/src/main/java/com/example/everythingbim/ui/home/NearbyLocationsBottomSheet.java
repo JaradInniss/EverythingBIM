@@ -33,6 +33,8 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
     private static final String ARG_ANCHOR_NAME = "anchor_name";
     private static final String ARG_ANCHOR_LATITUDE = "anchor_latitude";
     private static final String ARG_ANCHOR_LONGITUDE = "anchor_longitude";
+    private static final String ARG_RADIUS_METERS = "radius_meters";
+    private static final int[] RADIUS_OPTIONS_METERS = {1000, 3000, 5000, 10000, 25000};
 
     private final LinkedHashSet<Long> selectedIds = new LinkedHashSet<>();
     private final LinkedHashSet<NearbySavedLocation> selectedLocations = new LinkedHashSet<>();
@@ -44,16 +46,19 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
     private TextView routeButton;
     private TextView externalRouteButton;
     private TextView selectedCountView;
+    private TextView radiusButton;
     private int visibleLocationCount = PAGE_SIZE;
     private String anchorName = "anchor";
     private double anchorLatitude;
     private double anchorLongitude;
+    private int searchRadiusMeters = 1000;
 
     public static NearbyLocationsBottomSheet newInstance(@NonNull ArrayList<NearbySavedLocation> locations,
                                                          @NonNull ArrayList<Long> selectedIds,
                                                          @Nullable String anchorName,
                                                          double anchorLatitude,
-                                                         double anchorLongitude) {
+                                                         double anchorLongitude,
+                                                         int searchRadiusMeters) {
         NearbyLocationsBottomSheet sheet = new NearbyLocationsBottomSheet();
         Bundle args = new Bundle();
         args.putSerializable(ARG_LOCATIONS, locations);
@@ -61,6 +66,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         args.putString(ARG_ANCHOR_NAME, anchorName);
         args.putDouble(ARG_ANCHOR_LATITUDE, anchorLatitude);
         args.putDouble(ARG_ANCHOR_LONGITUDE, anchorLongitude);
+        args.putInt(ARG_RADIUS_METERS, searchRadiusMeters);
         sheet.setArguments(args);
         return sheet;
     }
@@ -82,6 +88,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         ImageView closeButton = view.findViewById(R.id.nearby_sheet_close_button);
         titleView = view.findViewById(R.id.nearby_sheet_title);
         selectedCountView = view.findViewById(R.id.nearby_sheet_selected_count);
+        radiusButton = view.findViewById(R.id.nearby_sheet_radius_button);
         seeMoreButton = view.findViewById(R.id.nearby_sheet_see_more_button);
         routeButton = view.findViewById(R.id.nearby_sheet_route_button);
         externalRouteButton = view.findViewById(R.id.nearby_sheet_external_route_button);
@@ -110,8 +117,10 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         titleView.setText(allLocations.isEmpty()
                 ? "Nearby " + anchorName + " Locations"
                 : "Nearby " + anchorName + " Locations (" + allLocations.size() + ")");
+        radiusButton.setOnClickListener(v -> showRadiusPicker());
         seeMoreButton.setOnClickListener(v -> showMoreLocations());
         updateVisibleLocations();
+        updateRadiusButton();
         Toast.makeText(requireContext(), "Tip: tap a location image for more options.", Toast.LENGTH_SHORT).show();
 
         routeButton.setOnClickListener(v -> {
@@ -162,6 +171,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         }
         anchorLatitude = args.getDouble(ARG_ANCHOR_LATITUDE, 0d);
         anchorLongitude = args.getDouble(ARG_ANCHOR_LONGITUDE, 0d);
+        searchRadiusMeters = args.getInt(ARG_RADIUS_METERS, 1000);
     }
 
     @Override
@@ -221,6 +231,66 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         }
     }
 
+    public void updateContent(@NonNull List<NearbySavedLocation> locations,
+                              @NonNull List<Long> selectedLocationIds,
+                              int updatedRadiusMeters) {
+        allLocations.clear();
+        allLocations.addAll(locations);
+        selectedIds.clear();
+        selectedIds.addAll(selectedLocationIds);
+        selectedLocations.clear();
+        for (NearbySavedLocation location : allLocations) {
+            if (selectedIds.contains(location.getLocationId())) {
+                selectedLocations.add(location);
+            }
+        }
+        searchRadiusMeters = updatedRadiusMeters;
+        visibleLocationCount = Math.min(Math.max(visibleLocationCount, PAGE_SIZE), allLocations.size());
+        titleView.setText(allLocations.isEmpty()
+                ? "Nearby " + anchorName + " Locations"
+                : "Nearby " + anchorName + " Locations (" + allLocations.size() + ")");
+        updateVisibleLocations();
+        updateRadiusButton();
+        updateSelectionSummary();
+    }
+
+    private void showRadiusPicker() {
+        String[] labels = new String[RADIUS_OPTIONS_METERS.length];
+        int selectedIndex = 0;
+        for (int index = 0; index < RADIUS_OPTIONS_METERS.length; index++) {
+            labels[index] = formatRadius(RADIUS_OPTIONS_METERS[index]);
+            if (RADIUS_OPTIONS_METERS[index] == searchRadiusMeters) {
+                selectedIndex = index;
+            }
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Select nearby radius")
+                .setSingleChoiceItems(labels, selectedIndex, (dialog, which) -> {
+                    int selectedRadius = RADIUS_OPTIONS_METERS[which];
+                    if (selectedRadius != searchRadiusMeters && actionsListener != null) {
+                        searchRadiusMeters = selectedRadius;
+                        updateRadiusButton();
+                        actionsListener.onRadiusSelected(selectedRadius);
+                    }
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void updateRadiusButton() {
+        radiusButton.setText("Radius: " + formatRadius(searchRadiusMeters));
+    }
+
+    @NonNull
+    private String formatRadius(int meters) {
+        if (meters >= 1000) {
+            return String.format(java.util.Locale.US, "%.0f km", meters / 1000f);
+        }
+        return meters + " m";
+    }
+
     private void updateSelectionSummary() {
         int count = selectedLocations.size();
         if (count == 0) {
@@ -262,5 +332,7 @@ public class NearbyLocationsBottomSheet extends BottomSheetDialogFragment implem
         void onOpenRouteExternallyRequested(@NonNull List<NearbySavedLocation> selectedLocations);
 
         void onLocationDetailsRequested(@NonNull NearbySavedLocation location);
+
+        void onRadiusSelected(int radiusMeters);
     }
 }
