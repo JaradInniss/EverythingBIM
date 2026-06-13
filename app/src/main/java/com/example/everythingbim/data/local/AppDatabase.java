@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
         UserEntity.class,
         GeneralUserEntity.class,
         BusinessUserEntity.class
-}, version = 11)
+}, version = 12)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final ExecutorService DATABASE_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -91,6 +91,17 @@ public abstract class AppDatabase extends RoomDatabase {
             db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationLongitude` REAL");
             db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationAddress` TEXT");
             db.execSQL("ALTER TABLE `posts` ADD COLUMN `locationPlaceId` TEXT");
+        }
+    };
+
+    private static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `locations` ADD COLUMN `locationFirestoreId` TEXT");
+            db.execSQL("ALTER TABLE `locations` ADD COLUMN `isActive` INTEGER NOT NULL DEFAULT 1");
+            db.execSQL("ALTER TABLE `locations` ADD COLUMN `sourceType` TEXT");
+            db.execSQL("ALTER TABLE `locations` ADD COLUMN `placeId` TEXT");
+            db.execSQL("ALTER TABLE `locations` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0");
         }
     };
 
@@ -162,7 +173,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     wipeLegacyDatabaseIfNeeded(appContext);
                     INSTANCE = Room.databaseBuilder(appContext,
                                     AppDatabase.class, "app_database")
-                            .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+                            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                             .addCallback(new Callback() {
                                 @Override
                                 public void onCreate(@NonNull androidx.sqlite.db.SupportSQLiteDatabase db) {

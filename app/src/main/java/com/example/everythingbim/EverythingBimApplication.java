@@ -3,6 +3,7 @@ package com.example.everythingbim;
 import android.app.Application;
 import android.util.Log;
 
+import com.example.everythingbim.data.repository.CanonicalLocationRepository;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
@@ -22,6 +23,8 @@ public class EverythingBimApplication extends Application {
         FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
                 DebugAppCheckProviderFactory.getInstance()
         );
+
+        new CanonicalLocationRepository(this).syncCanonicalLocations();
 
         Log.d(TAG, "Firebase initialized with App Check debug provider");
     }
