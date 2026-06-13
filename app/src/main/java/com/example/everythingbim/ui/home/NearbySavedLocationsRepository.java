@@ -23,6 +23,8 @@ public class NearbySavedLocationsRepository {
     private static final int EXPECTED_SEED_COUNT = 12;
     private static final String LOCAL_BATHSHEBA_IMAGE = "bathsheba.jpg";
     private static final String LOCAL_HARRISONS_CAVE_IMAGE = "harrisons_cave.jpg";
+    private static final String LOCAL_GAIA_IMAGE = "gaia.jpg";
+    private static final String LOCAL_HOLETOWN_IMAGE = "holetown.jpg";
     private static final String LEGACY_BATHSHEBA_LOCATION_IMAGE = "bathsheba_beach";
 
     private final LocationDao locationDao;
@@ -150,6 +152,19 @@ public class NearbySavedLocationsRepository {
         if (containsIgnoreCase(location.name, "Harrison's Cave")) {
             if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
                 return LOCAL_HARRISONS_CAVE_IMAGE;
+            }
+        }
+
+        if (containsIgnoreCase(location.name, "Grantley Adams International Airport")
+                || containsIgnoreCase(location.name, "GAIA")) {
+            if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
+                return LOCAL_GAIA_IMAGE;
+            }
+        }
+
+        if (containsIgnoreCase(location.name, "Holetown")) {
+            if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
+                return LOCAL_HOLETOWN_IMAGE;
             }
         }
 
