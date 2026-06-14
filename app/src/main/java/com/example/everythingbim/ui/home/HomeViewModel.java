@@ -14,6 +14,8 @@ public class HomeViewModel extends ViewModel {
     private final SingleLiveEvent<SelectedImage> navigationEvent = new SingleLiveEvent<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
+    public HomeViewModel() {}
+
     @NonNull
     public LiveData<SelectedImage> getNavigationEvent() {
         return navigationEvent;
@@ -24,9 +26,7 @@ public class HomeViewModel extends ViewModel {
         return errorMessage;
     }
 
-    public void onImageSelected(@NonNull SelectedImage selectedImage) {
-        navigationEvent.setValue(selectedImage);
-    }
+    public void onImageSelected(@NonNull SelectedImage selectedImage) { navigationEvent.setValue(selectedImage); }
 
     public void onSelectionError(@NonNull String message) {
         errorMessage.setValue(message);

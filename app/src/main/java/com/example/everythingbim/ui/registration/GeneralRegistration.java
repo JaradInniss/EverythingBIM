@@ -18,10 +18,10 @@ import android.graphics.Rect;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +36,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
-//import com.example.everythingbim.ui.registration.GeneralRegViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -57,13 +56,13 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
     private GeneralRegisForm2Binding form2Binding;
 
     // UI Elements
-    private TextView loginOption, errorTextView;
+    private TextView errorTextView;
     private ViewFlipper genRegFormViewFlipper;
-    private LinearLayout generalUserContainer, businessUserContainer, nextBttn, prevBttn, errorLayout;
+    private LinearLayout nextBttn, prevBttn, errorLayout;
     private Button submitBttn;
 
     // EditText fields from Form 1
-    private TextInputEditText usernameEditText, passwordEditText, emailEditText, rePasswordEditText;
+    private TextInputEditText usernameEditText, passwordEditText, emailEditText;
 
     // EditText fields from Form 2 (Email Verification)
     private EditText digit1, digit2, digit3, digit4, digit5;
@@ -159,6 +158,9 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(binding.generalRegistrationScroll, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -174,24 +176,32 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         });
     }
 
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
+    }
+
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void initViews() {
         // TextViews
-        loginOption = form1Binding.loginOpt;
-        loginOption.setOnClickListener(this);
+        form1Binding.loginOpt.setOnClickListener(this);
         errorTextView = form1Binding.regErrorTv;
 
         // ViewFlipper
         genRegFormViewFlipper = binding.regFormViewflipper;
 
         // Linear Layouts
-        generalUserContainer = binding.generalUserContainer;
-        businessUserContainer = binding.businessUserContainer;
-        generalUserContainer.setOnClickListener(this);
-        businessUserContainer.setOnClickListener(this);
+        binding.generalUserContainer.setOnClickListener(this);
+        binding.businessUserContainer.setOnClickListener(this);
         nextBttn = form1Binding.nextBttn;
         prevBttn = form2Binding.prevBttn;
         nextBttn.setOnClickListener(this);
@@ -207,7 +217,6 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
         usernameEditText = form1Binding.registerUsernameEt;
         passwordEditText = form1Binding.registerPasswordEt;
         emailEditText = form1Binding.registerEmailEt;
-        rePasswordEditText = form1Binding.registerRepasswordEt;
 
         // Digit fields for verification
         digit1 = form2Binding.digit1;
@@ -256,7 +265,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
             handler.removeCallbacksAndMessages(null);
             if (errors == null) {
                 // If errors are null, manually hide everything immediately
-                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                TransitionManager.beginDelayedTransition(binding.getRoot(), new AutoTransition());
                 errorLayout.setVisibility(View.GONE);
                 // Create a list of all layouts to reset them all at once
                 TextInputLayout[] allLayouts = {
@@ -290,7 +299,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
                 if (fieldLayout == null) continue;
 
                 // Animate layout changes
-                TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                TransitionManager.beginDelayedTransition(binding.getRoot(), new AutoTransition());
                 // Set the Error UI: Update the Material layout and our custom TextView
                 errorLayout.setVisibility(View.VISIBLE); // Makes error text appear
                 errorTextView.setText(error);
@@ -299,7 +308,7 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
                 // Delayed Disappearance: Create a timer to hide the error after 2 seconds
                 handler.postDelayed(() -> {
                     // Animate the views sliding back into their original places
-                    TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition());
+                    TransitionManager.beginDelayedTransition(binding.getRoot(), new AutoTransition());
                     // Reset UI: Hide the error box and clear the red outlines/text from the field
                     errorLayout.setVisibility(View.GONE);
                     updateEndIcon(fieldLayout, null);
@@ -410,13 +419,12 @@ public class GeneralRegistration extends AppCompatActivity implements View.OnCli
 
     // Validation for form page 1 (username, email, password)
     private boolean validatePage1() {
-        boolean isValid = viewModel.isFormValid(
+        return viewModel.isFormValid(
                 form1Binding.registerUsernameEt.getText().toString(),
                 form1Binding.registerEmailEt.getText().toString(),
                 form1Binding.registerPasswordEt.getText().toString(),
                 form1Binding.registerRepasswordEt.getText().toString()
         );
-        return isValid;
     }
 
     // Demo verification code (in real app, this should be sent via email)

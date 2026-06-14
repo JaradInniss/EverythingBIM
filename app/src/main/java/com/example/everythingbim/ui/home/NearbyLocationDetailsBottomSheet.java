@@ -45,7 +45,7 @@ public class NearbyLocationDetailsBottomSheet extends BottomSheetDialogFragment 
         TextView distanceView = view.findViewById(R.id.nearby_detail_distance);
         TextView addressView = view.findViewById(R.id.nearby_detail_address);
         TextView descriptionView = view.findViewById(R.id.nearby_detail_description);
-        TextView closeButton = view.findViewById(R.id.nearby_detail_close_button);
+        ImageView closeButton = view.findViewById(R.id.nearby_detail_close_button);
 
         nameView.setText(location.getName());
         categoryView.setText(location.getCategoryLabel());

@@ -17,18 +17,14 @@
             android:layout_weight="1"
             android:text="Location Details"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:fontFamily="@font/roboto_bold" />
+            android:textSize="16sp"
+            android:fontFamily="@font/roboto_medium" />
 
-        <TextView
+        <ImageView
             android:id="@+id/nearby_detail_close_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_border_rectangle_gold"
-            android:gravity="center"
-            android:text="X"
-            android:textColor="@color/prussian_blue"
-            android:textStyle="bold" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_close" />
     </LinearLayout>
 
     <ImageView

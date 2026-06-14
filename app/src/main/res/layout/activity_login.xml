@@ -237,8 +237,7 @@
                                 android:id="@+id/remember_me_check"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:buttonTint="@color/dark"
-                                android:checked="true" />
+                                android:buttonTint="@color/dark"/>
 
                             <TextView
                                 android:layout_width="wrap_content"

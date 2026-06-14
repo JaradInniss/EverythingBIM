@@ -14,7 +14,7 @@
         android:layout_alignParentBottom="true"
         android:elevation="5dp"
         app:menu="@menu/admin_bottom_nav_menu"
-        android:background="@color/dark"
+        android:background="@color/prussian_blue"
         app:labelVisibilityMode="labeled"
         app:itemIconTint="@color/nav_item_color_selector"
         app:itemTextColor="@color/nav_item_color_selector"/>

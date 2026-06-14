@@ -71,7 +71,8 @@ public class AdminUserFragment extends Fragment {
     // ─── Views ───────────────────────────────
     private LinearLayout btnGeneral, btnBusiness;
     private EditText searchEt;
-    private TextView headerTitle;
+    private TextView headerTitle, btnGeneralText, btnBusinessText;
+    private ImageView btnGeneralIcon, btnBusinessIcon;
     private View searchResultsCard;
     private LinearLayout searchResultsContainer;
     private TextView filterIdPill, filterUsernamePill;
@@ -118,7 +119,13 @@ public class AdminUserFragment extends Fragment {
 
         // Bind header views
         btnGeneral  = view.findViewById(R.id.general_user_container);
+        btnGeneralText = view.findViewById(R.id.general_user_tv);
+        btnGeneralIcon = view.findViewById(R.id.general_user_iv);
+
         btnBusiness = view.findViewById(R.id.business_user_container);
+        btnBusinessText = view.findViewById(R.id.business_user_tv);
+        btnBusinessIcon = view.findViewById(R.id.business_user_iv);
+
         searchEt    = view.findViewById(R.id.users_search_et);
         headerTitle = view.findViewById(R.id.users_header_title);
         contentScrollView = view.findViewById(R.id.users_content_scroll);
@@ -324,8 +331,16 @@ public class AdminUserFragment extends Fragment {
                 if (headerTitle != null) {
                     headerTitle.setText("Users' Submissions");
                 }
-                btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_active);
+                btnGeneral.setBackgroundResource(R.drawable.bg_rectangle_blue);
+                btnGeneralIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)));
+                btnGeneralText.setTextColor(getResources().getColor(R.color.white));
+
                 btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                btnBusinessIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.dark)));
+                btnBusinessText.setTextColor(getResources().getColor(R.color.dark));
+
                 generalContent.setVisibility(View.VISIBLE);
                 businessContent.setVisibility(View.GONE);
                 generalLegend.setVisibility(View.VISIBLE);
@@ -334,8 +349,16 @@ public class AdminUserFragment extends Fragment {
                 if (headerTitle != null) {
                     headerTitle.setText("Users");
                 }
-                btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_active);
+                btnBusiness.setBackgroundResource(R.drawable.bg_rectangle_blue);
+                btnBusinessIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)));
+                btnBusinessText.setTextColor(getResources().getColor(R.color.white));
+
                 btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                btnGeneralIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.dark)));
+                btnGeneralText.setTextColor(getResources().getColor(R.color.dark));
+
                 businessContent.setVisibility(View.VISIBLE);
                 generalContent.setVisibility(View.GONE);
                 generalLegend.setVisibility(View.GONE);
@@ -345,7 +368,13 @@ public class AdminUserFragment extends Fragment {
                     headerTitle.setText("Users");
                 }
                 btnGeneral.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                btnGeneralIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.dark)));
+                btnGeneralText.setTextColor(getResources().getColor(R.color.dark));
                 btnBusiness.setBackgroundResource(R.drawable.bg_users_toggle_inactive);
+                btnBusinessIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.dark)));
+                btnBusinessText.setTextColor(getResources().getColor(R.color.dark));
                 generalContent.setVisibility(View.GONE);
                 businessContent.setVisibility(View.GONE);
                 generalLegend.setVisibility(View.GONE);

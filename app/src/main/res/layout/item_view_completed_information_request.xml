@@ -65,7 +65,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Status:"
-                            android:textColor="@color/grey"
+                            android:textColor="@color/dim_grey"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                         <TextView
@@ -117,22 +117,17 @@
                 android:id="@+id/viewinforeq_name_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewinforeq_name_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
-                    android:textSize="13sp"
-                    android:padding="10dp"
                     android:focusable="false"
                     android:clickable="false"
-                    android:background="@android:color/transparent" />
+                    style="@style/txtInputEditText_style"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Location Description -->
@@ -147,22 +142,18 @@
                 android:id="@+id/viewinforeq_desc_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewinforeq_desc_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:textSize="13sp"
-                    android:padding="10dp"
                     android:focusable="false"
                     android:clickable="false"
-                    android:background="@android:color/transparent" />
+                    android:inputType="textMultiLine"
+                    android:gravity="start|top"
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Place Type -->
@@ -178,10 +169,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewinforeq_place_type_et"
@@ -191,8 +179,7 @@
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Reason For Request -->
@@ -207,22 +194,17 @@
                 android:id="@+id/viewinforeq_reason_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewinforeq_reason_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
-                    android:textSize="13sp"
-                    android:padding="10dp"
                     android:focusable="false"
                     android:clickable="false"
-                    android:background="@android:color/transparent" />
+                    style="@style/txtInputEditText_style"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Images of Location -->
@@ -237,7 +219,7 @@
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_rectangle_dim_grey"
+                android:background="@drawable/bg_rectangle_alice_blue"
                 android:layout_marginBottom="12dp">
                 <LinearLayout
                     android:id="@+id/viewinforeq_image_container"

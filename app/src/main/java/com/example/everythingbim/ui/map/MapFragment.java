@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.map;
 
 import android.Manifest;
+import android.graphics.Color;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -139,7 +140,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private RelativeLayout detailsHeader;
     private ScrollView detailsScrollView;
     private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
-    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5;
+    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5, closeWriteReviewBttn;
     private int currentKeyboardExtraBottom;
 
     private ArrayAdapter<String> searchResultsAdapter;
@@ -258,6 +259,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         ratingStar4.setOnClickListener(v -> mapViewModel.setRating(4));
         ratingStar5 = binding.ratingStar5;
         ratingStar5.setOnClickListener(v -> mapViewModel.setRating(5));
+        closeWriteReviewBttn = binding.closeWriteReviewBttn;
+        closeWriteReviewBttn.setOnClickListener(this);
 
         // Horizontal Scroll Views
         imagesField = binding.locationImagesField;
@@ -393,6 +396,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             toggleWriteReview();
         } else if (bttnId == R.id.submit_review_bttn) {
             mapViewModel.submitReview();
+        } else if (bttnId == R.id.close_write_review_bttn) {
+            toggleWriteReview();
         }
     }
 
@@ -766,6 +771,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (writeReviewBttn.getVisibility() == View.VISIBLE) {
             writeReviewBttn.setVisibility(View.GONE);
             writeReviewContainer.setVisibility(View.VISIBLE);
+            closeWriteReviewBttn.setVisibility(View.VISIBLE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.requestFocus();
@@ -774,6 +780,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         } else {
             writeReviewBttn.setVisibility(View.VISIBLE);
             writeReviewContainer.setVisibility(View.GONE);
+            closeWriteReviewBttn.setVisibility(View.GONE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.clearFocus();
@@ -1059,9 +1066,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             LatLng stopLatLng = new LatLng(stop.getLatitude(), stop.getLongitude());
             routePoints.add(stopLatLng);
 
-            float markerHue = index == routePreviewLocations.size() - 1
-                    ? BitmapDescriptorFactory.HUE_RED
-                    : BitmapDescriptorFactory.HUE_ORANGE;
+            int markerColor = index == routePreviewLocations.size() - 1
+                    ? ContextCompat.getColor(requireContext(), R.color.space_indigo)
+                    : ContextCompat.getColor(requireContext(), R.color.periwinkle);
+            float[] hsv = new float[3];
+            Color.colorToHSV(markerColor, hsv);
+            float markerHue = hsv[0];
+
             String markerTitle = (index + 1) + ". " + stop.getName();
             String markerSnippet = index == routePreviewLocations.size() - 1
                     ? "Destination | " + stop.getDistanceLabel()
@@ -1097,12 +1108,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         routePreviewOutlinePolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(16f)
+                .width(12f)
                 .color(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
 
         routePreviewPolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(9f)
+                .width(6f)
                 .color(ContextCompat.getColor(requireContext(), R.color.space_indigo)));
     }
 

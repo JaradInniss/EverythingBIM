@@ -3,6 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
+    android:fitsSystemWindows="true"
+    android:background="@color/prussian_blue"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.user.AddLocationRequestFragment">
@@ -116,6 +118,7 @@
                                 android:singleLine="true"
                                 android:textSize="12sp"
                                 android:textColor="@color/black"
+                                android:textColorHint="@color/black"
                                 android:imeOptions="actionSearch" />
                             <ImageView
                                 android:id="@+id/search_bttn"

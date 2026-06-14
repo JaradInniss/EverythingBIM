@@ -65,12 +65,7 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/light_grey"
-                app:boxStrokeWidth="1dp"
-                app:boxStrokeWidthFocused="2dp"
-                app:hintTextColor="@color/dim_grey"
-                android:background="@drawable/bg_rectangle_dim_grey">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/dialog_description_et"
@@ -80,7 +75,8 @@
                     android:textSize="15sp"
                     android:padding="12dp"
                     android:minLines="3"
-                    android:gravity="top|start" />
+                    android:gravity="top|start"
+                    style="@style/txtInputEditText_style"/>
 
             </com.google.android.material.textfield.TextInputLayout>
 
