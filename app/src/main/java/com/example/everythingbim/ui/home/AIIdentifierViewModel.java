@@ -14,20 +14,27 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.everythingbim.data.local.AppDatabase;
 import com.example.everythingbim.data.models.SelectedImage;
+import com.example.everythingbim.data.repository.CanonicalLocationRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AIIdentifierViewModel extends AndroidViewModel {
     private static final float PARLIAMENT_UNCERTAIN_THRESHOLD = 0.45f;
     private static final float GPS_SUPPORT_DISTANCE_METERS = 3000f;
+    private static final String CANONICAL_KEY_PARLIAMENT = "parliament";
+    private static final String CANONICAL_KEY_KENSINGTON = "kensington";
 
     private final MutableLiveData<HomeUiState> uiState = new MutableLiveData<>(HomeUiState.idle());
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final LandmarkRepository landmarkRepository = new LandmarkRepository();
     private final NearbySavedLocationsRepository nearbySavedLocationsRepository;
+    private final CanonicalLocationRepository canonicalLocationRepository;
 
     private LandmarkClassifier classifier;
     private SelectedImage selectedImage;
@@ -44,6 +51,7 @@ public class AIIdentifierViewModel extends AndroidViewModel {
 
     public AIIdentifierViewModel(@NonNull Application application) {
         super(application);
+        canonicalLocationRepository = new CanonicalLocationRepository(application);
         nearbySavedLocationsRepository = new NearbySavedLocationsRepository(
                 AppDatabase.getInstance(application).locationDao(),
                 AppDatabase.getInstance(application).postDao()
@@ -306,21 +314,64 @@ public class AIIdentifierViewModel extends AndroidViewModel {
 
     @Nullable
     private Landmark resolveLandmark(@NonNull LandmarkClassifier.Result prediction) {
+        String fallbackToken = resolveFallbackToken(prediction);
+        if (fallbackToken == null) {
+            return null;
+        }
+
+        Landmark canonicalLandmark = canonicalLocationRepository.findCanonicalLandmark(
+                buildCanonicalLookupKeys(prediction, fallbackToken));
+        if (canonicalLandmark != null) {
+            return canonicalLandmark;
+        }
+        return landmarkRepository.findByIdOrToken(fallbackToken);
+    }
+
+    @Nullable
+    private String resolveFallbackToken(@NonNull LandmarkClassifier.Result prediction) {
         if (LandmarkClassifier.LABEL_PARLIAMENT.equalsIgnoreCase(prediction.getLabel())) {
-            return landmarkRepository.findByIdOrToken("parliament");
+            return CANONICAL_KEY_PARLIAMENT;
         }
         if (LandmarkClassifier.LABEL_KENSINGTON_OVAL.equalsIgnoreCase(prediction.getLabel())) {
-            return landmarkRepository.findByIdOrToken("kensington");
+            return CANONICAL_KEY_KENSINGTON;
         }
         if (prediction.getParliamentProbability() >= prediction.getKensingtonProbability()
                 && prediction.getParliamentProbability() >= prediction.getOtherProbability()) {
-            return landmarkRepository.findByIdOrToken("parliament");
+            return CANONICAL_KEY_PARLIAMENT;
         }
         if (prediction.getKensingtonProbability() > prediction.getParliamentProbability()
                 && prediction.getKensingtonProbability() >= prediction.getOtherProbability()) {
-            return landmarkRepository.findByIdOrToken("kensington");
+            return CANONICAL_KEY_KENSINGTON;
         }
         return null;
+    }
+
+    @NonNull
+    private List<String> buildCanonicalLookupKeys(@NonNull LandmarkClassifier.Result prediction,
+                                                  @NonNull String fallbackToken) {
+        List<String> keys = new ArrayList<>();
+        addLookupKey(keys, prediction.getLabel());
+        addLookupKey(keys, fallbackToken);
+
+        if (CANONICAL_KEY_KENSINGTON.equalsIgnoreCase(fallbackToken)) {
+            addLookupKey(keys, LandmarkClassifier.LABEL_KENSINGTON_OVAL);
+            addLookupKey(keys, "Kensington Oval");
+        } else if (CANONICAL_KEY_PARLIAMENT.equalsIgnoreCase(fallbackToken)) {
+            addLookupKey(keys, "Barbados Parliament Buildings");
+            addLookupKey(keys, "Parliament Building");
+        }
+
+        return keys;
+    }
+
+    private void addLookupKey(@NonNull List<String> keys, @Nullable String value) {
+        if (value == null) {
+            return;
+        }
+        String trimmed = value.trim();
+        if (!trimmed.isEmpty()) {
+            keys.add(trimmed.toLowerCase(Locale.US));
+        }
     }
 
     private boolean isConfirmedPrediction(@NonNull LandmarkClassifier.Result prediction) {
@@ -329,7 +380,20 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     }
 
     private boolean isParliament(@NonNull Landmark landmark) {
-        return "parliament".equalsIgnoreCase(landmark.getId());
+        return matchesLandmarkIdentity(landmark, CANONICAL_KEY_PARLIAMENT, LandmarkClassifier.LABEL_PARLIAMENT);
+    }
+
+    private boolean isKensington(@NonNull Landmark landmark) {
+        return matchesLandmarkIdentity(landmark, CANONICAL_KEY_KENSINGTON, LandmarkClassifier.LABEL_KENSINGTON_OVAL);
+    }
+
+    private boolean matchesLandmarkIdentity(@NonNull Landmark landmark,
+                                            @NonNull String legacyId,
+                                            @NonNull String classifierLabel) {
+        return legacyId.equalsIgnoreCase(landmark.getId())
+                || legacyId.equalsIgnoreCase(landmark.getToken())
+                || classifierLabel.equalsIgnoreCase(landmark.getId())
+                || classifierLabel.equalsIgnoreCase(landmark.getToken());
     }
 
     private float getDisplayProbability(@NonNull LandmarkClassifier.Result prediction,
@@ -337,7 +401,7 @@ public class AIIdentifierViewModel extends AndroidViewModel {
         if (isParliament(landmark)) {
             return prediction.getParliamentProbability();
         }
-        if ("kensington".equalsIgnoreCase(landmark.getId())) {
+        if (isKensington(landmark)) {
             return prediction.getKensingtonProbability();
         }
         return prediction.getTopProbability();
