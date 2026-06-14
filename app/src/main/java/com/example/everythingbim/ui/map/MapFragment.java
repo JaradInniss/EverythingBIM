@@ -140,7 +140,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private RelativeLayout detailsHeader;
     private ScrollView detailsScrollView;
     private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
-    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5;
+    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5, closeWriteReviewBttn;
     private int currentKeyboardExtraBottom;
 
     private ArrayAdapter<String> searchResultsAdapter;
@@ -259,6 +259,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         ratingStar4.setOnClickListener(v -> mapViewModel.setRating(4));
         ratingStar5 = binding.ratingStar5;
         ratingStar5.setOnClickListener(v -> mapViewModel.setRating(5));
+        closeWriteReviewBttn = binding.closeWriteReviewBttn;
+        closeWriteReviewBttn.setOnClickListener(this);
 
         // Horizontal Scroll Views
         imagesField = binding.locationImagesField;
@@ -394,6 +396,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             toggleWriteReview();
         } else if (bttnId == R.id.submit_review_bttn) {
             mapViewModel.submitReview();
+        } else if (bttnId == R.id.close_write_review_bttn) {
+            toggleWriteReview();
         }
     }
 
@@ -767,6 +771,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (writeReviewBttn.getVisibility() == View.VISIBLE) {
             writeReviewBttn.setVisibility(View.GONE);
             writeReviewContainer.setVisibility(View.VISIBLE);
+            closeWriteReviewBttn.setVisibility(View.VISIBLE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.requestFocus();
@@ -775,6 +780,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         } else {
             writeReviewBttn.setVisibility(View.VISIBLE);
             writeReviewContainer.setVisibility(View.GONE);
+            closeWriteReviewBttn.setVisibility(View.GONE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.clearFocus();

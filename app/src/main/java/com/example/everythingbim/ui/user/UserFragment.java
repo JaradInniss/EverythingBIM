@@ -53,9 +53,7 @@ public class UserFragment extends Fragment {
     private View layoutGuestUser, layoutGeneralUser, layoutBusinessUser;
     private View generalContentSubmissions, generalContentMyProfile, generalContentSettings;
     private View generalIndSubmissions, generalIndMyProfile, generalIndSettings;
-    private View layoutGuestUser;
-    private View layoutGeneralUser;
-    private View layoutBusinessUser;
+
     private ScrollView generalScrollView;
     private ScrollView businessScrollView;
     private int generalKeyboardExtraBottom = 0;
@@ -93,16 +91,20 @@ public class UserFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentUserBinding.inflate(inflater, container, false);
         bindViews();
-        setUpListeners();
+        setUpListeners(binding.getRoot());
         setUpObservers();
+
+        String currentUserType = getUserType();
+        switchUserLayout(currentUserType);
+        setupKeyboardHints(binding.getRoot());
         setupGeneralUserTabs(binding.getRoot());
         setupBusinessUserTabs(binding.getRoot());
-        switchUserLayout(getUserType());
 
         setupEditToggle(binding.getRoot(), R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn, R.id.general_user_edit_username_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn, R.id.general_user_edit_password_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.general_user_bio_et, R.id.general_user_edit_bio_btn, R.id.general_user_edit_bio_btn_iv);
 
+        setupEditToggle(binding.getRoot(), R.id.business_edit_username_et, R.id.business_edit_username_btn, R.id.business_edit_username_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_edit_email_et, R.id.business_edit_email_btn, R.id.business_edit_email_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_edit_password_et, R.id.business_edit_password_btn, R.id.business_edit_password_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_edit_desc_et, R.id.business_edit_desc_btn, R.id.business_edit_desc_btn_iv);
@@ -123,55 +125,11 @@ public class UserFragment extends Fragment {
         businessSubmissionsTab = binding.businessTabSubmissions;
         businessMyProfileTab = binding.businessTabMyProfile;
         businessSettingsTab = binding.businessTabSettings;
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_user, container, false);
-
-        layoutGuestUser = view.findViewById(R.id.layout_guest_user);
-        layoutGeneralUser = view.findViewById(R.id.layout_general_user);
-        layoutBusinessUser = view.findViewById(R.id.layout_business_user);
-        generalScrollView = view.findViewById(R.id.general_user_scroll);
-        businessScrollView = view.findViewById(R.id.business_user_scroll);
-
-        generalContentSubmissions = view.findViewById(R.id.general_content_submissions);
-        generalContentMyProfile = view.findViewById(R.id.general_content_my_profile);
-        generalContentSettings = view.findViewById(R.id.general_content_settings);
-
-        generalIndSubmissions = view.findViewById(R.id.general_tab_submissions_indicator);
-        generalIndMyProfile = view.findViewById(R.id.general_tab_my_profile_indicator);
-        generalIndSettings = view.findViewById(R.id.general_tab_settings_indicator);
-
-        businessContentSubmissions = view.findViewById(R.id.business_content_submissions);
-        businessContentMyProfile = view.findViewById(R.id.business_content_my_profile);
-        businessContentSettings = view.findViewById(R.id.business_content_settings);
-
-        businessIndSubmissions = view.findViewById(R.id.business_tab_submissions_indicator);
-        businessIndMyProfile = view.findViewById(R.id.business_tab_my_profile_indicator);
-        businessIndSettings = view.findViewById(R.id.business_tab_settings_indicator);
-
-        String currentUserType = getUserType();
-        switchUserLayout(currentUserType);
-        setupKeyboardHints(view);
-        setupGeneralUserTabs(view);
-        setupBusinessUserTabs(view);
-
-        setClickIfPresent(view, R.id.general_user_btnLogout, v -> performLogout());
-        setClickIfPresent(view, R.id.btnLogout, v -> performLogout());
-        setClickIfPresent(view, R.id.general_replay_tour_btn, v -> replayTour());
-        setClickIfPresent(view, R.id.business_replay_tour_btn, v -> replayTour());
         generalContentSubmissions = binding.generalContentSubmissions;
         generalContentMyProfile = binding.generalContentMyProfile;
         generalContentSettings = binding.generalContentSettings;
 
-        setClickIfPresent(view, R.id.guest_login_btn, v ->
-                startActivity(new Intent(requireContext(), Login.class)));
-        setClickIfPresent(view, R.id.guest_register_general_btn, v ->
-                startActivity(new Intent(requireContext(), GeneralRegistration.class)));
-        setClickIfPresent(view, R.id.guest_register_business_btn, v ->
-                startActivity(new Intent(requireContext(), BusinessRegistration.class)));
-        setClickIfPresent(view, R.id.guest_admin_access_btn, v -> {
         businessContentSubmissions = binding.businessContentSubmissions;
         businessContentMyProfile = binding.businessContentMyProfile;
         businessContentSettings = binding.businessContentSettings;
@@ -218,16 +176,21 @@ public class UserFragment extends Fragment {
         guestAccountOptionsContainer = binding.guestAccountOptionsContainer;
     }
 
-    private void setUpListeners() {
-        // Buttons
-        guestLoginBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), Login.class)));
+    private void setUpListeners(View view) {
 
-        // Text Views
-        guestAdminAccessBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), Login.class);
-            intent.putExtra("preselectedUserType", UserType.ADMIN.name());
-            startActivity(intent);
-        });
+        setClickIfPresent(view, R.id.general_user_btnLogout, v -> performLogout());
+        setClickIfPresent(view, R.id.business_user_logout_btn, v -> performLogout());
+        setClickIfPresent(view, R.id.general_replay_tour_btn, v -> replayTour());
+        setClickIfPresent(view, R.id.business_replay_tour_btn, v -> replayTour());
+
+        setClickIfPresent(view, R.id.guest_login_btn, v ->
+                startActivity(new Intent(requireContext(), Login.class)));
+        setClickIfPresent(view, R.id.guest_register_general_btn, v ->
+                startActivity(new Intent(requireContext(), GeneralRegistration.class)));
+        setClickIfPresent(view, R.id.guest_register_business_btn, v ->
+                startActivity(new Intent(requireContext(), BusinessRegistration.class)));
+        setClickIfPresent(view, R.id.guest_admin_access_btn, v -> { });
+
         setClickIfPresent(view, R.id.guest_replay_tour_btn, v -> replayTour());
 
         setClickIfPresent(view, R.id.locreq_new_btn, v ->
@@ -236,7 +199,6 @@ public class UserFragment extends Fragment {
                 navigateTo(new ViewAddLocationRequestFragment()));
         setClickIfPresent(view, R.id.locreq_view_btn_2, v ->
                 navigateTo(new ViewCompletedLocationRequestFragment()));
-        guestReplayTourBtn.setOnClickListener(v -> replayTour());
 
         setClickIfPresent(view, R.id.inforeq_new_btn, v ->
                 navigateTo(new AddInformationRequestFragment()));
@@ -244,41 +206,63 @@ public class UserFragment extends Fragment {
                 navigateTo(new ViewAddInformationRequestFragment()));
         setClickIfPresent(view, R.id.inforeq_view_btn_2, v ->
                 navigateTo(new ViewCompletedInformationRequestFragment()));
-        // Linear Layouts
-        generalUserLogOutBtn.setOnClickListener(v -> performLogout());
-        businessUserLogOutBtn.setOnClickListener(v -> performLogout());
 
         setClickIfPresent(view, R.id.accver_view_btn, v ->
                 navigateTo(new ViewAccountVerificationRequestFragment()));
         setClickIfPresent(view, R.id.accver_view_btn_2, v ->
                 navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
-        generalReplayTourBtn.setOnClickListener(v -> replayTour());
-        businessReplayTourBtn.setOnClickListener(v -> replayTour());
 
         setClickIfPresent(view, R.id.addloc_view_btn, v ->
                 navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
-        guestRegisterGeneralBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), GeneralRegistration.class)));
-        guestRegisterBusinessBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), BusinessRegistration.class)));
-
-        setClickIfPresent(view, R.id.addloc_view_btn_2, v ->
-                navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
-        newLocationReqBtn.setOnClickListener(v -> navigateTo(new AddLocationRequestFragment()));
-        viewLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddLocationRequestFragment()));
-        viewCompletedLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedLocationRequestFragment()));
-
+        setClickIfPresent(view, R.id.addloc_view_btn_2, v -> navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
         setClickIfPresent(view, R.id.business_add_field_btn, v ->
                 navigateTo(new AddBusinessLocationRequestFragment()));
-        newInformationReqBtn.setOnClickListener(v -> navigateTo(new AddInformationRequestFragment()));
-        viewInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddInformationRequestFragment()));
-        viewCompletedInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedInformationRequestFragment()));
 
-        viewAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewAccountVerificationRequestFragment()));
-        viewCompletedAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
+        if (MainActivity.USER_TYPE_BUSINESS.equals(getUserType())) {
+            loadAddressesOnMainScreen(view);
 
-        viewAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
-        viewCompletedAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
+            TextView categoryTv = view.findViewById(R.id.business_category_tv);
+            if (categoryTv != null) {
+                categoryTv.setOnClickListener(v -> showCategoryDialog());
+            }
+        }
 
-        addBusinessLocationBtn.setOnClickListener(v -> navigateTo(new AddBusinessLocationRequestFragment()));
+        guestAdminAccessBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), Login.class);
+            intent.putExtra("preselectedUserType", UserType.ADMIN.name());
+            startActivity(intent);
+        });
+//        // Buttons
+//        guestLoginBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), Login.class)));
+//
+//        // Text Views
+//        guestReplayTourBtn.setOnClickListener(v -> replayTour());
+//
+//        // Linear Layouts
+//        generalUserLogOutBtn.setOnClickListener(v -> performLogout());
+//        businessUserLogOutBtn.setOnClickListener(v -> performLogout());
+//
+//        generalReplayTourBtn.setOnClickListener(v -> replayTour());
+//        businessReplayTourBtn.setOnClickListener(v -> replayTour());
+//
+//        guestRegisterGeneralBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), GeneralRegistration.class)));
+//        guestRegisterBusinessBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), BusinessRegistration.class)));
+//
+//        newLocationReqBtn.setOnClickListener(v -> navigateTo(new AddLocationRequestFragment()));
+//        viewLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddLocationRequestFragment()));
+//        viewCompletedLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedLocationRequestFragment()));
+//
+//        newInformationReqBtn.setOnClickListener(v -> navigateTo(new AddInformationRequestFragment()));
+//        viewInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddInformationRequestFragment()));
+//        viewCompletedInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedInformationRequestFragment()));
+//
+//        viewAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewAccountVerificationRequestFragment()));
+//        viewCompletedAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
+//
+//        viewAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
+//        viewCompletedAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
+//
+//        addBusinessLocationBtn.setOnClickListener(v -> navigateTo(new AddBusinessLocationRequestFragment()));
 
         // Card View
         guestAccountOptionsContainer.setOnClickListener(v -> {
@@ -289,14 +273,6 @@ public class UserFragment extends Fragment {
                 clickCount = 1;
             }
             lastClickTime = currentTime;
-        if (MainActivity.USER_TYPE_BUSINESS.equals(currentUserType)) {
-            loadAddressesOnMainScreen(view);
-
-            TextView categoryTv = view.findViewById(R.id.business_category_tv);
-            if (categoryTv != null) {
-                categoryTv.setOnClickListener(v -> showCategoryDialog());
-            }
-        }
             if (clickCount == 3) {
                 userViewModel.onAdminSecretTriggered();
                 clickCount = 0;
@@ -396,6 +372,7 @@ public class UserFragment extends Fragment {
         generalSubmissionsTab.setOnClickListener(v -> switchGeneralTab(0));
         generalMyProfileTab.setOnClickListener(v -> switchGeneralTab(1));
         generalSettingsTab.setOnClickListener(v -> switchGeneralTab(2));
+
         setClickIfPresent(view, R.id.general_tab_submissions, v -> switchGeneralTab(0));
         setClickIfPresent(view, R.id.general_tab_my_profile, v -> switchGeneralTab(1));
         setClickIfPresent(view, R.id.general_tab_settings, v -> switchGeneralTab(2));
@@ -409,6 +386,7 @@ public class UserFragment extends Fragment {
         generalIndSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
         generalIndMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
         generalIndSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+
         setVisibleIfPresent(generalContentSubmissions, tab == 0);
         setVisibleIfPresent(generalContentMyProfile, tab == 1);
         setVisibleIfPresent(generalContentSettings, tab == 2);
@@ -423,6 +401,7 @@ public class UserFragment extends Fragment {
         businessSubmissionsTab.setOnClickListener(v -> switchBusinessTab(0));
         businessMyProfileTab.setOnClickListener(v -> switchBusinessTab(1));
         businessSettingsTab.setOnClickListener(v -> switchBusinessTab(2));
+
         setClickIfPresent(view, R.id.business_tab_submissions, v -> switchBusinessTab(0));
         setClickIfPresent(view, R.id.business_tab_my_profile, v -> switchBusinessTab(1));
         setClickIfPresent(view, R.id.business_tab_settings, v -> switchBusinessTab(2));
@@ -589,6 +568,9 @@ public class UserFragment extends Fragment {
             if (keyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(targetScroll, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -602,6 +584,17 @@ public class UserFragment extends Fragment {
                 targetScroll.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     @Nullable
@@ -649,9 +642,9 @@ public class UserFragment extends Fragment {
         dialogScrollView.setTag(R.id.scroll_hint_overlay_host, keyboardExtraBottom);
     }
 
-    private void bindDialogFocusScroll(@Nullable TextInputEditText editText,
-                                       @Nullable ScrollView dialogScrollView,
-                                       @Nullable View anchorView) {
+    private void bindDialogFocusScroll(TextInputEditText editText,
+                                       ScrollView dialogScrollView,
+                                       View anchorView) {
         if (editText == null || dialogScrollView == null) {
             return;
         }
@@ -668,6 +661,9 @@ public class UserFragment extends Fragment {
             return;
         }
         dialogScrollView.post(() -> {
+            if (!isDescendant(dialogScrollView, anchorView)) {
+                return;
+            }
             Rect anchorRect = new Rect();
             Rect scrollRect = new Rect();
             anchorView.getDrawingRect(anchorRect);
@@ -759,7 +755,7 @@ public class UserFragment extends Fragment {
                             if (passwordMatches) {
                                 // Check if new password is same as current (comparing plain text)
                                 if (newPass.equals(current)) {
-                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", android.widget.Toast.LENGTH_LONG).show();
+                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", Toast.LENGTH_LONG).show();
                                     return;
                                 }
                                 // Current password verified - update in Firestore

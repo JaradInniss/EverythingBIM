@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -475,6 +476,9 @@ public class ViewPost extends AppCompatActivity {
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(viewPostScrollView, binding.writeReviewContainer)) {
+                return;
+            }
 
             Rect rect = new Rect();
             binding.writeReviewContainer.getDrawingRect(rect);
@@ -488,6 +492,17 @@ public class ViewPost extends AppCompatActivity {
                 viewPostScrollView.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {

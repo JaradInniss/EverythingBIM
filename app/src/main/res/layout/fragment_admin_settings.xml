@@ -13,7 +13,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:paddingVertical="15dp"
+        android:paddingHorizontal="8dp"
         android:gravity="center_horizontal"
         android:background="@color/prussian_blue">
 
@@ -22,7 +23,8 @@
             android:id="@+id/profile_pic"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/butterfly"
+            android:src="@drawable/ic_user_circle"
+            app:tint="@color/dim_grey"
             android:background="@drawable/circle_crop"
             android:clipToOutline="true"
             android:scaleType="centerCrop"
@@ -32,6 +34,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginLeft="8dp"
             android:orientation="vertical">
 
             <TextView
@@ -41,18 +44,15 @@
                 android:text="Admin"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="@color/white"
-                android:paddingLeft="18dp"/>
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/admin_ID"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
                 android:text="#102MA21"
-                android:textSize="10sp"
-                android:textColor="@color/dim_grey"
-                android:paddingTop="8dp"
-                android:paddingLeft="18dp"/>
+                style="@style/grey_small_txt_style"/>
         </LinearLayout>
     </LinearLayout>
 

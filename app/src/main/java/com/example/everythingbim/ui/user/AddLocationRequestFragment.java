@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -316,6 +317,9 @@ public class AddLocationRequestFragment extends Fragment {
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(formScrollView, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -329,6 +333,17 @@ public class AddLocationRequestFragment extends Fragment {
                 formScrollView.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {

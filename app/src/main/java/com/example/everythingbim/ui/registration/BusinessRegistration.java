@@ -16,6 +16,7 @@ import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -284,6 +285,9 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(binding.businessRegistrationScroll, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -297,6 +301,17 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
                 binding.businessRegistrationScroll.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {
@@ -444,6 +459,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
             }
         });
 
+        // Observe file lists
         viewModel.getFileList().observe(this, files -> {
             fileAdapter.updateList(files);
             if (files.size() == 0 || files.isEmpty()) {
