@@ -18,11 +18,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.LandmarkCatalogSeedProvider;
+import com.example.everythingbim.data.local.LandmarkCatalogSeedProvider.LandmarkCatalogSeed;
 import com.example.everythingbim.data.local.LocationSeedProvider;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.repository.CanonicalLocationRepository;
-import com.example.everythingbim.ui.home.Landmark;
-import com.example.everythingbim.ui.home.LandmarkRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -294,8 +294,7 @@ public class AdminLandmarkCatalogFragment extends Fragment {
     }
 
     private void importStarterLandmarks(boolean silent) {
-        LandmarkRepository repository = new LandmarkRepository();
-        List<Landmark> aiDefaults = repository.getAllLandmarks();
+        List<LandmarkCatalogSeed> aiDefaults = LandmarkCatalogSeedProvider.createSeedLandmarks();
         List<LocationEntity> seedLocations = LocationSeedProvider.createSeedLocations();
         if (aiDefaults.isEmpty() && seedLocations.isEmpty()) {
             if (!silent) {
@@ -343,31 +342,31 @@ public class AdminLandmarkCatalogFragment extends Fragment {
             importCount[0]++;
         }
 
-        for (Landmark landmark : aiDefaults) {
-            String normalizedName = landmark.getDisplayName().trim().toLowerCase(Locale.US);
+        for (LandmarkCatalogSeed landmark : aiDefaults) {
+            String normalizedName = landmark.displayName.trim().toLowerCase(Locale.US);
             if (!seenNames.add(normalizedName)) {
                 continue;
             }
 
             DocumentReference doc = firestore.collection(COLLECTION_LANDMARK_CATALOG).document();
             Map<String, Object> payload = new HashMap<>();
-            payload.put("name", landmark.getDisplayName());
-            payload.put("displayName", landmark.getDisplayName());
-            payload.put("category", inferCategory(landmark));
-            payload.put("latitude", landmark.getLatitude());
-            payload.put("longitude", landmark.getLongitude());
-            payload.put("address", landmark.getMapSubtitle());
-            payload.put("mapSubtitle", landmark.getMapSubtitle());
-            payload.put("description", landmark.getDescription());
-            payload.put("imageUrl", "");
+            payload.put("name", landmark.displayName);
+            payload.put("displayName", landmark.displayName);
+            payload.put("category", landmark.category);
+            payload.put("latitude", landmark.latitude);
+            payload.put("longitude", landmark.longitude);
+            payload.put("address", landmark.mapSubtitle);
+            payload.put("mapSubtitle", landmark.mapSubtitle);
+            payload.put("description", landmark.description);
+            payload.put("imageUrl", landmark.imageUrl);
             payload.put("placeId", "");
-            payload.put("sourceType", "cnn_seed");
+            payload.put("sourceType", landmark.getSourceType());
             payload.put("isActive", true);
             payload.put("isVerified", true);
             payload.put("rating", 0d);
-            payload.put("legacyLandmarkId", landmark.getId());
-            payload.put("classifierKey", landmark.getToken());
-            payload.put("nearbyRadiusMeters", landmark.getNearbyRadiusMeters());
+            payload.put("legacyLandmarkId", landmark.legacyLandmarkId);
+            payload.put("classifierKey", landmark.classifierKey);
+            payload.put("nearbyRadiusMeters", landmark.nearbyRadiusMeters);
             payload.put("addedBy", resolveAddedBy());
             payload.put("createdAt", FieldValue.serverTimestamp());
             payload.put("updatedAt", FieldValue.serverTimestamp());
@@ -400,21 +399,6 @@ public class AdminLandmarkCatalogFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
-    }
-
-    @NonNull
-    private String inferCategory(@NonNull Landmark landmark) {
-        String id = landmark.getId().toLowerCase(Locale.US);
-        if (id.contains("parliament")) {
-            return "Government Building";
-        }
-        if (id.contains("kensington")) {
-            return "Sports Venue";
-        }
-        if (id.contains("cathedral")) {
-            return "Religious Site";
-        }
-        return "Landmark";
     }
 
     private static class LandmarkCatalogItem {
