@@ -16,6 +16,7 @@ import com.example.everythingbim.data.local.dao.PostDao;
 import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.dao.LikeDao;
 import com.example.everythingbim.data.local.dao.ReportDao;
+import com.example.everythingbim.data.local.dao.ReviewDao;
 import com.example.everythingbim.data.local.dao.UserDao;
 import com.example.everythingbim.data.local.entities.BusinessUserEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
@@ -53,6 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract CommentDao commentDao();
     public abstract LikeDao likeDao();
     public abstract ReportDao reportDao();
+    public abstract ReviewDao reviewDao();
     public abstract UserDao userDao();
 
     // Singleton instance

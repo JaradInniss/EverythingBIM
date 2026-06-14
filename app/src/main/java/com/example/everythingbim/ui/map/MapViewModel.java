@@ -2,6 +2,7 @@ package com.example.everythingbim.ui.map;
 
 import android.app.Application;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -11,10 +12,11 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.everythingbim.data.local.AppDatabase;
 import com.example.everythingbim.data.local.dao.MarkerDao;
+import com.example.everythingbim.data.local.dao.LocationDao;
+import com.example.everythingbim.data.local.dao.ReviewDao;
 import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
-import com.example.everythingbim.ui.login.LoginViewModel;
 import com.example.everythingbim.ui.utils.NavigationCommand;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -26,7 +28,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapViewModel extends AndroidViewModel {
 
+    private static final String PREFS_APP = "app_prefs";
+    private static final String KEY_USER_TYPE = "userType";
+    private static final String KEY_USER_ID = "userId";
+    private static final String USER_TYPE_GUEST = "guest";
+
     private final MarkerDao markerDao;
+    private final LocationDao locationDao;
+    private final ReviewDao reviewDao;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final LiveData<List<MarkerEntity>> allMarkers;
     private final SingleLiveEvent<NavigationCommand> navigationEvent = new SingleLiveEvent<>();
@@ -40,7 +49,7 @@ public class MapViewModel extends AndroidViewModel {
     private final MutableLiveData<String> reviewBody = new MutableLiveData<>();
     private final MediatorLiveData<Boolean> isReviewValid = new MediatorLiveData<>();
     private final SingleLiveEvent<Boolean> reviewSubmited = new SingleLiveEvent<>();
-    private final LiveData<Long> authorId = new MutableLiveData<>();
+    private final SingleLiveEvent<String> reviewMessage = new SingleLiveEvent<>();
 
     // Metadata for navigation
     private long selectedLocationId = -1;
@@ -58,7 +67,10 @@ public class MapViewModel extends AndroidViewModel {
 
     public MapViewModel(Application application) {
         super(application);
-        markerDao = AppDatabase.getInstance(application).markerDao();
+        AppDatabase database = AppDatabase.getInstance(application);
+        markerDao = database.markerDao();
+        locationDao = database.locationDao();
+        reviewDao = database.reviewDao();
         allMarkers = markerDao.getAllMarkers();
 
         isReviewValid.addSource(reviewBody, body -> isReviewValid());
@@ -102,6 +114,8 @@ public class MapViewModel extends AndroidViewModel {
     public void setReviewBody(String newReview) { reviewBody.setValue(newReview); }
 
     public LiveData<Boolean> getReviewSubmited() { return reviewSubmited; }
+
+    public LiveData<String> getReviewMessage() { return reviewMessage; }
 
     public void insertMarker(MarkerEntity marker) {
         executorService.execute(() -> markerDao.insert(marker));
@@ -150,7 +164,61 @@ public class MapViewModel extends AndroidViewModel {
     }
 
     public void submitReview() {
-        // Handle submit review here
+        String body = reviewBody.getValue() != null ? reviewBody.getValue().trim() : "";
+        Integer currentRating = rating.getValue();
+
+        if (selectedLocationId <= 0L) {
+            reviewMessage.setValue("Reviews are only available for saved locations.");
+            return;
+        }
+        if (TextUtils.isEmpty(body) || currentRating == null || currentRating <= 0) {
+            reviewMessage.setValue("Please add review text and a star rating.");
+            return;
+        }
+
+        android.content.SharedPreferences prefs = getApplication()
+                .getSharedPreferences(PREFS_APP, Application.MODE_PRIVATE);
+        String userType = prefs.getString(KEY_USER_TYPE, USER_TYPE_GUEST);
+        if (USER_TYPE_GUEST.equalsIgnoreCase(userType)) {
+            reviewMessage.setValue("Log in to write a review.");
+            return;
+        }
+
+        String storedUserId = prefs.getString(KEY_USER_ID, "");
+        long authorId = resolveAuthorId(storedUserId);
+        long createdAt = System.currentTimeMillis();
+        ReviewEntity review = new ReviewEntity(
+                selectedLocationId,
+                authorId,
+                body,
+                currentRating.floatValue(),
+                createdAt
+        );
+
+        executorService.execute(() -> {
+            try {
+                reviewDao.insert(review);
+                Float averageRating = reviewDao.getAverageRatingForLocationSync(selectedLocationId);
+                if (averageRating != null) {
+                    locationDao.updateRating(selectedLocationId, averageRating);
+                }
+                reviewSubmited.postValue(true);
+                reviewMessage.postValue("Review submitted");
+            } catch (Exception error) {
+                reviewMessage.postValue("Failed to submit review. Please try again.");
+            }
+        });
+    }
+
+    private long resolveAuthorId(String storedUserId) {
+        if (storedUserId == null || storedUserId.trim().isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(storedUserId.trim());
+        } catch (NumberFormatException ignored) {
+            return Math.abs((long) storedUserId.trim().hashCode());
+        }
     }
 
 

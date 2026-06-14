@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.map;
 
 import android.content.Context;
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,11 +36,11 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
     public void onBindViewHolder(@NonNull ReviewViewHolder holder, int position) {
         ReviewEntity review = reviewList.get(position);
         
-        holder.usernameTv.setText("User " + review.authorId); // In a real app, you'd fetch the actual username
+        holder.usernameTv.setText(resolveAuthorLabel(review));
         holder.bodyTv.setText(review.body);
-        holder.ratingTv.setText(String.valueOf(review.rating));
+        holder.ratingTv.setText(String.format(java.util.Locale.US, "%.1f", review.rating));
         holder.commentsCountTv.setText("0"); // Placeholder for comments count
-        holder.uploadDateTv.setText("Recently"); // Placeholder for date formatting
+        holder.uploadDateTv.setText(resolveUploadDate(review));
     }
 
     @Override
@@ -50,6 +51,27 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
     public void setReviews(List<ReviewEntity> reviews) {
         this.reviewList = reviews;
         notifyDataSetChanged();
+    }
+
+    @NonNull
+    private String resolveAuthorLabel(@NonNull ReviewEntity review) {
+        if (review.authorId <= 0L) {
+            return "Community member";
+        }
+        return "User " + review.authorId;
+    }
+
+    @NonNull
+    private CharSequence resolveUploadDate(@NonNull ReviewEntity review) {
+        if (review.createdAt <= 0L) {
+            return "Recently";
+        }
+        return DateUtils.getRelativeTimeSpanString(
+                review.createdAt,
+                System.currentTimeMillis(),
+                DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.FORMAT_ABBREV_RELATIVE
+        );
     }
 
     static class ReviewViewHolder extends RecyclerView.ViewHolder {
