@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -108,6 +109,11 @@ public class LandmarkRepository {
     @NonNull
     public Landmark getRandomLandmark() {
         return landmarks.get(random.nextInt(landmarks.size()));
+    }
+
+    @NonNull
+    public List<Landmark> getAllLandmarks() {
+        return Collections.unmodifiableList(landmarks);
     }
 
     private void registerAliases(@NonNull Landmark landmark, @NonNull List<String> aliases) {

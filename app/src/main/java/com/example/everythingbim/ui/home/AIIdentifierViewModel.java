@@ -45,7 +45,8 @@ public class AIIdentifierViewModel extends AndroidViewModel {
     public AIIdentifierViewModel(@NonNull Application application) {
         super(application);
         nearbySavedLocationsRepository = new NearbySavedLocationsRepository(
-                AppDatabase.getInstance(application).locationDao()
+                AppDatabase.getInstance(application).locationDao(),
+                AppDatabase.getInstance(application).postDao()
         );
     }
 

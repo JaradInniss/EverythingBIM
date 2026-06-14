@@ -129,4 +129,11 @@ public interface PostDao {
      */
     @Query("SELECT * FROM posts WHERE authorUid = :authorUid")
     List<PostEntity> getPostsByAuthorUidSync(String authorUid);
+
+    @Query("SELECT imageUrl FROM posts " +
+            "WHERE locationId = :locationId " +
+            "AND imageUrl IS NOT NULL " +
+            "AND trim(imageUrl) != '' " +
+            "ORDER BY createdAt DESC LIMIT 1")
+    String getLatestImageUrlForLocationSync(long locationId);
 }

@@ -268,6 +268,7 @@ public class AdminHomeFragment extends Fragment {
         View cardInfo = requireView().findViewById(R.id.card_info);
         View cardLocation = requireView().findViewById(R.id.card_location);
         View cardReports = requireView().findViewById(R.id.card_reports);
+        View landmarkCatalogCard = requireView().findViewById(R.id.card_landmark_catalog);
         View bellButton = requireView().findViewById(R.id.btn_notification);
 
         if (cardBusiness != null) {
@@ -298,6 +299,9 @@ public class AdminHomeFragment extends Fragment {
                 // Don't mark as read here - only when admin clicks "View" on individual requests
                 navigateToReportsSection();
             });
+        }
+        if (landmarkCatalogCard != null) {
+            landmarkCatalogCard.setOnClickListener(v -> navigateToLandmarkCatalog());
         }
 
         if (bellButton != null) {
@@ -334,6 +338,19 @@ public class AdminHomeFragment extends Fragment {
      */
     private void navigateToReportsSection() {
         Fragment fragment = new AdminReportsFragment();
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void navigateToLandmarkCatalog() {
+        Fragment fragment = new AdminLandmarkCatalogFragment();
+        if (getParentFragment() instanceof AdminFragment) {
+            ((AdminFragment) getParentFragment()).navigateToLandmarkCatalog();
+            return;
+        }
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.admin_fragment_container, fragment)

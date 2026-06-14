@@ -37,7 +37,6 @@ public class AdminSettingsFragment extends Fragment {
     private TextInputEditText usernameField, emailField, passwordField;
     private ScrollView settingsScrollView;
     private int currentKeyboardExtraBottom = 0;
-
     // Edit state flags
     private boolean isEditingUsername = false;
     private boolean isEditingEmail = false;
@@ -79,6 +78,7 @@ public class AdminSettingsFragment extends Fragment {
         // Logout button
         View logoutBtn = root.findViewById(R.id.admin_logout_btn);
         logoutBtn.setOnClickListener(v -> performLogout());
+
     }
 
     private void setupKeyboardInsets(View root) {
