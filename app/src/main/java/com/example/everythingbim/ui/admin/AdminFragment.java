@@ -98,6 +98,23 @@ public class AdminFragment extends Fragment {
                 .commit();
     }
 
+    public void navigateToLandmarkCatalog() {
+        getChildFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container, new AdminLandmarkCatalogFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void navigateToLandmarkEditor(@Nullable String documentId) {
+        getChildFragmentManager()
+                .beginTransaction()
+                .replace(R.id.admin_fragment_container,
+                        AdminLandmarkEditorFragment.newInstance(documentId))
+                .addToBackStack(null)
+                .commit();
+    }
+
     // Unified navigation for request details
     public void navigateToRequestDetail(String requestType, String docId) {
         if ("location".equals(requestType)) {

@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 
 import com.example.everythingbim.data.local.LocationSeedProvider;
 import com.example.everythingbim.data.local.dao.LocationDao;
+import com.example.everythingbim.data.local.dao.PostDao;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.LocationWithDetails;
 
@@ -25,12 +26,17 @@ public class NearbySavedLocationsRepository {
     private static final String LOCAL_HARRISONS_CAVE_IMAGE = "harrisons_cave.jpg";
     private static final String LOCAL_GAIA_IMAGE = "gaia.jpg";
     private static final String LOCAL_HOLETOWN_IMAGE = "holetown.jpg";
+    private static final String LOCAL_PARLIAMENT_IMAGE = "parliament_building.jpg";
     private static final String LEGACY_BATHSHEBA_LOCATION_IMAGE = "bathsheba_beach";
+    private static final float ANCHOR_SELF_DISTANCE_THRESHOLD_METERS = 20f;
 
     private final LocationDao locationDao;
+    private final PostDao postDao;
 
-    public NearbySavedLocationsRepository(@NonNull LocationDao locationDao) {
+    public NearbySavedLocationsRepository(@NonNull LocationDao locationDao,
+                                          @NonNull PostDao postDao) {
         this.locationDao = locationDao;
+        this.postDao = postDao;
     }
 
     @NonNull
@@ -57,6 +63,10 @@ public class NearbySavedLocationsRepository {
             );
 
             if (distanceFromParliament > effectiveRadiusMeters) {
+                continue;
+            }
+
+            if (isAnchorLocation(landmark, location, distanceFromParliament)) {
                 continue;
             }
 
@@ -168,11 +178,55 @@ public class NearbySavedLocationsRepository {
             }
         }
 
+        if (containsIgnoreCase(location.name, "Barbados Parliament Buildings")
+                || containsIgnoreCase(location.name, "Parliament Building")
+                || containsIgnoreCase(location.name, "Parliament Buildings")) {
+            if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
+                return LOCAL_PARLIAMENT_IMAGE;
+            }
+        }
+
+        if (location.imageUrl == null || location.imageUrl.trim().isEmpty()) {
+            String representativePostImage = postDao.getLatestImageUrlForLocationSync(location.locationId);
+            if (representativePostImage != null && !representativePostImage.trim().isEmpty()) {
+                return representativePostImage.trim();
+            }
+        }
+
         return null;
     }
 
     private boolean containsIgnoreCase(@Nullable String text, @NonNull String query) {
         return text != null && text.toLowerCase(Locale.US).contains(query.toLowerCase(Locale.US));
+    }
+
+    private boolean isAnchorLocation(@NonNull Landmark landmark,
+                                     @NonNull LocationEntity location,
+                                     float distanceFromAnchorMeters) {
+        if (distanceFromAnchorMeters <= ANCHOR_SELF_DISTANCE_THRESHOLD_METERS) {
+            return true;
+        }
+
+        String anchorName = normalizeName(landmark.getDisplayName());
+        String locationName = normalizeName(location.name);
+        if (!anchorName.isEmpty() && anchorName.equals(locationName)) {
+            return true;
+        }
+
+        String anchorToken = normalizeName(landmark.getToken());
+        return !anchorToken.isEmpty() && anchorToken.equals(locationName);
+    }
+
+    @NonNull
+    private String normalizeName(@Nullable String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim()
+                .toLowerCase(Locale.US)
+                .replace("'", "")
+                .replace(".", "")
+                .replace(",", "");
     }
 
     @NonNull
