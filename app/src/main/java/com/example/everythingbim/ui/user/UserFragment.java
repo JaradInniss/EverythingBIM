@@ -110,6 +110,9 @@ public class UserFragment extends Fragment {
         setupEditToggle(binding.getRoot(), R.id.business_edit_desc_et, R.id.business_edit_desc_btn, R.id.business_edit_desc_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_user_bio_et, R.id.business_user_edit_bio_btn, R.id.business_user_edit_bio_btn_iv);
 
+        // Load user profile data from Firestore
+        loadUserProfileData(binding.getRoot());
+
         return binding.getRoot();
     }
 
@@ -838,6 +841,7 @@ public class UserFragment extends Fragment {
         if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
         if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
         if (fieldId == R.id.business_edit_desc_et) return "Business Description";
+        if (fieldId == R.id.business_edit_email_et) return "Email";
         return "Field";
     }
 
@@ -1291,9 +1295,16 @@ public class UserFragment extends Fragment {
         SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 
-        LinearLayout addressesContainer = view.findViewById(R.id.business_addresses_container);
-        TextView addressesCount = view.findViewById(R.id.business_addresses_count);
-        TextView viewAllBtn = view.findViewById(R.id.business_view_all_addresses_tv);
+        // Use binding root to find views - they exist in the layout but may not be visible yet
+        View rootView = binding.getRoot();
+        LinearLayout addressesContainer = rootView.findViewById(R.id.business_addresses_container);
+        TextView addressesCount = rootView.findViewById(R.id.business_addresses_count);
+        TextView viewAllBtn = rootView.findViewById(R.id.business_view_all_addresses_tv);
+
+        if (addressesContainer == null) {
+            android.util.Log.e("UserFragment", "loadAddressesOnMainScreen: addressesContainer is null");
+            return;
+        }
 
         viewAllBtn.setOnClickListener(v -> showAddressesDialog());
 
@@ -1305,8 +1316,16 @@ public class UserFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         addressesContainer.removeAllViews();
                         Object addressesObj = doc.get("addresses");
+                        
+                        // Handle List types including Firestore ArrayList
+                        final java.util.List<?> addresses;
                         if (addressesObj instanceof java.util.List) {
-                            java.util.List<?> addresses = (java.util.List<?>) addressesObj;
+                            addresses = (java.util.List<?>) addressesObj;
+                        } else {
+                            addresses = null;
+                        }
+                        
+                        if (addresses != null && !addresses.isEmpty()) {
                             if (addressesCount != null) addressesCount.setText("(" + addresses.size() + ")");
 
                             int displayCount = Math.min(addresses.size(), 3);
@@ -1344,6 +1363,8 @@ public class UserFragment extends Fragment {
                                 addressesContainer.addView(itemView);
                             }
                         } else {
+                            // No addresses or not a valid list - clear container and show (0)
+                            addressesContainer.removeAllViews();
                             if (addressesCount != null) addressesCount.setText("(0)");
                         }
                     });
@@ -1398,6 +1419,9 @@ public class UserFragment extends Fragment {
         } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
             if (fieldId == R.id.business_edit_username_et) {
                 updates.put("username", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.business_edit_email_et) {
+                updates.put("email", newValue);
                 hasValidUpdate = true;
             } else if (fieldId == R.id.business_edit_password_et) {
                 if (!newValue.isEmpty()) {
@@ -1497,6 +1521,7 @@ public class UserFragment extends Fragment {
             TextView businessCategoryTv = view.findViewById(R.id.business_category_tv);
 
             TextInputEditText usernameEt = view.findViewById(R.id.business_edit_username_et);
+            TextInputEditText emailEt = view.findViewById(R.id.business_edit_email_et);
             TextInputEditText passwordEt = view.findViewById(R.id.business_edit_password_et);
             TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
             TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
@@ -1506,10 +1531,11 @@ public class UserFragment extends Fragment {
                     .get()
                     .addOnSuccessListener(doc -> {
                         if (doc != null && doc.exists()) {
-requireActivity().runOnUiThread(() -> {
+                            requireActivity().runOnUiThread(() -> {
                                 String username = doc.getString("username");
                                 String shortUserId = doc.getString("shortUserId");
                                 String category = doc.getString("businessType");
+                                String email = doc.getString("businessEmail");
                                 String desc = doc.getString("description");
                                 String bio = doc.getString("bio");
 
@@ -1523,9 +1549,13 @@ requireActivity().runOnUiThread(() -> {
 
                                 // Update fields from Firestore
                                 if (usernameEt != null) usernameEt.setText(username != null ? username : "");
+                                if (emailEt != null) emailEt.setText(email != null ? email : "");
                                 if (descEt != null) descEt.setText(desc != null ? desc : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
                                 if (passwordEt != null) passwordEt.setText("");
+
+                                // Load addresses after profile data
+                                loadAddressesOnMainScreen(view);
                             });
                         }
                     })
@@ -1535,15 +1565,19 @@ requireActivity().runOnUiThread(() -> {
                             String username = prefs.getString("username", "BusinessUser");
                             String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
                             String category = prefs.getString("businessCategory", "Business");
-                            String email = prefs.getString("email", "");
+                            String email = prefs.getString("businessEmail", "");
                             String businessDescription = prefs.getString("businessDescription", "");
 
                             if (businessUserTv != null) businessUserTv.setText(username);
                             if (businessUserIdTv != null) businessUserIdTv.setText(shortUserId);
                             if (businessCategoryTv != null) businessCategoryTv.setText(category);
+                            if (emailEt != null) emailEt.setText(email != null ? email : "");
                             if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
                             if (bioEt != null) bioEt.setText("Not set");
                             if (passwordEt != null) passwordEt.setText("");
+
+                            // Load addresses after profile data
+                            loadAddressesOnMainScreen(view);
                         });
                     });
         }
