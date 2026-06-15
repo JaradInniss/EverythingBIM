@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -222,6 +223,9 @@ public class AdminSettingsFragment extends Fragment {
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(settingsScrollView, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -235,6 +239,17 @@ public class AdminSettingsFragment extends Fragment {
                 settingsScrollView.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {

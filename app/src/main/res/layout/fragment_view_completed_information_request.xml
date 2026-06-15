@@ -3,9 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/view_completed_information_req"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark"
+    android:background="@color/prussian_blue"
     tools:context=".ui.user.ViewCompletedInformationRequestFragment">
 
     <LinearLayout
@@ -13,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@color/dark"
+        android:background="@color/prussian_blue"
         android:gravity="center_vertical"
         android:padding="12dp">
 
@@ -52,7 +53,7 @@
         android:layout_height="match_parent"
         android:layout_below="@id/viewinforeq_toolbar"
         android:fillViewport="true"
-        android:background="@color/light_grey">
+        android:background="@color/alice_blue">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/viewinforeq_recycler"

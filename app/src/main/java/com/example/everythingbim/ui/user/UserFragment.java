@@ -9,10 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.Button;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -20,10 +22,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.models.UserType;
+import com.example.everythingbim.databinding.FragmentUserBinding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
@@ -42,68 +47,139 @@ public class UserFragment extends Fragment {
     private static final String PREF_USER_PASSWORD_DIALOG_SCROLL_HINT_SEEN = "user_password_dialog_scroll_hint_seen";
     private static final String PREF_USER_DESCRIPTION_DIALOG_SCROLL_HINT_SEEN = "user_description_dialog_scroll_hint_seen";
 
-    private View layoutGuestUser;
-    private View layoutGeneralUser;
-    private View layoutBusinessUser;
+    private UserViewModel userViewModel;
+    private FragmentUserBinding binding;
+
+    private View layoutGuestUser, layoutGeneralUser, layoutBusinessUser;
+    private View generalContentSubmissions, generalContentMyProfile, generalContentSettings;
+    private View generalIndSubmissions, generalIndMyProfile, generalIndSettings;
+
     private ScrollView generalScrollView;
     private ScrollView businessScrollView;
     private int generalKeyboardExtraBottom = 0;
     private int businessKeyboardExtraBottom = 0;
 
-    private View generalContentSubmissions;
-    private View generalContentMyProfile;
-    private View generalContentSettings;
+    private View businessContentSubmissions, businessContentMyProfile, businessContentSettings;
+    private View businessIndSubmissions, businessIndMyProfile, businessIndSettings;
 
-    private View generalIndSubmissions;
-    private View generalIndMyProfile;
-    private View generalIndSettings;
+    private Button  guestLoginBtn;
 
-    private View businessContentSubmissions;
-    private View businessContentMyProfile;
-    private View businessContentSettings;
+    private TextView guestAdminAccessBtn, guestReplayTourBtn;
 
-    private View businessIndSubmissions;
-    private View businessIndMyProfile;
-    private View businessIndSettings;
+    private LinearLayout generalSubmissionsTab, generalMyProfileTab, generalSettingsTab, businessSubmissionsTab, businessMyProfileTab, businessSettingsTab;
+    private LinearLayout generalUserLogOutBtn, generalReplayTourBtn, businessUserLogOutBtn, businessReplayTourBtn, guestRegisterGeneralBtn, guestRegisterBusinessBtn;
+    private LinearLayout newLocationReqBtn, viewLocationReqBtn, viewCompletedLocationReqBtn;
+    private LinearLayout newInformationReqBtn, viewInformationReqBtn, viewCompletedInformationReqBtn;
+    private LinearLayout viewAccVerificationBtn, viewCompletedAccVerificationBtn, viewAddBusinessLocationBtn, viewCompletedAddBusinessLocationBtn, addBusinessLocationBtn;
+
+    private CardView guestAccountOptionsContainer;
+
+    private long lastClickTime = 0;
+    private int clickCount = 0;
+
+    public UserFragment() {
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+    }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_user, container, false);
-
-        layoutGuestUser = view.findViewById(R.id.layout_guest_user);
-        layoutGeneralUser = view.findViewById(R.id.layout_general_user);
-        layoutBusinessUser = view.findViewById(R.id.layout_business_user);
-        generalScrollView = view.findViewById(R.id.general_user_scroll);
-        businessScrollView = view.findViewById(R.id.business_user_scroll);
-
-        generalContentSubmissions = view.findViewById(R.id.general_content_submissions);
-        generalContentMyProfile = view.findViewById(R.id.general_content_my_profile);
-        generalContentSettings = view.findViewById(R.id.general_content_settings);
-
-        generalIndSubmissions = view.findViewById(R.id.general_tab_submissions_indicator);
-        generalIndMyProfile = view.findViewById(R.id.general_tab_my_profile_indicator);
-        generalIndSettings = view.findViewById(R.id.general_tab_settings_indicator);
-
-        businessContentSubmissions = view.findViewById(R.id.business_content_submissions);
-        businessContentMyProfile = view.findViewById(R.id.business_content_my_profile);
-        businessContentSettings = view.findViewById(R.id.business_content_settings);
-
-        businessIndSubmissions = view.findViewById(R.id.business_tab_submissions_indicator);
-        businessIndMyProfile = view.findViewById(R.id.business_tab_my_profile_indicator);
-        businessIndSettings = view.findViewById(R.id.business_tab_settings_indicator);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        binding = FragmentUserBinding.inflate(inflater, container, false);
+        bindViews();
+        setUpListeners(binding.getRoot());
+        setUpObservers();
 
         String currentUserType = getUserType();
         switchUserLayout(currentUserType);
-        setupKeyboardHints(view);
-        setupGeneralUserTabs(view);
-        setupBusinessUserTabs(view);
+        setupKeyboardHints(binding.getRoot());
+        setupGeneralUserTabs(binding.getRoot());
+        setupBusinessUserTabs(binding.getRoot());
+
+        setupEditToggle(binding.getRoot(), R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn, R.id.general_user_edit_username_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn, R.id.general_user_edit_password_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.general_user_bio_et, R.id.general_user_edit_bio_btn, R.id.general_user_edit_bio_btn_iv);
+
+        setupEditToggle(binding.getRoot(), R.id.business_edit_username_et, R.id.business_edit_username_btn, R.id.business_edit_username_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.business_edit_email_et, R.id.business_edit_email_btn, R.id.business_edit_email_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.business_edit_password_et, R.id.business_edit_password_btn, R.id.business_edit_password_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.business_edit_desc_et, R.id.business_edit_desc_btn, R.id.business_edit_desc_btn_iv);
+        setupEditToggle(binding.getRoot(), R.id.business_user_bio_et, R.id.business_user_edit_bio_btn, R.id.business_user_edit_bio_btn_iv);
+
+        return binding.getRoot();
+    }
+
+    private void bindViews() {
+        layoutGuestUser = binding.layoutGuestUser;
+        layoutGeneralUser = binding.layoutGeneralUser;
+        layoutBusinessUser = binding.layoutBusinessUser;
+
+        generalSubmissionsTab = binding.generalTabSubmissions;
+        generalMyProfileTab = binding.generalTabMyProfile;
+        generalSettingsTab = binding.generalTabSettings;
+
+        businessSubmissionsTab = binding.businessTabSubmissions;
+        businessMyProfileTab = binding.businessTabMyProfile;
+        businessSettingsTab = binding.businessTabSettings;
+
+        generalContentSubmissions = binding.generalContentSubmissions;
+        generalContentMyProfile = binding.generalContentMyProfile;
+        generalContentSettings = binding.generalContentSettings;
+
+        businessContentSubmissions = binding.businessContentSubmissions;
+        businessContentMyProfile = binding.businessContentMyProfile;
+        businessContentSettings = binding.businessContentSettings;
+
+        generalIndSubmissions = binding.generalTabSubmissionsIndicator;
+        generalIndMyProfile = binding.generalTabMyProfileIndicator;
+        generalIndSettings = binding.generalTabSettingsIndicator;
+
+        businessIndSubmissions = binding.businessTabSubmissionsIndicator;
+        businessIndMyProfile = binding.businessTabMyProfileIndicator;
+        businessIndSettings = binding.businessTabSettingsIndicator;
+
+        // Buttons
+        generalUserLogOutBtn = binding.generalUserBtnLogout;
+        businessUserLogOutBtn = binding.businessUserLogoutBtn;
+        generalReplayTourBtn = binding.generalReplayTourBtn;
+        businessReplayTourBtn = binding.businessReplayTourBtn;
+        guestLoginBtn = binding.guestLoginBtn;
+
+        // Text Views
+        guestAdminAccessBtn = binding.guestAdminAccessBtn;
+        guestReplayTourBtn = binding.guestReplayTourBtn;
+
+        // Linear Layouts
+        guestRegisterGeneralBtn = binding.guestRegisterGeneralBtn;
+        guestRegisterBusinessBtn = binding.guestRegisterBusinessBtn;
+
+        newLocationReqBtn = binding.locreqNewBtn;
+        viewLocationReqBtn = binding.locreqViewBtn;
+        viewCompletedLocationReqBtn = binding.locreqViewBtn2;
+
+        newInformationReqBtn = binding.inforeqNewBtn;
+        viewInformationReqBtn = binding.inforeqViewBtn;
+        viewCompletedInformationReqBtn = binding.inforeqViewBtn2;
+
+        viewAccVerificationBtn = binding.accverViewBtn;
+        viewCompletedAccVerificationBtn = binding.accverViewBtn2;
+
+        viewAddBusinessLocationBtn = binding.addlocViewBtn;
+        viewCompletedAddBusinessLocationBtn = binding.addlocViewBtn2;
+
+        addBusinessLocationBtn = binding.businessAddFieldBtn;
+
+        guestAccountOptionsContainer = binding.guestAccountOptionsContainer;
+    }
+
+    private void setUpListeners(View view) {
 
         setClickIfPresent(view, R.id.general_user_btnLogout, v -> performLogout());
-        setClickIfPresent(view, R.id.btnLogout, v -> performLogout());
+        setClickIfPresent(view, R.id.business_user_logout_btn, v -> performLogout());
         setClickIfPresent(view, R.id.general_replay_tour_btn, v -> replayTour());
         setClickIfPresent(view, R.id.business_replay_tour_btn, v -> replayTour());
 
@@ -113,11 +189,8 @@ public class UserFragment extends Fragment {
                 startActivity(new Intent(requireContext(), GeneralRegistration.class)));
         setClickIfPresent(view, R.id.guest_register_business_btn, v ->
                 startActivity(new Intent(requireContext(), BusinessRegistration.class)));
-        setClickIfPresent(view, R.id.guest_admin_access_btn, v -> {
-            Intent intent = new Intent(requireContext(), Login.class);
-            intent.putExtra("preselectedUserType", UserType.ADMIN.name());
-            startActivity(intent);
-        });
+        setClickIfPresent(view, R.id.guest_admin_access_btn, v -> { });
+
         setClickIfPresent(view, R.id.guest_replay_tour_btn, v -> replayTour());
 
         setClickIfPresent(view, R.id.locreq_new_btn, v ->
@@ -141,26 +214,11 @@ public class UserFragment extends Fragment {
 
         setClickIfPresent(view, R.id.addloc_view_btn, v ->
                 navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
-
-        setClickIfPresent(view, R.id.addloc_view_btn_2, v ->
-                navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
-
+        setClickIfPresent(view, R.id.addloc_view_btn_2, v -> navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
         setClickIfPresent(view, R.id.business_add_field_btn, v ->
                 navigateTo(new AddBusinessLocationRequestFragment()));
 
-        setupEditToggle(view, R.id.general_user_edit_username_et, R.id.general_user_edit_username_btn);
-        setupEditToggle(view, R.id.general_user_edit_password_et, R.id.general_user_edit_password_btn);
-        setupEditToggle(view, R.id.general_user_bio_et, R.id.general_user_edit_bio_btn);
-
-        setupEditToggle(view, R.id.business_edit_username_et, R.id.business_edit_username_btn);
-        setupEditToggle(view, R.id.business_edit_password_et, R.id.business_edit_password_btn);
-        setupEditToggle(view, R.id.business_edit_desc_et, R.id.business_edit_desc_btn);
-        setupEditToggle(view, R.id.business_user_bio_et, R.id.business_user_edit_bio_btn);
-
-        // Load user profile data into settings fields
-        loadUserProfileData(view);
-
-        if (MainActivity.USER_TYPE_BUSINESS.equals(currentUserType)) {
+        if (MainActivity.USER_TYPE_BUSINESS.equals(getUserType())) {
             loadAddressesOnMainScreen(view);
 
             TextView categoryTv = view.findViewById(R.id.business_category_tv);
@@ -169,7 +227,67 @@ public class UserFragment extends Fragment {
             }
         }
 
-        return view;
+        guestAdminAccessBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), Login.class);
+            intent.putExtra("preselectedUserType", UserType.ADMIN.name());
+            startActivity(intent);
+        });
+//        // Buttons
+//        guestLoginBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), Login.class)));
+//
+//        // Text Views
+//        guestReplayTourBtn.setOnClickListener(v -> replayTour());
+//
+//        // Linear Layouts
+//        generalUserLogOutBtn.setOnClickListener(v -> performLogout());
+//        businessUserLogOutBtn.setOnClickListener(v -> performLogout());
+//
+//        generalReplayTourBtn.setOnClickListener(v -> replayTour());
+//        businessReplayTourBtn.setOnClickListener(v -> replayTour());
+//
+//        guestRegisterGeneralBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), GeneralRegistration.class)));
+//        guestRegisterBusinessBtn.setOnClickListener(v -> startActivity(new Intent(requireContext(), BusinessRegistration.class)));
+//
+//        newLocationReqBtn.setOnClickListener(v -> navigateTo(new AddLocationRequestFragment()));
+//        viewLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddLocationRequestFragment()));
+//        viewCompletedLocationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedLocationRequestFragment()));
+//
+//        newInformationReqBtn.setOnClickListener(v -> navigateTo(new AddInformationRequestFragment()));
+//        viewInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewAddInformationRequestFragment()));
+//        viewCompletedInformationReqBtn.setOnClickListener(v -> navigateTo(new ViewCompletedInformationRequestFragment()));
+//
+//        viewAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewAccountVerificationRequestFragment()));
+//        viewCompletedAccVerificationBtn.setOnClickListener(v -> navigateTo(new ViewCompletedAccountVerificationRequestFragment()));
+//
+//        viewAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewAddLocationToAddressFragment()));
+//        viewCompletedAddBusinessLocationBtn.setOnClickListener(v -> navigateTo(new com.example.everythingbim.ViewCompletedAddLocationToAddressFragment()));
+//
+//        addBusinessLocationBtn.setOnClickListener(v -> navigateTo(new AddBusinessLocationRequestFragment()));
+
+        // Card View
+        guestAccountOptionsContainer.setOnClickListener(v -> {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastClickTime < 500) {
+                clickCount++;
+            } else {
+                clickCount = 1;
+            }
+            lastClickTime = currentTime;
+            if (clickCount == 3) {
+                userViewModel.onAdminSecretTriggered();
+                clickCount = 0;
+            }
+        });
+    }
+
+    private void setUpObservers() {
+        userViewModel.isAdminAccessVisible().observe(getViewLifecycleOwner(), isAdminAccessVisible -> {
+            if (isAdminAccessVisible) {
+                guestAdminAccessBtn.setVisibility(View.VISIBLE);
+            } else {
+                guestAdminAccessBtn.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void setupKeyboardHints(View root) {
@@ -251,12 +369,24 @@ public class UserFragment extends Fragment {
     private void setupGeneralUserTabs(View view) {
         switchGeneralTab(0);
 
+        generalSubmissionsTab.setOnClickListener(v -> switchGeneralTab(0));
+        generalMyProfileTab.setOnClickListener(v -> switchGeneralTab(1));
+        generalSettingsTab.setOnClickListener(v -> switchGeneralTab(2));
+
         setClickIfPresent(view, R.id.general_tab_submissions, v -> switchGeneralTab(0));
         setClickIfPresent(view, R.id.general_tab_my_profile, v -> switchGeneralTab(1));
         setClickIfPresent(view, R.id.general_tab_settings, v -> switchGeneralTab(2));
     }
 
     private void switchGeneralTab(int tab) {
+        generalContentSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
+        generalContentMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
+        generalContentSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+
+        generalIndSubmissions.setVisibility(tab == 0 ? View.VISIBLE : View.GONE);
+        generalIndMyProfile.setVisibility(tab == 1 ? View.VISIBLE : View.GONE);
+        generalIndSettings.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
+
         setVisibleIfPresent(generalContentSubmissions, tab == 0);
         setVisibleIfPresent(generalContentMyProfile, tab == 1);
         setVisibleIfPresent(generalContentSettings, tab == 2);
@@ -267,6 +397,10 @@ public class UserFragment extends Fragment {
 
     private void setupBusinessUserTabs(View view) {
         switchBusinessTab(0);
+
+        businessSubmissionsTab.setOnClickListener(v -> switchBusinessTab(0));
+        businessMyProfileTab.setOnClickListener(v -> switchBusinessTab(1));
+        businessSettingsTab.setOnClickListener(v -> switchBusinessTab(2));
 
         setClickIfPresent(view, R.id.business_tab_submissions, v -> switchBusinessTab(0));
         setClickIfPresent(view, R.id.business_tab_my_profile, v -> switchBusinessTab(1));
@@ -306,13 +440,14 @@ public class UserFragment extends Fragment {
         }
     }
 
-    private void setupEditToggle(View root, int fieldId, int buttonId) {
+    private void setupEditToggle(View root, int fieldId, int buttonId, int iconId) {
         TextInputEditText field = root.findViewById(fieldId);
-        ImageButton button = root.findViewById(buttonId);
+        LinearLayout button = root.findViewById(buttonId);
         if (field == null || button == null) {
             return;
         }
-        
+        ImageView icon = root.findViewById(iconId);
+
         // Special handling for password and description - open dialog immediately
         if (fieldId == R.id.business_edit_password_et || fieldId == R.id.general_user_edit_password_et) {
             button.setOnClickListener(v -> openPasswordDialog());
@@ -322,21 +457,19 @@ public class UserFragment extends Fragment {
             button.setOnClickListener(v -> openDescriptionDialog());
             return;
         }
-        
+
         // Normal behavior for other fields
-        button.setOnClickListener(v -> toggleFieldEdit(field, button, fieldId));
+        button.setOnClickListener(v -> toggleFieldEdit(field, button, icon, fieldId));
     }
 
-    private void toggleFieldEdit(TextInputEditText field, ImageButton button, int fieldId) {
-        android.util.Log.d("UserFragment", "toggleFieldEdit called for fieldId=" + fieldId + ", field class=" + field.getClass().getName());
-        
+    private void toggleFieldEdit(TextInputEditText field, LinearLayout button, ImageView icon, int fieldId) {
         // TextInputLayout is the direct parent of TextInputEditText
         ViewParent parent = field.getParent();
         android.util.Log.d("UserFragment", "direct parent=" + (parent != null ? parent.getClass().getName() : "null"));
-        
+
         TextInputLayout fieldLayout = (parent instanceof TextInputLayout) ? (TextInputLayout) parent : null;
         android.util.Log.d("UserFragment", "fieldLayout direct=" + (fieldLayout != null ? "found" : "null"));
-        
+
         // Try to find TextInputLayout by walking up the hierarchy if not found directly
         if (fieldLayout == null && parent != null) {
             ViewParent current = parent;
@@ -356,7 +489,7 @@ public class UserFragment extends Fragment {
                 }
             }
         }
-        
+
         final TextInputLayout finalFieldLayout = fieldLayout;
         android.util.Log.d("UserFragment", "final fieldLayout=" + (finalFieldLayout != null ? "found" : "null"));
 
@@ -370,50 +503,50 @@ public class UserFragment extends Fragment {
             field.setFocusableInTouchMode(true);
             field.setClickable(true);
             field.requestFocus();
+
             scrollFieldAboveKeyboard(field);
             // Blue background, white icon
             button.setBackgroundResource(R.drawable.bg_rectangle_blue);
-            button.setImageTintList(android.content.res.ColorStateList.valueOf(
+            icon.setImageTintList(android.content.res.ColorStateList.valueOf(
                     androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white)
             ));
             // Blue outline on field
-            if (finalFieldLayout != null) {
-                finalFieldLayout.setBoxStrokeColor(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.persian_blue)
-                );
+            if (fieldLayout != null) {
+                fieldLayout.setBackgroundResource(R.drawable.bg_border_rectangle_alice_blue_2);
             }
+
         } else {
             // Exiting edit mode - retrieve original value from tag (set when entering edit mode)
             String storedOriginal = (String) field.getTag();
             String trimmedOriginal = (storedOriginal != null ? storedOriginal : "").trim();
             String newValue = field.getText() != null ? field.getText().toString().trim() : "";
-            
+
             // Hide keyboard
             android.view.inputmethod.InputMethodManager imm =
                     (android.view.inputmethod.InputMethodManager)
                             requireActivity().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(field.getWindowToken(), 0);
 
-            // Reset button appearance
-            button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
-            button.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
-            ));
-            if (finalFieldLayout != null) {
-                finalFieldLayout.setBoxStrokeColor(
-                        androidx.core.content.ContextCompat.getColor(requireContext(), R.color.light_grey)
-                );
-            }
             field.setFocusable(false);
             field.setFocusableInTouchMode(false);
             field.setClickable(false);
+
+            // Grey background, black icon
+            button.setBackgroundResource(R.drawable.bg_rectangle_alice_blue);
+            icon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
+            ));
+            // Reset field outline to grey
+            if (fieldLayout != null) {
+                fieldLayout.setBackgroundResource(R.drawable.bg_rectangle_alice_blue);
+            }
 
             // Check if value actually changed (for email/bio fields)
             if (!newValue.equals(trimmedOriginal)) {
                 android.util.Log.d("UserFragment", "Value changed - showing dialog");
                 showFieldDialog(fieldId, newValue,
-                    () -> saveField(fieldId, newValue),
-                    () -> resetFieldToOriginal(field, button, finalFieldLayout, trimmedOriginal));
+                        () -> saveField(fieldId, newValue),
+                        () -> resetFieldToOriginal(field, button, icon, finalFieldLayout, trimmedOriginal));
             } else {
                 // No change - just reset UI without dialog
                 android.util.Log.d("UserFragment", "No change - no dialog");
@@ -435,6 +568,9 @@ public class UserFragment extends Fragment {
             if (keyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(targetScroll, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -448,6 +584,17 @@ public class UserFragment extends Fragment {
                 targetScroll.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     @Nullable
@@ -495,9 +642,9 @@ public class UserFragment extends Fragment {
         dialogScrollView.setTag(R.id.scroll_hint_overlay_host, keyboardExtraBottom);
     }
 
-    private void bindDialogFocusScroll(@Nullable TextInputEditText editText,
-                                       @Nullable ScrollView dialogScrollView,
-                                       @Nullable View anchorView) {
+    private void bindDialogFocusScroll(TextInputEditText editText,
+                                       ScrollView dialogScrollView,
+                                       View anchorView) {
         if (editText == null || dialogScrollView == null) {
             return;
         }
@@ -514,6 +661,9 @@ public class UserFragment extends Fragment {
             return;
         }
         dialogScrollView.post(() -> {
+            if (!isDescendant(dialogScrollView, anchorView)) {
+                return;
+            }
             Rect anchorRect = new Rect();
             Rect scrollRect = new Rect();
             anchorView.getDrawingRect(anchorRect);
@@ -605,7 +755,7 @@ public class UserFragment extends Fragment {
                             if (passwordMatches) {
                                 // Check if new password is same as current (comparing plain text)
                                 if (newPass.equals(current)) {
-                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", android.widget.Toast.LENGTH_LONG).show();
+                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", Toast.LENGTH_LONG).show();
                                     return;
                                 }
                                 // Current password verified - update in Firestore
@@ -676,14 +826,14 @@ public class UserFragment extends Fragment {
         dialog.show();
     }
 
-    private void resetFieldToOriginal(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout, String originalValue) {
+    private void resetFieldToOriginal(TextInputEditText field, LinearLayout button, ImageView icon,TextInputLayout fieldLayout, String originalValue) {
         field.setText(originalValue);
-        resetField(field, button, fieldLayout);
+        resetField(field, button, icon, fieldLayout);
     }
 
     private String getFieldName(int fieldId) {
         if (fieldId == R.id.general_user_edit_username_et || fieldId == R.id.business_user_tv) return "Username";
-        
+
         if (fieldId == R.id.business_edit_username_et) return "Username";
         if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
         if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
@@ -866,43 +1016,43 @@ public class UserFragment extends Fragment {
             onCancel.run();
         });
 
-return dialog;
+        return dialog;
     }
 
-private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
-        final Dialog dialog = new Dialog(requireContext());
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_confirm_field_change);
+    private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable onSave, Runnable onCancel) {
+            final Dialog dialog = new Dialog(requireContext());
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.setContentView(R.layout.dialog_confirm_field_change);
 
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawableResource(android.R.color.transparent);
-            window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            WindowManager.LayoutParams params = window.getAttributes();
-            params.gravity = android.view.Gravity.CENTER;
-            window.setAttributes(params);
-        }
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setBackgroundDrawableResource(android.R.color.transparent);
+                window.setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                WindowManager.LayoutParams params = window.getAttributes();
+                params.gravity = android.view.Gravity.CENTER;
+                window.setAttributes(params);
+            }
 
-        TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
-        TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
-        Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
-        Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
+            TextView titleTv = dialog.findViewById(R.id.dialog_confirm_title);
+            TextView messageTv = dialog.findViewById(R.id.dialog_confirm_message);
+            Button yesBtn = dialog.findViewById(R.id.dialog_confirm_yes);
+            Button noBtn = dialog.findViewById(R.id.dialog_confirm_no);
 
-        String fieldName = getFieldName(fieldId);
-        if (titleTv != null) titleTv.setText("Confirm " + fieldName + " Change?");
-        if (messageTv != null) messageTv.setText("Update " + fieldName.toLowerCase() + " to:\n\n" + currentValue);
+            String fieldName = getFieldName(fieldId);
+            if (titleTv != null) titleTv.setText("Confirm " + fieldName + " Change?");
+            if (messageTv != null) messageTv.setText("Update " + fieldName.toLowerCase() + " to:\n\n" + currentValue);
 
-        yesBtn.setOnClickListener(v -> {
-            dialog.dismiss();
-            onSave.run();
-        });
+            yesBtn.setOnClickListener(v -> {
+                dialog.dismiss();
+                onSave.run();
+            });
 
-        noBtn.setOnClickListener(v -> {
-            dialog.dismiss();
-            onCancel.run();
-        });
+            noBtn.setOnClickListener(v -> {
+                dialog.dismiss();
+                onCancel.run();
+            });
 
-        return dialog;
+            return dialog;
     }
 
     private String getAddressFromObject(Object addressObj) {
@@ -1201,12 +1351,12 @@ private Dialog createConfirmDialog(int fieldId, String currentValue, Runnable on
             });
     }
 
-    private void resetField(TextInputEditText field, ImageButton button, TextInputLayout fieldLayout) {
+    private void resetField(TextInputEditText field, LinearLayout button, ImageView icon, TextInputLayout fieldLayout) {
         field.setFocusable(false);
         field.setFocusableInTouchMode(false);
         field.setClickable(false);
         button.setBackgroundResource(R.drawable.bg_rectangle_edit_btn);
-        button.setImageTintList(android.content.res.ColorStateList.valueOf(
+        icon.setImageTintList(android.content.res.ColorStateList.valueOf(
                 androidx.core.content.ContextCompat.getColor(requireContext(), R.color.black)
         ));
         if (fieldLayout != null) {

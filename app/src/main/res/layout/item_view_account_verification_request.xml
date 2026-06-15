@@ -68,7 +68,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Status:"
-                            android:textColor="@color/grey"
+                            android:textColor="@color/dim_grey"
                             android:textSize="12sp"
                             android:textStyle="bold" />
 
@@ -87,7 +87,8 @@
                         android:layout_height="28dp"
                         android:layout_marginStart="8dp"
                         android:contentDescription="Status Icon"
-                        android:src="@drawable/ic_view" />
+                        android:src="@drawable/ic_view"
+                        app:tint="@color/persian_blue"/>
 
                 </LinearLayout>
             </LinearLayout>
@@ -116,21 +117,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_name_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Contact Information -->
@@ -155,21 +150,16 @@
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="4dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    app:boxBackgroundMode="outline"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    style="@style/txtInputLayout_style">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/viewaccverreq_phone_no_et"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:clickable="false"
                         android:focusable="false"
                         android:inputType="text"
-                        android:padding="10dp"
-                        android:textSize="13sp" />
+                        style="@style/txtInputEditText_style"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -179,21 +169,16 @@
                     android:layout_weight="1"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    app:boxBackgroundMode="outline"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    style="@style/txtInputLayout_style">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/viewaccverreq_email_et"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:clickable="false"
                         android:focusable="false"
                         android:inputType="text"
-                        android:padding="10dp"
-                        android:textSize="13sp" />
+                        style="@style/txtInputEditText_style"/>
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
@@ -213,21 +198,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_location_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Business Description -->
@@ -245,21 +225,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_desc_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    android:inputType="textMultiLine"
+                    android:gravity="start|top"
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Business Type -->
@@ -276,21 +252,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_business_type_et"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Images of Business -->
@@ -302,11 +273,12 @@
                 android:textStyle="bold"
                 android:textSize="13sp"
                 android:textColor="@color/black"/>
+
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_rectangle_dim_grey">
+                android:background="@drawable/bg_rectangle_alice_blue">
 
                 <LinearLayout
                     android:id="@+id/viewaccverreq_image_container"
@@ -331,7 +303,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_rectangle_dim_grey">
+                android:background="@drawable/bg_rectangle_alice_blue">
 
                 <LinearLayout
                     android:id="@+id/viewaccverreq_certificates_container"
@@ -341,8 +313,6 @@
                     android:orientation="horizontal"
                     android:padding="4dp" />
             </HorizontalScrollView>
-
-
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

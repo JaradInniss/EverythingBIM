@@ -24,6 +24,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -342,6 +343,9 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
             if (currentKeyboardExtraBottom <= 0) {
                 return;
             }
+            if (!isDescendant(createPostScrollView, anchorView)) {
+                return;
+            }
 
             Rect rect = new Rect();
             anchorView.getDrawingRect(rect);
@@ -355,6 +359,17 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
                 createPostScrollView.smoothScrollBy(0, delta);
             }
         });
+    }
+
+    private boolean isDescendant(ViewGroup parent, View child) {
+        ViewParent p = child.getParent();
+        while (p != null) {
+            if (p == parent) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
     }
 
     private int dpToPx(int dp) {

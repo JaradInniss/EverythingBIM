@@ -15,7 +15,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/bg_main"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
         android:paddingTop="12dp"
@@ -28,10 +27,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Users"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/roboto_medium"
+            android:textSize="16sp"
+            style="@style/white_medium_txt_style"
             android:gravity="center"
             android:layout_marginBottom="12dp" />
 
@@ -126,6 +123,7 @@
                 android:hint="Search ID, Username"
                 android:textSize="13sp"
                 android:textColor="@color/black"
+                android:textColorHint="@color/black"
                 android:singleLine="true"
                 android:imeOptions="actionSearch"
                 android:inputType="text" />

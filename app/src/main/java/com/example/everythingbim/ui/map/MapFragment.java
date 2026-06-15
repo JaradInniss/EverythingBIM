@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.map;
 
 import android.Manifest;
+import android.graphics.Color;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -36,8 +37,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.BuildConfig;
 import com.example.everythingbim.R;
@@ -138,13 +137,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private ListView searchResultsList;
     private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn, writeReviewBttn, writeReviewContainer, submitReviewBttn, directionsButton;
     private HorizontalScrollView imagesField, reviewsField, postsField;
-    private RecyclerView reviewsPreviewRv;
     private RelativeLayout detailsHeader;
     private ScrollView detailsScrollView;
-    private TextView barbadosText, placeName, placeAddress, placeRating, totalRatingsTv, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
-    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5;
+    private TextView barbadosText, placeName, placeAddress, placeRating, reviewsCount, imagesCount, postsCount, noImagesText, noReviewsText, noPostsText, placeMeta, placeContact;
+    private ImageView ratingStar1, ratingStar2, ratingStar3, ratingStar4, ratingStar5, closeWriteReviewBttn;
     private int currentKeyboardExtraBottom;
-    private ReviewsAdapter reviewsPreviewAdapter;
 
     private ArrayAdapter<String> searchResultsAdapter;
 
@@ -262,17 +259,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         ratingStar4.setOnClickListener(v -> mapViewModel.setRating(4));
         ratingStar5 = binding.ratingStar5;
         ratingStar5.setOnClickListener(v -> mapViewModel.setRating(5));
+        closeWriteReviewBttn = binding.closeWriteReviewBttn;
+        closeWriteReviewBttn.setOnClickListener(this);
 
         // Horizontal Scroll Views
         imagesField = binding.locationImagesField;
         reviewsField = binding.locationReviewsField;
         postsField = binding.locationPostsField;
-        reviewsPreviewRv = binding.locationReviewsContainer;
-        totalRatingsTv = binding.locationTotalRatingsTv;
-
-        reviewsPreviewAdapter = new ReviewsAdapter(requireContext());
-        reviewsPreviewRv.setLayoutManager(new LinearLayoutManager(requireContext()));
-        reviewsPreviewRv.setAdapter(reviewsPreviewAdapter);
 
         // Edit Texts
         searchInput = binding.mapSearchInput;
@@ -403,6 +396,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             toggleWriteReview();
         } else if (bttnId == R.id.submit_review_bttn) {
             mapViewModel.submitReview();
+        } else if (bttnId == R.id.close_write_review_bttn) {
+            toggleWriteReview();
         }
     }
 
@@ -442,14 +437,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         mapViewModel.getReviewSubmited().observe(getViewLifecycleOwner(), submitted -> {
             if (submitted) {
+                Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show();
                 toggleWriteReview();
-                mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-            }
-        });
-
-        mapViewModel.getReviewMessage().observe(getViewLifecycleOwner(), message -> {
-            if (message != null && !message.trim().isEmpty()) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -782,6 +771,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (writeReviewBttn.getVisibility() == View.VISIBLE) {
             writeReviewBttn.setVisibility(View.GONE);
             writeReviewContainer.setVisibility(View.VISIBLE);
+            closeWriteReviewBttn.setVisibility(View.VISIBLE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.requestFocus();
@@ -790,6 +780,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         } else {
             writeReviewBttn.setVisibility(View.VISIBLE);
             writeReviewContainer.setVisibility(View.GONE);
+            closeWriteReviewBttn.setVisibility(View.GONE);
             mapViewModel.resetReviewForm();
             if (newReviewInput != null) {
                 newReviewInput.clearFocus();
@@ -1075,9 +1066,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             LatLng stopLatLng = new LatLng(stop.getLatitude(), stop.getLongitude());
             routePoints.add(stopLatLng);
 
-            float markerHue = index == routePreviewLocations.size() - 1
-                    ? BitmapDescriptorFactory.HUE_RED
-                    : BitmapDescriptorFactory.HUE_ORANGE;
+            int markerColor = index == routePreviewLocations.size() - 1
+                    ? ContextCompat.getColor(requireContext(), R.color.space_indigo)
+                    : ContextCompat.getColor(requireContext(), R.color.periwinkle);
+            float[] hsv = new float[3];
+            Color.colorToHSV(markerColor, hsv);
+            float markerHue = hsv[0];
+
             String markerTitle = (index + 1) + ". " + stop.getName();
             String markerSnippet = index == routePreviewLocations.size() - 1
                     ? "Destination | " + stop.getDistanceLabel()
@@ -1113,12 +1108,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         routePreviewOutlinePolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(16f)
+                .width(12f)
                 .color(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
 
         routePreviewPolyline = map.addPolyline(new PolylineOptions()
                 .addAll(polylinePoints)
-                .width(9f)
+                .width(6f)
                 .color(ContextCompat.getColor(requireContext(), R.color.space_indigo)));
     }
 
@@ -1324,10 +1319,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         placeName.setText(details.title);
         placeAddress.setText(details.subtitle);
         placeRating.setText(String.format(Locale.US, "%.1f", details.rating));
-        if (totalRatingsTv != null) {
-            int reviewTotal = details.reviews != null ? details.reviews.size() : 0;
-            totalRatingsTv.setText(String.format(Locale.US, "(%d)", reviewTotal));
-        }
         if (overviewInput != null) {
             overviewInput.setText(details.overview != null ? details.overview : "");
         }
@@ -1367,18 +1358,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noReviewsText.setVisibility(View.VISIBLE);
             reviewsCount.setVisibility(View.GONE);
             reviewsField.setVisibility(View.GONE);
-            viewAllReviewsBttn.setVisibility(View.GONE);
-            if (reviewsPreviewAdapter != null) {
-                reviewsPreviewAdapter.setReviews(new ArrayList<>());
-            }
+            //viewAllReviewsBttn.setVisibility(View.GONE);
         } else {
             noReviewsText.setVisibility(View.GONE);
             reviewsCount.setText(String.format(java.util.Locale.US, "(%d)", details.reviews.size()));
             reviewsField.setVisibility(View.VISIBLE);
             viewAllReviewsBttn.setVisibility(View.VISIBLE);
-            if (reviewsPreviewAdapter != null) {
-                reviewsPreviewAdapter.setReviews(details.reviews);
-            }
         }
 
         if (details.posts == null || details.posts.isEmpty()) {
@@ -1391,12 +1376,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             postsCount.setText(String.format(java.util.Locale.US, "(%d)", details.posts.size()));
             postsField.setVisibility(View.VISIBLE);
             viewAllPostsBttn.setVisibility(View.VISIBLE);
-        }
-
-        boolean canWriteReview = details.id > 0L;
-        writeReviewBttn.setVisibility(canWriteReview ? View.VISIBLE : View.GONE);
-        if (!canWriteReview) {
-            writeReviewContainer.setVisibility(View.GONE);
         }
 
         detailsContainer.setVisibility(View.VISIBLE);

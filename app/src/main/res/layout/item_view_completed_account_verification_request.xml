@@ -68,7 +68,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Status:"
-                            android:textColor="@color/grey"
+                            android:textColor="@color/dim_grey"
                             android:textSize="12sp"
                             android:textStyle="bold" />
 
@@ -77,7 +77,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Approved"
-                            android:textColor="@color/celadon"
+                            android:textColor="@color/shamrock"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -88,7 +88,7 @@
                         android:layout_marginStart="8dp"
                         android:contentDescription="Status Icon"
                         android:src="@drawable/ic_check_circle"
-                        app:tint="@color/celadon" />
+                        app:tint="@color/shamrock" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -117,10 +117,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_name_et"
@@ -130,8 +127,7 @@
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Contact Information -->
@@ -156,10 +152,7 @@
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="4dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    app:boxBackgroundMode="outline"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    style="@style/txtInputLayout_style">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/viewaccverreq_phone_no_et"
@@ -169,8 +162,7 @@
                         android:clickable="false"
                         android:focusable="false"
                         android:inputType="text"
-                        android:padding="10dp"
-                        android:textSize="13sp" />
+                        style="@style/txtInputEditText_style" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -180,10 +172,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="4dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_rectangle_dim_grey"
-                    app:boxBackgroundMode="outline"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    style="@style/txtInputLayout_style">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/viewaccverreq_email_et"
@@ -193,8 +182,7 @@
                         android:clickable="false"
                         android:focusable="false"
                         android:inputType="text"
-                        android:padding="10dp"
-                        android:textSize="13sp" />
+                        style="@style/txtInputEditText_style" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
@@ -214,10 +202,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_location_et"
@@ -227,8 +212,7 @@
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Business Description -->
@@ -246,10 +230,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_desc_et"
@@ -258,9 +239,8 @@
                     android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
-                    android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    android:inputType="textMultiLine"
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Business Type -->
@@ -277,10 +257,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_rectangle_dim_grey"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp">
+                style="@style/txtInputLayout_style">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/viewaccverreq_business_type_et"
@@ -290,8 +267,7 @@
                     android:clickable="false"
                     android:focusable="false"
                     android:inputType="text"
-                    android:padding="10dp"
-                    android:textSize="13sp" />
+                    style="@style/txtInputEditText_style" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Images of Business -->
@@ -307,7 +283,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_rectangle_dim_grey">
+                android:background="@drawable/bg_rectangle_alice_blue">
 
                 <LinearLayout
                     android:id="@+id/viewaccverreq_image_container"
@@ -332,7 +308,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_rectangle_dim_grey">
+                android:background="@drawable/bg_rectangle_alice_blue">
 
                 <LinearLayout
                     android:id="@+id/viewaccverreq_certificates_container"
