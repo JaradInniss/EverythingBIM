@@ -184,6 +184,7 @@
                             android:inputType="text"
                             android:textSize="12sp"
                             android:padding="10dp"
+                            android:textColor="@color/black"
                             android:background="@android:color/transparent" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -214,6 +215,7 @@
                             android:inputType="text"
                             android:textSize="12sp"
                             android:padding="10dp"
+                            android:textColor="@color/black"
                             android:background="@android:color/transparent" />
                     </com.google.android.material.textfield.TextInputLayout>
 
