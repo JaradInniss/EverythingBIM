@@ -74,7 +74,76 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         setupActions();
         observeViewModel();
+
+        // Check login state and set username immediately
+        android.content.SharedPreferences prefs = getActivity()
+                .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        if (userId.isEmpty()) {
+            // Not logged in - show "User" using binding
+            binding.homeWelcomeUsernameTv.setText("User");
+        } else {
+            // Logged in - load username from Firestore
+            loadWelcomeUsername();
+        }
+
         return binding.getRoot();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reset username to "User" if not logged in
+        if (getActivity() == null) return;
+
+        android.content.SharedPreferences prefs = getActivity()
+                .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+
+        if (userId.isEmpty()) {
+            if (binding.homeWelcomeUsernameTv != null) {
+                binding.homeWelcomeUsernameTv.setText("User");
+            }
+        } else {
+            // Reload username in case it changed
+            loadWelcomeUsername();
+        }
+    }
+
+    private void loadWelcomeUsername() {
+        if (getActivity() == null) return;
+
+        android.content.SharedPreferences prefs = getActivity()
+                .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        String userType = prefs.getString("userType", "");
+
+        if (userId.isEmpty()) return;
+
+        // Use Firebase Auth UID to query Firestore for username
+        String collection = "business".equals(userType) ? "businesses" : "users";
+        db.collection(collection).document(userId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String username;
+                        if ("business".equals(userType)) {
+                            // Try businessName first (lowercase), fall back to companyName
+                            username = doc.getString("businessName");
+                            if (username == null || username.isEmpty()) {
+                                username = doc.getString("companyName");
+                            }
+                        } else {
+                            username = doc.getString("username");
+                        }
+                        if (username != null && !username.isEmpty()) {
+                            if (binding.homeWelcomeUsernameTv != null) {
+                                binding.homeWelcomeUsernameTv.setText(username);
+                            }
+                        }
+                    }
+                });
     }
 
     private void registerLaunchers() {

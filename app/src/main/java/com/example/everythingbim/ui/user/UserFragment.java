@@ -1526,12 +1526,13 @@ public class UserFragment extends Fragment {
             TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
             TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
 
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("businesses").document(userId)
-                    .get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc != null && doc.exists()) {
-                            requireActivity().runOnUiThread(() -> {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .get()
+            .addOnSuccessListener(doc -> {
+                if (!isAdded() || getActivity() == null) return;
+                if (doc != null && doc.exists()) {
+                    requireActivity().runOnUiThread(() -> {
                                 String username = doc.getString("username");
                                 String shortUserId = doc.getString("shortUserId");
                                 String category = doc.getString("businessType");

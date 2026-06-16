@@ -494,7 +494,7 @@ public class AddBusinessLocationRequestFragment extends Fragment {
 
     private void setupPlaceTypeSpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                requireContext(), android.R.layout.simple_spinner_item, PLACE_TYPES) {
+                requireContext(), R.layout.spinner_item, PLACE_TYPES) {
 
             @Override public boolean isEnabled(int position) { return position != 0; }
 
@@ -504,11 +504,11 @@ public class AddBusinessLocationRequestFragment extends Fragment {
                 View v = super.getDropDownView(position, convertView, parent);
                 ((android.widget.TextView) v).setTextColor(
                         position == 0 ? android.graphics.Color.GRAY
-                                : android.graphics.Color.BLACK);
+                                : android.graphics.Color.WHITE);
                 return v;
             }
         };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         placeTypeSpinner.setAdapter(adapter);
         placeTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {

@@ -10,6 +10,7 @@ import androidx.lifecycle.Transformations;
 
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReportEntity;
+import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.data.local.entities.UserWithProfile;
 import com.example.everythingbim.data.models.RequestReportStatus;
 import com.example.everythingbim.data.repository.PostRepository;
@@ -69,6 +70,20 @@ public class ViewUserProfileViewModel extends AndroidViewModel {
 
     public LiveData<List<PostEntity>> getUserPosts() {
         return userPosts;
+    }
+
+    /**
+     * Get posts by author's Firebase UID. Used when the user is not in local cache.
+     */
+    public LiveData<List<PostEntity>> getPostsByAuthorUid(@NonNull String authorUid) {
+        return postRepository.getPostsByAuthorUid(authorUid);
+    }
+
+    /**
+     * Get a user by their local Room ID. Used to look up firebaseUid.
+     */
+    public LiveData<UserEntity> getUserById(long userId) {
+        return userRepository.getUserById(userId);
     }
 
     /**

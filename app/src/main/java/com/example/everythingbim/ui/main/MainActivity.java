@@ -27,6 +27,7 @@ import com.example.everythingbim.ui.onboarding.OnboardingStep;
 import com.example.everythingbim.ui.posts.PostFragment;
 import com.example.everythingbim.ui.user.UserFragment;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
@@ -98,13 +99,19 @@ public class MainActivity extends AppCompatActivity {
             userType = normalizeUserType(sharedPreferences.getString("userType", USER_TYPE_GUEST));
         }
 
-        // Security check removed - app uses custom Firestore authentication, not Firebase Auth
-        // The login flow verifies credentials via Firestore query, so no Firebase Auth check needed
-
         // Also save userId from intent if present (sent from Login after successful authentication)
         if (getIntent().hasExtra("userId")) {
             String userId = getIntent().getStringExtra("userId");
             sharedPreferences.edit().putString("userId", userId).apply();
+        }
+
+        // If SharedPreferences was cleared but Firebase Auth session persists, restore session
+        if (USER_TYPE_GUEST.equals(userType) && sharedPreferences.getString("userId", "").isEmpty()) {
+            FirebaseAuth auth = FirebaseAuth.getInstance();
+            if (auth.getCurrentUser() != null) {
+                String firebaseUid = auth.getCurrentUser().getUid();
+                restoreUserSessionFromFirebaseAuth(firebaseUid);
+            }
         }
 
         pendingMapFocus = getIntent().getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
@@ -261,11 +268,57 @@ public class MainActivity extends AppCompatActivity {
         return USER_TYPE_GUEST;
     }
 
+    private void restoreUserSessionFromFirebaseAuth(String firebaseUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Try users collection first
+        db.collection("users").document(firebaseUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String userTypeFromDb = doc.getString("userType");
+                        if (userTypeFromDb == null) userTypeFromDb = USER_TYPE_GENERAL;
+                        restoreSession(userTypeFromDb, firebaseUid);
+                    } else {
+                        // Try businesses collection
+                        db.collection("businesses").document(firebaseUid).get()
+                                .addOnSuccessListener(bizDoc -> {
+                                    if (bizDoc != null && bizDoc.exists()) {
+                                        restoreSession(USER_TYPE_BUSINESS, firebaseUid);
+                                    } else {
+                                        // Try admin collection
+                                        db.collection("admins").document(firebaseUid).get()
+                                                .addOnSuccessListener(adminDoc -> {
+                                                    if (adminDoc != null && adminDoc.exists()) {
+                                                        restoreSession(USER_TYPE_ADMIN, firebaseUid);
+                                                    }
+                                                    // If nothing found, stay as guest
+                                                });
+                                    }
+                                });
+                    }
+                });
+    }
+
+    private void restoreSession(String userType, String userId) {
+        MainActivity.this.userType = userType;
+        sharedPreferences.edit()
+                .putString("userType", userType)
+                .putString("userId", userId)
+                .apply();
+        android.util.Log.d("MainActivity", "Session restored: userType=" + userType + ", userId=" + userId);
+        // Recreate activity to apply the restored session
+        recreate();
+    }
+
     public void handleLogout() {
         FirebaseAuth.getInstance().signOut();
 
-        sharedPreferences.edit().putString("userType", USER_TYPE_GUEST).apply();
-        getSharedPreferences("user_prefs", MODE_PRIVATE).edit().clear().apply();
+        // Use commit() for synchronous write to SharedPreferences
+        sharedPreferences.edit()
+                .putString("userType", USER_TYPE_GUEST)
+                .putString("userId", "")
+                .commit();
+        getSharedPreferences("user_prefs", MODE_PRIVATE).edit().clear().commit();
 
         userType = USER_TYPE_GUEST;
         pendingMapFocus = false;
@@ -285,6 +338,10 @@ public class MainActivity extends AppCompatActivity {
         viewModel.setNavbarItemId(R.id.navbar_home);
 
         android.widget.Toast.makeText(this, "Logged out successfully", android.widget.Toast.LENGTH_SHORT).show();
+
+        // Don't call recreate() - just finish and let app restart naturally
+        // The SharedPreferences and Firebase Auth are now properly cleared
+        finish();
     }
 
     private void resumePendingActionIfNeeded() {

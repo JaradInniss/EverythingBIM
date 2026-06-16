@@ -8,4 +8,4 @@
     android:paddingEnd="12dp"
     android:textColor="@color/black"
     android:textSize="14sp"
-    android:background="@drawable/bg_rectangle_white" />
+    android:background="@color/white" />
