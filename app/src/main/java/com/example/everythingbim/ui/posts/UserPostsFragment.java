@@ -65,25 +65,36 @@ public class UserPostsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         RecyclerView recyclerView = view.findViewById(R.id.user_posts_rv);
+        if (recyclerView == null) return;
+
         adapter = new PostAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(requireActivity()).get(ViewUserProfileViewModel.class);
+        if (viewModel == null) return;
 
         // If we have an authorUid, load posts by UID; otherwise load by local userId
         if (authorUid != null && !authorUid.isEmpty()) {
-            viewModel.getPostsByAuthorUid(authorUid).observe(getViewLifecycleOwner(), posts -> {
-                if (posts != null) {
-                    adapter.setPosts(posts);
-                }
-            });
+            try {
+                viewModel.getPostsByAuthorUid(authorUid).observe(getViewLifecycleOwner(), posts -> {
+                    if (posts != null && adapter != null) {
+                        adapter.setPosts(posts);
+                    }
+                });
+            } catch (Exception e) {
+                // Handle error silently
+            }
         } else if (userId > 0) {
-            viewModel.getUserPosts().observe(getViewLifecycleOwner(), posts -> {
-                if (posts != null) {
-                    adapter.setPosts(posts);
-                }
-            });
+            try {
+                viewModel.getUserPosts().observe(getViewLifecycleOwner(), posts -> {
+                    if (posts != null && adapter != null) {
+                        adapter.setPosts(posts);
+                    }
+                });
+            } catch (Exception e) {
+                // Handle error silently
+            }
         }
     }
 }

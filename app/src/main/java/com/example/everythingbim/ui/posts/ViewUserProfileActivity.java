@@ -31,6 +31,8 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.List;
+
 
 // Activity for Viewing A User's Profile Information
 
@@ -90,70 +92,140 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
      * Directly load user profile from Firestore by UID.
      */
     private void loadUserProfileFromFirestore(String uid) {
+        if (uid == null || uid.isEmpty()) {
+            // No UID - can't load from Firestore
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    username.setText("Unknown User");
+                    userIdText.setText("#");
+                    bio.setText("Unable to load profile");
+                }
+            });
+            return;
+        }
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Try users collection first (general users)
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
-                    if (doc != null && doc.exists()) {
-                        // Found in users - it's a general user
-                        String displayUsername = doc.getString("username");
-                        String bioText = doc.getString("bio");
+                    if (!isFinishing() && !isDestroyed()) {
+                        if (doc != null && doc.exists()) {
+                            // Found in users - it's a general user
+                            String displayUsername = doc.getString("username");
+                            String bioText = doc.getString("bio");
+
+                            if (displayUsername == null || displayUsername.isEmpty()) {
+                                displayUsername = "User";
+                            }
+
+                            username.setText(displayUsername);
+                            userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
+                            bio.setText(bioText != null ? bioText : "");
+
+                            // Load profile pic
+                            String profilePicUrl = doc.getString("profilePictureUrl");
+                            Glide.with(this)
+                                    .load(profilePicUrl)
+                                    .placeholder(R.drawable.ic_user_circle)
+                                    .into(profilePic);
+
+                            // General user - hide business elements, show posts
+                            businessTag.setVisibility(View.GONE);
+                            verificationIcon.setVisibility(View.GONE);
+                            tabLayout.setVisibility(View.GONE);
+                            viewPager.setVisibility(View.VISIBLE);
+                            viewPager.setUserInputEnabled(false);
+                        } else {
+                            // Not in users - try businesses
+                            loadBusinessProfileFromFirestore(uid);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        // Failed to check users - try businesses
+                        loadBusinessProfileFromFirestore(uid);
+                    }
+                });
+    }
+
+    private void loadBusinessProfileFromFirestore(String uid) {
+        if (isFinishing() || isDestroyed()) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(uid).get()
+                .addOnSuccessListener(bizDoc -> {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    if (bizDoc != null && bizDoc.exists()) {
+                        // Try businessName first (lowercase), fall back to companyName
+                        String displayUsername = bizDoc.getString("businessName");
+                        if (displayUsername == null || displayUsername.isEmpty()) {
+                            displayUsername = bizDoc.getString("companyName");
+                        }
+                        String bioText = bizDoc.getString("description");
+                        if (bioText == null) bioText = bizDoc.getString("businessDescription");
 
                         if (displayUsername == null || displayUsername.isEmpty()) {
-                            displayUsername = "User";
+                            displayUsername = "Business";
                         }
 
                         username.setText(displayUsername);
                         userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
                         bio.setText(bioText != null ? bioText : "");
 
-                        // Load profile pic
-                        String profilePicUrl = doc.getString("profilePictureUrl");
+                        // Load profile pic - first item from imageUrls list
+                        String profilePicUrl = null;
+                        Object imageUrlsObj = bizDoc.get("imageUrls");
+                        if (imageUrlsObj instanceof List) {
+                            List<?> list = (List<?>) imageUrlsObj;
+                            if (!list.isEmpty() && list.get(0) != null) {
+                                profilePicUrl = list.get(0).toString();
+                            }
+                        }
                         Glide.with(this)
                                 .load(profilePicUrl)
                                 .placeholder(R.drawable.ic_user_circle)
                                 .into(profilePic);
 
-                        // General user - hide business elements, show posts
+                        // Business user - show business elements and tabs
+                        businessTag.setVisibility(View.VISIBLE);
+                        // Set business type text (e.g., "Restaurant", "Retail")
+                        String businessType = bizDoc.getString("businessType");
+                        businessTag.setText(businessType != null && !businessType.isEmpty() ? businessType : "Business");
+                        // verificationStatus is a String ("Completed", "In Review", "Rejected") - check for "Completed"
+                        // OR verified field is a Boolean
+                        Boolean verified = bizDoc.getBoolean("verified");
+                        String verificationStatus = bizDoc.getString("verificationStatus");
+                        boolean isVerified = Boolean.TRUE.equals(verified) || "Completed".equals(verificationStatus);
+                        verificationIcon.setVisibility(isVerified ? View.VISIBLE : View.GONE);
+                        tabLayout.setVisibility(View.VISIBLE);
+                        viewPager.setVisibility(View.VISIBLE);
+                        viewPager.setUserInputEnabled(true);
+                    } else {
+                        // User not found in either collection
+                        username.setText("User");
+                        userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
+                        bio.setText("Profile not found");
                         businessTag.setVisibility(View.GONE);
                         verificationIcon.setVisibility(View.GONE);
                         tabLayout.setVisibility(View.GONE);
-                        viewPager.setVisibility(View.VISIBLE);
-                    } else {
-                        // Not in users - try businesses
-                        db.collection("businesses").document(uid).get()
-                                .addOnSuccessListener(bizDoc -> {
-                                    if (bizDoc != null && bizDoc.exists()) {
-                                        String displayUsername = bizDoc.getString("companyName");
-                                        String bioText = bizDoc.getString("description");
-                                        if (bioText == null) bioText = bizDoc.getString("businessDescription");
-
-                                        if (displayUsername == null || displayUsername.isEmpty()) {
-                                            displayUsername = "User";
-                                        }
-
-                                        username.setText(displayUsername);
-                                        userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
-                                        bio.setText(bioText != null ? bioText : "");
-
-                                        // Load profile pic
-                                        String profilePicUrl = bizDoc.getString("profilePictureUrl");
-                                        Glide.with(this)
-                                                .load(profilePicUrl)
-                                                .placeholder(R.drawable.ic_user_circle)
-                                                .into(profilePic);
-
-                                        // Business user - show business elements and tabs
-                                        businessTag.setVisibility(View.VISIBLE);
-                                        Boolean verified = bizDoc.getBoolean("verificationStatus");
-                                        verificationIcon.setVisibility(Boolean.TRUE.equals(verified) ? View.VISIBLE : View.GONE);
-                                        tabLayout.setVisibility(View.VISIBLE);
-                                        viewPager.setVisibility(View.VISIBLE);
-                                    }
-                                });
+                        viewPager.setVisibility(View.GONE);
                     }
-});
+                })
+                .addOnFailureListener(e -> {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    // Business query failed
+                    username.setText("User");
+                    userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
+                    bio.setText("Unable to load profile");
+                    businessTag.setVisibility(View.GONE);
+                    verificationIcon.setVisibility(View.GONE);
+                    tabLayout.setVisibility(View.GONE);
+                    viewPager.setVisibility(View.GONE);
+                });
     }
 
     /**
@@ -356,7 +428,12 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
                     return UserPostsFragment.newInstance(userId);
                 }
             } else {
-                return BusinessInfoFragment.newInstance(userId);
+                // Business Info tab - pass authorUid if available for Firestore loading
+                if (authorUid != null && !authorUid.isEmpty()) {
+                    return BusinessInfoFragment.newInstance(userId, authorUid);
+                } else {
+                    return BusinessInfoFragment.newInstance(userId);
+                }
             }
         }
 
