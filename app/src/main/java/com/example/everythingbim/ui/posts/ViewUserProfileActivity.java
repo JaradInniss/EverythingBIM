@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -21,11 +22,14 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
+import com.example.everythingbim.data.local.entities.UserEntity;
 import com.example.everythingbim.data.local.entities.UserWithProfile;
 import com.example.everythingbim.data.models.RequestReportStatus;
 import com.example.everythingbim.data.models.UserType;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 
 // Activity for Viewing A User's Profile Information
@@ -51,34 +55,112 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
 
         viewModel = new ViewModelProvider(this).get(ViewUserProfileViewModel.class);
 
-        // The activity can be launched with either a local Room userId
-        // (USER_ID) or a Firebase Auth UID (USER_UID). Prefer the local
-        // id when both are present so that the locally-cached profile
-        // (including the user's posts and business tabs) works as before;
-        // fall back to the UID when the user is not in the local cache
-        // (e.g. navigating from a tagged-user chip on the View Post page).
         targetUserId = getIntent().getLongExtra("USER_ID", -1);
         String targetUserUid = getIntent().getStringExtra("USER_UID");
 
-        if (targetUserId != -1) {
-            viewModel.setUserId(targetUserId);
-            initViews();
-            setupViewPager(targetUserId);
+        initViews();
+
+        // If we have userId but no UID, look up the user's firebaseUid from Room
+        if (targetUserId != -1 && (targetUserUid == null || targetUserUid.isEmpty())) {
+            viewModel.getUserById(targetUserId).observe(this, user -> {
+                if (user != null && user.firebaseUid != null && !user.firebaseUid.isEmpty()) {
+                    // Now we have the UID - load from Firestore and set up posts with UID
+                    setupViewPager(targetUserId, user.firebaseUid);
+                    loadUserProfileFromFirestore(user.firebaseUid);
+                } else {
+                    // No UID available - just use Room data
+                    setupViewPager(targetUserId, null);
+                    viewModel.getUserWithProfile().observe(this, this::updateUIFromRoom);
+                }
+            });
         } else if (targetUserUid != null && !targetUserUid.isEmpty()) {
-            viewModel.loadUserByFirebaseUid(targetUserUid);
-            initViews();
-            // We don't have a local userId, so the posts/business tabs
-            // can't be loaded. Hide them - the user can still see the
-            // profile information from Firestore.
-            tabLayout.setVisibility(View.GONE);
-            viewPager.setVisibility(View.GONE);
+            // Have UID - load from Firestore directly
+            viewModel.setUserId(targetUserId);
+            // Set up posts with the UID (userId might be -1 but that's ok - UserPostsFragment will use UID)
+            setupViewPager(targetUserId, targetUserUid);
+            loadUserProfileFromFirestore(targetUserUid);
         } else {
+            // No identifier - close
             finish();
             return;
         }
+    }
 
-        // Observe User Profile data from ViewModel
-        viewModel.getUserWithProfile().observe(this, this::updateUI);
+/**
+     * Directly load user profile from Firestore by UID.
+     */
+    private void loadUserProfileFromFirestore(String uid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Try users collection first (general users)
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        // Found in users - it's a general user
+                        String displayUsername = doc.getString("username");
+                        String bioText = doc.getString("bio");
+
+                        if (displayUsername == null || displayUsername.isEmpty()) {
+                            displayUsername = "User";
+                        }
+
+                        username.setText(displayUsername);
+                        userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
+                        bio.setText(bioText != null ? bioText : "");
+
+                        // Load profile pic
+                        String profilePicUrl = doc.getString("profilePictureUrl");
+                        Glide.with(this)
+                                .load(profilePicUrl)
+                                .placeholder(R.drawable.ic_user_circle)
+                                .into(profilePic);
+
+                        // General user - hide business elements, show posts
+                        businessTag.setVisibility(View.GONE);
+                        verificationIcon.setVisibility(View.GONE);
+                        tabLayout.setVisibility(View.GONE);
+                        viewPager.setVisibility(View.VISIBLE);
+                    } else {
+                        // Not in users - try businesses
+                        db.collection("businesses").document(uid).get()
+                                .addOnSuccessListener(bizDoc -> {
+                                    if (bizDoc != null && bizDoc.exists()) {
+                                        String displayUsername = bizDoc.getString("companyName");
+                                        String bioText = bizDoc.getString("description");
+                                        if (bioText == null) bioText = bizDoc.getString("businessDescription");
+
+                                        if (displayUsername == null || displayUsername.isEmpty()) {
+                                            displayUsername = "User";
+                                        }
+
+                                        username.setText(displayUsername);
+                                        userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
+                                        bio.setText(bioText != null ? bioText : "");
+
+                                        // Load profile pic
+                                        String profilePicUrl = bizDoc.getString("profilePictureUrl");
+                                        Glide.with(this)
+                                                .load(profilePicUrl)
+                                                .placeholder(R.drawable.ic_user_circle)
+                                                .into(profilePic);
+
+                                        // Business user - show business elements and tabs
+                                        businessTag.setVisibility(View.VISIBLE);
+                                        Boolean verified = bizDoc.getBoolean("verificationStatus");
+                                        verificationIcon.setVisibility(Boolean.TRUE.equals(verified) ? View.VISIBLE : View.GONE);
+                                        tabLayout.setVisibility(View.VISIBLE);
+                                        viewPager.setVisibility(View.VISIBLE);
+                                    }
+                                });
+                    }
+});
+    }
+
+    /**
+     * Update UI from Room/ViewModel (original method)
+     */
+    private void updateUIFromRoom(UserWithProfile profile) {
+        updateUI(profile);
     }
 
     private void initViews() {
@@ -186,8 +268,8 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         });
     }
 
-    private void setupViewPager(long userId) {
-        pagerAdapter = new ProfilePagerAdapter(this, userId);
+    private void setupViewPager(long userId, @Nullable String authorUid) {
+        pagerAdapter = new ProfilePagerAdapter(this, userId, authorUid);
         viewPager.setAdapter(pagerAdapter);
 
         // Attach TabLayout to ViewPager2
@@ -197,24 +279,42 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
     }
 
     private void updateUI(UserWithProfile profile) {
-        if (profile == null) return;
+        if (profile == null || profile.user == null) return;
 
-        username.setText(profile.user.username);
-        userIdText.setText("#" + profile.user.userId);
+        // Username - use username field
+        String displayUsername = profile.user.username;
+        if (displayUsername == null || displayUsername.isEmpty()) {
+            displayUsername = "User";
+        }
+        username.setText(displayUsername);
 
+        // User ID - for Firestore-loaded users (userId=0), use firebaseUid or show "#0"
+        String displayId;
+        if (profile.user.userId > 0) {
+            displayId = "#" + profile.user.userId;
+        } else if (profile.user.firebaseUid != null && !profile.user.firebaseUid.isEmpty()) {
+            // Use first 8 chars of firebaseUid as display ID for Firestore users
+            String uid = profile.user.firebaseUid;
+            displayId = "#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase();
+        } else {
+            displayId = "#0";
+        }
+        userIdText.setText(displayId);
 
         // Check if user is a Business
         boolean isBusiness = profile.user.userType == UserType.BUSINESS;
 
         // Toggle Visibility of Business-specific UI elements
-        verificationIcon.setVisibility(isBusiness && profile.businessUser.verificationStatus== RequestReportStatus.ACCEPTED ? View.VISIBLE : View.GONE);
+        boolean isVerified = isBusiness && profile.businessUser != null &&
+                profile.businessUser.verificationStatus == RequestReportStatus.ACCEPTED;
+        verificationIcon.setVisibility(isVerified ? View.VISIBLE : View.GONE);
         businessTag.setVisibility(isBusiness ? View.VISIBLE : View.GONE);
         tabLayout.setVisibility(isBusiness ? View.VISIBLE : View.GONE);
 
         // Disable swiping if it's a general user (stays on "Posts")
         viewPager.setUserInputEnabled(isBusiness);
 
-        // Update Bio and Profile Pic from GeneralUserEntity part of the join
+        // Update Bio and Profile Pic from GeneralUserEntity or BusinessUserEntity
         if (profile.generalUser != null) {
             bio.setText(profile.generalUser.bio);
             Glide.with(this)
@@ -238,17 +338,23 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
      */
     private static class ProfilePagerAdapter extends FragmentStateAdapter {
         private final long userId;
+        private final String authorUid;
 
-        public ProfilePagerAdapter(@NonNull FragmentActivity fragmentActivity, long userId) {
+        public ProfilePagerAdapter(@NonNull FragmentActivity fragmentActivity, long userId, @Nullable String authorUid) {
             super(fragmentActivity);
             this.userId = userId;
+            this.authorUid = authorUid;
         }
 
         @NonNull
         @Override
         public Fragment createFragment(int position) {
             if (position == 0) {
-                return UserPostsFragment.newInstance(userId);
+                if (authorUid != null && !authorUid.isEmpty()) {
+                    return UserPostsFragment.newInstance(userId, authorUid);
+                } else {
+                    return UserPostsFragment.newInstance(userId);
+                }
             } else {
                 return BusinessInfoFragment.newInstance(userId);
             }

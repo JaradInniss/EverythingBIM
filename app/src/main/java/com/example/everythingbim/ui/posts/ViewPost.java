@@ -220,6 +220,32 @@ public class ViewPost extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Navigates to {@link ViewUserProfileActivity} for the post author.
+     * Always passes both authorId and authorUid to ensure we can load the profile
+     * from either Room (if cached) or Firestore (if not cached but have UID).
+     */
+    private void openAuthorProfile(@NonNull PostEntity post) {
+        Intent intent = new Intent(this, ViewUserProfileActivity.class);
+
+        // Always pass both ID and UID when available
+        if (post.authorId > 0L) {
+            intent.putExtra("USER_ID", post.authorId);
+        }
+        if (post.authorUid != null && !post.authorUid.isEmpty()) {
+            intent.putExtra("USER_UID", post.authorUid);
+        }
+
+        // Must have at least one identifier
+        boolean hasValidId = post.authorId > 0L;
+        boolean hasValidUid = post.authorUid != null && !post.authorUid.isEmpty();
+        if (!hasValidId && !hasValidUid) {
+            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivity(intent);
+    }
+
     // Set up LiveData observers for post details and comments.
     private void setupObservers() {
         // Observe Post Details and populate the UI
@@ -292,6 +318,10 @@ public class ViewPost extends AppCompatActivity {
     private void populatePostDetails(PostEntity post) {
         username.setText(resolveAuthorLabel(post));
         caption.setText(post.caption);
+
+        // Make username and profile pic clickable to open author profile
+        username.setOnClickListener(v -> openAuthorProfile(post));
+        profilePic.setOnClickListener(v -> openAuthorProfile(post));
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         uploadDate.setText(sdf.format(new Date(post.createdAt)));

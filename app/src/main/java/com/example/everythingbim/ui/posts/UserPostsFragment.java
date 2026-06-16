@@ -21,7 +21,9 @@ import com.example.everythingbim.data.repository.PostRepository;
 public class UserPostsFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
+    private static final String ARG_AUTHOR_UID = "author_uid";
     private long userId;
+    private String authorUid;
     private PostAdapter adapter;
     private ViewUserProfileViewModel viewModel;
 
@@ -34,11 +36,21 @@ public class UserPostsFragment extends Fragment {
         return fragment;
     }
 
+    public static UserPostsFragment newInstance(long userId, String authorUid) {
+        UserPostsFragment fragment = new UserPostsFragment();
+        Bundle args = new Bundle();
+        args.putLong(ARG_USER_ID, userId);
+        args.putString(ARG_AUTHOR_UID, authorUid);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            userId = getArguments().getLong(ARG_USER_ID);
+            userId = getArguments().getLong(ARG_USER_ID, -1);
+            authorUid = getArguments().getString(ARG_AUTHOR_UID);
         }
     }
 
@@ -51,7 +63,7 @@ public class UserPostsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
         RecyclerView recyclerView = view.findViewById(R.id.user_posts_rv);
         adapter = new PostAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
@@ -59,11 +71,19 @@ public class UserPostsFragment extends Fragment {
 
         viewModel = new ViewModelProvider(requireActivity()).get(ViewUserProfileViewModel.class);
 
-        // Observe posts for the user and update the adapter
-        viewModel.getUserPosts().observe(getViewLifecycleOwner(), posts -> {
-            if (posts != null) {
-                adapter.setPosts(posts);
-            }
-        });
+        // If we have an authorUid, load posts by UID; otherwise load by local userId
+        if (authorUid != null && !authorUid.isEmpty()) {
+            viewModel.getPostsByAuthorUid(authorUid).observe(getViewLifecycleOwner(), posts -> {
+                if (posts != null) {
+                    adapter.setPosts(posts);
+                }
+            });
+        } else if (userId > 0) {
+            viewModel.getUserPosts().observe(getViewLifecycleOwner(), posts -> {
+                if (posts != null) {
+                    adapter.setPosts(posts);
+                }
+            });
+        }
     }
 }
