@@ -1,5 +1,6 @@
 package com.example.everythingbim.ui.posts;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -70,6 +71,13 @@ public class UserPostsFragment extends Fragment {
         adapter = new PostAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
+
+        // Set click listener to open ViewPost
+        adapter.setOnPostClickListener(post -> {
+            Intent intent = new Intent(getActivity(), ViewPost.class);
+            intent.putExtra("POST_ID", post.postId);
+            startActivity(intent);
+        });
 
         viewModel = new ViewModelProvider(requireActivity()).get(ViewUserProfileViewModel.class);
         if (viewModel == null) return;

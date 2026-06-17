@@ -48,7 +48,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
 
     // Variables
     private long targetUserId;
-
+    private String targetUserUid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +58,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         viewModel = new ViewModelProvider(this).get(ViewUserProfileViewModel.class);
 
         targetUserId = getIntent().getLongExtra("USER_ID", -1);
-        String targetUserUid = getIntent().getStringExtra("USER_UID");
+        targetUserUid = getIntent().getStringExtra("USER_UID");
 
         initViews();
 
@@ -67,8 +67,9 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
             viewModel.getUserById(targetUserId).observe(this, user -> {
                 if (user != null && user.firebaseUid != null && !user.firebaseUid.isEmpty()) {
                     // Now we have the UID - load from Firestore and set up posts with UID
-                    setupViewPager(targetUserId, user.firebaseUid);
-                    loadUserProfileFromFirestore(user.firebaseUid);
+                    targetUserUid = user.firebaseUid;
+                    setupViewPager(targetUserId, targetUserUid);
+                    loadUserProfileFromFirestore(targetUserUid);
                 } else {
                     // No UID available - just use Room data
                     setupViewPager(targetUserId, null);
@@ -88,7 +89,19 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         }
     }
 
-/**
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh profile data when returning to this activity
+        if (targetUserUid != null && !targetUserUid.isEmpty()) {
+            loadUserProfileFromFirestore(targetUserUid);
+        } else if (targetUserId != -1) {
+            // Reload from Room
+            viewModel.getUserWithProfile().observe(this, this::updateUIFromRoom);
+        }
+    }
+
+    /**
      * Directly load user profile from Firestore by UID.
      */
     private void loadUserProfileFromFirestore(String uid) {
@@ -159,7 +172,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
                     if (isFinishing() || isDestroyed()) return;
 
                     if (bizDoc != null && bizDoc.exists()) {
-                        // Try businessName first (lowercase), fall back to companyName
+                        // Try businessName first, fall back to companyName
                         String displayUsername = bizDoc.getString("businessName");
                         if (displayUsername == null || displayUsername.isEmpty()) {
                             displayUsername = bizDoc.getString("companyName");

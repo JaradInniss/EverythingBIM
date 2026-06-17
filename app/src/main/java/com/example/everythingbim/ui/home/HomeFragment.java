@@ -129,7 +129,7 @@ public class HomeFragment extends Fragment {
                     if (doc != null && doc.exists()) {
                         String username;
                         if ("business".equals(userType)) {
-                            // Try businessName first (lowercase), fall back to companyName
+                            // Try businessName first, fall back to companyName
                             username = doc.getString("businessName");
                             if (username == null || username.isEmpty()) {
                                 username = doc.getString("companyName");

@@ -86,6 +86,16 @@ public class UserFragment extends Fragment {
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reload profile data when returning to this fragment
+        // This ensures bio and other fields are fresh from Firestore
+        if (binding != null && binding.getRoot() != null) {
+            loadUserProfileData(binding.getRoot());
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -837,7 +847,7 @@ public class UserFragment extends Fragment {
     private String getFieldName(int fieldId) {
         if (fieldId == R.id.general_user_edit_username_et || fieldId == R.id.business_user_tv) return "Username";
 
-        if (fieldId == R.id.business_edit_username_et) return "Username";
+        if (fieldId == R.id.business_edit_username_et) return "Business Name";
         if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
         if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
         if (fieldId == R.id.business_edit_desc_et) return "Business Description";
@@ -1418,7 +1428,7 @@ public class UserFragment extends Fragment {
             }
         } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
             if (fieldId == R.id.business_edit_username_et) {
-                updates.put("username", newValue);
+                updates.put("businessName", newValue);
                 hasValidUpdate = true;
             } else if (fieldId == R.id.business_edit_email_et) {
                 updates.put("email", newValue);
@@ -1531,25 +1541,29 @@ public class UserFragment extends Fragment {
             .get()
             .addOnSuccessListener(doc -> {
                 if (!isAdded() || getActivity() == null) return;
-                if (doc != null && doc.exists()) {
-                    requireActivity().runOnUiThread(() -> {
-                                String username = doc.getString("username");
-                                String shortUserId = doc.getString("shortUserId");
-                                String category = doc.getString("businessType");
-                                String email = doc.getString("businessEmail");
-                                String desc = doc.getString("description");
-                                String bio = doc.getString("bio");
+                    if (doc != null && doc.exists()) {
+                     requireActivity().runOnUiThread(() -> {
+                                 // Try businessName first, fall back to companyName
+                                 String businessName = doc.getString("businessName");
+                                 if (businessName == null || businessName.isEmpty()) {
+                                     businessName = doc.getString("companyName");
+                                 }
+                                 String shortUserId = doc.getString("shortUserId");
+                                 String category = doc.getString("businessType");
+                                 String email = doc.getString("businessEmail");
+                                 String desc = doc.getString("description");
+                                 String bio = doc.getString("bio");
 
-                                // Update header from Firestore
-                                if (businessUserTv != null) businessUserTv.setText(username != null ? username : "");
-                                if (businessUserIdTv != null) {
-                                    String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
-                                    businessUserIdTv.setText(displayId);
-                                }
-                                if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
+                                 // Update header from Firestore
+                                 if (businessUserTv != null) businessUserTv.setText(businessName != null ? businessName : "");
+                                 if (businessUserIdTv != null) {
+                                     String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
+                                     businessUserIdTv.setText(displayId);
+                                 }
+                                 if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
 
-                                // Update fields from Firestore
-                                if (usernameEt != null) usernameEt.setText(username != null ? username : "");
+                                 // Update fields from Firestore
+                                 if (usernameEt != null) usernameEt.setText(businessName != null ? businessName : "");
                                 if (emailEt != null) emailEt.setText(email != null ? email : "");
                                 if (descEt != null) descEt.setText(desc != null ? desc : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");

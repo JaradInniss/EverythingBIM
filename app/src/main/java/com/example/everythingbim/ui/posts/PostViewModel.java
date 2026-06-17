@@ -227,6 +227,7 @@ public class PostViewModel extends AndroidViewModel {
                                               @NonNull String authorName,
                                               @Nullable String authorUid,
                                               @Nullable String parentAuthorName,
+                                              @Nullable String parentAuthorUid,
                                               @NonNull String body) {
         if (!hasSyncedFirestorePost(post)) {
             MutableLiveData<CommentEntity> failure = new MutableLiveData<>();
@@ -239,10 +240,19 @@ public class PostViewModel extends AndroidViewModel {
                 authorName,
                 authorUid,
                 parentAuthorName,
+                parentAuthorUid,
                 body,
                 System.currentTimeMillis()
         );
         return repository.addCommentToFirestore(post.firestoreId, comment);
+    }
+
+    /**
+     * Updates a comment in the local Room database.
+     * Used to refresh author names after resolving from Firestore.
+     */
+    public void updateComment(CommentEntity comment) {
+        repository.updateComment(comment);
     }
 
     /**
@@ -291,6 +301,17 @@ public class PostViewModel extends AndroidViewModel {
                     post.firestoreId, post.postId, current.getUid());
             result.addSource(source, result::setValue);
             return result;
+        });
+    }
+
+    /**
+     * Refreshes a post from Firestore to ensure fresh data.
+     * Call this before viewing a post.
+     */
+    public void refreshPost(long postId) {
+        repository.refreshPostFromFirestore(postId, post -> {
+            // Post has been refreshed in Room - the LiveData from getPostById
+            // will automatically update since it observes Room
         });
     }
 }

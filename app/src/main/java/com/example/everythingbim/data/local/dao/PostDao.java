@@ -101,6 +101,14 @@ public interface PostDao {
     LiveData<PostEntity> getPostById(long postId);
 
     /**
+     * Synchronously retrieves a post by its postId.
+     * @param postId The post's stable long ID.
+     * @return The post entity, or null if not found.
+     */
+    @Query("SELECT * FROM posts WHERE postId = :postId LIMIT 1")
+    PostEntity getPostByIdSync(long postId);
+
+    /**
      * Synchronously returns the total number of posts in the database.
      * @return The count of posts.
      */

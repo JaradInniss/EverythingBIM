@@ -513,6 +513,45 @@ public class PostRepository {
         return postDao.getPostById(postId);
     }
 
+    /**
+     * Refreshes a single post from Firestore and updates Room cache.
+     * Call this before viewing a post to ensure fresh data.
+     */
+    public void refreshPostFromFirestore(long postId, PostCallback callback) {
+        // First get the post to find its firestoreId
+        executorService.execute(() -> {
+            PostEntity cachedPost = postDao.getPostByIdSync(postId);
+            if (cachedPost == null || cachedPost.firestoreId == null) {
+                callback.onComplete(null);
+                return;
+            }
+
+            firestore.collection(COLLECTION_POSTS)
+                    .document(cachedPost.firestoreId)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                            DocumentSnapshot doc = task.getResult();
+                            PostEntity post = mapPostFromFirestore(doc);
+                            if (post != null) {
+                                executorService.execute(() -> {
+                                    postDao.upsert(post);
+                                    callback.onComplete(post);
+                                });
+                            } else {
+                                callback.onComplete(null);
+                            }
+                        } else {
+                            callback.onComplete(null);
+                        }
+                    });
+        });
+    }
+
+    public interface PostCallback {
+        void onComplete(PostEntity post);
+    }
+
     public LiveData<LocationEntity> getLocationById(long locationId) {
         return locationDao.getLocationById(locationId);
     }
@@ -665,6 +704,20 @@ public class PostRepository {
                     result.postValue(null);
                 });
         return result;
+    }
+
+    /**
+     * Updates an existing comment in the local Room database.
+     * Used to refresh author names after resolving from Firestore.
+     */
+    public void updateComment(CommentEntity comment) {
+        executorService.execute(() -> {
+            try {
+                commentDao.update(comment);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to update comment in Room", e);
+            }
+        });
     }
 
     private CommentEntity mapCommentFromFirestore(@NonNull DocumentSnapshot doc, long fallbackPostId) {

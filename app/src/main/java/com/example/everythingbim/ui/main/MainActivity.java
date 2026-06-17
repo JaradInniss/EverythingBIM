@@ -339,8 +339,10 @@ public class MainActivity extends AppCompatActivity {
 
         android.widget.Toast.makeText(this, "Logged out successfully", android.widget.Toast.LENGTH_SHORT).show();
 
-        // Don't call recreate() - just finish and let app restart naturally
-        // The SharedPreferences and Firebase Auth are now properly cleared
+        // Navigate to Login screen instead of closing app
+        Intent loginIntent = new Intent(this, com.example.everythingbim.ui.login.Login.class);
+        loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(loginIntent);
         finish();
     }
 
