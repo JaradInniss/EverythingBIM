@@ -476,18 +476,18 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // Sets green background on the WRAPPER (not CardView) — works reliably
     // ────────────────────────────────────────────────────────
 
-    private void applyAcceptedState(String date, String by) {
+private void applyAcceptedState(String date, String by) {
         cardWrapper.setBackgroundResource(R.drawable.bg_card_accepted);
 
         statusTv.setText("Status: Accepted");
-        statusTv.setTextColor(android.graphics.Color.parseColor("#28965a"));
+        statusTv.setTextColor(android.graphics.Color.parseColor("#27ae60"));
 
         actionButtons.setVisibility(View.GONE);
 
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.GONE);
         resolutionDateTv.setText("Accepted: " + date);
-        resolutionByTv.setText("Accepted By: " + by);
+        resolutionByTv.setText("Accepted By: Administrator");
     }
 
     // ────────────────────────────────────────────────────────
@@ -506,9 +506,9 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.VISIBLE);
         resolutionDateTv.setText("Rejected: " + date);
-        resolutionByTv.setText("Rejected By: " + by);
+        resolutionByTv.setText("Rejected By: Administrator");
         resolutionReasonTv.setText("Reason For Rejection: " + reason);
-    }
+}
 
     // ────────────────────────────────────────────────────────
     // HELPERS

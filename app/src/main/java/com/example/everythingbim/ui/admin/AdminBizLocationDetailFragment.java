@@ -272,10 +272,39 @@ public class AdminBizLocationDetailFragment extends Fragment {
                         cachedDate = dateStr;
                     }
 
-                    String submittedBy = doc.getString("userId");
-                    submittedByTv.setText("Submitted By: " + (submittedBy != null ? submittedBy : "User"));
-                    cachedSubmittedBy = submittedBy != null ? submittedBy : "";
-                    cachedRecipientUserId = submittedBy != null ? submittedBy : "";
+                    // Get userId to look up business name
+                    String userId = doc.getString("userId");
+                    final String[] submittedBy = {"Business User"};
+                    submittedByTv.setText("Submitted By: Loading...");
+                    cachedRecipientUserId = userId != null ? userId : "";
+
+                    // Look up business name from businesses collection
+                    if (userId != null && !userId.isEmpty()) {
+                        db.collection("businesses").document(userId).get()
+                                .addOnSuccessListener(bizDoc -> {
+                                    if (bizDoc != null && bizDoc.exists()) {
+                                        String businessName = bizDoc.getString("businessName");
+                                        if (businessName == null || businessName.isEmpty()) {
+                                            businessName = bizDoc.getString("companyName");
+                                        }
+                                        if (businessName == null || businessName.isEmpty()) {
+                                            businessName = bizDoc.getString("name");
+                                        }
+                                        if (businessName != null && !businessName.isEmpty()) {
+                                            submittedBy[0] = businessName;
+                                        }
+                                    }
+                                    submittedByTv.setText("Submitted By: " + submittedBy[0]);
+                                    cachedSubmittedBy = submittedBy[0];
+                                })
+                                .addOnFailureListener(e -> {
+                                    submittedByTv.setText("Submitted By: " + submittedBy[0]);
+                                    cachedSubmittedBy = submittedBy[0];
+                                });
+                    } else {
+                        submittedByTv.setText("Submitted By: Business User");
+                        cachedSubmittedBy = "Business User";
+                    }
 
                     String locationName = nvl(doc.getString("locationName"));
                     locationNameTv.setText(locationName);
@@ -533,7 +562,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.GONE);
         resolutionDateTv.setText("Accepted: " + date);
-        resolutionByTv.setText("Accepted By: " + by);
+        resolutionByTv.setText("Accepted By: Administrator");
     }
 
     private void applyRejectedState(String date, String by, String reason) {
@@ -546,7 +575,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
         resolutionContainer.setVisibility(View.VISIBLE);
         resolutionReasonRow.setVisibility(View.VISIBLE);
         resolutionDateTv.setText("Rejected: " + date);
-        resolutionByTv.setText("Rejected By: " + by);
+        resolutionByTv.setText("Rejected By: Administrator");
         resolutionReasonTv.setText("Reason For Rejection: " + reason);
     }
 

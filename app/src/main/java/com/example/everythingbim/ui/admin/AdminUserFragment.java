@@ -210,6 +210,13 @@ public class AdminUserFragment extends Fragment {
                                 AdminUserRequestsFragment.newInstance("business_location"))
                         .addToBackStack(null).commit());
 
+        view.findViewById(R.id.business_verreq_view_all).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.admin_fragment_container,
+                                AdminUserRequestsFragment.newInstance("business"))
+                        .addToBackStack(null).commit());
+
         // ── Search text watcher ───────────────
         searchEt.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int i, int c, int a) {}
@@ -416,7 +423,14 @@ public class AdminUserFragment extends Fragment {
 
     private boolean isBizVerEffectivelyRead(RequestItem item) {
         if (item == null || item.docId == null || item.docId.isEmpty()) return false;
-        return ReadStateManager.isBizVerRead(requireContext(), item.docId);
+        // Check both Firestore read field AND local SharedPreferences
+        return item.read || ReadStateManager.isBizVerRead(requireContext(), item.docId);
+    }
+
+    private boolean isBizLocVerEffectivelyRead(RequestItem item) {
+        if (item == null || item.docId == null || item.docId.isEmpty()) return false;
+        // Check both Firestore read field AND local SharedPreferences
+        return item.read || ReadStateManager.isBizLocVerRead(requireContext(), item.docId);
     }
 
     private void markBizVerAsRead(RequestItem item) {
@@ -427,11 +441,6 @@ public class AdminUserFragment extends Fragment {
     private void markBizLocVerAsRead(RequestItem item) {
         if (item == null || item.docId == null || item.docId.isEmpty()) return;
         ReadStateManager.markBizLocVerRead(requireContext(), item.docId);
-    }
-
-    private boolean isBizLocVerEffectivelyRead(RequestItem item) {
-        if (item == null || item.docId == null || item.docId.isEmpty()) return false;
-        return ReadStateManager.isBizLocVerRead(requireContext(), item.docId);
     }
 
     private void markSectionAsRead(String sectionType) {
@@ -681,36 +690,100 @@ public class AdminUserFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(snap -> {
                     allBizLocVerReqs.clear();
+                    final int totalDocs = snap.size();
+                    final int[] processedCount = {0};
+
+                    if (totalDocs == 0) {
+                        addBizLocVerReqPlaceholders();
+                        renderBusinessLocVerReqs();
+                        updateBizLocVerReqCount(0);
+                        return;
+                    }
+
                     for (QueryDocumentSnapshot doc : snap) {
                         boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
                         String locationName = doc.getString("locationName");
                         if (locationName == null || locationName.isEmpty()) {
                             locationName = "Business Location";
                         }
-                        String submittedBy = doc.getString("userId");
-                        if (submittedBy == null || submittedBy.isEmpty()) {
-                            submittedBy = "User";
-                        }
-                        Timestamp ts = doc.getTimestamp("createdAt");
-                        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate()) : "";
+                        String userId = doc.getString("userId");
                         String requestNum = doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
                         String placeType = doc.getString("placeType");
                         if (placeType == null) placeType = "";
-                        RequestItem item = new RequestItem("#" + requestNum, locationName, submittedBy, date, read, doc.getId());
-                        item.placeType = placeType;
-                        item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
+                        Timestamp ts = doc.getTimestamp("createdAt");
+                        String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(ts.toDate()) : "";
+                        String status = doc.getString("status") != null ? doc.getString("status") : "In Review";
                         Double lat = doc.getDouble("latitude");
                         Double lng = doc.getDouble("longitude");
+                        String coordinates = "";
                         if (lat != null && lng != null) {
-                            item.latitude = lat;
-                            item.longitude = lng;
-                            item.coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
+                            coordinates = String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng);
                         }
+
+                        // Create item first with placeholder
+                        final RequestItem item = new RequestItem("#" + requestNum, locationName, "Loading...", date, read, doc.getId());
+                        item.placeType = placeType;
+                        item.status = status;
+                        item.latitude = lat != null ? lat : 0.0;
+                        item.longitude = lng != null ? lng : 0.0;
+                        item.coordinates = coordinates;
                         allBizLocVerReqs.add(item);
+
+                        // Look up business name from businesses collection using userId
+                        if (userId != null && !userId.isEmpty()) {
+                            final String docId = doc.getId();
+                            db.collection("businesses").document(userId).get()
+                                    .addOnSuccessListener(bizDoc -> {
+                                        String businessName = null;
+                                        if (bizDoc != null && bizDoc.exists()) {
+                                            businessName = bizDoc.getString("businessName");
+                                            if (businessName == null || businessName.isEmpty()) {
+                                                businessName = bizDoc.getString("companyName");
+                                            }
+                                            if (businessName == null || businessName.isEmpty()) {
+                                                businessName = bizDoc.getString("name");
+                                            }
+                                        }
+                                        if (businessName == null || businessName.isEmpty()) {
+                                            businessName = "Business User";
+
+                                        }
+                                        // Find and update the item
+                                        for (RequestItem i : allBizLocVerReqs) {
+                                            if (docId.equals(i.docId)) {
+                                                i.submittedBy = businessName;
+                                                break;
+                                            }
+                                        }
+                                        processedCount[0]++;
+                                        if (processedCount[0] == totalDocs) {
+                                            renderBusinessLocVerReqs();
+                                            updateBizLocVerReqCount(totalDocs);
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        // Update with fallback
+                                        for (RequestItem i : allBizLocVerReqs) {
+                                            if (docId.equals(i.docId)) {
+                                                i.submittedBy = userId != null ? userId : "Business User";
+                                                break;
+                                            }
+                                        }
+                                        processedCount[0]++;
+                                        if (processedCount[0] == totalDocs) {
+                                            renderBusinessLocVerReqs();
+                                            updateBizLocVerReqCount(totalDocs);
+                                        }
+                                    });
+                        } else {
+                            item.submittedBy = "Business User";
+                            processedCount[0]++;
+                            if (processedCount[0] == totalDocs) {
+                                renderBusinessLocVerReqs();
+                                updateBizLocVerReqCount(totalDocs);
+                            }
+                        }
                     }
-                    if (allBizLocVerReqs.isEmpty()) addBizLocVerReqPlaceholders();
-                    renderBusinessLocVerReqs();
-                    updateBizLocVerReqCount(snap.size());
                 })
                 .addOnFailureListener(e -> {
                     addBizLocVerReqPlaceholders();
@@ -818,6 +891,19 @@ public class AdminUserFragment extends Fragment {
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
                 effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
 
+        // Status dot
+        String status = item.status != null ? item.status : "In Review";
+        View statusDot = row.findViewById(R.id.status_dot);
+        if ("In Review".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+        } else if ("Completed".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+        } else if ("Rejected".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+        } else {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+        }
+
         TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
         viewBtn.setTextColor(effectivelyRead
                 ? android.graphics.Color.parseColor("#9e9e9e")
@@ -909,6 +995,19 @@ public class AdminUserFragment extends Fragment {
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
                 effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
 
+        // Status dot — based on item.status (In Review, Completed, Rejected)
+        String status = item.status != null ? item.status : "In Review";
+        View statusDot = row.findViewById(R.id.status_dot);
+        if ("In Review".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+        } else if ("Completed".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+        } else if ("Rejected".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+        } else {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+        }
+
         // View button colour — cobalt if unread, grey if read
         TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
         viewBtn.setTextColor(effectivelyRead
@@ -996,6 +1095,19 @@ public class AdminUserFragment extends Fragment {
         boolean effectivelyRead = isBizVerEffectivelyRead(item);
         row.findViewById(R.id.user_req_dot).setBackgroundResource(
                 effectivelyRead ? R.drawable.bg_dot_grey : R.drawable.bg_dot_red);
+
+        // Status dot
+        String status = item.status != null ? item.status : "In Review";
+        View statusDot = row.findViewById(R.id.status_dot);
+        if ("In Review".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+        } else if ("Completed".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+        } else if ("Rejected".equals(status)) {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+        } else {
+            statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+        }
 
         // View button colour — cobalt if unread, grey if read
         TextView viewBtn = row.findViewById(R.id.user_req_view_btn);
