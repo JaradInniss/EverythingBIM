@@ -28,6 +28,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     private List<CommentUIModel> comments = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
     private OnReplyClickListener replyClickListener;
+    private OnCommentClickListener commentClickListener;
 
     /**
      * Interface to handle clicks on the "Reply" button.
@@ -37,10 +38,24 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     }
 
     /**
+     * Interface to handle clicks on the comment username.
+     */
+    public interface OnCommentClickListener {
+        void onCommentClick(CommentEntity comment);
+    }
+
+    /**
      * Sets the listener for reply button clicks.
      */
     public void setOnReplyClickListener(OnReplyClickListener listener) {
         this.replyClickListener = listener;
+    }
+
+    /**
+     * Sets the listener for comment username clicks.
+     */
+    public void setOnCommentClickListener(OnCommentClickListener listener) {
+        this.commentClickListener = listener;
     }
 
     /**
@@ -100,6 +115,12 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         public void bind(CommentUIModel uiModel) {
             CommentEntity comment = uiModel.getComment();
             username.setText(comment.authorName);
+            // Make username clickable to open author profile
+            username.setOnClickListener(v -> {
+                if (commentClickListener != null) {
+                    commentClickListener.onCommentClick(comment);
+                }
+            });
             body.setText(comment.body);
             // createdAt is a boxed Long; for comments that haven't
             // received a server timestamp yet we fall back to "now" so
@@ -147,6 +168,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
                 List<CommentUIModel> replies = uiModel.getReplies();
                 CommentAdapter nestedAdapter = new CommentAdapter();
                 nestedAdapter.setOnReplyClickListener(replyClickListener); // Propagate listener
+                nestedAdapter.setOnCommentClickListener(commentClickListener); // Propagate click listener for author names
                 repliesRv.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
                 repliesRv.setAdapter(nestedAdapter);
                 nestedAdapter.setComments(replies);

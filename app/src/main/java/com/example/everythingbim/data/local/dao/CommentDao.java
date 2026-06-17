@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.example.everythingbim.data.local.entities.CommentEntity;
 
@@ -32,6 +33,13 @@ public interface CommentDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(CommentEntity comment);
+
+    /**
+     * Updates an existing comment in the database.
+     * @param comment The CommentEntity to be updated.
+     */
+    @Update
+    void update(CommentEntity comment);
 
     /**
      * Retrieves all comments associated with a specific post.

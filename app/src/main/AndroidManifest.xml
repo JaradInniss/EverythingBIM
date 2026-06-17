@@ -78,6 +78,9 @@
             android:name=".ui.admin.AdminActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.admin.MigratePostsAuthorUidActivity"
+            android:exported="false" />
+        <activity
             android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
