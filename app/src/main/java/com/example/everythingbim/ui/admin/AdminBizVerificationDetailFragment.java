@@ -226,7 +226,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
 
     private void applyStatusVisual(String status) {
         if ("Completed".equals(status) || "Approved".equals(status)) {
-            applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
+            applyAcceptedState(cachedResolvedAt, cachedResolvedBy, null);
         } else if ("Rejected".equals(status)) {
             applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
         }
@@ -316,7 +316,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                     // Restore resolved state
                     if ("Completed".equals(status) || "Approved".equals(status)) {
                         applyAcceptedState(fmt(doc.getTimestamp("resolvedAt")),
-                                nvl(doc.getString("resolvedBy")));
+                                nvl(doc.getString("resolvedBy")), null);
                     } else if ("Rejected".equals(status)) {
                         applyRejectedState(fmt(doc.getTimestamp("resolvedAt")),
                                 nvl(doc.getString("resolvedBy")),
@@ -343,9 +343,27 @@ public class AdminBizVerificationDetailFragment extends Fragment {
         if (dialog.getWindow() != null)
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
+        EditText reasonEt = dialog.findViewById(R.id.dialog_accept_reason_et);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        android.widget.ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_confirm_accept_scroll);
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "admin_business_verification_accept_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
         dialog.findViewById(R.id.dialog_accept_yes).setOnClickListener(v -> {
+            String reason = reasonEt.getText().toString().trim();
             dialog.dismiss();
-            confirmAccept();
+            confirmAccept(reason);
         });
         dialog.findViewById(R.id.dialog_accept_no).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
@@ -394,16 +412,25 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // CONFIRM ACCEPT
     // ────────────────────────────────────────────────────────
 
-    private void confirmAccept() {
+    private void confirmAccept(String acceptanceReason) {
         if (docId.isEmpty()) return;
         String adminId = getAdminId();
         String today   = todayStr();
+
+        // Build notification message with reason if provided
+        final String notificationMessage;
+        if (acceptanceReason != null && !acceptanceReason.isEmpty()) {
+            notificationMessage = "Your business verification for " + firstNonEmpty(cachedName, "your business") + " was accepted. Reason: " + acceptanceReason;
+        } else {
+            notificationMessage = "Your business verification for " + firstNonEmpty(cachedName, "your business") + " was accepted.";
+        }
 
         db.collection("businesses").document(docId)
                 .update("verificationStatus", "Completed",
                         "verified",           true,
                         "resolvedAt",         Timestamp.now(),
-                        "resolvedBy",         adminId)
+                        "resolvedBy",         adminId,
+                        "acceptanceReason",   acceptanceReason != null ? acceptanceReason : "")
                 .addOnSuccessListener(v -> {
                     if (!isUiActive()) return;
                     // Log approval activity
@@ -413,7 +440,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                             cachedRecipientUserId,
                             UserNotificationHelper.TYPE_BUSINESS_VERIFICATION,
                             "Business Verification Update",
-                            "Your business verification for " + firstNonEmpty(cachedName, "your business") + " was accepted.",
+                            notificationMessage,
                             "Accepted",
                             docId,
                             "businesses",
@@ -422,7 +449,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
                             firstNonEmpty(cachedName, "Business Verification")
                     );
                     showToast("Request Accepted");
-                    applyAcceptedState(today, "Administrator");
+                    applyAcceptedState(today, "Administrator", acceptanceReason);
                 })
                 .addOnFailureListener(e -> {
                     if (!isAdded()) return;
@@ -476,7 +503,7 @@ public class AdminBizVerificationDetailFragment extends Fragment {
     // Sets green background on the WRAPPER (not CardView) — works reliably
     // ────────────────────────────────────────────────────────
 
-private void applyAcceptedState(String date, String by) {
+private void applyAcceptedState(String date, String by, String reason) {
         cardWrapper.setBackgroundResource(R.drawable.bg_card_accepted);
 
         statusTv.setText("Status: Accepted");

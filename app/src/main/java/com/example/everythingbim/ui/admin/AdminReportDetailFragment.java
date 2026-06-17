@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -69,6 +70,7 @@ public class AdminReportDetailFragment extends Fragment {
     private ImageView postImage;
     private Spinner actionSpinner;
     private Button submitBtn;
+    private EditText actionReasonEt;
     private View postDateLayout;
     private View accountInfoLayout;
     private View descriptionLayout;
@@ -76,6 +78,7 @@ public class AdminReportDetailFragment extends Fragment {
     // ─── State ───────────────────────────────
     private String selectedAction = "";
     private String docId          = "";
+    private String actionReason   = "";
 
     // ─── Cached report data ─────────────────
     private String cachedNumber     = "";
@@ -246,6 +249,7 @@ public class AdminReportDetailFragment extends Fragment {
         postImage    = view.findViewById(R.id.report_detail_image);
         actionSpinner = view.findViewById(R.id.report_detail_action_spinner);
         submitBtn    = view.findViewById(R.id.report_detail_submit_btn);
+        actionReasonEt = view.findViewById(R.id.report_detail_action_reason_et);
 
         // New views for content switching
         contentHeaderTv = view.findViewById(R.id.report_detail_content_header);
@@ -569,6 +573,9 @@ public class AdminReportDetailFragment extends Fragment {
         }
         if (docId.isEmpty()) return;
 
+        // Capture the action reason
+        actionReason = actionReasonEt != null ? actionReasonEt.getText().toString().trim() : "";
+
         submitBtn.setEnabled(false);
         submitBtn.setText(getString(R.string.processing));
 
@@ -598,6 +605,7 @@ public class AdminReportDetailFragment extends Fragment {
                 .update(
                         "status", "Completed",
                         "adminAction", selectedAction,
+                        "actionReason", actionReason,
                         "resolvedAt", com.google.firebase.Timestamp.now()
                 )
                 .addOnSuccessListener(v -> {
@@ -661,13 +669,19 @@ public class AdminReportDetailFragment extends Fragment {
     private void notifyContentRemoved(String authorUid, String reporterUid, String reporterId, String postId, boolean postDeleted) {
         String notificationType = "content_removed";
 
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         // Notify the content creator - authorUid is the Firebase Auth UID (reportedUserUid)
         if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
             final String creatorMessage;
             if (postDeleted) {
-                creatorMessage = "Your post has been removed for violating community guidelines.";
+                creatorMessage = "Your post has been removed for violating community guidelines." + reasonSuffix;
             } else {
-                creatorMessage = "Your account has been flagged for review. Please contact support if you believe this is an error.";
+                creatorMessage = "Your account has been flagged for review. Please contact support if you believe this is an error." + reasonSuffix;
             }
 
             // Use authorUid directly as Firebase Auth UID (reportedUserUid)
@@ -685,11 +699,17 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify the reporter that their report was actioned
     private void notifyReporter(String reporterUid, String reporterId, String postId, boolean wasRemoved) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         String message;
         if (wasRemoved) {
-            message = "Thank you for your report. The content you reported has been removed for violating community guidelines.";
+            message = "Thank you for your report. The content you reported has been removed for violating community guidelines." + reasonSuffix;
         } else {
-            message = "Thank you for your report. We've reviewed the content and taken appropriate action.";
+            message = "Thank you for your report. We've reviewed the content and taken appropriate action." + reasonSuffix;
         }
 
         // Use reporterUid directly if available (new reports), otherwise use reporterId lookup (legacy)
@@ -799,8 +819,14 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify content creator about formal warning
     private void notifyFormalWarning(String authorUid, String reporterUid, String reporterId, String postId, String reportType) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
-            String message = "You have received a formal warning for violating our community guidelines. Please review our policies to avoid further action.";
+            String message = "You have received a formal warning for violating our community guidelines. Please review our policies to avoid further action." + reasonSuffix;
             UserNotificationHelper.createNotification(
                     db, authorUid, "formal_warning",
                     "Formal Warning Issued",
@@ -814,7 +840,13 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify reporter that their report resulted in a warning
     private void notifyReporterWarning(String reporterUid, String reporterId, String postId) {
-        String message = "Thank you for your report. The account has been issued a formal warning.";
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
+        String message = "Thank you for your report. The account has been issued a formal warning." + reasonSuffix;
 
         if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
             UserNotificationHelper.createNotification(
@@ -884,8 +916,14 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify content creator about edit/removal request
     private void notifyEditRemovalRequest(String authorUid, String reporterUid, String reporterId, String postId, String reportType) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
-            String message = "Your content has been flagged for review. Please edit or remove the content that violates our community guidelines.";
+            String message = "Your content has been flagged for review. Please edit or remove the content that violates our community guidelines." + reasonSuffix;
             UserNotificationHelper.createNotification(
                     db, authorUid, "content_edit_request",
                     "Action Required: Edit or Remove Content",
@@ -899,7 +937,13 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify reporter that their report resulted in an edit/removal request
     private void notifyReporterEditRequest(String reporterUid, String reporterId, String postId) {
-        String message = "Thank you for your report. The content owner has been requested to edit or remove the content.";
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
+        String message = "Thank you for your report. The content owner has been requested to edit or remove the content." + reasonSuffix;
 
         if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
             UserNotificationHelper.createNotification(
@@ -967,7 +1011,13 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify reporter that their report was dismissed
     private void notifyReportDismissed(String reporterUid, String reporterId, String postId) {
-        String message = "Thank you for your report. After review, we found that no action is needed at this time.";
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
+        String message = "Thank you for your report. After review, we found that no action is needed at this time." + reasonSuffix;
 
         if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
             UserNotificationHelper.createNotification(
@@ -1051,13 +1101,19 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify both the content creator and the reporter about spam content removal
     private void notifySpamContentRemoved(String authorUid, String reporterUid, String reporterId, String postId, boolean postDeleted) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         // Notify the content creator
         if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
             final String creatorMessage;
             if (postDeleted) {
-                creatorMessage = "Your post has been removed for violating our spam and fake engagement policies.";
+                creatorMessage = "Your post has been removed for violating our spam and fake engagement policies." + reasonSuffix;
             } else {
-                creatorMessage = "Your account has been flagged for spam/fake engagement. Please review our policies.";
+                creatorMessage = "Your account has been flagged for spam/fake engagement. Please review our policies." + reasonSuffix;
             }
 
             UserNotificationHelper.createNotification(
@@ -1073,11 +1129,17 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify the reporter that their report resulted in spam content removal
     private void notifyReporterSpamRemoval(String reporterUid, String reporterId, String postId, boolean wasRemoved) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         String message;
         if (wasRemoved) {
-            message = "Thank you for your report. The spam content you reported has been removed.";
+            message = "Thank you for your report. The spam content you reported has been removed." + reasonSuffix;
         } else {
-            message = "Thank you for your report. We've reviewed the content and taken appropriate action.";
+            message = "Thank you for your report. We've reviewed the content and taken appropriate action." + reasonSuffix;
         }
 
         if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
@@ -1140,12 +1202,18 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify both the account owner and the reporter about watch-list flagging
     private void notifyWatchListFlagged(String authorUid, String reporterUid, String reporterId, String accountId) {
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
         // Notify the account owner - authorUid is the Firebase Auth UID (reportedUserUid)
         if (authorUid != null && !authorUid.isEmpty() && !"anonymous".equals(authorUid)) {
             UserNotificationHelper.createNotification(
                     db, authorUid, "account_watchlisted",
                     "Account Under Review",
-                    "Your account has been flagged for monitoring. Please review our community guidelines.",
+                    "Your account has been flagged for monitoring. Please review our community guidelines." + reasonSuffix,
                     accountId,
                     "users"
             );
@@ -1155,7 +1223,13 @@ public class AdminReportDetailFragment extends Fragment {
 
     // Notify the reporter that their report resulted in watch-list flagging
     private void notifyReporterWatchList(String reporterUid, String reporterId, String accountId) {
-        String message = "Thank you for your report. The account you reported has been flagged for monitoring.";
+        // Build reason suffix if provided
+        String reasonSuffix = "";
+        if (actionReason != null && !actionReason.isEmpty()) {
+            reasonSuffix = " Reason: " + actionReason;
+        }
+
+        String message = "Thank you for your report. The account you reported has been flagged for monitoring." + reasonSuffix;
 
         // Use reporterUid directly if available (new reports), otherwise use reporterId lookup (legacy)
         if (reporterUid != null && !reporterUid.isEmpty() && !"anonymous".equals(reporterUid)) {
@@ -1206,6 +1280,7 @@ public class AdminReportDetailFragment extends Fragment {
                 .update(
                         "status", "Completed",
                         "adminAction", action,
+                        "actionReason", actionReason,
                         "resolvedAt", com.google.firebase.Timestamp.now()
                 )
                 .addOnSuccessListener(v -> {

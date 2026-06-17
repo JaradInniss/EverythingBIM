@@ -469,6 +469,31 @@
 
                     </RelativeLayout>
 
+                    <!-- Action Reason -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Action Reason (Optional):"
+                        android:textColor="@color/black"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="6dp" />
+
+                    <EditText
+                        android:id="@+id/report_detail_action_reason_et"
+                        android:layout_width="match_parent"
+                        android:layout_height="80dp"
+                        android:background="@drawable/bg_admin_field"
+                        android:padding="10dp"
+                        android:gravity="top"
+                        android:inputType="textMultiLine"
+                        android:textSize="12sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/roboto_medium"
+                        android:hint="Enter reason for action taken..."
+                        android:layout_marginBottom="16dp" />
+
                     <!-- Submit button -->
                     <Button
                         android:id="@+id/report_detail_submit_btn"

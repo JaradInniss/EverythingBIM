@@ -219,7 +219,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
     private void applyStatusVisual(String status) {
         if ("Completed".equals(status)) {
-            applyAcceptedState(cachedResolvedAt, cachedResolvedBy);
+            applyAcceptedState(cachedResolvedAt, cachedResolvedBy, null);
         } else if ("Rejected".equals(status)) {
             applyRejectedState(cachedResolvedAt, cachedResolvedBy, cachedRejectionReason);
         }
@@ -299,7 +299,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
 
                     if ("Completed".equals(status)) {
                         String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
-                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")));
+                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")), null);
                         cachedResolvedAt = resolvedAt;
                         cachedResolvedBy = nvl(doc.getString("resolvedBy"));
                     } else if ("Rejected".equals(status)) {
@@ -331,8 +331,26 @@ public class AdminInfoRequestDetailFragment extends Fragment {
         if (dialog.getWindow() != null)
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
+        EditText reasonEt = dialog.findViewById(R.id.dialog_accept_reason_et);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        android.widget.ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_confirm_accept_scroll);
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "admin_info_accept_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
         dialog.findViewById(R.id.dialog_accept_yes).setOnClickListener(v -> {
-            dialog.dismiss(); confirmAccept();
+            String reason = reasonEt.getText().toString().trim();
+            dialog.dismiss(); confirmAccept(reason);
         });
         dialog.findViewById(R.id.dialog_accept_no).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
@@ -375,12 +393,22 @@ public class AdminInfoRequestDetailFragment extends Fragment {
     // CONFIRM ACCEPT / REJECT
     // ────────────────────────────────────────────────────────
 
-    private void confirmAccept() {
+    private void confirmAccept(String acceptanceReason) {
         if (docId.isEmpty()) return;
+
+        // Build notification message with reason if provided
+        final String notificationMessage;
+        if (acceptanceReason != null && !acceptanceReason.isEmpty()) {
+            notificationMessage = "Your information request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted. Reason: " + acceptanceReason;
+        } else {
+            notificationMessage = "Your information request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted.";
+        }
+
         db.collection("add_information_requests").document(docId)
                 .update("status", "Completed",
                         "resolvedAt", Timestamp.now(),
-                        "resolvedBy", getAdminId())
+                        "resolvedBy", getAdminId(),
+                        "acceptanceReason", acceptanceReason != null ? acceptanceReason : "")
                 .addOnSuccessListener(v -> {
                     if (!isUiActive()) return;
                     // Log approval activity
@@ -390,7 +418,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                             cachedRecipientUserId,
                             UserNotificationHelper.TYPE_INFO_REQUEST,
                             "Information Request Update",
-                            "Your information request for " + firstNonEmpty(cachedLocationName, "this location") + " was accepted.",
+                            notificationMessage,
                             "Accepted",
                             docId,
                             "add_information_requests",
@@ -399,7 +427,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
                             firstNonEmpty(cachedLocationName, "Information Request")
                     );
                     showToast("Request Accepted");
-                    applyAcceptedState(todayStr(), "Administrator");
+                    applyAcceptedState(todayStr(), "Administrator", acceptanceReason);
                 })
                 .addOnFailureListener(e -> {
                     if (!isAdded()) return;
@@ -447,7 +475,7 @@ public class AdminInfoRequestDetailFragment extends Fragment {
     // using a plain LinearLayout wrapper with padding solves this.
     // ────────────────────────────────────────────────────────
 
-    private void applyAcceptedState(String date, String by) {
+    private void applyAcceptedState(String date, String by, String reason) {
         cardWrapper.setBackgroundResource(R.drawable.bg_card_accepted);
 
         statusTv.setText("Status: Accepted");

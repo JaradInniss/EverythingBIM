@@ -234,7 +234,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
 
     private void applyStatusVisual(String status) {
         if ("Completed".equals(status)) {
-            applyAcceptedState(cachedDate, "Administrator");
+            applyAcceptedState(cachedDate, "Administrator", null);
         } else if ("Rejected".equals(status)) {
             applyRejectedState(cachedDate, "Administrator", "");
         }
@@ -331,7 +331,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
 
                     if ("Completed".equals(status)) {
                         String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
-                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")));
+                        applyAcceptedState(resolvedAt, nvl(doc.getString("resolvedBy")), null);
                     } else if ("Rejected".equals(status)) {
                         String resolvedAt = fmt(doc.getTimestamp("resolvedAt"));
                         String rejectionReason = nvl(doc.getString("rejectionReason"));
@@ -357,8 +357,26 @@ public class AdminBizLocationDetailFragment extends Fragment {
         if (dialog.getWindow() != null)
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
+        EditText reasonEt = dialog.findViewById(R.id.dialog_accept_reason_et);
+        View dialogRoot = dialog.findViewById(R.id.dialog_keyboard_root);
+        android.widget.ScrollView dialogScrollView = dialog.findViewById(R.id.dialog_confirm_accept_scroll);
+        KeyboardScrollHintHelper.attach(
+                dialogRoot,
+                dialogRoot,
+                dialogScrollView,
+                "admin_business_location_accept_dialog_scroll_hint_seen",
+                extraBottom -> {
+                    if (dialogScrollView == null) return;
+                    dialogScrollView.setPadding(
+                            dialogScrollView.getPaddingLeft(),
+                            dialogScrollView.getPaddingTop(),
+                            dialogScrollView.getPaddingRight(),
+                            extraBottom);
+                    dialogScrollView.setClipToPadding(false);
+                });
         dialog.findViewById(R.id.dialog_accept_yes).setOnClickListener(v -> {
-            dialog.dismiss(); confirmAccept();
+            String reason = reasonEt.getText().toString().trim();
+            dialog.dismiss(); confirmAccept(reason);
         });
         dialog.findViewById(R.id.dialog_accept_no).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
@@ -401,7 +419,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
     // CONFIRM ACCEPT / REJECT
     // ────────────────────────────────────────────────────────
 
-    private void confirmAccept() {
+    private void confirmAccept(String acceptanceReason) {
         if (docId.isEmpty()) return;
 
         // First, get the document to find the userId
@@ -423,11 +441,20 @@ public class AdminBizLocationDetailFragment extends Fragment {
                         return;
                     }
 
+                    // Build notification message with reason if provided
+                    final String notificationMessage;
+                    if (acceptanceReason != null && !acceptanceReason.isEmpty()) {
+                        notificationMessage = "Your business location request for " + firstNonEmpty(cachedLocationName, locationName, "this location") + " was accepted. Reason: " + acceptanceReason;
+                    } else {
+                        notificationMessage = "Your business location request for " + firstNonEmpty(cachedLocationName, locationName, "this location") + " was accepted.";
+                    }
+
                     // Update request status to Completed
                     db.collection("add_business_location_requests").document(docId)
                             .update("status", "Completed",
                                     "resolvedAt", Timestamp.now(),
-                                    "resolvedBy", getAdminId())
+                                    "resolvedBy", getAdminId(),
+                                    "acceptanceReason", acceptanceReason != null ? acceptanceReason : "")
                             .addOnSuccessListener(v -> {
                                 activityLogger.logApproval(ActivityLogger.TYPE_LOCATION, cachedLocationName, docId);
                                 UserNotificationHelper.createNotification(
@@ -435,7 +462,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
                                         firstNonEmpty(cachedRecipientUserId, userId),
                                         UserNotificationHelper.TYPE_LOCATION_REQUEST,
                                         "Business Location Request Update",
-                                        "Your business location request for " + firstNonEmpty(cachedLocationName, locationName, "this location") + " was accepted.",
+                                        notificationMessage,
                                         "Accepted",
                                         docId,
                                         "add_business_location_requests",
@@ -444,7 +471,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
                                         firstNonEmpty(cachedLocationName, locationName, "Business Location Request")
                                 );
                                 Toast.makeText(getContext(), "Request Accepted", Toast.LENGTH_SHORT).show();
-                                applyAcceptedState(todayStr(), "Administrator");
+                                applyAcceptedState(todayStr(), "Administrator", acceptanceReason);
 
                                 // Now add this address to the business user's addresses list
                                 addAddressToBusinessProfile(userId, address, placeType);
@@ -552,7 +579,7 @@ public class AdminBizLocationDetailFragment extends Fragment {
     // BORDER STATE
     // ────────────────────────────────────────────────────────
 
-    private void applyAcceptedState(String date, String by) {
+    private void applyAcceptedState(String date, String by, String reason) {
         cardWrapper.setBackgroundResource(R.drawable.bg_card_accepted);
 
         statusTv.setText("Status: Accepted");
