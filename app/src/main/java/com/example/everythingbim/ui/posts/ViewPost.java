@@ -48,7 +48,10 @@ import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -517,6 +520,7 @@ public class ViewPost extends AppCompatActivity {
         // Fetch correct author name from Firestore if we have authorUid
         if (post.authorUid != null && !post.authorUid.isEmpty()) {
             fetchAuthorName(post.authorUid);
+            fetchAuthorProfilePic(post.authorUid);
         }
 
         setupLocationTag(post);
@@ -565,6 +569,54 @@ public class ViewPost extends AppCompatActivity {
                         }
                     }
                 });
+    }
+
+    /**
+     * Fetches the author profile picture URL from Firestore and loads it into the profilePic ImageView.
+     * Tries users collection first, then businesses collection.
+     */
+    private void fetchAuthorProfilePic(String authorUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final ImageView profilePicView = profilePic;
+
+        // Try users collection first (general users)
+        db.collection("users").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        final String profilePicUrl = doc.getString("profilePictureUrl");
+                        if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                            runOnUiThread(() -> loadProfilePicture(profilePicUrl));
+                            return;
+                        }
+                    }
+                    // Not in users - try businesses
+                    fetchAuthorProfilePicFromBusinesses(authorUid);
+                })
+                .addOnFailureListener(e -> {
+                    // Try businesses on failure
+                    fetchAuthorProfilePicFromBusinesses(authorUid);
+                });
+    }
+
+    private void fetchAuthorProfilePicFromBusinesses(String authorUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String profilePicUrl = doc.getString("profilePictureUrl");
+                        if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                            runOnUiThread(() -> loadProfilePicture(profilePicUrl));
+                        }
+                    }
+                });
+    }
+
+    private void loadProfilePicture(String profilePicUrl) {
+        Glide.with(this)
+                .load(profilePicUrl)
+                .placeholder(R.drawable.ic_user_circle)
+                .circleCrop()
+                .into(profilePic);
     }
 
     private String resolveAuthorLabel(PostEntity post) {

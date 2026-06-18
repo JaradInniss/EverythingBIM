@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
         UserEntity.class,
         GeneralUserEntity.class,
         BusinessUserEntity.class
-}, version = 13)
+}, version = 14)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final ExecutorService DATABASE_EXECUTOR = Executors.newSingleThreadExecutor();

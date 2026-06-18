@@ -88,4 +88,5 @@ dependencies {
     implementation "androidx.room:room-runtime:2.6.0"
     annotationProcessor "androidx.room:room-compiler:2.6.0"
     implementation libs.glide
+    implementation 'com.github.yalantis:ucrop:2.2.8'
 }

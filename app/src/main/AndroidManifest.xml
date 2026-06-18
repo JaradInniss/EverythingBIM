@@ -43,6 +43,10 @@
         <activity
             android:name=".ui.home.AIIdentifier"
             android:exported="false" /> <!-- Move the API key meta-data here -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAhDmoOrhWytf13ywP7FJwdK_-hOWQsfe0" />

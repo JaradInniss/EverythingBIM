@@ -71,6 +71,12 @@ public class CommentEntity {
     public String authorUid;
 
     /**
+     * Profile picture URL of the comment's author. Loaded from Firestore
+     * when the comment is displayed.
+     */
+    public String authorProfilePictureUrl;
+
+    /**
      * Creation timestamp of the comment, in epoch milliseconds. Named
      * {@code createdAt} to match the Firestore field name; Room stores
      * this as a boxed {@code Long}.
@@ -213,6 +219,14 @@ public class CommentEntity {
 
     public void setAuthorUid(String authorUid) {
         this.authorUid = authorUid;
+    }
+
+    public String getAuthorProfilePictureUrl() {
+        return authorProfilePictureUrl;
+    }
+
+    public void setAuthorProfilePictureUrl(String authorProfilePictureUrl) {
+        this.authorProfilePictureUrl = authorProfilePictureUrl;
     }
 
     public String getFirestoreId() {
