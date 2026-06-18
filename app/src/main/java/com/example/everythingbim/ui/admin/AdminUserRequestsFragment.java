@@ -102,18 +102,33 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll    = view.findViewById(R.id.req_filter_all);
         filterUnread = view.findViewById(R.id.req_filter_unread);
         filterRead   = view.findViewById(R.id.req_filter_read);
+        filterStatusAll = view.findViewById(R.id.req_filter_status_all);
+        filterStatusInReview = view.findViewById(R.id.req_filter_status_in_review);
+        filterStatusCompleted = view.findViewById(R.id.req_filter_status_completed);
+        filterStatusRejected = view.findViewById(R.id.req_filter_status_rejected);
         countTv      = view.findViewById(R.id.req_list_count_tv);
 
         // Update header labels based on type
         TextView sectionTitle = view.findViewById(R.id.req_list_section_title);
+        TextView userTypeTv = view.findViewById(R.id.req_list_user_type_tv);
         if (requestType.equals("location")) {
             sectionTitle.setText("Add Location Requests");
+            userTypeTv.setText("General Users");
         } else if (requestType.equals("submissions")) {
             sectionTitle.setText("Users' Submissions");
+            userTypeTv.setText("General Users");
         } else if (requestType.equals("dataset")) {
             sectionTitle.setText("Dataset Image Submissions");
+            userTypeTv.setText("General Users");
+        } else if (requestType.equals("business")) {
+            sectionTitle.setText("Verification Requests");
+            userTypeTv.setText("Business Users");
+        } else if (requestType.equals("business_location")) {
+            sectionTitle.setText("Location Requests");
+            userTypeTv.setText("Business Users");
         } else {
             sectionTitle.setText("Information Requests");
+            userTypeTv.setText("General Users");
         }
 
         // Back button
@@ -133,6 +148,12 @@ public class AdminUserRequestsFragment extends Fragment {
         filterAll.setOnClickListener(v -> { readFilter = ReadFilter.ALL; updatePills(); applyFilters(); });
         filterUnread.setOnClickListener(v -> { readFilter = ReadFilter.UNREAD; updatePills(); applyFilters(); });
         filterRead.setOnClickListener(v -> { readFilter = ReadFilter.READ; updatePills(); applyFilters(); });
+
+        // Status filter pills
+        filterStatusAll.setOnClickListener(v -> { statusFilter = StatusFilter.ALL; updatePills(); applyFilters(); });
+        filterStatusInReview.setOnClickListener(v -> { statusFilter = StatusFilter.IN_REVIEW; updatePills(); applyFilters(); });
+        filterStatusCompleted.setOnClickListener(v -> { statusFilter = StatusFilter.COMPLETED; updatePills(); applyFilters(); });
+        filterStatusRejected.setOnClickListener(v -> { statusFilter = StatusFilter.REJECTED; updatePills(); applyFilters(); });
 
         // Search
         searchEt.addTextChangedListener(new TextWatcher() {
@@ -204,6 +225,11 @@ public class AdminUserRequestsFragment extends Fragment {
                     }
                     applyFilters();
                     countTv.setText(String.valueOf(allItems.size()));
+
+                    // Resolve business names for business_location items
+                    if ("business_location".equals(requestType)) {
+                        resolveBusinessNames();
+                    }
                 });
     }
 
@@ -400,7 +426,7 @@ public class AdminUserRequestsFragment extends Fragment {
     @NonNull
     private String getCollectionName() {
         if ("location".equals(requestType)) {
-            return "add_location_requests";
+            return "add_information_requests";
         }
         if ("dataset".equals(requestType)) {
             return "dataset_image_submissions";
@@ -408,19 +434,57 @@ public class AdminUserRequestsFragment extends Fragment {
         if ("business_location".equals(requestType)) {
             return "add_business_location_requests";
         }
+        if ("business".equals(requestType)) {
+            return "businesses";
+        }
         return "add_information_requests";
     }
 
     private RequestItem buildRequestItem(QueryDocumentSnapshot doc, String type) {
         String number = doc.contains("number")
                 ? "#" + doc.getLong("number")
-                : "#" + doc.getId().substring(0, 3).toUpperCase();
-        String name = doc.getString("locationName") != null
-                ? doc.getString("locationName")
-                : doc.getString("title") != null
-                ? doc.getString("title") : "Request";
-        String submittedBy = doc.getString("submittedByUsername") != null
-                ? doc.getString("submittedByUsername") : "User";
+                : "#" + doc.getId().substring(0, Math.min(6, doc.getId().length())).toUpperCase();
+
+        // For business type, use companyName/businessName fields; otherwise use locationName/title
+        String name;
+        if ("business".equals(type)) {
+            name = doc.getString("companyName");
+            if (name == null || name.isEmpty()) {
+                name = doc.getString("BusinessName");
+            }
+            if (name == null || name.isEmpty()) {
+                name = doc.getString("name");
+            }
+            if (name == null || name.isEmpty()) {
+                name = "Business";
+            }
+        } else {
+            name = doc.getString("locationName") != null
+                    ? doc.getString("locationName")
+                    : doc.getString("title") != null
+                    ? doc.getString("title") : "Request";
+        }
+
+        // For submittedBy: check submittedByUsername first (for info/location), then username (for business)
+        String submittedBy;
+        if ("business".equals(type)) {
+            submittedBy = doc.getString("username");
+            if (submittedBy == null || submittedBy.isEmpty()) {
+                submittedBy = doc.getString("submittedByUsername");
+            }
+        } else if ("business_location".equals(type)) {
+            // Store userId for async lookup
+            String userId = doc.getString("userId");
+            // Try to get business name, but use placeholder for async resolution
+            submittedBy = "Loading...";
+            // Also store userId in item later after creation
+        } else {
+            submittedBy = doc.getString("submittedByUsername");
+        }
+        if (submittedBy == null || submittedBy.isEmpty()) {
+            submittedBy = "User";
+        }
+
         boolean read = Boolean.TRUE.equals(doc.getBoolean("read"));
         Timestamp ts = doc.getTimestamp("createdAt");
         String date = ts != null ? new SimpleDateFormat("yyyy/MM/dd",
@@ -429,6 +493,11 @@ public class AdminUserRequestsFragment extends Fragment {
         RequestItem item = new RequestItem(number, name, submittedBy, date, read, doc.getId());
         item.requestType = type;
         item.createdAtMillis = ts != null ? ts.toDate().getTime() : 0L;
+
+        // For business_location, store userId for async business name lookup
+        if ("business_location".equals(type)) {
+            item.userId = doc.getString("userId");
+        }
 
         item.status = doc.getString("status") != null ? doc.getString("status") : "In Review";
         item.locationName = doc.getString("locationName") != null ? doc.getString("locationName") : "";
@@ -448,6 +517,9 @@ public class AdminUserRequestsFragment extends Fragment {
 
         item.phone = doc.getString("phone") != null ? doc.getString("phone") : "";
         item.email = doc.getString("email") != null ? doc.getString("email") : "";
+        if (item.email.isEmpty()) {
+            item.email = doc.getString("businessEmail") != null ? doc.getString("businessEmail") : "";
+        }
         item.address = doc.getString("address") != null ? doc.getString("address") : "";
         item.businessType = doc.getString("businessType") != null ? doc.getString("businessType") : "";
         if (item.businessType.isEmpty()) {
@@ -471,6 +543,18 @@ public class AdminUserRequestsFragment extends Fragment {
             if (readFilter == ReadFilter.UNREAD && effectivelyRead) continue;
             if (readFilter == ReadFilter.READ && !effectivelyRead) continue;
 
+            // Status filter
+            if (statusFilter != StatusFilter.ALL) {
+                String status = item.status != null ? item.status : "In Review";
+                boolean matchesStatus = false;
+                switch (statusFilter) {
+                    case IN_REVIEW: matchesStatus = "In Review".equals(status); break;
+                    case COMPLETED: matchesStatus = "Completed".equals(status); break;
+                    case REJECTED: matchesStatus = "Rejected".equals(status); break;
+                }
+                if (!matchesStatus) continue;
+            }
+
             // Search filter
             if (!query.isEmpty()) {
                 boolean matches = item.number.toLowerCase().contains(query)
@@ -484,6 +568,80 @@ public class AdminUserRequestsFragment extends Fragment {
 
         adapter.notifyDataSetChanged();
         countTv.setText(String.valueOf(displayedItems.size()));
+    }
+
+    // ────────────────────────────────────────────────────────
+    // RESOLVE BUSINESS NAMES FOR BUSINESS LOCATION ITEMS
+    // ────────────────────────────────────────────────────────
+
+    private void resolveBusinessNames() {
+        // Collect all business_location items with userIds that need resolution
+        List<RequestItem> itemsNeedingResolution = new ArrayList<>();
+        for (RequestItem item : allItems) {
+            if ("business_location".equals(item.requestType)
+                    && item.userId != null
+                    && !item.userId.isEmpty()
+                    && "Loading...".equals(item.submittedBy)) {
+                itemsNeedingResolution.add(item);
+            }
+        }
+
+        if (itemsNeedingResolution.isEmpty()) {
+            return;
+        }
+
+        final int totalItems = itemsNeedingResolution.size();
+        final int[] resolvedCount = {0};
+
+        for (RequestItem item : itemsNeedingResolution) {
+            final String userId = item.userId;
+            final String docId = item.docId;
+
+            db.collection("businesses").document(userId).get()
+                    .addOnSuccessListener(bizDoc -> {
+                        String businessName = null;
+                        if (bizDoc != null && bizDoc.exists()) {
+                            businessName = bizDoc.getString("businessName");
+                            if (businessName == null || businessName.isEmpty()) {
+                                businessName = bizDoc.getString("companyName");
+                            }
+                            if (businessName == null || businessName.isEmpty()) {
+                                businessName = bizDoc.getString("name");
+                            }
+                        }
+                        if (businessName == null || businessName.isEmpty()) {
+                            businessName = "Business User";
+                        }
+
+                        // Update the item in allItems
+                        for (RequestItem ai : allItems) {
+                            if (docId.equals(ai.docId)) {
+                                ai.submittedBy = businessName;
+                                break;
+                            }
+                        }
+
+                        resolvedCount[0]++;
+                        if (resolvedCount[0] == totalItems) {
+                            // All resolved, re-apply filters to update display
+                            applyFilters();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        // Update with userId as fallback
+                        for (RequestItem ai : allItems) {
+                            if (docId.equals(ai.docId)) {
+                                ai.submittedBy = userId != null ? userId : "Business User";
+                                break;
+                            }
+                        }
+
+                        resolvedCount[0]++;
+                        if (resolvedCount[0] == totalItems) {
+                            applyFilters();
+                        }
+                    });
+        }
     }
 
     // ────────────────────────────────────────────────────────
@@ -513,6 +671,35 @@ public class AdminUserRequestsFragment extends Fragment {
             case READ:
                 filterRead.setBackgroundResource(R.drawable.bg_search_filter_active);
                 filterRead.setTextColor(android.graphics.Color.WHITE);
+                break;
+        }
+
+        // Status filter pills visual state
+        filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+        filterStatusInReview.setBackgroundResource(R.drawable.bg_biz_unread_pill);
+        filterStatusCompleted.setBackgroundResource(R.drawable.bg_biz_read_pill);
+        filterStatusRejected.setBackgroundResource(R.drawable.bg_biz_read_pill);
+        filterStatusAll.setTextColor(dark);
+        filterStatusInReview.setTextColor(dark);
+        filterStatusCompleted.setTextColor(dark);
+        filterStatusRejected.setTextColor(dark);
+
+        switch (statusFilter) {
+            case ALL:
+                filterStatusAll.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusAll.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case IN_REVIEW:
+                filterStatusInReview.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusInReview.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case COMPLETED:
+                filterStatusCompleted.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusCompleted.setTextColor(android.graphics.Color.WHITE);
+                break;
+            case REJECTED:
+                filterStatusRejected.setBackgroundResource(R.drawable.bg_search_filter_active);
+                filterStatusRejected.setTextColor(android.graphics.Color.WHITE);
                 break;
         }
     }
@@ -565,6 +752,18 @@ public class AdminUserRequestsFragment extends Fragment {
             h.dot.setBackgroundResource(effectivelyRead
                     ? R.drawable.bg_dot_grey
                     : R.drawable.bg_dot_red);
+
+            // Status dot - based on item.status
+            String status = item.status != null ? item.status : "In Review";
+            if ("In Review".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_light_blue);
+            } else if ("Completed".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_green);
+            } else if ("Rejected".equals(status)) {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_orange);
+            } else {
+                h.statusDot.setBackgroundResource(R.drawable.bg_dot_grey);
+            }
 
             h.viewBtn.setTextColor(effectivelyRead
                     ? android.graphics.Color.parseColor("#9e9e9e")
@@ -655,11 +854,13 @@ public class AdminUserRequestsFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             View dot;
+            View statusDot;
             TextView number, title, submittedBy, date, viewBtn, typeBadge;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
                 dot         = itemView.findViewById(R.id.user_req_dot);
+                statusDot   = itemView.findViewById(R.id.status_dot);
                 number      = itemView.findViewById(R.id.user_req_number);
                 title       = itemView.findViewById(R.id.user_req_title);
                 typeBadge   = itemView.findViewById(R.id.user_req_type_badge);
@@ -677,6 +878,8 @@ public class AdminUserRequestsFragment extends Fragment {
         boolean read;
         String requestType;
         long createdAtMillis;
+        // For business_location lookups
+        String userId;
 
         // Location & Info request fields
         String locationName, description, placeType, reason, coordinates;
@@ -694,6 +897,7 @@ public class AdminUserRequestsFragment extends Fragment {
             this.status = "In Review";
             this.requestType = "info";
             this.createdAtMillis = 0L;
+            this.userId = "";
             this.locationName = "";
             this.description = "";
             this.placeType = "";

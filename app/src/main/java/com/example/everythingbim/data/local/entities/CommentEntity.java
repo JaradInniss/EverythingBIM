@@ -56,6 +56,12 @@ public class CommentEntity {
      */
     public String parentAuthorName;
 
+    /**
+     * Firebase Auth UID of the parent comment's author. Used to resolve
+     * the correct parentAuthorName when the parent's name changes.
+     */
+    public String parentAuthorUid;
+
     public String body;
 
     /**
@@ -63,6 +69,12 @@ public class CommentEntity {
      * comments. Used for Firestore queries and security-rule checks.
      */
     public String authorUid;
+
+    /**
+     * Profile picture URL of the comment's author. Loaded from Firestore
+     * when the comment is displayed.
+     */
+    public String authorProfilePictureUrl;
 
     /**
      * Creation timestamp of the comment, in epoch milliseconds. Named
@@ -98,7 +110,7 @@ public class CommentEntity {
     }
 
     public CommentEntity(long postId, Long parentCommentId, String authorName, String parentAuthorName, String body, Long createdAt) {
-        this(postId, parentCommentId, authorName, null, parentAuthorName, body, createdAt);
+        this(postId, parentCommentId, authorName, null, parentAuthorName, null, body, createdAt);
     }
 
     public CommentEntity(long postId,
@@ -106,6 +118,7 @@ public class CommentEntity {
                          String authorName,
                          String authorUid,
                          String parentAuthorName,
+                         String parentAuthorUid,
                          String body,
                          Long createdAt) {
         this.postId = postId;
@@ -113,6 +126,7 @@ public class CommentEntity {
         this.authorName = authorName;
         this.authorUid = authorUid;
         this.parentAuthorName = parentAuthorName;
+        this.parentAuthorUid = parentAuthorUid;
         this.body = body;
         this.createdAt = createdAt;
     }
@@ -157,6 +171,14 @@ public class CommentEntity {
         this.parentAuthorName = parentAuthorName;
     }
 
+    public String getParentAuthorUid() {
+        return parentAuthorUid;
+    }
+
+    public void setParentAuthorUid(String parentAuthorUid) {
+        this.parentAuthorUid = parentAuthorUid;
+    }
+
     public String getBody() {
         return body;
     }
@@ -197,6 +219,14 @@ public class CommentEntity {
 
     public void setAuthorUid(String authorUid) {
         this.authorUid = authorUid;
+    }
+
+    public String getAuthorProfilePictureUrl() {
+        return authorProfilePictureUrl;
+    }
+
+    public void setAuthorProfilePictureUrl(String authorProfilePictureUrl) {
+        this.authorProfilePictureUrl = authorProfilePictureUrl;
     }
 
     public String getFirestoreId() {

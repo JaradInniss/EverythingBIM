@@ -2,6 +2,7 @@ package com.example.everythingbim.ui.admin;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -15,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,17 +27,20 @@ import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import com.example.everythingbim.R;
 
 public class AdminSettingsFragment extends Fragment {
     private static final String PREF_ADMIN_SETTINGS_SCROLL_HINT_SEEN = "admin_settings_scroll_hint_seen";
+    private static final String PREF_NAME = "app_prefs";
 
     // UI components
     private ImageButton editUsernameBtn, editEmailBtn, editPasswordBtn, eyeBtn;
     private LinearLayout usernameContainer, emailContainer;
     private RelativeLayout passwordContainer;
     private TextInputEditText usernameField, emailField, passwordField;
+    private TextView adminText, adminId, adminRoleTv;
     private ScrollView settingsScrollView;
     private int currentKeyboardExtraBottom = 0;
     // Edit state flags
@@ -45,6 +50,9 @@ public class AdminSettingsFragment extends Fragment {
 
     // Password visibility state
     private boolean isPasswordVisible = false;
+
+    // Firebase
+    private FirebaseFirestore firestore;
 
     @Nullable
     @Override
@@ -75,11 +83,19 @@ public class AdminSettingsFragment extends Fragment {
         usernameField = root.findViewById(R.id.admin_username_et);
         emailField = root.findViewById(R.id.admin_email_et);
         passwordField = root.findViewById(R.id.admin_password_et);
+        adminText = root.findViewById(R.id.adminText);
+        adminId = root.findViewById(R.id.admin_ID);
+        adminRoleTv = root.findViewById(R.id.admin_role_tv);
 
         // Logout button
         View logoutBtn = root.findViewById(R.id.admin_logout_btn);
         logoutBtn.setOnClickListener(v -> performLogout());
 
+        // Initialize Firebase
+        firestore = FirebaseFirestore.getInstance();
+
+        // Load admin data from Firestore
+        loadAdminData();
     }
 
     private void setupKeyboardInsets(View root) {
@@ -155,19 +171,6 @@ public class AdminSettingsFragment extends Fragment {
         ));
     }
 
-    /**
-     * Helper method to toggle edit mode for a field.
-     *
-     * @param isCurrentlyEditing Current edit state (true = editing)
-     * @param editButton The edit button (ImageButton)
-     * @param fieldContainer The container (LinearLayout or RelativeLayout) that holds the label and field
-     * @param textField The TextInputEditText to enable/disable
-     * @param activeButtonBg Drawable for active edit button (blue)
-     * @param inactiveButtonBg Drawable for inactive edit button (grey)
-     * @param activeBorder Drawable for highlighted field border (blue stroke)
-     * @param inactiveBorder Drawable for normal field border (grey stroke)
-     * @param toggleState Runnable to flip the boolean state after operation
-     */
     private void toggleEditMode(boolean isCurrentlyEditing,
                                 ImageButton editButton,
                                 View fieldContainer,
@@ -178,7 +181,6 @@ public class AdminSettingsFragment extends Fragment {
                                 int inactiveBorder,
                                 Runnable toggleState) {
         if (!isCurrentlyEditing) {
-            // Activate edit mode
             editButton.setBackgroundResource(activeButtonBg);
             editButton.setImageTintList(ColorStateList.valueOf(Color.WHITE));
             fieldContainer.setBackgroundResource(activeBorder);
@@ -189,13 +191,11 @@ public class AdminSettingsFragment extends Fragment {
             textField.requestFocus();
             scrollAnchorAboveKeyboard(fieldContainer);
 
-            // Show keyboard
             InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(textField, InputMethodManager.SHOW_IMPLICIT);
             }
         } else {
-            // Deactivate edit mode
             editButton.setBackgroundResource(inactiveButtonBg);
             editButton.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark)));
             fieldContainer.setBackgroundResource(inactiveBorder);
@@ -204,13 +204,11 @@ public class AdminSettingsFragment extends Fragment {
             textField.setFocusableInTouchMode(false);
             textField.setClickable(false);
 
-            // Hide keyboard
             InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.hideSoftInputFromWindow(textField.getWindowToken(), 0);
             }
         }
-        // Flip the state after the operation
         toggleState.run();
     }
 
@@ -259,17 +257,73 @@ public class AdminSettingsFragment extends Fragment {
     private void setupPasswordToggle() {
         eyeBtn.setOnClickListener(v -> {
             if (isPasswordVisible) {
-                // Hide password
                 passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
                 eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.dark)));
             } else {
-                // Show password
                 passwordField.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
                 eyeBtn.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.prussian_blue)));
             }
-            // Keep cursor at the end
             passwordField.setSelection(passwordField.getText() != null ? passwordField.getText().length() : 0);
             isPasswordVisible = !isPasswordVisible;
         });
+    }
+
+    private void loadAdminData() {
+        if (!isAdded() || firestore == null) return;
+        SharedPreferences prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String adminIdStr = prefs.getString("userId", "");
+
+        if (adminIdStr.isEmpty()) {
+            if (adminText != null) adminText.setText("Admin");
+            if (adminId != null) adminId.setText("#UNKNOWN");
+            return;
+        }
+
+        if (adminId != null) {
+            adminId.setText("#" + adminIdStr.substring(0, Math.min(6, adminIdStr.length())).toUpperCase());
+        }
+
+        firestore.collection("admins").document(adminIdStr).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!isAdded() || documentSnapshot == null || !documentSnapshot.exists()) {
+                        if (adminText != null) adminText.setText("Admin");
+                        return;
+                    }
+
+                    String username = documentSnapshot.getString("username");
+                    if (username != null && !username.isEmpty() && adminText != null) {
+                        adminText.setText(username);
+                    }
+
+                    if (usernameField != null) {
+                        usernameField.setText(username != null ? username : "");
+                    }
+
+                    String email = documentSnapshot.getString("email");
+                    if (emailField != null) {
+                        emailField.setText(email != null ? email : "");
+                    }
+
+                    if (passwordField != null) {
+                        passwordField.setText("••••••••••••");
+                    }
+
+                    String role = documentSnapshot.getString("adminRole");
+                    if (role == null || role.isEmpty()) {
+                        role = documentSnapshot.getString("role");
+                    }
+                    if (role == null || role.isEmpty()) {
+                        role = "Admin";
+                    }
+                    if (adminRoleTv != null) {
+                        adminRoleTv.setText(role);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (adminText != null) adminText.setText("Admin");
+                    if (adminId != null) {
+                        adminId.setText("#" + adminIdStr.substring(0, Math.min(6, adminIdStr.length())).toUpperCase());
+                    }
+                });
     }
 }

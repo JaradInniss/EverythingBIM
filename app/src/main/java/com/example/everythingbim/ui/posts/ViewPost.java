@@ -48,14 +48,21 @@ import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.utils.ImageReferenceLoader;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Activity for viewing a single post in detail, including its comments and replies.
@@ -82,6 +89,7 @@ public class ViewPost extends AppCompatActivity {
     // State for managing replies
     private Long currentParentCommentId = null;
     private String currentParentAuthorName = null;
+    private String currentParentAuthorUid = null;
     private boolean isSubmittingComment = false;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
@@ -119,6 +127,11 @@ public class ViewPost extends AppCompatActivity {
 
         initViews();
         setupRecyclerView();
+
+        // Refresh post from Firestore before setting up observers
+        // This ensures we have fresh data (e.g., tagged users, author info)
+        viewModel.refreshPost(postId);
+
         setupObservers();
         setupListeners();
     }
@@ -165,6 +178,7 @@ public class ViewPost extends AppCompatActivity {
     // Set up the RecyclerView for comments and handles reply button clicks.
     private void setupRecyclerView() {
         commentAdapter = new CommentAdapter();
+        commentAdapter.setOnCommentClickListener(this::openCommentAuthorProfile);
         commentsRv.setLayoutManager(new LinearLayoutManager(this));
         commentsRv.setAdapter(commentAdapter);
         // Disable nested scrolling to let the parent ScrollView handle it if necessary
@@ -174,10 +188,12 @@ public class ViewPost extends AppCompatActivity {
         commentAdapter.setOnReplyClickListener(comment -> {
             currentParentCommentId = comment.commentId;
             currentParentAuthorName = comment.authorName;
+            currentParentAuthorUid = comment.authorUid;
 
-            replyingToUsername.setText("Re: @" + currentParentAuthorName);
+            // Show loading state while we resolve the name
+            replyingToUsername.setText("Re: @" + comment.authorName);
             replyingToUsername.setVisibility(View.VISIBLE);
-            
+
             submitCommentBttn.setVisibility(View.GONE);
             submitReplyBttn.setVisibility(View.VISIBLE);
 
@@ -187,6 +203,16 @@ public class ViewPost extends AppCompatActivity {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
+            }
+
+            // Resolve the correct parent author name from Firestore
+            if (currentParentAuthorUid != null && !currentParentAuthorUid.isEmpty()) {
+                resolveParentAuthorName(currentParentAuthorUid, resolvedName -> {
+                    if (resolvedName != null && !resolvedName.isEmpty()) {
+                        currentParentAuthorName = resolvedName;
+                        runOnUiThread(() -> replyingToUsername.setText("Re: @" + resolvedName));
+                    }
+                });
             }
         });
 
@@ -220,6 +246,190 @@ public class ViewPost extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Navigates to {@link ViewUserProfileActivity} for the post author.
+     * Always passes both authorId and authorUid to ensure we can load the profile
+     * from either Room (if cached) or Firestore (if not cached but have UID).
+     */
+    private void openAuthorProfile(@NonNull PostEntity post) {
+        Intent intent = new Intent(this, ViewUserProfileActivity.class);
+
+        // Always pass both ID and UID when available
+        if (post.authorId > 0L) {
+            intent.putExtra("USER_ID", post.authorId);
+        }
+        if (post.authorUid != null && !post.authorUid.isEmpty()) {
+            intent.putExtra("USER_UID", post.authorUid);
+        }
+
+        // Must have at least one identifier
+        boolean hasValidId = post.authorId > 0L;
+        boolean hasValidUid = post.authorUid != null && !post.authorUid.isEmpty();
+        if (!hasValidId && !hasValidUid) {
+            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivity(intent);
+    }
+
+    /**
+     * Navigates to {@link ViewUserProfileActivity} for the comment author.
+     */
+    private void openCommentAuthorProfile(@NonNull CommentEntity comment) {
+        Intent intent = new Intent(this, ViewUserProfileActivity.class);
+        if (comment.authorUid != null && !comment.authorUid.isEmpty()) {
+            intent.putExtra("USER_UID", comment.authorUid);
+        }
+        boolean hasValidUid = comment.authorUid != null && !comment.authorUid.isEmpty();
+        if (!hasValidUid) {
+            Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivity(intent);
+    }
+
+    /**
+     * Collects all unique author UIDs from comments and nested replies.
+     */
+    private Set<String> collectAuthorUids(List<CommentUIModel> comments) {
+        Set<String> uids = new HashSet<>();
+        for (CommentUIModel uiModel : comments) {
+            CommentEntity comment = uiModel.getComment();
+            if (comment.authorUid != null && !comment.authorUid.isEmpty()) {
+                uids.add(comment.authorUid);
+            }
+            // Also collect parent author UIDs for resolving "Re: @username"
+            if (comment.parentAuthorUid != null && !comment.parentAuthorUid.isEmpty()) {
+                uids.add(comment.parentAuthorUid);
+            }
+            uids.addAll(collectAuthorUids(uiModel.getReplies()));
+        }
+        return uids;
+    }
+
+    /**
+     * Resolves author names from Firestore for all comments and replies,
+     * then updates the adapter with correct usernames/businessNames.
+     */
+    private void resolveCommentAuthorNames(List<CommentUIModel> comments) {
+        Set<String> authorUids = collectAuthorUids(comments);
+        if (authorUids.isEmpty()) {
+            commentAdapter.setComments(comments);
+            int totalCount = calculateTotalComments(comments);
+            commentsCount.setText(String.valueOf(totalCount));
+            return;
+        }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final Map<String, String> uidToNameMap = new HashMap<>();
+        final int[] pendingFetches = {authorUids.size()};
+
+        for (String authorUid : authorUids) {
+            final String uid = authorUid;
+            db.collection("users").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String name = doc.getString("username");
+                        if (name != null && !name.isEmpty()) {
+                            uidToNameMap.put(uid, name);
+                        }
+                    }
+                    pendingFetches[0]--;
+                    if (pendingFetches[0] == 0) {
+                        fetchRemainingBusinessNames(uidToNameMap, authorUids, comments);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    pendingFetches[0]--;
+                    if (pendingFetches[0] == 0) {
+                        fetchRemainingBusinessNames(uidToNameMap, authorUids, comments);
+                    }
+                });
+        }
+    }
+
+    /**
+     * Fetches business names for any UIDs not found in users collection.
+     */
+    private void fetchRemainingBusinessNames(Map<String, String> uidToNameMap, Set<String> authorUids, List<CommentUIModel> comments) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        int remaining = 0;
+        for (String uid : authorUids) {
+            if (!uidToNameMap.containsKey(uid)) remaining++;
+        }
+
+        if (remaining == 0) {
+            applyCommentAuthorNamesAndUpdateAdapter(uidToNameMap, comments);
+            return;
+        }
+
+        final int totalPending = remaining;
+        final int[] completed = {0};
+
+        for (String authorUid : authorUids) {
+            if (uidToNameMap.containsKey(authorUid)) continue;
+            final String uid = authorUid;
+            db.collection("businesses").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String name = doc.getString("businessName");
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("companyName");
+                        }
+                        if (name != null && !name.isEmpty()) {
+                            uidToNameMap.put(uid, name);
+                        }
+                    }
+                    completed[0]++;
+                    if (completed[0] == totalPending) {
+                        applyCommentAuthorNamesAndUpdateAdapter(uidToNameMap, comments);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    completed[0]++;
+                    if (completed[0] == totalPending) {
+                        applyCommentAuthorNamesAndUpdateAdapter(uidToNameMap, comments);
+                    }
+                });
+        }
+    }
+
+    /**
+     * Applies resolved names to CommentEntity objects, updates them in Room database,
+     * and updates the adapter.
+     */
+    private void applyCommentAuthorNamesAndUpdateAdapter(Map<String, String> uidToNameMap, List<CommentUIModel> comments) {
+        for (CommentUIModel uiModel : comments) {
+            CommentEntity comment = uiModel.getComment();
+            boolean updated = false;
+            if (comment.authorUid != null && uidToNameMap.containsKey(comment.authorUid)) {
+                String newName = uidToNameMap.get(comment.authorUid);
+                if (!newName.equals(comment.authorName)) {
+                    comment.setAuthorName(newName);
+                    updated = true;
+                }
+            }
+            // Also resolve parentAuthorName if we have parentAuthorUid
+            if (comment.parentAuthorUid != null && uidToNameMap.containsKey(comment.parentAuthorUid)) {
+                String newParentName = uidToNameMap.get(comment.parentAuthorUid);
+                if (newParentName != null && !newParentName.equals(comment.parentAuthorName)) {
+                    comment.setParentAuthorName(newParentName);
+                    updated = true;
+                }
+            }
+            // Persist the updated comment to Room if name changed
+            if (updated) {
+                viewModel.updateComment(comment);
+            }
+            applyCommentAuthorNamesAndUpdateAdapter(uidToNameMap, uiModel.getReplies());
+        }
+        runOnUiThread(() -> {
+            commentAdapter.setComments(comments);
+            int totalCount = calculateTotalComments(comments);
+            commentsCount.setText(String.valueOf(totalCount));
+        });
+    }
+
     // Set up LiveData observers for post details and comments.
     private void setupObservers() {
         // Observe Post Details and populate the UI
@@ -233,10 +443,7 @@ public class ViewPost extends AppCompatActivity {
         // Observe Comments and update the adapter and total count
         viewModel.getCommentsForPost(postId).observe(this, comments -> {
             if (comments != null) {
-                commentAdapter.setComments(comments);
-                // Calculate and display total count including all nested replies
-                int totalCount = calculateTotalComments(comments);
-                commentsCount.setText(String.valueOf(totalCount));
+                resolveCommentAuthorNames(comments);
             }
         });
 
@@ -290,8 +497,13 @@ public class ViewPost extends AppCompatActivity {
 
     // Populates the post UI elements with data from a PostEntity.
     private void populatePostDetails(PostEntity post) {
+        // Set username - will be updated async if we have authorUid
         username.setText(resolveAuthorLabel(post));
         caption.setText(post.caption);
+
+        // Make username and profile pic clickable to open author profile
+        username.setOnClickListener(v -> openAuthorProfile(post));
+        profilePic.setOnClickListener(v -> openAuthorProfile(post));
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         uploadDate.setText(sdf.format(new Date(post.createdAt)));
@@ -305,7 +517,106 @@ public class ViewPost extends AppCompatActivity {
         // Load the post image
         ImageReferenceLoader.loadInto(postImage, post.imageUrl, R.drawable.butterfly);
 
+        // Fetch correct author name from Firestore if we have authorUid
+        if (post.authorUid != null && !post.authorUid.isEmpty()) {
+            fetchAuthorName(post.authorUid);
+            fetchAuthorProfilePic(post.authorUid);
+        }
+
         setupLocationTag(post);
+    }
+
+    /**
+     * Fetches the correct author name from Firestore based on authorUid.
+     * Tries users collection first, then businesses collection.
+     */
+    private void fetchAuthorName(String authorUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final TextView usernameView = username;
+
+        // Try users collection first (general users)
+        db.collection("users").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        final String authorName = doc.getString("username");
+                        if (authorName != null && !authorName.isEmpty()) {
+                            runOnUiThread(() -> usernameView.setText(authorName));
+                            return;
+                        }
+                    }
+                    // Not in users - try businesses
+                    fetchAuthorNameFromBusinesses(authorUid, usernameView);
+                })
+                .addOnFailureListener(e -> {
+                    // Try businesses on failure
+                    fetchAuthorNameFromBusinesses(authorUid, usernameView);
+                });
+    }
+
+    private void fetchAuthorNameFromBusinesses(String authorUid, final TextView usernameView) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        // Try businessName first, fall back to companyName
+                        String name = doc.getString("businessName");
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("companyName");
+                        }
+                        final String authorName = name;
+                        if (authorName != null && !authorName.isEmpty()) {
+                            runOnUiThread(() -> usernameView.setText(authorName));
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Fetches the author profile picture URL from Firestore and loads it into the profilePic ImageView.
+     * Tries users collection first, then businesses collection.
+     */
+    private void fetchAuthorProfilePic(String authorUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final ImageView profilePicView = profilePic;
+
+        // Try users collection first (general users)
+        db.collection("users").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        final String profilePicUrl = doc.getString("profilePictureUrl");
+                        if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                            runOnUiThread(() -> loadProfilePicture(profilePicUrl));
+                            return;
+                        }
+                    }
+                    // Not in users - try businesses
+                    fetchAuthorProfilePicFromBusinesses(authorUid);
+                })
+                .addOnFailureListener(e -> {
+                    // Try businesses on failure
+                    fetchAuthorProfilePicFromBusinesses(authorUid);
+                });
+    }
+
+    private void fetchAuthorProfilePicFromBusinesses(String authorUid) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(authorUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String profilePicUrl = doc.getString("profilePictureUrl");
+                        if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                            runOnUiThread(() -> loadProfilePicture(profilePicUrl));
+                        }
+                    }
+                });
+    }
+
+    private void loadProfilePicture(String profilePicUrl) {
+        Glide.with(this)
+                .load(profilePicUrl)
+                .placeholder(R.drawable.ic_user_circle)
+                .circleCrop()
+                .into(profilePic);
     }
 
     private String resolveAuthorLabel(PostEntity post) {
@@ -606,7 +917,7 @@ public class ViewPost extends AppCompatActivity {
                 Toast.makeText(this, "Sign in to comment", Toast.LENGTH_SHORT).show();
                 return;
             }
-            submitComment(currentPost, /*parentCommentId*/ null, /*parentAuthorName*/ null, body);
+            submitComment(currentPost, /*parentCommentId*/ null, /*parentAuthorName*/ null, /*parentAuthorUid*/ null, body);
         });
 
         // Submit a reply to an existing comment
@@ -631,7 +942,7 @@ public class ViewPost extends AppCompatActivity {
                 Toast.makeText(this, "Sign in to reply", Toast.LENGTH_SHORT).show();
                 return;
             }
-            submitComment(currentPost, currentParentCommentId, currentParentAuthorName, body);
+            submitComment(currentPost, currentParentCommentId, currentParentAuthorName, currentParentAuthorUid, body);
         });
     }
 
@@ -844,14 +1155,85 @@ public class ViewPost extends AppCompatActivity {
     private void submitComment(@NonNull PostEntity post,
                                Long parentCommentId,
                                String parentAuthorName,
+                               String parentAuthorUid,
                                @NonNull String body) {
         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
         if (current == null) return;
         setCommentSubmissionInProgress(true);
-        String authorUid = current.getUid();
-        String authorName = resolveCurrentUserName(current);
+        final String authorUid = current.getUid();
+
+        // Resolve current user's display name from Firestore
+        resolveParentAuthorName(authorUid, resolvedAuthorName -> {
+            String authorName = resolvedAuthorName != null ? resolvedAuthorName : resolveCurrentUserName(current);
+
+            // If we have parentAuthorUid, resolve the correct name from Firestore
+            if (parentAuthorUid != null && !parentAuthorUid.isEmpty()) {
+                resolveParentAuthorName(parentAuthorUid, resolvedParentName -> {
+                    String resolvedParentAuthorName = resolvedParentName != null ? resolvedParentName : parentAuthorName;
+                    finalizeSubmitComment(post, parentCommentId, authorName, authorUid, resolvedParentAuthorName, parentAuthorUid, body);
+                });
+            } else {
+                finalizeSubmitComment(post, parentCommentId, authorName, authorUid, parentAuthorName, parentAuthorUid, body);
+            }
+        });
+    }
+
+    /**
+     * Resolves the parent comment author's display name from Firestore.
+     */
+    private void resolveParentAuthorName(String parentAuthorUid, OnNameResolvedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        // Try users collection first
+        db.collection("users").document(parentAuthorUid).get()
+            .addOnSuccessListener(doc -> {
+                if (doc != null && doc.exists()) {
+                    String name = doc.getString("username");
+                    if (name != null && !name.isEmpty()) {
+                        listener.onResolved(name);
+                        return;
+                    }
+                }
+                // Try businesses collection
+                resolveFromBusinesses(parentAuthorUid, listener);
+            })
+            .addOnFailureListener(e -> resolveFromBusinesses(parentAuthorUid, listener));
+    }
+
+    private void resolveFromBusinesses(String parentAuthorUid, OnNameResolvedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(parentAuthorUid).get()
+            .addOnSuccessListener(doc -> {
+                if (doc != null && doc.exists()) {
+                    String name = doc.getString("businessName");
+                    if (name == null || name.isEmpty()) {
+                        name = doc.getString("companyName");
+                    }
+                    if (name != null && !name.isEmpty()) {
+                        listener.onResolved(name);
+                        return;
+                    }
+                }
+                listener.onResolved(null);
+            })
+            .addOnFailureListener(e -> listener.onResolved(null));
+    }
+
+    private interface OnNameResolvedListener {
+        void onResolved(String name);
+    }
+
+    /**
+     * Finalizes the comment submission after resolving parent author name if needed.
+     */
+    private void finalizeSubmitComment(@NonNull PostEntity post,
+                                        Long parentCommentId,
+                                        String authorName,
+                                        String authorUid,
+                                        String parentAuthorName,
+                                        String parentAuthorUid,
+                                        @NonNull String body) {
         observeOnce(
-                viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, body),
+                viewModel.addComment(post, parentCommentId, authorName, authorUid, parentAuthorName, parentAuthorUid, body),
                 persisted -> {
                     setCommentSubmissionInProgress(false);
                     if (persisted == null) {
@@ -878,6 +1260,7 @@ public class ViewPost extends AppCompatActivity {
     private void resetReplyMode() {
         currentParentCommentId = null;
         currentParentAuthorName = null;
+        currentParentAuthorUid = null;
         replyingToUsername.setVisibility(View.GONE);
         submitReplyBttn.setVisibility(View.GONE);
         submitCommentBttn.setVisibility(View.VISIBLE);

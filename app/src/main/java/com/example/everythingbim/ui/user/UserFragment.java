@@ -1,8 +1,11 @@
 package com.example.everythingbim.ui.user;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.graphics.Rect;
 import android.view.LayoutInflater;
@@ -39,7 +42,23 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.example.everythingbim.ui.utils.PasswordHash;
+
+import com.bumptech.glide.Glide;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 public class UserFragment extends Fragment {
     private static final String PREF_USER_GENERAL_SCROLL_HINT_SEEN = "user_general_scroll_hint_seen";
@@ -74,6 +93,16 @@ public class UserFragment extends Fragment {
 
     private CardView guestAccountOptionsContainer;
 
+    // Profile picture members
+    private ImageView generalUserProfileIv;
+    private ImageView businessUserProfileIv;
+    private ActivityResultLauncher<String[]> galleryPickerLauncher;
+    private ActivityResultLauncher<android.net.Uri> takePictureLauncher;
+    private ActivityResultLauncher<android.content.Intent> uCropLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private android.net.Uri pendingCameraUri;
+    private String currentUserTypeForProfilePic = "general";
+
     private long lastClickTime = 0;
     private int clickCount = 0;
 
@@ -84,6 +113,56 @@ public class UserFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        registerProfilePicLaunchers();
+    }
+
+    private void registerProfilePicLaunchers() {
+        galleryPickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                this::handleGalleryResult
+        );
+
+        takePictureLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(),
+                success -> {
+                    if (success && pendingCameraUri != null) {
+                        launchUCrop(pendingCameraUri);
+                    }
+                }
+        );
+
+        cameraPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        launchCameraCapture();
+                    } else {
+                        Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        uCropLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                        android.net.Uri croppedUri = com.yalantis.ucrop.UCrop.getOutput(result.getData());
+                        if (croppedUri != null) {
+                            uploadProfilePicture(croppedUri);
+                        }
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reload profile data when returning to this fragment
+        // This ensures bio and other fields are fresh from Firestore
+        if (binding != null && binding.getRoot() != null) {
+            loadUserProfileData(binding.getRoot());
+        }
     }
 
     @Nullable
@@ -110,7 +189,216 @@ public class UserFragment extends Fragment {
         setupEditToggle(binding.getRoot(), R.id.business_edit_desc_et, R.id.business_edit_desc_btn, R.id.business_edit_desc_btn_iv);
         setupEditToggle(binding.getRoot(), R.id.business_user_bio_et, R.id.business_user_edit_bio_btn, R.id.business_user_edit_bio_btn_iv);
 
+        // Load user profile data from Firestore
+        loadUserProfileData(binding.getRoot());
+
+        // Setup profile picture click listeners
+        setupProfilePictureListeners();
+
         return binding.getRoot();
+    }
+
+    private void setupProfilePictureListeners() {
+        // General user profile picture
+        generalUserProfileIv = binding.getRoot().findViewById(R.id.general_user_profile_iv);
+        if (generalUserProfileIv != null) {
+            generalUserProfileIv.setOnClickListener(v -> {
+                currentUserTypeForProfilePic = "general";
+                showProfilePicOptions();
+            });
+        }
+
+        // Business user profile picture
+        businessUserProfileIv = binding.getRoot().findViewById(R.id.business_user_profile_iv);
+        if (businessUserProfileIv != null) {
+            businessUserProfileIv.setOnClickListener(v -> {
+                currentUserTypeForProfilePic = "business";
+                showProfilePicOptions();
+            });
+        }
+    }
+
+    private void showProfilePicOptions() {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_profile_pic_options);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        dialog.findViewById(R.id.dialog_view_photo_btn).setOnClickListener(v -> {
+            dialog.dismiss();
+            showProfilePicturePreview();
+        });
+
+        dialog.findViewById(R.id.dialog_take_photo_btn).setOnClickListener(v -> {
+            dialog.dismiss();
+            openCamera();
+        });
+
+        dialog.findViewById(R.id.dialog_choose_gallery_btn).setOnClickListener(v -> {
+            dialog.dismiss();
+            openGallery();
+        });
+
+        dialog.findViewById(R.id.dialog_cancel_btn).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void showProfilePicturePreview() {
+        Dialog previewDialog = new Dialog(requireContext());
+        previewDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        previewDialog.setContentView(R.layout.dialog_profile_picture_preview);
+        if (previewDialog.getWindow() != null) {
+            previewDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            previewDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        }
+
+        ImageView previewImageView = previewDialog.findViewById(R.id.preview_profile_pic);
+        Button closeBtn = previewDialog.findViewById(R.id.close_preview_btn);
+
+        // Load the current profile picture
+        String profilePicUrl = null;
+        if (generalUserProfileIv != null) {
+            Drawable drawable = generalUserProfileIv.getDrawable();
+            if (drawable != null) {
+                // Use Glide to load the same image into the preview
+                String userType = getUserType();
+                String collection = MainActivity.USER_TYPE_GENERAL.equals(userType) ? "users" : "businesses";
+                SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
+                String userId = prefs.getString("userId", "");
+
+                if (!userId.isEmpty()) {
+                    FirebaseFirestore.getInstance().collection(collection).document(userId).get()
+                            .addOnSuccessListener(doc -> {
+                                if (doc != null && doc.exists() && isAdded()) {
+                                    String url = doc.getString("profilePictureUrl");
+                                    if (url != null && !url.isEmpty()) {
+                                        Glide.with(requireContext())
+                                                .load(url)
+                                                .circleCrop()
+                                                .into(previewImageView);
+                                    }
+                                }
+                            });
+                }
+            }
+        }
+
+        closeBtn.setOnClickListener(v -> previewDialog.dismiss());
+        previewDialog.show();
+    }
+
+    private void openGallery() {
+        galleryPickerLauncher.launch(new String[]{"image/*"});
+    }
+
+    private void openCamera() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            launchCameraCapture();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void launchCameraCapture() {
+        try {
+            File photoFile = createImageFile();
+            pendingCameraUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    requireContext().getPackageName() + ".fileprovider",
+                    photoFile
+            );
+            takePictureLauncher.launch(pendingCameraUri);
+        } catch (IOException exception) {
+            Toast.makeText(requireContext(), "Unable to create image file", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = requireContext().getCacheDir();
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
+    }
+
+    private void handleGalleryResult(android.net.Uri uri) {
+        if (uri == null) {
+            Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        try {
+            requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+        } catch (SecurityException ignored) {
+        }
+        launchUCrop(uri);
+    }
+
+    private void launchUCrop(android.net.Uri sourceUri) {
+        android.net.Uri destinationUri = android.net.Uri.fromFile(new File(requireContext().getCacheDir(), "cropped_profile_pic.jpg"));
+
+        com.yalantis.ucrop.UCrop.Options options = new com.yalantis.ucrop.UCrop.Options();
+        options.setCompressionQuality(85);
+        options.setHideBottomControls(false);
+        options.setFreeStyleCropEnabled(false);
+
+        com.yalantis.ucrop.UCrop uCrop = com.yalantis.ucrop.UCrop.of(sourceUri, destinationUri)
+                .withAspectRatio(1f, 1f)
+                .withMaxResultSize(500, 500)
+                .withOptions(options);
+
+        Intent uCropIntent = uCrop.getIntent(requireContext());
+        uCropLauncher.launch(uCropIntent);
+    }
+
+    private void uploadProfilePicture(android.net.Uri imageUri) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Please sign in to upload profile picture", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String uid = user.getUid();
+        String collection = "general".equals(currentUserTypeForProfilePic) ? "users" : "businesses";
+
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                .child("profile_pictures/" + uid + "/profile.jpg");
+
+        Toast.makeText(requireContext(), "Uploading...", Toast.LENGTH_SHORT).show();
+
+        storageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl()
+                        .addOnSuccessListener(downloadUrl -> {
+                            String profilePicUrl = downloadUrl.toString();
+
+                            // Update Firestore
+                            FirebaseFirestore.getInstance().collection(collection).document(uid)
+                                    .update("profilePictureUrl", profilePicUrl)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Toast.makeText(requireContext(), "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                                        // Reload profile to show new picture
+                                        loadUserProfileData(binding.getRoot());
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(requireContext(), "Failed to save profile picture URL", Toast.LENGTH_SHORT).show();
+                                    });
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(requireContext(), "Failed to get download URL: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }))
+                .addOnFailureListener(e -> {
+                    String errorMsg = "Upload failed";
+                    if (e instanceof com.google.firebase.storage.StorageException) {
+                        com.google.firebase.storage.StorageException se = (com.google.firebase.storage.StorageException) e;
+                        errorMsg = "Storage error: " + se.getErrorCode() + " - " + se.getMessage();
+                    } else {
+                        errorMsg = "Upload failed: " + e.getMessage();
+                    }
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                });
     }
 
     private void bindViews() {
@@ -834,10 +1122,11 @@ public class UserFragment extends Fragment {
     private String getFieldName(int fieldId) {
         if (fieldId == R.id.general_user_edit_username_et || fieldId == R.id.business_user_tv) return "Username";
 
-        if (fieldId == R.id.business_edit_username_et) return "Username";
+        if (fieldId == R.id.business_edit_username_et) return "Business Name";
         if (fieldId == R.id.general_user_edit_password_et || fieldId == R.id.business_edit_password_et) return "Password";
         if (fieldId == R.id.general_user_bio_et || fieldId == R.id.business_user_bio_et) return "Bio";
         if (fieldId == R.id.business_edit_desc_et) return "Business Description";
+        if (fieldId == R.id.business_edit_email_et) return "Email";
         return "Field";
     }
 
@@ -1291,9 +1580,16 @@ public class UserFragment extends Fragment {
         SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", requireActivity().MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 
-        LinearLayout addressesContainer = view.findViewById(R.id.business_addresses_container);
-        TextView addressesCount = view.findViewById(R.id.business_addresses_count);
-        TextView viewAllBtn = view.findViewById(R.id.business_view_all_addresses_tv);
+        // Use binding root to find views - they exist in the layout but may not be visible yet
+        View rootView = binding.getRoot();
+        LinearLayout addressesContainer = rootView.findViewById(R.id.business_addresses_container);
+        TextView addressesCount = rootView.findViewById(R.id.business_addresses_count);
+        TextView viewAllBtn = rootView.findViewById(R.id.business_view_all_addresses_tv);
+
+        if (addressesContainer == null) {
+            android.util.Log.e("UserFragment", "loadAddressesOnMainScreen: addressesContainer is null");
+            return;
+        }
 
         viewAllBtn.setOnClickListener(v -> showAddressesDialog());
 
@@ -1305,8 +1601,16 @@ public class UserFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         addressesContainer.removeAllViews();
                         Object addressesObj = doc.get("addresses");
+                        
+                        // Handle List types including Firestore ArrayList
+                        final java.util.List<?> addresses;
                         if (addressesObj instanceof java.util.List) {
-                            java.util.List<?> addresses = (java.util.List<?>) addressesObj;
+                            addresses = (java.util.List<?>) addressesObj;
+                        } else {
+                            addresses = null;
+                        }
+                        
+                        if (addresses != null && !addresses.isEmpty()) {
                             if (addressesCount != null) addressesCount.setText("(" + addresses.size() + ")");
 
                             int displayCount = Math.min(addresses.size(), 3);
@@ -1344,6 +1648,8 @@ public class UserFragment extends Fragment {
                                 addressesContainer.addView(itemView);
                             }
                         } else {
+                            // No addresses or not a valid list - clear container and show (0)
+                            addressesContainer.removeAllViews();
                             if (addressesCount != null) addressesCount.setText("(0)");
                         }
                     });
@@ -1397,7 +1703,10 @@ public class UserFragment extends Fragment {
             }
         } else if (MainActivity.USER_TYPE_BUSINESS.equals(userType)) {
             if (fieldId == R.id.business_edit_username_et) {
-                updates.put("username", newValue);
+                updates.put("businessName", newValue);
+                hasValidUpdate = true;
+            } else if (fieldId == R.id.business_edit_email_et) {
+                updates.put("email", newValue);
                 hasValidUpdate = true;
             } else if (fieldId == R.id.business_edit_password_et) {
                 if (!newValue.isEmpty()) {
@@ -1458,8 +1767,10 @@ public class UserFragment extends Fragment {
             db.collection("users").document(userId)
                     .get()
                     .addOnSuccessListener(doc -> {
+                        if (!isAdded()) return;
                         if (doc != null && doc.exists()) {
                             requireActivity().runOnUiThread(() -> {
+                                if (!isAdded()) return;
                                 String username = doc.getString("username");
                                 String shortUserId = doc.getString("shortUserId");
                                 String bio = doc.getString("bio");
@@ -1474,12 +1785,51 @@ public class UserFragment extends Fragment {
                                 // Update fields from Firestore
                                 if (usernameEt != null) usernameEt.setText(username != null ? username : "");
                                 if (bioEt != null) bioEt.setText(bio != null ? bio : "");
+
+                                // Load profile picture
+                                ImageView profileIv = view.findViewById(R.id.general_user_profile_iv);
+                                if (profileIv != null) {
+                                    // Check for different URL field name variations
+                                    String profilePicUrl = doc.getString("profilePictureUrl");
+                                    if (profilePicUrl == null || profilePicUrl.isEmpty()) {
+                                        profilePicUrl = doc.getString("profilePictureURL");
+                                    }
+                                    if (profilePicUrl == null || profilePicUrl.isEmpty()) {
+                                        profilePicUrl = doc.getString("profilePicture");
+                                    }
+                                    final String finalProfilePicUrl = profilePicUrl;
+                                    if (finalProfilePicUrl != null && !finalProfilePicUrl.isEmpty()) {
+                                        Glide.with(requireContext())
+                                                .load(finalProfilePicUrl)
+                                                .placeholder(R.drawable.ic_user_circle)
+                                                .circleCrop()
+                                                .skipMemoryCache(true)
+                                                .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                                                    @Override
+                                                    public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
+                                                        android.util.Log.e("UserFragment", "Glide load failed for URL: " + finalProfilePicUrl + ", error: " + (e != null ? e.getMessage() : "null"));
+                                                        return false;
+                                                    }
+                                                    @Override
+                                                    public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                                                        android.util.Log.d("UserFragment", "Glide loaded successfully: " + finalProfilePicUrl);
+                                                        return false;
+                                                    }
+                                                })
+                                                .into(profileIv);
+                                    } else {
+                                        android.util.Log.d("UserFragment", "No profilePictureUrl found in doc, fields: " + doc.getData().keySet());
+                                        profileIv.setImageResource(R.drawable.ic_user_circle);
+                                    }
+                                }
                             });
                         }
                     })
                     .addOnFailureListener(e -> {
+                        if (!isAdded()) return;
                         // Fallback to SharedPreferences
                         requireActivity().runOnUiThread(() -> {
+                            if (!isAdded()) return;
                             String username = prefs.getString("username", "User");
                             String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
 
@@ -1497,55 +1847,97 @@ public class UserFragment extends Fragment {
             TextView businessCategoryTv = view.findViewById(R.id.business_category_tv);
 
             TextInputEditText usernameEt = view.findViewById(R.id.business_edit_username_et);
+            TextInputEditText emailEt = view.findViewById(R.id.business_edit_email_et);
             TextInputEditText passwordEt = view.findViewById(R.id.business_edit_password_et);
             TextInputEditText descEt = view.findViewById(R.id.business_edit_desc_et);
             TextInputEditText bioEt = view.findViewById(R.id.business_user_bio_et);
 
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("businesses").document(userId)
-                    .get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc != null && doc.exists()) {
-requireActivity().runOnUiThread(() -> {
-                                String username = doc.getString("username");
-                                String shortUserId = doc.getString("shortUserId");
-                                String category = doc.getString("businessType");
-                                String desc = doc.getString("description");
-                                String bio = doc.getString("bio");
-
-                                // Update header from Firestore
-                                if (businessUserTv != null) businessUserTv.setText(username != null ? username : "");
-                                if (businessUserIdTv != null) {
-                                    String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
-                                    businessUserIdTv.setText(displayId);
-                                }
-                                if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
-
-                                // Update fields from Firestore
-                                if (usernameEt != null) usernameEt.setText(username != null ? username : "");
-                                if (descEt != null) descEt.setText(desc != null ? desc : "");
-                                if (bioEt != null) bioEt.setText(bio != null ? bio : "");
-                                if (passwordEt != null) passwordEt.setText("");
-                            });
+FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("businesses").document(userId)
+            .get()
+            .addOnSuccessListener(doc -> {
+                if (!isAdded()) return;
+                if (doc != null && doc.exists()) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
+                        // Try businessName first, fall back to companyName
+                        String businessName = doc.getString("businessName");
+                        if (businessName == null || businessName.isEmpty()) {
+                            businessName = doc.getString("companyName");
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        // Fallback to SharedPreferences
-                        requireActivity().runOnUiThread(() -> {
-                            String username = prefs.getString("username", "BusinessUser");
-                            String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
-                            String category = prefs.getString("businessCategory", "Business");
-                            String email = prefs.getString("email", "");
-                            String businessDescription = prefs.getString("businessDescription", "");
+                        String shortUserId = doc.getString("shortUserId");
+                        String category = doc.getString("businessType");
+                        String email = doc.getString("businessEmail");
+                        String desc = doc.getString("description");
+                        String bio = doc.getString("bio");
 
-                            if (businessUserTv != null) businessUserTv.setText(username);
-                            if (businessUserIdTv != null) businessUserIdTv.setText(shortUserId);
-                            if (businessCategoryTv != null) businessCategoryTv.setText(category);
-                            if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
-                            if (bioEt != null) bioEt.setText("Not set");
-                            if (passwordEt != null) passwordEt.setText("");
-                        });
+                        // Update header from Firestore
+                        if (businessUserTv != null) businessUserTv.setText(businessName != null ? businessName : "");
+                        if (businessUserIdTv != null) {
+                            String displayId = shortUserId != null ? shortUserId : "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase();
+                            businessUserIdTv.setText(displayId);
+                        }
+                        if (businessCategoryTv != null) businessCategoryTv.setText(category != null ? category : "Business");
+
+                        // Update fields from Firestore
+                        if (usernameEt != null) usernameEt.setText(businessName != null ? businessName : "");
+                        if (emailEt != null) emailEt.setText(email != null ? email : "");
+                        if (descEt != null) descEt.setText(desc != null ? desc : "");
+                        if (bioEt != null) bioEt.setText(bio != null ? bio : "");
+                        if (passwordEt != null) passwordEt.setText("");
+
+                        // Load profile picture
+                        ImageView profileIv = view.findViewById(R.id.business_user_profile_iv);
+                        if (profileIv != null) {
+                            // Check for different URL field name variations
+                            String profilePicUrl = doc.getString("profilePictureUrl");
+                            if (profilePicUrl == null || profilePicUrl.isEmpty()) {
+                                profilePicUrl = doc.getString("profilePictureURL");
+                            }
+                            if (profilePicUrl == null || profilePicUrl.isEmpty()) {
+                                profilePicUrl = doc.getString("profilePicture");
+                            }
+                            final String finalProfilePicUrl = profilePicUrl;
+                            if (finalProfilePicUrl != null && !finalProfilePicUrl.isEmpty()) {
+                                Glide.with(requireContext())
+                                        .load(finalProfilePicUrl)
+                                        .placeholder(R.drawable.ic_user_circle)
+                                        .circleCrop()
+                                        .skipMemoryCache(true)
+                                        .into(profileIv);
+                            } else {
+                                profileIv.setImageResource(R.drawable.ic_user_circle);
+                            }
+                        }
+
+                        // Load addresses after profile data
+                        loadAddressesOnMainScreen(view);
                     });
+                }
+            })
+            .addOnFailureListener(e -> {
+                if (!isAdded()) return;
+                // Fallback to SharedPreferences
+                requireActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
+                    String username = prefs.getString("username", "BusinessUser");
+                    String shortUserId = prefs.getString("shortUserId", "#" + userId.substring(0, Math.min(6, userId.length())).toUpperCase());
+                    String category = prefs.getString("businessCategory", "Business");
+                    String email = prefs.getString("businessEmail", "");
+                    String businessDescription = prefs.getString("businessDescription", "");
+
+                    if (businessUserTv != null) businessUserTv.setText(username);
+                    if (businessUserIdTv != null) businessUserIdTv.setText(shortUserId);
+                    if (businessCategoryTv != null) businessCategoryTv.setText(category);
+                    if (emailEt != null) emailEt.setText(email != null ? email : "");
+                    if (descEt != null) descEt.setText(businessDescription.isEmpty() ? "Not set" : businessDescription);
+                    if (bioEt != null) bioEt.setText("Not set");
+                    if (passwordEt != null) passwordEt.setText("");
+
+                    // Load addresses after profile data
+                    loadAddressesOnMainScreen(view);
+});
+            });
         }
     }
 

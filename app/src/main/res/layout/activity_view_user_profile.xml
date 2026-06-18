@@ -46,9 +46,9 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_below="@id/return_bttn"
+                android:scaleType="centerCrop"
                 android:src="@drawable/ic_user_circle"
-                android:contentDescription="@null"
-                app:tint="@color/light_grey" />
+                android:contentDescription="@null" />
 
             <!-- Business Tag -->
             <TextView
