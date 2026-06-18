@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/bg_dialog"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Profile Picture"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/roboto_medium"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <Button
+        android:id="@+id/dialog_view_photo_btn"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="View Profile Picture"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/roboto_medium"
+        android:backgroundTint="@color/celadon"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/dialog_take_photo_btn"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Take Photo"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/roboto_medium"
+        android:background="@drawable/bg_border_rectangle_celadon"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/dialog_choose_gallery_btn"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Choose from Gallery"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/roboto_medium"
+        android:background="@drawable/bg_border_rectangle_celadon"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/dialog_cancel_btn"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Cancel"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/roboto_medium"
+        android:background="@drawable/bg_border_rectangle_old_rose"
+        android:insetTop="0dp"
+        android:insetBottom="0dp" />
+
+</LinearLayout>

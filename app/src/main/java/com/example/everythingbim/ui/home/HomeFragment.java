@@ -102,7 +102,7 @@ public class HomeFragment extends Fragment {
         String userId = prefs.getString("userId", "");
 
         if (userId.isEmpty()) {
-            if (binding.homeWelcomeUsernameTv != null) {
+            if (binding != null && binding.homeWelcomeUsernameTv != null) {
                 binding.homeWelcomeUsernameTv.setText("User");
             }
         } else {
@@ -126,6 +126,7 @@ public class HomeFragment extends Fragment {
         db.collection(collection).document(userId)
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (binding == null) return;
                     if (doc != null && doc.exists()) {
                         String username;
                         if ("business".equals(userType)) {

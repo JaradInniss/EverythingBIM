@@ -1,7 +1,11 @@
 package com.example.everythingbim.ui.posts;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -44,6 +48,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
     private ProfilePagerAdapter pagerAdapter;
 
     private ImageView profilePic, verificationIcon, returnBttn, reportBttn;
+    private String currentProfilePicUrl;
     private TextView username, userIdText, bio, businessTag;
 
     // Variables
@@ -138,10 +143,14 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
 
                             // Load profile pic
                             String profilePicUrl = doc.getString("profilePictureUrl");
-                            Glide.with(this)
-                                    .load(profilePicUrl)
-                                    .placeholder(R.drawable.ic_user_circle)
-                                    .into(profilePic);
+                            if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                                currentProfilePicUrl = profilePicUrl;
+                                Glide.with(this)
+                                        .load(profilePicUrl)
+                                        .placeholder(R.drawable.ic_user_circle)
+                                        .circleCrop()
+                                        .into(profilePic);
+                            }
 
                             // General user - hide business elements, show posts
                             businessTag.setVisibility(View.GONE);
@@ -188,19 +197,16 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
                         userIdText.setText("#" + uid.substring(0, Math.min(8, uid.length())).toUpperCase());
                         bio.setText(bioText != null ? bioText : "");
 
-                        // Load profile pic - first item from imageUrls list
-                        String profilePicUrl = null;
-                        Object imageUrlsObj = bizDoc.get("imageUrls");
-                        if (imageUrlsObj instanceof List) {
-                            List<?> list = (List<?>) imageUrlsObj;
-                            if (!list.isEmpty() && list.get(0) != null) {
-                                profilePicUrl = list.get(0).toString();
-                            }
+                        // Load profile pic from profilePictureUrl field
+                        String profilePicUrl = bizDoc.getString("profilePictureUrl");
+                        if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                            currentProfilePicUrl = profilePicUrl;
+                            Glide.with(this)
+                                    .load(profilePicUrl)
+                                    .placeholder(R.drawable.ic_user_circle)
+                                    .circleCrop()
+                                    .into(profilePic);
                         }
-                        Glide.with(this)
-                                .load(profilePicUrl)
-                                .placeholder(R.drawable.ic_user_circle)
-                                .into(profilePic);
 
                         // Business user - show business elements and tabs
                         businessTag.setVisibility(View.VISIBLE);
@@ -257,6 +263,7 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
 
         // ImageViews
         profilePic = findViewById(R.id.viewprofile_profile_pic);
+        profilePic.setOnClickListener(v -> showProfilePicturePreview());
         verificationIcon = findViewById(R.id.viewprofile_verification_icon);
         returnBttn = findViewById(R.id.return_bttn);
         returnBttn.setOnClickListener(this);
@@ -402,20 +409,53 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
         // Update Bio and Profile Pic from GeneralUserEntity or BusinessUserEntity
         if (profile.generalUser != null) {
             bio.setText(profile.generalUser.bio);
-            Glide.with(this)
-                    .load(profile.generalUser.profilePictureUrl)
-                    .placeholder(R.drawable.ic_user_circle)
-                    .into(profilePic);
+            if (profile.generalUser.profilePictureUrl != null && !profile.generalUser.profilePictureUrl.isEmpty()) {
+                currentProfilePicUrl = profile.generalUser.profilePictureUrl;
+                Glide.with(this)
+                        .load(profile.generalUser.profilePictureUrl)
+                        .placeholder(R.drawable.ic_user_circle)
+                        .circleCrop()
+                        .into(profilePic);
+            }
         }
         else if (profile.businessUser != null) {
             bio.setText(profile.businessUser.businessDescription);
-            Glide.with(this)
-                    .load(profile.businessUser.profilePictureUrl)
-                    .placeholder(R.drawable.ic_user_circle)
-                    .into(profilePic);
+            if (profile.businessUser.profilePictureUrl != null && !profile.businessUser.profilePictureUrl.isEmpty()) {
+                currentProfilePicUrl = profile.businessUser.profilePictureUrl;
+                Glide.with(this)
+                        .load(profile.businessUser.profilePictureUrl)
+                        .placeholder(R.drawable.ic_user_circle)
+                        .circleCrop()
+                        .into(profilePic);
+            }
         }
     }
 
+    private void showProfilePicturePreview() {
+        if (currentProfilePicUrl == null || currentProfilePicUrl.isEmpty()) {
+            Toast.makeText(this, "No profile picture available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Dialog previewDialog = new Dialog(this);
+        previewDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        previewDialog.setContentView(R.layout.dialog_profile_picture_preview);
+        if (previewDialog.getWindow() != null) {
+            previewDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            previewDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        }
+
+        ImageView previewImageView = previewDialog.findViewById(R.id.preview_profile_pic);
+        Button closeBtn = previewDialog.findViewById(R.id.close_preview_btn);
+
+        Glide.with(this)
+                .load(currentProfilePicUrl)
+                .circleCrop()
+                .into(previewImageView);
+
+        closeBtn.setOnClickListener(v -> previewDialog.dismiss());
+        previewDialog.show();
+    }
 
 
     /**

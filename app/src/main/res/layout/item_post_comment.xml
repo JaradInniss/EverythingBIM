@@ -12,10 +12,31 @@
         android:background="@color/space_indigo"
         android:padding="10dp">
 
+        <!-- Profile Picture -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/comment_profile_pic_card"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            app:cardCornerRadius="16dp"
+            android:layout_marginRight="8dp"
+            android:layout_alignParentStart="true">
+
+            <ImageView
+                android:id="@+id/comment_author_profile_pic"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_user_circle"
+                android:scaleType="centerCrop" />
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Username -->
         <TextView
             android:id="@+id/comment_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/comment_profile_pic_card"
+            android:layout_marginStart="8dp"
             android:text="Username"
             android:textSize="14sp"
             style="@style/white_small_txt_style"
@@ -25,8 +46,10 @@
             android:id="@+id/comment_replying_to"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/comment_profile_pic_card"
             android:layout_below="@id/comment_username"
             android:layout_marginTop="4dp"
+            android:layout_marginStart="8dp"
             android:layout_marginRight="10dp"
             android:text="Re: Other User"
             style="@style/white_small_txt_style"
@@ -36,20 +59,22 @@
             android:id="@+id/comment_upload_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/comment_username"
             android:layout_toRightOf="@id/comment_replying_to"
+            android:layout_below="@id/comment_username"
             android:layout_marginTop="4dp"
+            android:layout_marginStart="8dp"
             android:text="2026/01/01"
             style="@style/white_small_txt_style"/>
 
         <TextView
             android:id="@+id/comment_body"
-            android:layout_width="300dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/comment_profile_pic_card"
             android:layout_below="@id/comment_upload_date"
-            android:layout_alignParentStart="true"
             android:layout_toLeftOf="@id/reply_bttn"
             android:layout_marginTop="6dp"
+            android:layout_marginStart="8dp"
             android:layout_marginRight="10dp"
             android:text="Comment body"
             style="@style/white_small_txt_style"/>

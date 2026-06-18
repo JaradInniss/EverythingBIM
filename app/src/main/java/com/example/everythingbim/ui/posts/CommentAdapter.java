@@ -3,6 +3,7 @@ package com.example.everythingbim.ui.posts;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -10,8 +11,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.local.entities.CommentEntity;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -91,6 +94,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
      */
     class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView username, replyingTo, uploadDate, body, replyCount;
+        ImageView authorProfilePic;
         LinearLayout replyLayout;
         View separator, replyBttn;
         RecyclerView repliesRv;
@@ -107,6 +111,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             separator = itemView.findViewById(R.id.comment_reply_separator);
             repliesRv = itemView.findViewById(R.id.replies_rv);
             replyBttn = itemView.findViewById(R.id.reply_bttn);
+            authorProfilePic = itemView.findViewById(R.id.comment_author_profile_pic);
         }
 
         /**
@@ -121,6 +126,21 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
                     commentClickListener.onCommentClick(comment);
                 }
             });
+            // Load profile picture if available, otherwise fetch from Firestore
+            String profilePicUrl = comment.authorProfilePictureUrl;
+            if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                Glide.with(itemView.getContext())
+                        .load(profilePicUrl)
+                        .placeholder(R.drawable.ic_user_circle)
+                        .circleCrop()
+                        .into(authorProfilePic);
+            } else {
+                authorProfilePic.setImageResource(R.drawable.ic_user_circle);
+                // Fetch profile picture from Firestore if not available
+                if (comment.authorUid != null && !comment.authorUid.isEmpty()) {
+                    fetchAuthorProfilePic(comment.authorUid, comment);
+                }
+            }
             body.setText(comment.body);
             // createdAt is a boxed Long; for comments that haven't
             // received a server timestamp yet we fall back to "now" so
@@ -187,6 +207,57 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             int visibility = expanded ? View.VISIBLE : View.GONE;
             separator.setVisibility(visibility);
             repliesRv.setVisibility(visibility);
+        }
+
+        /**
+         * Fetches the author's profile picture URL from Firestore and updates the comment.
+         */
+        private void fetchAuthorProfilePic(String authorUid, CommentEntity comment) {
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            final ImageView profilePicView = authorProfilePic;
+
+            // Try users collection first (general users)
+            db.collection("users").document(authorUid).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            String profilePicUrl = doc.getString("profilePictureUrl");
+                            if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                                // Update the comment with the profile picture URL
+                                comment.authorProfilePictureUrl = profilePicUrl;
+                                Glide.with(itemView.getContext())
+                                        .load(profilePicUrl)
+                                        .placeholder(R.drawable.ic_user_circle)
+                                        .circleCrop()
+                                        .into(profilePicView);
+                                return;
+                            }
+                        }
+                        // Not in users - try businesses
+                        fetchAuthorProfilePicFromBusinesses(authorUid, comment, profilePicView);
+                    })
+                    .addOnFailureListener(e -> {
+                        // Try businesses on failure
+                        fetchAuthorProfilePicFromBusinesses(authorUid, comment, profilePicView);
+                    });
+        }
+
+        private void fetchAuthorProfilePicFromBusinesses(String authorUid, CommentEntity comment, ImageView profilePicView) {
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("businesses").document(authorUid).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            String profilePicUrl = doc.getString("profilePictureUrl");
+                            if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                                // Update the comment with the profile picture URL
+                                comment.authorProfilePictureUrl = profilePicUrl;
+                                Glide.with(itemView.getContext())
+                                        .load(profilePicUrl)
+                                        .placeholder(R.drawable.ic_user_circle)
+                                        .circleCrop()
+                                        .into(profilePicView);
+                            }
+                        }
+                    });
         }
     }
 }
