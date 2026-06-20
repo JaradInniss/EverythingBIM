@@ -752,20 +752,48 @@
 
                             </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="10dp"
-                                android:text="My Posts"
-                                style="@style/black_medium_txt_style" />
-
-                            <GridLayout
-                                android:id="@+id/general_user_posts_grid"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:columnCount="3"
-                                android:layout_marginBottom="8dp">
-                            </GridLayout>
+                                android:layout_marginBottom="10dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="My Posts"
+                                    style="@style/black_medium_txt_style" />
+
+                                <TextView
+                                    android:id="@+id/general_user_posts_view_all_tv"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="4dp"
+                                    android:text="View All"
+                                    android:textColor="@color/persian_blue"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/general_user_posts_empty_tv"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:text="You haven't posted yet."
+                                android:visibility="gone"
+                                style="@style/grey_small_txt_style" />
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/general_user_posts_rv"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:nestedScrollingEnabled="false"
+                                tools:listitem="@layout/item_post_group_header" />
 
                         </LinearLayout>
 
@@ -1566,20 +1594,48 @@
 
                             </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="My Posts"
-                                style="@style/black_medium_txt_style"
-                                android:layout_marginBottom="8dp" />
-
-                            <GridLayout
-                                android:id="@+id/business_user_posts_grid"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:columnCount="3"
-                                android:layout_marginBottom="10dp">
-                            </GridLayout>
+                                android:layout_marginBottom="8dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="My Posts"
+                                    style="@style/black_medium_txt_style" />
+
+                                <TextView
+                                    android:id="@+id/business_user_posts_view_all_tv"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:padding="4dp"
+                                    android:text="View All"
+                                    android:textColor="@color/persian_blue"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/business_user_posts_empty_tv"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:text="You haven't posted yet."
+                                android:visibility="gone"
+                                style="@style/grey_small_txt_style" />
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/business_user_posts_rv"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                android:nestedScrollingEnabled="false"
+                                tools:listitem="@layout/item_post_group_header" />
 
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>

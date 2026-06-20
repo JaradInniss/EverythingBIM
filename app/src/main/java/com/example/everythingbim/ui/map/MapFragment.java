@@ -37,6 +37,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.BuildConfig;
 import com.example.everythingbim.R;
@@ -107,6 +109,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService routeExecutor = Executors.newSingleThreadExecutor();
     private final List<MarkerEntity> storedMarkers = new ArrayList<>();
+    private final List<LocationWithDetails> savedLocations = new ArrayList<>();
     private final List<AutocompletePrediction> autocompletePredictions = new ArrayList<>();
     private final List<String> predictionLabels = new ArrayList<>();
     private final List<Place.Field> placeFields = Arrays.asList(
@@ -136,6 +139,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private View searchResultsContainer, detailsContainer, zoomInButton, zoomOutButton, fixLocationButton, returnButton;
     private ListView searchResultsList;
     private LinearLayout viewAllImagesBttn, viewAllReviewsBttn, viewAllPostsBttn, writeReviewBttn, writeReviewContainer, submitReviewBttn, directionsButton;
+    private RecyclerView reviewsPreviewRv;
     private HorizontalScrollView imagesField, reviewsField, postsField;
     private RelativeLayout detailsHeader;
     private ScrollView detailsScrollView;
@@ -144,6 +148,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     private int currentKeyboardExtraBottom;
 
     private ArrayAdapter<String> searchResultsAdapter;
+    private ReviewsAdapter reviewsPreviewAdapter;
 
     private Marker searchMarker;
     private Place selectedPlace;
@@ -181,6 +186,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         setupKeyboardHints(view);
         setupSearchUi();
         setUpObservers();
+        observeSavedLocations();
         observeFocusedSavedLocation();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -214,6 +220,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         directionsButton = binding.directionsBttn;
         directionsButton.setOnClickListener(this);
         writeReviewContainer = binding.writeReviewContainer;
+        reviewsPreviewRv = binding.locationReviewsContainer;
+        reviewsPreviewAdapter = new ReviewsAdapter(requireContext());
+        reviewsPreviewRv.setLayoutManager(new LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false));
+        reviewsPreviewRv.setAdapter(reviewsPreviewAdapter);
 
         // Progress Bar
         searchProgress = binding.mapSearchProgress;
@@ -398,6 +408,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             mapViewModel.submitReview();
         } else if (bttnId == R.id.close_write_review_bttn) {
             toggleWriteReview();
+        } else if (bttnId == R.id.location_images_view_all_bttn) {
+            mapViewModel.onViewAllClicked("IMAGES");
+        } else if (bttnId == R.id.location_reviews_view_all_bttn) {
+            mapViewModel.onViewAllClicked("REVIEWS");
+        } else if (bttnId == R.id.location_posts_view_all_bttn) {
+            mapViewModel.onViewAllClicked("POSTS");
+        } else if (bttnId == R.id.directions_bttn) {
+            openDirectionsSheet();
         }
     }
 
@@ -440,6 +458,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                 Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show();
                 toggleWriteReview();
             }
+        });
+
+        mapViewModel.getReviewMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message == null || message.trim().isEmpty() || "Review submitted".equals(message)) {
+                return;
+            }
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -582,6 +607,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         if (place == null || place.getLatLng() == null) return;
 
         selectedPlace = place;
+        LocationWithDetails savedLocation = findSavedLocationForPlace(place);
+        MarkerDetails details = savedLocation != null
+                ? buildSavedLocationDetails(savedLocation)
+                : buildMarkerDetails(place);
 
         // Clear previous search marker
         if (searchMarker != null) searchMarker.remove();
@@ -589,22 +618,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         // Create a new marker for this place
         searchMarker = map.addMarker(new MarkerOptions()
                 .position(place.getLatLng())
-                .title(place.getName())
+                .title(details.title)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+        if (searchMarker != null) {
+            searchMarker.setTag(details);
+        }
 
         // Update ViewModel
         mapViewModel.setFocusedLocation(place.getLatLng());
-        mapViewModel.setSelectedLocationMetadata(-1, place.getName());
-
-        // Populate the UI fields (Name, Address, etc.)
-        placeName.setText(place.getName());
-        placeAddress.setText(place.getAddress());
-
-        if (place.getRating() != null) {
-            placeRating.setText(String.format(Locale.getDefault(), "%.1f", place.getRating()));
-        } else {
-            placeRating.setText("N/A");
-        }
+        mapViewModel.setSelectedLocationMetadata(details.id, details.title);
+        showPlaceDetails(details);
 
         // Zoom into the new location
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15f));
@@ -686,6 +709,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
                         mapViewModel.setSelectedLocationMetadata(location.locationId, externalFocusTitle);
                         showExternalFocusedLocation();
                         mapViewModel.setDetailsUIState(MapDetailsState.PEEK);
+                    }
+                });
+    }
+
+    private void observeSavedLocations() {
+        AppDatabase.getInstance(requireContext())
+                .locationDao()
+                .getAllLocationsWithDetails()
+                .observe(getViewLifecycleOwner(), items -> {
+                    savedLocations.clear();
+                    if (items != null) {
+                        savedLocations.addAll(items);
+                    }
+                    if (map != null) {
+                        renderMarkers();
                     }
                 });
     }
@@ -918,12 +956,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             if (selectedPlace != null && selectedPlace.getLatLng() != null) {
                 renderMarkers();
                 mapViewModel.setFocusedLocation(selectedPlace.getLatLng());
-
-                // Set metadata for navigation
-                mapViewModel.setSelectedLocationMetadata(-1, selectedPlace.getName());
-
                 mapViewModel.setDetailsUIState(MapDetailsState.FULL);
-                showPlaceDetails(buildMarkerDetails(selectedPlace));
+                handlePlaceSelection(selectedPlace);
             }
             showSearchLoading(false);
         }).addOnFailureListener(error -> {
@@ -941,18 +975,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
 
         for (MarkerEntity marker : storedMarkers) {
             LatLng position = new LatLng(marker.latitude, marker.longitude);
+            LocationWithDetails savedLocation = findSavedLocationForMarker(marker);
+            MarkerDetails details = savedLocation != null
+                    ? buildSavedLocationDetails(savedLocation)
+                    : new MarkerDetails(
+                            marker.id,
+                            buildStoredMarkerTitle(marker),
+                            buildStoredMarkerSnippet(marker),
+                            "", "", 0.0f, "", "",
+                            new ArrayList<String>(), new ArrayList<ReviewEntity>(), new ArrayList<PostEntity>()
+                    );
             Marker savedMarker = map.addMarker(new MarkerOptions()
                     .position(position)
-                    .title(buildStoredMarkerTitle(marker))
-                    .snippet(buildStoredMarkerSnippet(marker)));
+                    .title(details.title)
+                    .snippet(details.subtitle));
             if (savedMarker != null) {
-                savedMarker.setTag(new MarkerDetails(
-                        marker.id,
-                        buildStoredMarkerTitle(marker),
-                        buildStoredMarkerSnippet(marker),
-                        "", "", 0.0f, "", "",
-                        new ArrayList<String>(), new ArrayList<ReviewEntity>(), new ArrayList<PostEntity>()
-                ));
+                savedMarker.setTag(details);
             }
         }
 
@@ -1358,12 +1396,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
             noReviewsText.setVisibility(View.VISIBLE);
             reviewsCount.setVisibility(View.GONE);
             reviewsField.setVisibility(View.GONE);
+            if (reviewsPreviewAdapter != null) {
+                reviewsPreviewAdapter.setReviews(new ArrayList<>());
+            }
             //viewAllReviewsBttn.setVisibility(View.GONE);
         } else {
             noReviewsText.setVisibility(View.GONE);
             reviewsCount.setText(String.format(java.util.Locale.US, "(%d)", details.reviews.size()));
             reviewsField.setVisibility(View.VISIBLE);
             viewAllReviewsBttn.setVisibility(View.VISIBLE);
+            if (reviewsPreviewAdapter != null) {
+                reviewsPreviewAdapter.setReviews(details.reviews);
+            }
         }
 
         if (details.posts == null || details.posts.isEmpty()) {
@@ -1401,6 +1445,67 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
     @NonNull private String getPlaceAddress(Place place) { String address = place.getAddress(); return address != null ? address : ""; }
     @NonNull private String buildStoredMarkerTitle(MarkerEntity marker) { return (marker.title != null && !marker.title.trim().isEmpty()) ? marker.title.trim() : "Saved marker"; }
     @NonNull private String buildStoredMarkerSnippet(MarkerEntity marker) { return (marker.snippet != null && !marker.snippet.trim().isEmpty()) ? marker.snippet.trim() : "Coordinates: " + formatLatLng(marker.latitude, marker.longitude); }
+
+    @Nullable
+    private LocationWithDetails findSavedLocationForMarker(@NonNull MarkerEntity marker) {
+        String markerTitle = buildStoredMarkerTitle(marker);
+        for (LocationWithDetails item : savedLocations) {
+            if (item == null || item.location == null) {
+                continue;
+            }
+            LocationEntity location = item.location;
+            if (sameCoordinates(location.latitude, location.longitude, marker.latitude, marker.longitude)) {
+                return item;
+            }
+            if (location.name != null && location.name.trim().equalsIgnoreCase(markerTitle)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private LocationWithDetails findSavedLocationForPlace(@Nullable Place place) {
+        if (place == null) {
+            return null;
+        }
+
+        String placeName = place.getName() != null ? place.getName().trim() : "";
+        String placeId = place.getId() != null ? place.getId().trim() : "";
+        LatLng placeLatLng = place.getLatLng();
+
+        for (LocationWithDetails item : savedLocations) {
+            if (item == null || item.location == null) {
+                continue;
+            }
+
+            LocationEntity location = item.location;
+            if (!placeId.isEmpty()
+                    && location.placeId != null
+                    && placeId.equalsIgnoreCase(location.placeId.trim())) {
+                return item;
+            }
+            if (placeLatLng != null && sameCoordinates(
+                    location.latitude,
+                    location.longitude,
+                    placeLatLng.latitude,
+                    placeLatLng.longitude)) {
+                return item;
+            }
+            if (!placeName.isEmpty()
+                    && location.name != null
+                    && location.name.trim().equalsIgnoreCase(placeName)) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean sameCoordinates(double firstLat, double firstLng, double secondLat, double secondLng) {
+        return Math.abs(firstLat - secondLat) < 0.0001d
+                && Math.abs(firstLng - secondLng) < 0.0001d;
+    }
 
     @NonNull
     private MarkerDetails getMarkerDetails(Marker marker) {
@@ -1444,14 +1549,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, View.On
         FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, placeFields).build();
         placesClient.fetchPlace(request).addOnSuccessListener(response -> {
             selectedPlace = response.getPlace();
-            MarkerDetails details = buildMarkerDetails(selectedPlace);
+            LocationWithDetails savedLocation = findSavedLocationForPlace(selectedPlace);
+            MarkerDetails details = savedLocation != null
+                    ? buildSavedLocationDetails(savedLocation)
+                    : buildMarkerDetails(selectedPlace);
             if (searchMarker != null) {
                 searchMarker.setTag(details);
                 showPlaceDetails(details);
             }
 
             // Update metadata once details are fetched
-            mapViewModel.setSelectedLocationMetadata(-1, details.title);
+            mapViewModel.setSelectedLocationMetadata(details.id, details.title);
 
             showSearchLoading(false);
         }).addOnFailureListener(error -> {

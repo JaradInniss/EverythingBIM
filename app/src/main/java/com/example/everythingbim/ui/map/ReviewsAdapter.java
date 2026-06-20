@@ -55,6 +55,9 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
 
     @NonNull
     private String resolveAuthorLabel(@NonNull ReviewEntity review) {
+        if (review.authorName != null && !review.authorName.trim().isEmpty()) {
+            return review.authorName.trim();
+        }
         if (review.authorId <= 0L) {
             return "Community member";
         }

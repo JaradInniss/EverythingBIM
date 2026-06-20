@@ -18,6 +18,7 @@ import com.example.everythingbim.data.local.entities.MarkerEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 import com.example.everythingbim.data.models.MapDetailsState;
 import com.example.everythingbim.ui.utils.NavigationCommand;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
@@ -31,6 +32,7 @@ public class MapViewModel extends AndroidViewModel {
     private static final String PREFS_APP = "app_prefs";
     private static final String KEY_USER_TYPE = "userType";
     private static final String KEY_USER_ID = "userId";
+    private static final String KEY_USERNAME = "username";
     private static final String USER_TYPE_GUEST = "guest";
 
     private final MarkerDao markerDao;
@@ -185,19 +187,50 @@ public class MapViewModel extends AndroidViewModel {
         }
 
         String storedUserId = prefs.getString(KEY_USER_ID, "");
+        if (TextUtils.isEmpty(storedUserId)) {
+            reviewMessage.setValue("Log in to write a review.");
+            return;
+        }
+
+        String authorName = resolveAuthorName(
+                prefs.getString(KEY_USERNAME, ""),
+                FirebaseAuth.getInstance()
+        );
         long authorId = resolveAuthorId(storedUserId);
         long createdAt = System.currentTimeMillis();
-        ReviewEntity review = new ReviewEntity(
-                selectedLocationId,
-                authorId,
-                body,
-                currentRating.floatValue(),
-                createdAt
-        );
 
         executorService.execute(() -> {
             try {
-                reviewDao.insert(review);
+                ReviewEntity review = reviewDao.getReviewByLocationAndAuthorUidSync(selectedLocationId, storedUserId);
+                if (review == null) {
+                    review = reviewDao.getLatestReviewByLocationAndAuthorIdSync(selectedLocationId, authorId);
+                }
+
+                if (review != null) {
+                    review.locationId = selectedLocationId;
+                    review.authorId = authorId;
+                    review.authorUid = storedUserId;
+                    review.authorName = authorName;
+                    review.body = body;
+                    review.rating = currentRating.floatValue();
+                    review.createdAt = createdAt;
+                    reviewDao.update(review);
+                } else {
+                    review = new ReviewEntity(
+                            selectedLocationId,
+                            authorId,
+                            storedUserId,
+                            authorName,
+                            body,
+                            currentRating.floatValue(),
+                            createdAt
+                    );
+                    long reviewId = reviewDao.insert(review);
+                    review.reviewId = reviewId;
+                }
+
+                reviewDao.deleteDuplicateReviewsForAuthorUid(selectedLocationId, storedUserId, review.reviewId);
+                reviewDao.deleteDuplicateReviewsForAuthorId(selectedLocationId, authorId, review.reviewId);
                 Float averageRating = reviewDao.getAverageRatingForLocationSync(selectedLocationId);
                 if (averageRating != null) {
                     locationDao.updateRating(selectedLocationId, averageRating);
@@ -219,6 +252,28 @@ public class MapViewModel extends AndroidViewModel {
         } catch (NumberFormatException ignored) {
             return Math.abs((long) storedUserId.trim().hashCode());
         }
+    }
+
+    @NonNull
+    private String resolveAuthorName(String storedUsername, FirebaseAuth auth) {
+        if (storedUsername != null && !storedUsername.trim().isEmpty()) {
+            return storedUsername.trim();
+        }
+
+        if (auth.getCurrentUser() != null) {
+            String displayName = auth.getCurrentUser().getDisplayName();
+            if (displayName != null && !displayName.trim().isEmpty()) {
+                return displayName.trim();
+            }
+
+            String email = auth.getCurrentUser().getEmail();
+            if (email != null && !email.trim().isEmpty()) {
+                int atIndex = email.indexOf('@');
+                return atIndex > 0 ? email.substring(0, atIndex) : email.trim();
+            }
+        }
+
+        return "Community member";
     }
 
 

@@ -732,6 +732,7 @@ public class PostRepository {
         comment.authorUid = doc.getString("authorUid");
         comment.authorName = doc.getString("authorName");
         comment.parentAuthorName = doc.getString("parentAuthorName");
+        comment.parentAuthorUid = doc.getString("parentAuthorUid");
         comment.body = doc.getString("body");
         comment.createdAt = timestampFieldToMillis(doc.get("createdAt"));
         return comment;
@@ -746,6 +747,7 @@ public class PostRepository {
         map.put("authorUid", comment.authorUid);
         map.put("authorName", comment.authorName);
         map.put("parentAuthorName", comment.parentAuthorName);
+        map.put("parentAuthorUid", comment.parentAuthorUid);
         map.put("body", comment.body);
         // ServerTimestamp so ordering is monotonic across clients.
         map.put("createdAt", FieldValue.serverTimestamp());
