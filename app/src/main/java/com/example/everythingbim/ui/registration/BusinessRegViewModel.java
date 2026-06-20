@@ -11,7 +11,6 @@ import androidx.lifecycle.ViewModel;
 import com.example.everythingbim.R;
 import com.example.everythingbim.data.FirebaseProvider;
 import com.example.everythingbim.data.RealFirebaseProvider;
-import com.example.everythingbim.data.models.BusinessProfile;
 import com.example.everythingbim.data.models.File;
 import com.example.everythingbim.ui.login.Login;
 import com.google.android.gms.tasks.Tasks;
@@ -25,6 +24,7 @@ import com.google.firebase.storage.UploadTask;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -360,20 +360,41 @@ public class BusinessRegViewModel extends ViewModel {
         Tasks.whenAllSuccess(uploadTasks)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        BusinessProfile profile = new BusinessProfile(
-                                userId,
-                                username.getValue(),
-                                companyName.getValue(),
-                                businessEmail.getValue(), // Use ViewModel's business email, not Firebase email
-                                businessType.getValue(),  // Business type from dropdown
-                                phone.getValue(),
-                                address.getValue(),
-                                description.getValue(),
-                                "", // bio - empty for new registrations, can be updated in profile settings
-                                imageUrls,
-                                fileUrls,
-                                com.google.firebase.Timestamp.now()
-                        );
+                        String resolvedUsername = username.getValue() != null
+                                ? username.getValue().trim()
+                                : "";
+                        String resolvedCompanyName = companyName.getValue() != null
+                                ? companyName.getValue().trim()
+                                : "";
+                        String resolvedBusinessEmail = businessEmail.getValue() != null
+                                ? businessEmail.getValue().trim()
+                                : email;
+
+                        Map<String, Object> profile = new HashMap<>();
+                        profile.put("userId", userId);
+                        profile.put("userType", "business");
+                        profile.put("username", resolvedUsername);
+                        // Keep both names in sync because different app areas
+                        // still read one or the other while the schema settles.
+                        profile.put("companyName", resolvedCompanyName);
+                        profile.put("businessName", resolvedCompanyName);
+                        profile.put("BusinessName", resolvedCompanyName);
+                        profile.put("businessEmail", resolvedBusinessEmail);
+                        profile.put("businessType", businessType.getValue() != null
+                                ? businessType.getValue().trim()
+                                : "");
+                        profile.put("phone", phone.getValue() != null ? phone.getValue().trim() : "");
+                        profile.put("address", address.getValue() != null ? address.getValue().trim() : "");
+                        profile.put("description", description.getValue() != null
+                                ? description.getValue().trim()
+                                : "");
+                        profile.put("bio", "");
+                        profile.put("imageUrls", imageUrls);
+                        profile.put("fileUrls", fileUrls);
+                        profile.put("createdAt", com.google.firebase.Timestamp.now());
+                        profile.put("verificationStatus", "In Review");
+                        profile.put("verified", false);
+                        profile.put("read", false);
 
                         db.collection("businesses").document(userId).set(profile)
                                 .addOnSuccessListener(aVoid -> {
