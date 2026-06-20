@@ -10,6 +10,8 @@ import com.example.everythingbim.data.local.entities.ReviewEntity;
 
 import org.junit.Test;
 
+import java.util.Collections;
+
 /**
  * Unit tests for Room entity classes.
  * Tests entity construction using actual constructors.
@@ -80,10 +82,21 @@ public class   EntityValidationTest {
     @Test
     public void postEntity_constructor_setsAllFields() {
         long timestamp = System.currentTimeMillis();
-        PostEntity post = new PostEntity(123L, 456L, "Great beach day!", "https://example.com/post.jpg", timestamp);
+        PostEntity post = new PostEntity(
+                123L,
+                "Test Location",
+                456L,
+                "user123",
+                "Great beach day!",
+                "https://example.com/post.jpg",
+                timestamp,
+                Collections.emptyList()
+        );
 
         assertEquals("LocationId should be 123", 123L, post.locationId);
+        assertEquals("LocationName should be Test Location", "Test Location", post.locationName);
         assertEquals("AuthorId should be 456", 456L, post.authorId);
+        assertEquals("AuthorName should be user123", "user123", post.authorName);
         assertEquals("Caption should be Great beach day!", "Great beach day!", post.caption);
         assertEquals("ImageUrl should match", "https://example.com/post.jpg", post.imageUrl);
         assertEquals("CreatedAt should match timestamp", timestamp, post.createdAt);
@@ -91,7 +104,9 @@ public class   EntityValidationTest {
 
     @Test
     public void postEntity_canHandleNullFields() {
-        PostEntity post = new PostEntity(1L, 2L, null, null, 0L);
+        PostEntity post = new PostEntity(1L, null, 2L, null, null, null, 0L, null);
+        assertNull("LocationName should be null", post.locationName);
+        assertNull("AuthorName should be null", post.authorName);
         assertNull("Caption should be null", post.caption);
         assertNull("ImageUrl should be null", post.imageUrl);
     }
@@ -108,7 +123,7 @@ public class   EntityValidationTest {
         assertEquals("ParentCommentId should be 123", Long.valueOf(123L), comment.parentCommentId);
         assertEquals("AuthorName should be user123", "user123", comment.authorName);
         assertEquals("ParentAuthorName should be parentUser", "parentUser", comment.parentAuthorName);
-        assertEquals("Timestamp should match", timestamp, comment.timestamp);
+        assertEquals("CreatedAt should match", Long.valueOf(timestamp), comment.createdAt);
     }
 
     @Test
@@ -177,7 +192,7 @@ public class   EntityValidationTest {
 
     @Test
     public void postEntity_fieldsArePublic() {
-        PostEntity post = new PostEntity(1L, 2L, "caption", "url", 0L);
+        PostEntity post = new PostEntity(1L, "location", 2L, "author", "caption", "url", 0L, null);
         assertEquals("postId should be accessible", 0L, post.postId);
         post.postId = 888L;
         assertEquals("postId should be settable", 888L, post.postId);

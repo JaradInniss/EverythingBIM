@@ -6,6 +6,8 @@ import android.net.Uri;
 
 import androidx.test.core.app.ApplicationProvider;
 
+import com.example.everythingbim.data.local.entities.UserEntity;
+import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.ui.posts.CreatePostViewModel;
 
 import org.junit.Before;
@@ -23,6 +25,19 @@ import org.robolectric.annotation.Config;
 public class CreatePostViewModelTest {
 
     private CreatePostViewModel viewModel;
+
+    private UserEntity createUser(long userId, String username) {
+        UserEntity user = new UserEntity(
+                username,
+                "hash",
+                username + "@example.com",
+                UserType.GENERAL,
+                true,
+                System.currentTimeMillis()
+        );
+        user.userId = userId;
+        return user;
+    }
 
     @Before
     public void setUp() {
@@ -99,38 +114,41 @@ public class CreatePostViewModelTest {
 
     @Test
     public void addTaggedUser_increasesListSize() {
-        viewModel.addTaggedUser("user1");
+        viewModel.addTaggedUser(createUser(1L, "user1"));
         assertEquals("Tagged users should have 1 item", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void addTaggedUser_duplicate_notAdded() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user1");
+        UserEntity user = createUser(1L, "user1");
+        viewModel.addTaggedUser(user);
+        viewModel.addTaggedUser(user);
         assertEquals("Duplicate should not increase list size", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void addTaggedUser_multipleDifferent_increasesSize() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user2");
-        viewModel.addTaggedUser("user3");
+        viewModel.addTaggedUser(createUser(1L, "user1"));
+        viewModel.addTaggedUser(createUser(2L, "user2"));
+        viewModel.addTaggedUser(createUser(3L, "user3"));
         assertEquals("Should have 3 tagged users", 3, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
     public void removeTaggedUser_decreasesListSize() {
-        viewModel.addTaggedUser("user1");
-        viewModel.addTaggedUser("user2");
-        viewModel.removeTaggedUser("user1");
+        UserEntity user1 = createUser(1L, "user1");
+        UserEntity user2 = createUser(2L, "user2");
+        viewModel.addTaggedUser(user1);
+        viewModel.addTaggedUser(user2);
+        viewModel.removeTaggedUser(user1);
         assertEquals("Should have 1 tagged user after removal", 1, viewModel.getTaggedUsers().getValue().size());
-        assertTrue("user2 should still be present", viewModel.getTaggedUsers().getValue().contains("user2"));
+        assertTrue("user2 should still be present", viewModel.getTaggedUsers().getValue().contains(user2));
     }
 
     @Test
     public void removeTaggedUser_nonExistent_doesNothing() {
-        viewModel.addTaggedUser("user1");
-        viewModel.removeTaggedUser("nonexistent");
+        viewModel.addTaggedUser(createUser(1L, "user1"));
+        viewModel.removeTaggedUser(createUser(2L, "nonexistent"));
         assertEquals("Should still have 1 user", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
@@ -189,7 +207,7 @@ public class CreatePostViewModelTest {
         viewModel.setCaption("My caption");
         viewModel.setImageUri(Uri.parse("content://test.jpg"));
         viewModel.setSelectedLocationId(456L);
-        viewModel.addTaggedUser("tag1");
+        viewModel.addTaggedUser(createUser(1L, "tag1"));
 
         assertEquals("Caption should be set", "My caption", viewModel.getCaption().getValue());
         assertEquals("Image URI should be set", Uri.parse("content://test.jpg"), viewModel.getImageUri().getValue());
@@ -199,10 +217,11 @@ public class CreatePostViewModelTest {
 
     @Test
     public void clearState_individually() {
+        UserEntity user = createUser(1L, "user1");
         viewModel.setCaption("Test");
         viewModel.setImageUri(Uri.parse("content://test.jpg"));
         viewModel.setSelectedLocationId(123L);
-        viewModel.addTaggedUser("user1");
+        viewModel.addTaggedUser(user);
 
         // Clear caption
         viewModel.setCaption("");
@@ -217,7 +236,7 @@ public class CreatePostViewModelTest {
         assertNull("Location ID should be null", viewModel.getSelectedLocationId().getValue());
 
         // Clear tagged users (via remove)
-        viewModel.removeTaggedUser("user1");
+        viewModel.removeTaggedUser(user);
         assertEquals("Tagged users should be empty", 0, viewModel.getTaggedUsers().getValue().size());
     }
 
@@ -226,21 +245,18 @@ public class CreatePostViewModelTest {
     @Test
     public void setCaption_null_isAllowed() {
         viewModel.setCaption(null);
-        assertNull("Null caption should be allowed", viewModel.getCaption().getValue());
+        assertEquals("Null caption should normalize to empty", "", viewModel.getCaption().getValue());
     }
 
     @Test
     public void addTaggedUser_emptyString_isAllowed() {
-        viewModel.addTaggedUser("");
-        // Empty string is technically allowed by the code
-        // (only checks if not already in list, not if empty)
+        viewModel.addTaggedUser(createUser(1L, ""));
+        assertEquals("Empty username is allowed", 1, viewModel.getTaggedUsers().getValue().size());
     }
 
     @Test
-    public void addTaggedUser_null_addedToList() {
+    public void addTaggedUser_null_isIgnored() {
         viewModel.addTaggedUser(null);
-        // Note: The code adds null because contains(null) returns false for empty list
-        // This is a potential bug in the ViewModel
-        assertTrue("Null should be in list", viewModel.getTaggedUsers().getValue().contains(null));
+        assertTrue("Null should be ignored", viewModel.getTaggedUsers().getValue().isEmpty());
     }
 }

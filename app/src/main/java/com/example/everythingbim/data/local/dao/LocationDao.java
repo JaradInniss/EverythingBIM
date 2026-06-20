@@ -153,6 +153,9 @@ public interface LocationDao {
     @Query("UPDATE locations SET imageUrl = :imageUrl WHERE locationId = :locationId")
     void updateImageUrl(long locationId, String imageUrl);
 
+    @Query("UPDATE locations SET rating = :rating WHERE locationId = :locationId")
+    void updateRating(long locationId, float rating);
+
     @Transaction
     @Query("SELECT * FROM locations")
     List<LocationWithDetails> getAllLocationsWithDetailsList();

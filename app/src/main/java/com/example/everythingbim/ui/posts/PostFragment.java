@@ -97,7 +97,14 @@ public class PostFragment extends Fragment {
 
     private void setupRecyclerView() {
         adapter = new PostAdapter();
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
+        GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 3);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return adapter.isHeaderPosition(position) ? 3 : 1;
+            }
+        });
+        recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
         int initialLeft = recyclerView.getPaddingLeft();
         int initialTop = recyclerView.getPaddingTop();

@@ -13,7 +13,10 @@ import androidx.room.Index;
                 childColumns = "locationId",
                 onDelete = ForeignKey.CASCADE
         ),
-        indices = @Index("locationId")
+        indices = {
+                @Index("locationId"),
+                @Index(value = {"locationId", "authorUid"}, unique = true)
+        }
 )
 public class ReviewEntity {
 
@@ -23,13 +26,23 @@ public class ReviewEntity {
     public long locationId;
 
     public long authorId;
+    public String authorUid;
+    public String authorName;
     public String body;
     public float rating;
     public long createdAt;
 
-    public ReviewEntity(long locationId, long authorId, String body, float rating, long createdAt) {
+    public ReviewEntity(long locationId,
+                        long authorId,
+                        String authorUid,
+                        String authorName,
+                        String body,
+                        float rating,
+                        long createdAt) {
         this.locationId = locationId;
         this.authorId = authorId;
+        this.authorUid = authorUid;
+        this.authorName = authorName;
         this.body = body;
         this.rating = rating;
         this.createdAt = createdAt;

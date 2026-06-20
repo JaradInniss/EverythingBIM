@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    tools:context=".ui.posts.MyPostsActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/prussian_blue"
+        android:padding="10dp">
+
+        <LinearLayout
+            android:id="@+id/return_bttn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_caret_left"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="Profile"
+                style="@style/white_medium_txt_style" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/my_posts_title_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/return_bttn"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="5dp"
+            android:text="My Posts"
+            android:textSize="20sp"
+            style="@style/white_medium_txt_style" />
+
+        <LinearLayout
+            android:id="@+id/my_posts_meta_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/my_posts_title_tv"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Posts"
+                style="@style/grey_medium_txt_style" />
+
+            <View
+                android:layout_width="2dp"
+                android:layout_height="15dp"
+                android:layout_marginHorizontal="10dp"
+                android:background="@drawable/bg_rectangle_pale_slate" />
+
+            <TextView
+                android:id="@+id/my_posts_count_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                style="@style/grey_medium_txt_style" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/my_posts_empty_tv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="20dp"
+        android:text="You haven't posted yet."
+        android:visibility="gone"
+        style="@style/grey_small_txt_style" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/my_posts_rv"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:nestedScrollingEnabled="true"
+        android:padding="8dp"
+        tools:listitem="@layout/item_post_group_header" />
+
+</LinearLayout>

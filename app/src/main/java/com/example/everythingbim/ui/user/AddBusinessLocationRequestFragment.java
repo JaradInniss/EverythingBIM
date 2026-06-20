@@ -85,6 +85,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class AddBusinessLocationRequestFragment extends Fragment {
+    private static final String MAP_PICKER_REQUEST_KEY = "add_business_location_request_map_picker";
     private static final String PREF_ADD_LOCATION_SCROLL_HINT_SEEN =
             KeyboardScrollHintHelper.PREF_ADD_LOCATION_SCROLL_HINT_SEEN;
 
@@ -238,9 +239,11 @@ public class AddBusinessLocationRequestFragment extends Fragment {
         });
 
         submitBtn.setOnClickListener(v -> validateAndSubmit());
+        view.findViewById(R.id.expand_map_tv).setOnClickListener(v -> openExpandedMapPicker());
 
         setupPlaceTypeSpinner();
         setupMap(view, savedInstanceState);
+        observeExpandedMapSelection();
         setupKeyboardInsets(view);
         setupFocusedFieldScroll();
 
@@ -475,10 +478,9 @@ public class AddBusinessLocationRequestFragment extends Fragment {
             googleMap.getUiSettings().setZoomControlsEnabled(true);
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(13.1939, -59.5432), 11f));
             googleMap.setOnMapClickListener(latLng -> {
-                googleMap.clear();
-                googleMap.addMarker(new MarkerOptions().position(latLng).title("Selected Location"));
                 selectedLat = latLng.latitude;
                 selectedLng = latLng.longitude;
+                updateMapSelection(latLng, getCurrentLocationTitle(), false);
                 reverseGeocode(latLng);
                 // Clear search bar when user taps map
                 locationSearchEt.setText("");
@@ -486,6 +488,59 @@ public class AddBusinessLocationRequestFragment extends Fragment {
                 hideKeyboard();
             });
         });
+    }
+
+    private void observeExpandedMapSelection() {
+        getParentFragmentManager().setFragmentResultListener(
+                MAP_PICKER_REQUEST_KEY,
+                getViewLifecycleOwner(),
+                (requestKey, result) -> {
+                    double lat = result.getDouble(ExpandedRequestMapDialogFragment.RESULT_LAT, 0.0d);
+                    double lng = result.getDouble(ExpandedRequestMapDialogFragment.RESULT_LNG, 0.0d);
+                    if (lat == 0.0d && lng == 0.0d) {
+                        return;
+                    }
+                    selectedLat = lat;
+                    selectedLng = lng;
+                    LatLng latLng = new LatLng(lat, lng);
+                    updateMapSelection(latLng, getCurrentLocationTitle(), true);
+                    reverseGeocode(latLng);
+                    locationSearchEt.setText("");
+                    clearPredictions();
+                    hideKeyboard();
+                }
+        );
+    }
+
+    private void openExpandedMapPicker() {
+        ExpandedRequestMapDialogFragment.newInstance(
+                        MAP_PICKER_REQUEST_KEY,
+                        selectedLat,
+                        selectedLng,
+                        getCurrentLocationTitle())
+                .show(getParentFragmentManager(), "add_business_location_request_expanded_map");
+    }
+
+    private void updateMapSelection(@NonNull LatLng latLng, @Nullable String title, boolean animate) {
+        if (googleMap == null) {
+            return;
+        }
+        googleMap.clear();
+        googleMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title((title != null && !title.trim().isEmpty()) ? title.trim() : "Selected Location"));
+        if (animate) {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f));
+        } else {
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f));
+        }
+    }
+
+    @Nullable
+    private String getCurrentLocationTitle() {
+        return locationNameEt != null && locationNameEt.getText() != null
+                ? locationNameEt.getText().toString().trim()
+                : null;
     }
 
     // ────────────────────────────────────────────────────────
@@ -619,11 +674,7 @@ public class AddBusinessLocationRequestFragment extends Fragment {
 
                         // Update map if available
                         if (googleMap != null) {
-                            googleMap.clear();
-                            googleMap.addMarker(new MarkerOptions()
-                                    .position(latLng)
-                                    .title(locationName));
-                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f));
+                            updateMapSelection(latLng, locationName, true);
                         }
                     }
                 })

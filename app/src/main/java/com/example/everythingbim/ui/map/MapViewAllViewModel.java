@@ -1,9 +1,15 @@
 package com.example.everythingbim.ui.map;
 
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
+import com.example.everythingbim.data.local.AppDatabase;
+import com.example.everythingbim.data.local.dao.LocationDao;
+import com.example.everythingbim.data.local.dao.ReviewDao;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.ReviewEntity;
 
@@ -11,21 +17,33 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class MapViewAllViewModel extends ViewModel {
+public class MapViewAllViewModel extends AndroidViewModel {
 
     private final MutableLiveData<List<PostEntity>> posts = new MutableLiveData<>();
     private final MutableLiveData<List<ReviewEntity>> reviews = new MutableLiveData<>();
     private final MutableLiveData<Set<Long>> likedPostIds = new MutableLiveData<>(new HashSet<>());
-    private final MutableLiveData<Float> overallRating = new MutableLiveData<>(4.5f);
+    private final MutableLiveData<Float> overallRating = new MutableLiveData<>(0f);
+    private final ReviewDao reviewDao;
+    private final LocationDao locationDao;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private long locationId;
+
+    public MapViewAllViewModel(@NonNull Application application) {
+        super(application);
+        AppDatabase database = AppDatabase.getInstance(application);
+        reviewDao = database.reviewDao();
+        locationDao = database.locationDao();
+    }
 
     public void setLocationId(long locationId, String viewType) {
         this.locationId = locationId;
         if ("IMAGES".equalsIgnoreCase(viewType) || "POSTS".equalsIgnoreCase(viewType)) {
             loadPostsPlaceholder();
         } else if ("REVIEWS".equalsIgnoreCase(viewType)) {
-            loadReviewsPlaceholder();
+            loadReviews();
         }
     }
 
@@ -63,17 +81,19 @@ public class MapViewAllViewModel extends ViewModel {
         likedPostIds.setValue(new HashSet<>());
     }
 
-    private void loadReviewsPlaceholder() {
-        List<ReviewEntity> placeholderList = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            placeholderList.add(new ReviewEntity(
-                    locationId,
-                    202,
-                    "This is a sample review for location #" + locationId + ". It's a great place!",
-                    4.0f + (i % 2),
-                    System.currentTimeMillis()
-            ));
-        }
-        reviews.setValue(placeholderList);
+    private void loadReviews() {
+        executorService.execute(() -> {
+            List<ReviewEntity> actualReviews = reviewDao.getReviewsByLocationSync(locationId);
+            reviews.postValue(actualReviews);
+            com.example.everythingbim.data.local.entities.LocationEntity location =
+                    locationDao.getLocationByIdSync(locationId);
+            overallRating.postValue(location != null ? location.rating : 0f);
+        });
+    }
+
+    @Override
+    protected void onCleared() {
+        executorService.shutdownNow();
+        super.onCleared();
     }
 }
