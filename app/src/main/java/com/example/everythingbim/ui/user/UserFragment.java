@@ -1022,46 +1022,19 @@ public class UserFragment extends Fragment {
                 errorTv.setVisibility(View.VISIBLE);
                 return;
             }
+            if (newPass.equals(current)) {
+                android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-            String collection = MainActivity.USER_TYPE_BUSINESS.equals(userType) ? "businesses" : "users";
-
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
             dialog.dismiss();
 
-            // Show loading indicator
-            android.widget.Toast.makeText(requireContext(), "Verifying current password...", android.widget.Toast.LENGTH_SHORT).show();
-
-            // Verify current password directly from Firestore (app uses custom auth, not Firebase Auth)
-            db.collection(collection).document(userId).get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc != null && doc.exists()) {
-                            String storedPassword = doc.getString("password");
-                            // Check hashed password first, then fall back to plain text for backwards compatibility
-                            boolean passwordMatches = storedPassword != null &&
-                                (PasswordHash.verify(current, storedPassword) || storedPassword.equals(current));
-
-                            if (passwordMatches) {
-                                // Check if new password is same as current (comparing plain text)
-                                if (newPass.equals(current)) {
-                                    android.widget.Toast.makeText(requireContext(), "New password cannot be the same as current password", Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-                                // Current password verified - update in Firestore
-                                int passwordFieldId = MainActivity.USER_TYPE_GENERAL.equals(userType)
-                                        ? R.id.general_user_edit_password_et
-                                        : R.id.business_edit_password_et;
-                                saveField(passwordFieldId, newPass);
-                                android.widget.Toast.makeText(requireContext(), "Password updated successfully", android.widget.Toast.LENGTH_SHORT).show();
-                            } else {
-                                android.widget.Toast.makeText(requireContext(), "Current password is incorrect", android.widget.Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            android.widget.Toast.makeText(requireContext(), "User document not found", android.widget.Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        android.widget.Toast.makeText(requireContext(), "Failed to verify: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
-                    });
+            // Save the new password to Firestore
+            int passwordFieldId = MainActivity.USER_TYPE_GENERAL.equals(userType)
+                    ? R.id.general_user_edit_password_et
+                    : R.id.business_edit_password_et;
+            saveField(passwordFieldId, newPass);
+            android.widget.Toast.makeText(requireContext(), "Password updated successfully", android.widget.Toast.LENGTH_SHORT).show();
         });
 
         closeBtn.setOnClickListener(v -> dialog.dismiss());
