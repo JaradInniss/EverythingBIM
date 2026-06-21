@@ -186,7 +186,7 @@ public class LoginViewModel extends ViewModel {
                         String userTypeStr = (selected == UserType.BUSINESS)
                                 ? MainActivity.USER_TYPE_BUSINESS
                                 : MainActivity.USER_TYPE_GENERAL;
-                        saveAndNavigate(userTypeStr, userDoc.getId());
+                        saveAndNavigate(userTypeStr, userDoc.getId(), resolveDisplayName(userDoc, selected));
                     } else {
                         isLoading.setValue(false);
                         toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
@@ -206,7 +206,7 @@ public class LoginViewModel extends ViewModel {
         String storedPassword = userDoc.getString("password");
         if (storedPassword != null && storedPassword.equals(password)) {
             isLoading.setValue(false);
-            saveAndNavigate("admin", userDoc.getId());
+            saveAndNavigate("admin", userDoc.getId(), resolveAdminDisplayName(userDoc));
             return;
         }
 
@@ -216,7 +216,7 @@ public class LoginViewModel extends ViewModel {
                     .addOnCompleteListener(authTask -> {
                         isLoading.setValue(false);
                         if (authTask.isSuccessful()) {
-                            saveAndNavigate("admin", userDoc.getId());
+                            saveAndNavigate("admin", userDoc.getId(), resolveAdminDisplayName(userDoc));
                         } else {
                             toastMessage.setValue(getFriendlyErrorMessage(authTask.getException()));
                         }
@@ -327,7 +327,7 @@ public class LoginViewModel extends ViewModel {
                         );
                         if (resolvedUserType != null) {
                             isLoading.setValue(false);
-                            saveAndNavigate(resolvedUserType, userId);
+                            saveAndNavigate(resolvedUserType, userId, resolveRecoveredDisplayName(document, resolvedUserType));
                         } else {
                             isLoading.setValue(false);
                             toastMessage.setValue("User type not found");
@@ -356,21 +356,78 @@ public class LoginViewModel extends ViewModel {
         return null;
     }
 
-    private void saveAndNavigate(String userType, String userId) {
+    private void saveAndNavigate(String userType, String userId, String username) {
         if (sharedPreferences != null) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("userType", userType);
             editor.putString("userId", userId);
+            editor.putString("username", username);
             editor.apply();
         }
         Bundle extras = new Bundle();
         extras.putString("userType", userType);
         extras.putString("userId", userId);
+        extras.putString("username", username);
         if ("admin".equals(userType)) {
             navigationEvent.setValue(new NavigationCommand(AdminActivity.class, extras));
         } else {
             navigationEvent.setValue(new NavigationCommand(MainActivity.class, extras));
         }
+    }
+
+    private String resolveDisplayName(@NonNull DocumentSnapshot userDoc, @NonNull UserType selected) {
+        if (selected == UserType.BUSINESS) {
+            String username = trimToNull(userDoc.getString("username"));
+            if (username != null) return username;
+            String companyName = trimToNull(userDoc.getString("companyName"));
+            if (companyName != null) return companyName;
+            String businessEmail = trimToNull(userDoc.getString("businessEmail"));
+            if (businessEmail != null) return businessEmail;
+            return "Business user";
+        }
+
+        String username = trimToNull(userDoc.getString("username"));
+        if (username != null) return username;
+        String email = trimToNull(userDoc.getString("email"));
+        if (email != null) return email;
+        return "User";
+    }
+
+    private String resolveAdminDisplayName(@NonNull DocumentSnapshot userDoc) {
+        String username = trimToNull(userDoc.getString("username"));
+        if (username != null) return username;
+        String email = trimToNull(userDoc.getString("email"));
+        if (email != null) return email;
+        return "Admin";
+    }
+
+    private String resolveRecoveredDisplayName(@NonNull DocumentSnapshot document, @NonNull String resolvedUserType) {
+        if (MainActivity.USER_TYPE_BUSINESS.equals(resolvedUserType)) {
+            String username = trimToNull(document.getString("username"));
+            if (username != null) return username;
+            String companyName = trimToNull(document.getString("companyName"));
+            if (companyName != null) return companyName;
+            String businessEmail = trimToNull(document.getString("businessEmail"));
+            if (businessEmail != null) return businessEmail;
+            return "Business user";
+        }
+        if (MainActivity.USER_TYPE_ADMIN.equals(resolvedUserType)) {
+            return resolveAdminDisplayName(document);
+        }
+
+        String username = trimToNull(document.getString("username"));
+        if (username != null) return username;
+        String email = trimToNull(document.getString("email"));
+        if (email != null) return email;
+        return "User";
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public void onCreateAccountClicked() {

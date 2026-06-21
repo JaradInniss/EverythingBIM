@@ -91,6 +91,7 @@ public class ViewPost extends AppCompatActivity {
     private String currentParentAuthorName = null;
     private String currentParentAuthorUid = null;
     private boolean isSubmittingComment = false;
+    private boolean isTogglingLike = false;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
     private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
@@ -464,6 +465,12 @@ public class ViewPost extends AppCompatActivity {
         if (isLiked == null) return;
         int tintRes = isLiked ? R.color.red : R.color.pale_slate;
         likesIcon.setColorFilter(ContextCompat.getColor(this, tintRes));
+    }
+
+    private void setLikeToggleInProgress(boolean inProgress) {
+        isTogglingLike = inProgress;
+        likesIcon.setEnabled(!inProgress);
+        likesIcon.setAlpha(inProgress ? 0.6f : 1f);
     }
 
     /**
@@ -875,6 +882,9 @@ public class ViewPost extends AppCompatActivity {
 
         // Like / unlike. Guarded for unauthenticated users.
         likesIcon.setOnClickListener(v -> {
+            if (isTogglingLike) {
+                return;
+            }
             FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
             if (current == null || current.getUid() == null) {
                 Toast.makeText(this, "Sign in to like posts", Toast.LENGTH_SHORT).show();
@@ -888,7 +898,9 @@ public class ViewPost extends AppCompatActivity {
                 showPostNotSyncedMessage();
                 return;
             }
+            setLikeToggleInProgress(true);
             observeOnce(viewModel.toggleLike(postId), nowLiked -> {
+                setLikeToggleInProgress(false);
                 if (nowLiked == null) {
                     Toast.makeText(this, "Failed to update like", Toast.LENGTH_SHORT).show();
                 }

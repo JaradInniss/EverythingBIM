@@ -28,12 +28,19 @@ import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.everythingbim.R;
+import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.FragmentUserBinding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.posts.MyPostsActivity;
+import com.example.everythingbim.ui.posts.PostAdapter;
+import com.example.everythingbim.ui.posts.PostViewModel;
+import com.example.everythingbim.ui.posts.ViewPost;
 import com.example.everythingbim.ui.registration.BusinessRegistration;
 import com.example.everythingbim.ui.registration.GeneralRegistration;
 import com.example.everythingbim.ui.utils.KeyboardScrollHintHelper;
@@ -51,7 +58,10 @@ import com.bumptech.glide.Glide;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
@@ -61,6 +71,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 public class UserFragment extends Fragment {
+    private static final int MY_POSTS_PREVIEW_LIMIT = 6;
     private static final String PREF_USER_GENERAL_SCROLL_HINT_SEEN = "user_general_scroll_hint_seen";
     private static final String PREF_USER_BUSINESS_SCROLL_HINT_SEEN = "user_business_scroll_hint_seen";
     private static final String PREF_USER_PASSWORD_DIALOG_SCROLL_HINT_SEEN = "user_password_dialog_scroll_hint_seen";
@@ -102,6 +113,15 @@ public class UserFragment extends Fragment {
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private android.net.Uri pendingCameraUri;
     private String currentUserTypeForProfilePic = "general";
+    private RecyclerView generalUserPostsRv;
+    private RecyclerView businessUserPostsRv;
+    private TextView generalUserPostsEmptyTv;
+    private TextView businessUserPostsEmptyTv;
+    private TextView generalUserPostsViewAllTv;
+    private TextView businessUserPostsViewAllTv;
+    private PostAdapter generalPostsAdapter;
+    private PostAdapter businessPostsAdapter;
+    private PostViewModel postViewModel;
 
     private long lastClickTime = 0;
     private int clickCount = 0;
@@ -113,6 +133,7 @@ public class UserFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        postViewModel = new ViewModelProvider(this).get(PostViewModel.class);
         registerProfilePicLaunchers();
     }
 
@@ -194,6 +215,7 @@ public class UserFragment extends Fragment {
 
         // Setup profile picture click listeners
         setupProfilePictureListeners();
+        setupMyPostsSection();
 
         return binding.getRoot();
     }
@@ -462,6 +484,12 @@ public class UserFragment extends Fragment {
         addBusinessLocationBtn = binding.businessAddFieldBtn;
 
         guestAccountOptionsContainer = binding.guestAccountOptionsContainer;
+        generalUserPostsRv = binding.generalUserPostsRv;
+        businessUserPostsRv = binding.businessUserPostsRv;
+        generalUserPostsEmptyTv = binding.generalUserPostsEmptyTv;
+        businessUserPostsEmptyTv = binding.businessUserPostsEmptyTv;
+        generalUserPostsViewAllTv = binding.generalUserPostsViewAllTv;
+        businessUserPostsViewAllTv = binding.businessUserPostsViewAllTv;
     }
 
     private void setUpListeners(View view) {
@@ -576,6 +604,102 @@ public class UserFragment extends Fragment {
                 guestAdminAccessBtn.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void setupMyPostsSection() {
+        setupPostsRecycler(generalUserPostsRv, true);
+        setupPostsRecycler(businessUserPostsRv, false);
+        setupViewAllPostsButton(generalUserPostsViewAllTv);
+        setupViewAllPostsButton(businessUserPostsViewAllTv);
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            renderUserPosts(null);
+            return;
+        }
+
+        postViewModel.setAuthorUidFilter(currentUser.getUid());
+        postViewModel.getPostsByAuthorUid().observe(getViewLifecycleOwner(), this::renderUserPosts);
+    }
+
+    private void setupViewAllPostsButton(@Nullable TextView viewAllView) {
+        if (viewAllView == null) {
+            return;
+        }
+        viewAllView.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), MyPostsActivity.class)));
+    }
+
+    private void setupPostsRecycler(@Nullable RecyclerView recyclerView, boolean general) {
+        if (recyclerView == null) {
+            return;
+        }
+
+        PostAdapter adapter = new PostAdapter();
+        GridLayoutManager layoutManager = new GridLayoutManager(requireContext(), 3);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return adapter.isHeaderPosition(position) ? 3 : 1;
+            }
+        });
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setNestedScrollingEnabled(false);
+        recyclerView.setAdapter(adapter);
+
+        adapter.setOnPostClickListener(post -> {
+            Intent intent = new Intent(getActivity(), ViewPost.class);
+            intent.putExtra("POST_ID", post.postId);
+            startActivity(intent);
+        });
+
+        if (general) {
+            generalPostsAdapter = adapter;
+        } else {
+            businessPostsAdapter = adapter;
+        }
+    }
+
+    private void renderUserPosts(@Nullable List<PostEntity> posts) {
+        List<PostEntity> safePosts = posts != null ? posts : Collections.emptyList();
+        boolean hasPosts = !safePosts.isEmpty();
+        List<PostEntity> previewPosts = getPreviewPosts(safePosts);
+        boolean showViewAll = safePosts.size() > MY_POSTS_PREVIEW_LIMIT;
+
+        if (generalPostsAdapter != null) {
+            generalPostsAdapter.setPosts(previewPosts);
+        }
+        if (businessPostsAdapter != null) {
+            businessPostsAdapter.setPosts(previewPosts);
+        }
+
+        if (generalUserPostsRv != null) {
+            generalUserPostsRv.setVisibility(hasPosts ? View.VISIBLE : View.GONE);
+        }
+        if (businessUserPostsRv != null) {
+            businessUserPostsRv.setVisibility(hasPosts ? View.VISIBLE : View.GONE);
+        }
+        if (generalUserPostsEmptyTv != null) {
+            generalUserPostsEmptyTv.setVisibility(hasPosts ? View.GONE : View.VISIBLE);
+        }
+        if (businessUserPostsEmptyTv != null) {
+            businessUserPostsEmptyTv.setVisibility(hasPosts ? View.GONE : View.VISIBLE);
+        }
+        if (generalUserPostsViewAllTv != null) {
+            generalUserPostsViewAllTv.setVisibility(showViewAll ? View.VISIBLE : View.GONE);
+        }
+        if (businessUserPostsViewAllTv != null) {
+            businessUserPostsViewAllTv.setVisibility(showViewAll ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    @NonNull
+    private List<PostEntity> getPreviewPosts(@NonNull List<PostEntity> posts) {
+        if (posts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        int limit = Math.min(MY_POSTS_PREVIEW_LIMIT, posts.size());
+        return new ArrayList<>(posts.subList(0, limit));
     }
 
     private void setupKeyboardHints(View root) {

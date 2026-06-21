@@ -104,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
             String userId = getIntent().getStringExtra("userId");
             sharedPreferences.edit().putString("userId", userId).apply();
         }
+        if (getIntent().hasExtra("username")) {
+            String username = getIntent().getStringExtra("username");
+            sharedPreferences.edit().putString("username", username).apply();
+        }
 
         // If SharedPreferences was cleared but Firebase Auth session persists, restore session
         if (USER_TYPE_GUEST.equals(userType) && sharedPreferences.getString("userId", "").isEmpty()) {
@@ -154,6 +158,9 @@ public class MainActivity extends AppCompatActivity {
         if (intent.hasExtra("userType")) {
             userType = normalizeUserType(intent.getStringExtra("userType"));
             sharedPreferences.edit().putString("userType", userType).apply();
+        }
+        if (intent.hasExtra("username")) {
+            sharedPreferences.edit().putString("username", intent.getStringExtra("username")).apply();
         }
 
         pendingMapFocus = intent.getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
@@ -277,19 +284,31 @@ public class MainActivity extends AppCompatActivity {
                     if (doc != null && doc.exists()) {
                         String userTypeFromDb = doc.getString("userType");
                         if (userTypeFromDb == null) userTypeFromDb = USER_TYPE_GENERAL;
-                        restoreSession(userTypeFromDb, firebaseUid);
+                        String username = firstNonEmpty(doc.getString("username"), doc.getString("email"), firebaseUid);
+                        restoreSession(userTypeFromDb, firebaseUid, username);
                     } else {
                         // Try businesses collection
                         db.collection("businesses").document(firebaseUid).get()
                                 .addOnSuccessListener(bizDoc -> {
                                     if (bizDoc != null && bizDoc.exists()) {
-                                        restoreSession(USER_TYPE_BUSINESS, firebaseUid);
+                                        String username = firstNonEmpty(
+                                                bizDoc.getString("username"),
+                                                bizDoc.getString("companyName"),
+                                                bizDoc.getString("businessEmail"),
+                                                firebaseUid
+                                        );
+                                        restoreSession(USER_TYPE_BUSINESS, firebaseUid, username);
                                     } else {
                                         // Try admin collection
                                         db.collection("admins").document(firebaseUid).get()
                                                 .addOnSuccessListener(adminDoc -> {
                                                     if (adminDoc != null && adminDoc.exists()) {
-                                                        restoreSession(USER_TYPE_ADMIN, firebaseUid);
+                                                        String username = firstNonEmpty(
+                                                                adminDoc.getString("username"),
+                                                                adminDoc.getString("email"),
+                                                                firebaseUid
+                                                        );
+                                                        restoreSession(USER_TYPE_ADMIN, firebaseUid, username);
                                                     }
                                                     // If nothing found, stay as guest
                                                 });
@@ -299,13 +318,14 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void restoreSession(String userType, String userId) {
+    private void restoreSession(String userType, String userId, String username) {
         MainActivity.this.userType = userType;
         sharedPreferences.edit()
                 .putString("userType", userType)
                 .putString("userId", userId)
+                .putString("username", username)
                 .apply();
-        android.util.Log.d("MainActivity", "Session restored: userType=" + userType + ", userId=" + userId);
+        android.util.Log.d("MainActivity", "Session restored: userType=" + userType + ", userId=" + userId + ", username=" + username);
         // Recreate activity to apply the restored session
         recreate();
     }
@@ -317,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences.edit()
                 .putString("userType", USER_TYPE_GUEST)
                 .putString("userId", "")
+                .putString("username", "")
                 .commit();
         getSharedPreferences("user_prefs", MODE_PRIVATE).edit().clear().commit();
 
@@ -344,6 +365,18 @@ public class MainActivity extends AppCompatActivity {
         loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(loginIntent);
         finish();
+    }
+
+    private String firstNonEmpty(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
     }
 
     private void resumePendingActionIfNeeded() {

@@ -16,6 +16,7 @@ import com.example.everythingbim.data.local.dao.PostDao;
 import com.example.everythingbim.data.local.dao.CommentDao;
 import com.example.everythingbim.data.local.dao.LikeDao;
 import com.example.everythingbim.data.local.dao.ReportDao;
+import com.example.everythingbim.data.local.dao.ReviewDao;
 import com.example.everythingbim.data.local.dao.UserDao;
 import com.example.everythingbim.data.local.entities.BusinessUserEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
@@ -42,7 +43,7 @@ import java.util.concurrent.Executors;
         UserEntity.class,
         GeneralUserEntity.class,
         BusinessUserEntity.class
-}, version = 14)
+}, version = 15)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final ExecutorService DATABASE_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -53,6 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract CommentDao commentDao();
     public abstract LikeDao likeDao();
     public abstract ReportDao reportDao();
+    public abstract ReviewDao reviewDao();
     public abstract UserDao userDao();
 
     // Singleton instance
@@ -109,6 +111,15 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase db) {
             db.execSQL("ALTER TABLE `comments` ADD COLUMN `parentAuthorUid` TEXT");
+        }
+    };
+
+    private static final Migration MIGRATION_14_15 = new Migration(14, 15) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `reviews` ADD COLUMN `authorUid` TEXT");
+            db.execSQL("ALTER TABLE `reviews` ADD COLUMN `authorName` TEXT");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_reviews_locationId_authorUid` ON `reviews` (`locationId`, `authorUid`)");
         }
     };
 
@@ -180,7 +191,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     wipeLegacyDatabaseIfNeeded(appContext);
                     INSTANCE = Room.databaseBuilder(appContext,
                                     AppDatabase.class, "app_database")
-                            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+                            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_14_15)
                             .addCallback(new Callback() {
                                 @Override
                                 public void onCreate(@NonNull androidx.sqlite.db.SupportSQLiteDatabase db) {

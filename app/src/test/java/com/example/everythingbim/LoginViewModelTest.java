@@ -51,8 +51,8 @@ public class LoginViewModelTest {
     }
 
     @Test
-    public void defaultUserType_isAdmin() {
-        assertEquals("Default user type should be ADMIN", UserType.ADMIN, viewModel.getSelectedUserType().getValue());
+    public void defaultUserType_isGeneral() {
+        assertEquals("Default user type should be GENERAL", UserType.GENERAL, viewModel.getSelectedUserType().getValue());
     }
 
     // ========== Error Field HashMap Tests ==========
@@ -60,27 +60,27 @@ public class LoginViewModelTest {
 
     @Test
     public void setErrorField_addsErrorCorrectly() {
-        viewModel.setErrorField(com.example.everythingbim.R.id.login_email_et, "Email error");
+        viewModel.setErrorField(com.example.everythingbim.R.id.login_username_et, "Email error");
         assertNotNull("ErrorFields should not be null", viewModel.getErrorFields().getValue());
         assertEquals("Error message should match", "Email error",
-            viewModel.getErrorFields().getValue().get(com.example.everythingbim.R.id.login_email_et));
+            viewModel.getErrorFields().getValue().get(com.example.everythingbim.R.id.login_username_et));
     }
 
     @Test
     public void setErrorField_nullRemovesError() {
-        viewModel.setErrorField(com.example.everythingbim.R.id.login_email_et, "error");
-        viewModel.setErrorField(com.example.everythingbim.R.id.login_email_et, null);
+        viewModel.setErrorField(com.example.everythingbim.R.id.login_username_et, "error");
+        viewModel.setErrorField(com.example.everythingbim.R.id.login_username_et, null);
         if (viewModel.getErrorFields().getValue() != null) {
             assertFalse("Field should be removed from error map",
-                viewModel.getErrorFields().getValue().containsKey(com.example.everythingbim.R.id.login_email_et));
+                viewModel.getErrorFields().getValue().containsKey(com.example.everythingbim.R.id.login_username_et));
         }
     }
 
     @Test
     public void setErrorField_multipleErrorsAndClear_becomesNull() {
-        viewModel.setErrorField(com.example.everythingbim.R.id.login_email_et, "error1");
+        viewModel.setErrorField(com.example.everythingbim.R.id.login_username_et, "error1");
         viewModel.setErrorField(com.example.everythingbim.R.id.login_password_et, "error2");
-        viewModel.setErrorField(com.example.everythingbim.R.id.login_email_et, null);
+        viewModel.setErrorField(com.example.everythingbim.R.id.login_username_et, null);
         viewModel.setErrorField(com.example.everythingbim.R.id.login_password_et, null);
         assertNull("ErrorFields should become null when empty", viewModel.getErrorFields().getValue());
     }

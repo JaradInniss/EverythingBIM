@@ -108,6 +108,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private int currentKeyboardExtraBottom = 0;
+    private boolean hasAttemptedVerification = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -238,6 +239,8 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         digit5 = form2Binding.digit5;
         checkIcon = form2Binding.checkIcon;
         warningIcon = form2Binding.warningIcon;
+        checkIcon.setVisibility(View.GONE);
+        warningIcon.setVisibility(View.GONE);
 
         // Auto‑advance and backspace handling
         setDigitAutoAdvance();
@@ -381,6 +384,11 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
         digit2.addTextChangedListener(new SimpleTextWatcher(() -> digit3.requestFocus()));
         digit3.addTextChangedListener(new SimpleTextWatcher(() -> digit4.requestFocus()));
         digit4.addTextChangedListener(new SimpleTextWatcher(() -> digit5.requestFocus()));
+        attachVerificationStateWatcher(digit1);
+        attachVerificationStateWatcher(digit2);
+        attachVerificationStateWatcher(digit3);
+        attachVerificationStateWatcher(digit4);
+        attachVerificationStateWatcher(digit5);
 
         // Backspace: clear current field and move to previous if empty
         setBackspaceListener(digit2, digit1);
@@ -426,6 +434,43 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
                 digit5.getText().toString();
     }
 
+    private void attachVerificationStateWatcher(@NonNull EditText field) {
+        field.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                updateVerificationIndicators();
+            }
+        });
+    }
+
+    private void updateVerificationIndicators() {
+        String enteredCode = getEnteredCode();
+        if (enteredCode.isEmpty() || enteredCode.length() < 5) {
+            hasAttemptedVerification = false;
+            checkIcon.setVisibility(View.GONE);
+            warningIcon.setVisibility(View.GONE);
+            return;
+        }
+
+        boolean isValid = Boolean.TRUE.equals(viewModel.getIsCodeValid().getValue());
+        if (isValid) {
+            checkIcon.setVisibility(View.VISIBLE);
+            warningIcon.setVisibility(View.GONE);
+            return;
+        }
+
+        checkIcon.setVisibility(View.GONE);
+        warningIcon.setVisibility(hasAttemptedVerification ? View.VISIBLE : View.GONE);
+    }
+
     private void clearDigitFields() {
         digit1.setText("");
         digit2.setText("");
@@ -437,9 +482,12 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
     private void verifyCodeAndProceed() {
         String enteredCode = getEnteredCode();
+        hasAttemptedVerification = enteredCode.length() >= 5;
         boolean success = viewModel.verifyAndProceed(enteredCode);
         if (!success) {
             clearDigitFields();
+        } else {
+            updateVerificationIndicators();
         }
     }
 
@@ -503,13 +551,7 @@ public class BusinessRegistration extends AppCompatActivity implements View.OnCl
 
         // Observe code validation result to show/hide icons
         viewModel.getIsCodeValid().observe(this, isValid -> {
-            if (isValid) {
-                checkIcon.setVisibility(View.VISIBLE);
-                warningIcon.setVisibility(View.GONE);
-            } else {
-                checkIcon.setVisibility(View.GONE);
-                warningIcon.setVisibility(View.VISIBLE);
-            }
+            updateVerificationIndicators();
         });
 
         // Observe info messages (like the demo code)
