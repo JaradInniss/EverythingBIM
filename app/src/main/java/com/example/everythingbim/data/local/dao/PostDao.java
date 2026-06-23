@@ -2,6 +2,7 @@ package com.example.everythingbim.data.local.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
@@ -83,6 +84,12 @@ public interface PostDao {
 
     @Query("UPDATE posts SET imageUrl = :imageUrl WHERE postId = :postId")
     void updateImageUrl(long postId, String imageUrl);
+
+    @Delete
+    void delete(PostEntity post);
+
+    @Query("DELETE FROM posts WHERE postId = :postId")
+    void deletePostById(long postId);
 
     /**
      * Retrieves all posts in a random order.

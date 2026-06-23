@@ -32,6 +32,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
     private OnReplyClickListener replyClickListener;
     private OnCommentClickListener commentClickListener;
+    private OnCommentDeleteListener commentDeleteListener;
+    private boolean isAdminMode = false;
 
     /**
      * Interface to handle clicks on the "Reply" button.
@@ -48,6 +50,13 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     }
 
     /**
+     * Interface to handle clicks on the delete button (admin mode).
+     */
+    public interface OnCommentDeleteListener {
+        void onCommentDelete(CommentEntity comment);
+    }
+
+    /**
      * Sets the listener for reply button clicks.
      */
     public void setOnReplyClickListener(OnReplyClickListener listener) {
@@ -59,6 +68,20 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
      */
     public void setOnCommentClickListener(OnCommentClickListener listener) {
         this.commentClickListener = listener;
+    }
+
+    /**
+     * Sets the listener for delete button clicks (admin mode).
+     */
+    public void setOnCommentDeleteListener(OnCommentDeleteListener listener) {
+        this.commentDeleteListener = listener;
+    }
+
+    /**
+     * Enables admin mode which shows delete buttons on comments.
+     */
+    public void setAdminMode(boolean adminMode) {
+        this.isAdminMode = adminMode;
     }
 
     /**
@@ -96,7 +119,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         TextView username, replyingTo, uploadDate, body, replyCount;
         ImageView authorProfilePic;
         LinearLayout replyLayout;
-        View separator, replyBttn;
+        View separator, replyBttn, deleteBtn;
         RecyclerView repliesRv;
 
         public CommentViewHolder(@NonNull View itemView) {
@@ -111,6 +134,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             separator = itemView.findViewById(R.id.comment_reply_separator);
             repliesRv = itemView.findViewById(R.id.replies_rv);
             replyBttn = itemView.findViewById(R.id.reply_bttn);
+            deleteBtn = itemView.findViewById(R.id.comment_delete_btn);
             authorProfilePic = itemView.findViewById(R.id.comment_author_profile_pic);
         }
 
@@ -165,6 +189,18 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
                 }
             });
 
+            // Handle delete button click (admin mode)
+            if (isAdminMode && deleteBtn != null) {
+                deleteBtn.setVisibility(View.VISIBLE);
+                deleteBtn.setOnClickListener(v -> {
+                    if (commentDeleteListener != null) {
+                        commentDeleteListener.onCommentDelete(comment);
+                    }
+                });
+            } else if (deleteBtn != null) {
+                deleteBtn.setVisibility(View.GONE);
+            }
+
             // Handle nested replies visibility and count
             int totalReplies = uiModel.getTotalRepliesCount();
             if (totalReplies == 0) {
@@ -189,6 +225,8 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
                 CommentAdapter nestedAdapter = new CommentAdapter();
                 nestedAdapter.setOnReplyClickListener(replyClickListener); // Propagate listener
                 nestedAdapter.setOnCommentClickListener(commentClickListener); // Propagate click listener for author names
+                nestedAdapter.setOnCommentDeleteListener(commentDeleteListener); // Propagate delete listener
+                nestedAdapter.setAdminMode(isAdminMode); // Propagate admin mode
                 repliesRv.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
                 repliesRv.setAdapter(nestedAdapter);
                 nestedAdapter.setComments(replies);

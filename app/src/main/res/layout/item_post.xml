@@ -13,4 +13,17 @@
         android:layout_height="120dp"
         android:scaleType="centerCrop"/>
 
+    <ImageView
+        android:id="@+id/post_options_btn"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:src="@drawable/ic_more_vert"
+        android:background="@drawable/bg_circle_semi_transparent"
+        android:padding="2dp"
+        android:visibility="gone"
+        app:tint="@color/white"
+        android:contentDescription="Post options"/>
+
 </androidx.cardview.widget.CardView>

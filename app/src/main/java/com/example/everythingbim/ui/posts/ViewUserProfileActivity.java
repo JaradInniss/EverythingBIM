@@ -1,6 +1,7 @@
 package com.example.everythingbim.ui.posts;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -231,6 +232,8 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
                         verificationIcon.setVisibility(View.GONE);
                         tabLayout.setVisibility(View.GONE);
                         viewPager.setVisibility(View.GONE);
+
+                        reportBttn.setVisibility(View.GONE);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -244,6 +247,8 @@ public class ViewUserProfileActivity extends AppCompatActivity implements View.O
                     verificationIcon.setVisibility(View.GONE);
                     tabLayout.setVisibility(View.GONE);
                     viewPager.setVisibility(View.GONE);
+
+                    reportBttn.setVisibility(View.GONE);
                 });
     }
 

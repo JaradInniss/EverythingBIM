@@ -153,10 +153,12 @@ public class   EntityValidationTest {
     @Test
     public void reviewEntity_constructor_setsAllFields() {
         long timestamp = System.currentTimeMillis();
-        ReviewEntity review = new ReviewEntity(123L, 456L, "Great place!", 4.5f, timestamp);
+        ReviewEntity review = new ReviewEntity(123L, 456L, "user123", "Test User", "Great place!", 4.5f, timestamp);
 
         assertEquals("LocationId should be 123", 123L, review.locationId);
         assertEquals("AuthorId should be 456", 456L, review.authorId);
+        assertEquals("AuthorUid should be user123", "user123", review.authorUid);
+        assertEquals("AuthorName should be Test User", "Test User", review.authorName);
         assertEquals("Body should be Great place!", "Great place!", review.body);
         assertEquals("Rating should be 4.5", 4.5f, review.rating, 0.0f);
         assertEquals("CreatedAt should match timestamp", timestamp, review.createdAt);
@@ -164,19 +166,19 @@ public class   EntityValidationTest {
 
     @Test
     public void reviewEntity_ratingCanBeMaxValue() {
-        ReviewEntity review = new ReviewEntity(1L, 2L, "body", 5.0f, 0L);
+        ReviewEntity review = new ReviewEntity(1L, 2L, "uid", "Author", "body", 5.0f, 0L);
         assertEquals("Rating of 5.0 should be allowed", 5.0f, review.rating, 0.0f);
     }
 
     @Test
     public void reviewEntity_ratingCanBeZero() {
-        ReviewEntity review = new ReviewEntity(1L, 2L, "body", 0.0f, 0L);
+        ReviewEntity review = new ReviewEntity(1L, 2L, "uid", "Author", "body", 0.0f, 0L);
         assertEquals("Rating of 0.0 should be allowed", 0.0f, review.rating, 0.0f);
     }
 
     @Test
     public void reviewEntity_canHandleNullBody() {
-        ReviewEntity review = new ReviewEntity(1L, 2L, null, 4.0f, 0L);
+        ReviewEntity review = new ReviewEntity(1L, 2L, "uid", "Author", null, 4.0f, 0L);
         assertNull("Body should be null", review.body);
     }
 
@@ -206,9 +208,9 @@ public class   EntityValidationTest {
         assertEquals("commentId should be settable", 777L, comment.commentId);
     }
 
-    @Test
+@Test
     public void reviewEntity_fieldsArePublic() {
-        ReviewEntity review = new ReviewEntity(1L, 2L, "body", 4.0f, 0L);
+        ReviewEntity review = new ReviewEntity(1L, 2L, "uid", "Author", "body", 4.0f, 0L);
         assertEquals("reviewId should be accessible", 0L, review.reviewId);
         review.reviewId = 666L;
         assertEquals("reviewId should be settable", 666L, review.reviewId);

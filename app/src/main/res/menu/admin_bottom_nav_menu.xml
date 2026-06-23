@@ -5,6 +5,11 @@
         android:id="@+id/admin_navbar_user"
         android:icon="@drawable/ic_multi_users"
         android:title="Users" />
+    <item
+        android:id="@+id/admin_navbar_moderate"
+        android:icon="@drawable/ic_flag"
+        android:title="Moderate" />
+
 
     <item
         android:id="@+id/admin_navbar_home"

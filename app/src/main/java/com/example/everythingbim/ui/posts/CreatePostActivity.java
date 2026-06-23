@@ -103,7 +103,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     // UI Elements
     private LinearLayout returnBttn, submitPostBttn, searchBar, cameraOptionBttn, galleryOptionBttn, clearPostContentBttn, uploadOptionsContainer;
     private EditText searchEt, userTagEt, captionEt;
-    private TextView submitPostBttnText;
+    private TextView submitPostBttnText, createPostTitle;
     private CardView locationResultsCard, imageContainer, userResultsCard;
     private ListView locationResultsList, userResultsList;
     private RecyclerView tagsRecyclerView;
@@ -123,6 +123,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
     private int currentKeyboardExtraBottom;
     @Nullable
     private AlertDialog uploadingDialog;
+
+    // Edit mode fields
+    private boolean isEditMode = false;
+    private long editPostId = -1;
+    private String editPostFirestoreId;
 
 
     @Override
@@ -154,6 +159,69 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         registerLaunchers();
         setupListeners();
         initializePlacesClient();
+
+        // Check if we're in edit mode
+        checkEditMode();
+    }
+
+    private void checkEditMode() {
+        Intent intent = getIntent();
+        editPostId = intent.getLongExtra("EDIT_POST_ID", -1);
+        if (editPostId != -1) {
+            isEditMode = true;
+            editPostFirestoreId = intent.getStringExtra("EDIT_POST_FIRESTORE_ID");
+
+            // Update UI for edit mode
+            submitPostBttnText.setText("Update");
+            createPostTitle.setText("Edit Post");
+            returnBttn.setVisibility(View.GONE); // Hide back button in edit mode
+
+            // Pre-populate fields
+            String locationName = intent.getStringExtra("EDIT_POST_LOCATION_NAME");
+            long locationId = intent.getLongExtra("EDIT_POST_LOCATION_ID", -1);
+            String caption = intent.getStringExtra("EDIT_POST_CAPTION");
+            String imageUrl = intent.getStringExtra("EDIT_POST_IMAGE_URL");
+            ArrayList<String> taggedUsers = intent.getStringArrayListExtra("EDIT_POST_TAGGED_USERS");
+
+            // Set caption first (required for validation)
+            if (caption != null && !caption.isEmpty()) {
+                captionEt.setText(caption);
+                viewModel.setCaption(caption);
+            }
+
+            // Set image URL (required for validation)
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                viewModel.setImageUrl(imageUrl);
+                Glide.with(this)
+                        .load(imageUrl)
+                        .into(uploadedImageView);
+                uploadedImageView.setVisibility(View.VISIBLE);
+            }
+
+            // Set location for validation - create a temporary location if needed
+            // This is needed because validatePost() requires location to not be null
+            if (locationName != null && !locationName.isEmpty()) {
+                searchEt.setText(locationName);
+                // Create a temporary location for immediate validation
+                com.example.everythingbim.data.local.entities.LocationEntity tempLocation =
+                        new com.example.everythingbim.data.local.entities.LocationEntity(
+                                locationName, 0.0, 0.0, 0f, false, "", "", "", "", ""
+                        );
+                if (locationId != -1) {
+                    tempLocation.setLocationId(locationId);
+                }
+                viewModel.setLocationForValidation(tempLocation);
+            }
+
+            if (taggedUsers != null && !taggedUsers.isEmpty()) {
+                viewModel.setTaggedUsers(taggedUsers);
+            }
+
+            // Load actual location entity asynchronously for when user saves
+            if (locationId != -1) {
+                viewModel.loadLocationForEdit(locationId, locationName);
+            }
+        }
     }
 
     @Override
@@ -187,6 +255,7 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
 
         submitPostBttnIcon = binding.submitPostBttnIcon;
         submitPostBttnText = binding.submitPostBttnText;
+        createPostTitle = binding.createPostTitle;
 
         searchEt = binding.searchEt;
         captionEt = binding.captionEt;
@@ -447,8 +516,17 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         viewModel.getPostCreated().observe(this, created -> {
             if (created) {
                 dismissUploadingDialog();
-                Toast.makeText(this, "Post shared successfully!", Toast.LENGTH_SHORT).show();
-                finish();
+                if (isEditMode) {
+                    Toast.makeText(this, "Post updated", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.putExtra(MainActivity.EXTRA_OPEN_USER_PROFILE, true);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(this, "Post shared successfully!", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
             }
         });
     }
@@ -476,7 +554,11 @@ public class CreatePostActivity extends AppCompatActivity implements View.OnClic
         Boolean isValid = viewModel.getIsPostValid().getValue();
 
         if (isValid != null && isValid) {
-            viewModel.createPost();
+            if (isEditMode) {
+                viewModel.updatePost(editPostId, editPostFirestoreId);
+            } else {
+                viewModel.createPost();
+            }
         }
         else {
             StringBuilder missingFields = new StringBuilder("Please fill out: ");

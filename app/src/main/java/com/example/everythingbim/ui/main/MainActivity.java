@@ -58,12 +58,14 @@ public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MAP_FOCUS_SUBTITLE = "map_focus_subtitle";
     public static final String EXTRA_OPEN_MAP_ROUTE = "open_map_route";
     public static final String EXTRA_MAP_ROUTE_LOCATIONS = "map_route_locations";
+    public static final String EXTRA_OPEN_USER_PROFILE = "open_user_profile";
 
     private MainViewModel viewModel;
     private BottomNavigationView bottomNavigationView;
     private SharedPreferences sharedPreferences;
     private String userType; // "guest", "general" or "business"
     private boolean pendingMapFocus;
+    private boolean pendingUserProfile;
     private OnboardingPreferences onboardingPreferences;
     private OnboardingOverlayView onboardingOverlayView;
     private List<OnboardingStep> onboardingSteps;
@@ -120,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
         pendingMapFocus = getIntent().getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
                 || getIntent().getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
+        pendingUserProfile = getIntent().getBooleanExtra(EXTRA_OPEN_USER_PROFILE, false);
 
         bottomNavigationView = findViewById(R.id.navigation_bar);
         configureBottomNavigation();
@@ -165,10 +168,17 @@ public class MainActivity extends AppCompatActivity {
 
         pendingMapFocus = intent.getBooleanExtra(EXTRA_OPEN_MAP_FOCUS, false)
                 || intent.getBooleanExtra(EXTRA_OPEN_MAP_ROUTE, false);
+        pendingUserProfile = intent.getBooleanExtra(EXTRA_OPEN_USER_PROFILE, false);
 
         if (pendingMapFocus) {
             configureBottomNavigation();
             viewModel.setNavbarItemId(R.id.navbar_map);
+            return;
+        }
+
+        if (pendingUserProfile) {
+            configureBottomNavigation();
+            viewModel.setNavbarItemId(R.id.navbar_user);
             return;
         }
 
@@ -189,6 +199,8 @@ public class MainActivity extends AppCompatActivity {
             viewModel.setNavbarItemId(R.id.navbar_home);
         } else if (pendingMapFocus) {
             viewModel.setNavbarItemId(R.id.navbar_map);
+        } else if (pendingUserProfile) {
+            viewModel.setNavbarItemId(R.id.navbar_user);
         } else {
             viewModel.setNavbarItemId(R.id.navbar_home);
         }
@@ -360,11 +372,8 @@ public class MainActivity extends AppCompatActivity {
 
         android.widget.Toast.makeText(this, "Logged out successfully", android.widget.Toast.LENGTH_SHORT).show();
 
-        // Navigate to Login screen instead of closing app
-        Intent loginIntent = new Intent(this, com.example.everythingbim.ui.login.Login.class);
-        loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(loginIntent);
-        finish();
+        // Navigate to guest user view (MainActivity is already set to USER_TYPE_GUEST above)
+        // No need to navigate away - the activity will show guest view
     }
 
     private String firstNonEmpty(String... values) {

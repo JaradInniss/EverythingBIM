@@ -127,10 +127,16 @@ public class AdminSettingsFragment extends Fragment {
 
     private void performLogout() {
         FirebaseAuth.getInstance().signOut();
-        Intent intent = new Intent(requireContext(), Login.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        requireActivity().finish();
+        // Navigate to MainActivity with guest user instead of Login
+        if (requireActivity() instanceof com.example.everythingbim.ui.main.MainActivity) {
+            ((com.example.everythingbim.ui.main.MainActivity) requireActivity()).handleLogout();
+        } else {
+            // Fallback: navigate to MainActivity
+            Intent intent = new Intent(requireContext(), com.example.everythingbim.ui.main.MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            requireActivity().finish();
+        }
     }
 
     private void setupEditButtons() {

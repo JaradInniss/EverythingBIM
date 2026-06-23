@@ -44,6 +44,7 @@ import com.example.everythingbim.data.local.entities.CommentEntity;
 import com.example.everythingbim.data.local.entities.LocationEntity;
 import com.example.everythingbim.data.local.entities.PostEntity;
 import com.example.everythingbim.data.local.entities.UserEntity;
+import com.example.everythingbim.data.repository.PostRepository;
 import com.example.everythingbim.databinding.ActivityViewPostBinding;
 import com.example.everythingbim.ui.main.MainActivity;
 import com.example.everythingbim.ui.utils.ImageReferenceLoader;
@@ -71,10 +72,12 @@ import java.util.Set;
 public class ViewPost extends AppCompatActivity {
     private static final String PREF_VIEW_POST_SCROLL_HINT_SEEN =
             KeyboardScrollHintHelper.PREF_VIEW_POST_SCROLL_HINT_SEEN;
+    public static final String EXTRA_IS_ADMIN_MODE = "EXTRA_IS_ADMIN_MODE";
 
     ActivityViewPostBinding binding;
     private PostViewModel viewModel;
     private CommentAdapter commentAdapter;
+    private PostRepository postRepository;
     private ViewPostTagAdapter taggedUsersAdapter;
     private long postId;
     private long lastObservedLocationId = -1L;
@@ -92,6 +95,7 @@ public class ViewPost extends AppCompatActivity {
     private String currentParentAuthorUid = null;
     private boolean isSubmittingComment = false;
     private boolean isTogglingLike = false;
+    private boolean isAdminMode = false;
 
     private TextView username, location, likes, commentsCount, caption, uploadDate, submitCommentBttn, submitReplyBttn, replyingToUsername;
     private ImageView postImage, profilePic, reportBttn, likesIcon, commentsIcon, viewTaggedUsersBttn;
@@ -117,8 +121,12 @@ public class ViewPost extends AppCompatActivity {
             return;
         }
 
+        // Check if opened in admin mode
+        isAdminMode = getIntent().getBooleanExtra(EXTRA_IS_ADMIN_MODE, false);
+
         viewModel = new ViewModelProvider(this).get(PostViewModel.class);
-        
+        postRepository = new PostRepository(this);
+
         // Handle window insets for edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(binding.viewPosts, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -184,6 +192,12 @@ public class ViewPost extends AppCompatActivity {
         commentsRv.setAdapter(commentAdapter);
         // Disable nested scrolling to let the parent ScrollView handle it if necessary
         commentsRv.setNestedScrollingEnabled(false);
+
+        // Enable admin mode if in admin mode
+        if (isAdminMode) {
+            commentAdapter.setAdminMode(true);
+            commentAdapter.setOnCommentDeleteListener(this::deleteComment);
+        }
 
         // When a reply button is clicked in the adapter, update the UI to "reply mode"
         commentAdapter.setOnReplyClickListener(comment -> {
@@ -270,6 +284,7 @@ public class ViewPost extends AppCompatActivity {
             Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
             return;
         }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
 
@@ -286,6 +301,7 @@ public class ViewPost extends AppCompatActivity {
             Toast.makeText(this, "Unable to open user profile", Toast.LENGTH_SHORT).show();
             return;
         }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
 
@@ -1276,6 +1292,28 @@ public class ViewPost extends AppCompatActivity {
         replyingToUsername.setVisibility(View.GONE);
         submitReplyBttn.setVisibility(View.GONE);
         submitCommentBttn.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Deletes a comment (admin mode).
+     */
+    private void deleteComment(@NonNull CommentEntity comment) {
+        if (postRepository == null || currentPost == null) return;
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Comment")
+                .setMessage("Are you sure you want to delete this comment?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    postRepository.deleteComment(comment, currentPost.firestoreId).observe(this, success -> {
+                        if (success) {
+                            Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     /**

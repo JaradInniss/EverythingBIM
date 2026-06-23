@@ -2,6 +2,8 @@ package com.example.everythingbim.ui.posts;
 
 import android.app.Application;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -240,7 +242,9 @@ public class CreatePostViewModel extends AndroidViewModel {
         boolean isValid = (currentCaption != null && !currentCaption.trim().isEmpty())
                 && (currentUri != null)
                 && (currentLocation != null);
-        isPostValid.setValue(isValid);
+        // Use postValue instead of setValue because this method can be called
+        // from a background thread (e.g., loadLocationForEdit via executorService)
+        isPostValid.postValue(isValid);
     }
 
     // ---- Reset all draft state -------------------------------------------
@@ -258,6 +262,178 @@ public class CreatePostViewModel extends AndroidViewModel {
         taggedUsers.setValue(new ArrayList<>());
         userQuery.setValue("");
         validatePost();
+    }
+
+    // ---- Setters for Edit Mode --------------------------------------------
+
+    public void setImageUrl(@Nullable String url) {
+        // For edit mode: image is already uploaded, just store the URL
+        if (url != null && !url.isEmpty()) {
+            imageUri.setValue(Uri.parse(url));
+        }
+    }
+
+    public void setLocationName(@Nullable String name) {
+        // For edit mode: pre-fill location name without creating a new location
+        // The actual location entity will be fetched when saving
+    }
+
+    public void setTaggedUsers(@Nullable List<String> uids) {
+        // For edit mode: pre-fill tagged users
+        // In edit mode, we store UIDs and resolve them to UserEntity later
+        taggedUsers.setValue(new ArrayList<>());
+    }
+
+    public void loadLocationForEdit(long locationId, @Nullable String locationName) {
+        executorService.execute(() -> {
+            LocationEntity loc = locationDao.getLocationByIdSync(locationId);
+            if (loc != null) {
+                location.postValue(loc);
+                selectedLocationId.postValue(locationId);
+                validatePost();
+            } else if (locationName != null && !locationName.isEmpty()) {
+                // Create a minimal location entity from the name
+                LocationEntity fallback = new LocationEntity(
+                        locationName, 0.0, 0.0, 0f, false, "", "", "", "", ""
+                );
+                fallback.setLocationId(locationId);
+                location.postValue(fallback);
+                selectedLocationId.postValue(locationId);
+                validatePost();
+            }
+        });
+    }
+
+    /**
+     * Sets a temporary location for immediate validation.
+     * Used in edit mode before the actual location is loaded.
+     */
+    public void setLocationForValidation(@NonNull LocationEntity tempLocation) {
+        location.setValue(tempLocation);
+        validatePost();
+    }
+
+    // ---- Update existing post -------------------------------------------
+
+    /**
+     * Updates an existing post. Called from edit mode.
+     * @param postId The local Room post ID
+     * @param firestoreId The Firestore document ID
+     */
+    public void updatePost(long postId, @Nullable String firestoreId) {
+        String currentCaption = caption.getValue();
+        Uri currentUri = imageUri.getValue();
+        LocationEntity currentLocation = location.getValue();
+        List<UserEntity> currentTags = taggedUsers.getValue();
+
+        if (currentLocation == null
+                || currentCaption == null
+                || currentCaption.trim().isEmpty()) {
+            return;
+        }
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.getUid() == null) {
+            errorMessage.setValue("Sign in to update a post.");
+            return;
+        }
+
+        isSaving.setValue(true);
+        executorService.execute(() -> {
+            String uid = currentUser.getUid();
+            String authorName = resolveAuthorName(currentUser);
+            long authorLocalId = resolveAuthorId(currentUser);
+
+            List<String> taggedUids = new ArrayList<>();
+            if (currentTags != null) {
+                for (UserEntity user : currentTags) {
+                    if (user.firebaseUid != null) {
+                        taggedUids.add(user.firebaseUid);
+                    }
+                }
+            }
+
+            // Determine image URL - if URI is a local file, upload it
+            String imageUrl = null;
+            if (currentUri != null) {
+                if (currentUri.toString().startsWith("http")) {
+                    // Already a remote URL, use it directly
+                    imageUrl = currentUri.toString();
+                } else {
+                    // Local file, need to upload
+                    UploadResult uploadResult = uploadImageToStorage(currentUri, uid);
+                    if (uploadResult.downloadUrl == null) {
+                        errorMessage.postValue("Failed to upload image. Please try again.");
+                        isSaving.postValue(false);
+                        return;
+                    }
+                    imageUrl = uploadResult.downloadUrl;
+                }
+            }
+
+            // Fetch existing post to preserve fields that shouldn't change
+            PostEntity existingPost = postDao.getPostByIdSync(postId);
+            if (existingPost == null) {
+                errorMessage.postValue("Post not found.");
+                isSaving.postValue(false);
+                return;
+            }
+
+            // Update the post
+            existingPost.caption = currentCaption;
+            existingPost.locationId = currentLocation.getLocationId();
+            existingPost.locationName = currentLocation.getName();
+            existingPost.locationLatitude = currentLocation.getLatitude();
+            existingPost.locationLongitude = currentLocation.getLongitude();
+            existingPost.locationAddress = currentLocation.getAddress();
+            if (imageUrl != null) {
+                existingPost.imageUrl = imageUrl;
+            }
+            existingPost.taggedUserUids = taggedUids;
+
+            // If we have a firestoreId, update Room and Firestore
+            if (firestoreId != null && !firestoreId.isEmpty()) {
+                existingPost.firestoreId = firestoreId;
+            }
+            // Update Room first
+            try {
+                postDao.update(existingPost);
+            } catch (Exception e) {
+                errorMessage.postValue("Failed to update post locally.");
+                isSaving.postValue(false);
+                return;
+            }
+            // Then update Firestore directly (the Room listener will pick up the change)
+            if (existingPost.firestoreId != null && !existingPost.firestoreId.isEmpty()) {
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                LiveData<PostEntity> firestoreLiveData = getOrCreatePostRepository().updatePostInFirestore(existingPost);
+                mainHandler.post(() -> {
+                    final boolean[] handled = {false};
+                    androidx.lifecycle.Observer<PostEntity> observer = new androidx.lifecycle.Observer<PostEntity>() {
+                        @Override
+                        public void onChanged(PostEntity result) {
+                            if (handled[0]) return;
+                            handled[0] = true;
+                            firestoreLiveData.removeObserver(this);
+                            if (result != null) {
+                                isSaving.postValue(false);
+                                postCreated.postValue(true);
+                            } else {
+                                // Room was updated, but Firestore update failed
+                                // The post is in an inconsistent state
+                                errorMessage.postValue("Post saved locally but failed to sync. Try again later.");
+                                isSaving.postValue(false);
+                            }
+                        }
+                    };
+                    firestoreLiveData.observeForever(observer);
+                });
+            } else {
+                // No firestoreId means this is a local-only post
+                isSaving.postValue(false);
+                postCreated.postValue(true);
+            }
+        });
     }
 
     // ---- Persist to Firestore --------------------------------------------

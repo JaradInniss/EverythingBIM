@@ -1063,4 +1063,192 @@ public class PostRepository {
                 && query != null
                 && text.toLowerCase(java.util.Locale.US).contains(query.toLowerCase(java.util.Locale.US));
     }
+
+    // ---------------------------------------------------------------------
+    // Delete: Firestore + Room
+    // ---------------------------------------------------------------------
+
+    /**
+     * Deletes a post from both Firestore and Room.
+     * Firestore is the source of truth; the Room cache is updated after
+     * the Firestore delete succeeds.
+     *
+     * @param post the post to delete. Must have a non-null {@code firestoreId}.
+     * @return a {@link LiveData} that emits {@code true} on success, {@code false} on failure.
+     */
+    public LiveData<Boolean> deletePost(@NonNull PostEntity post) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+        if (post.firestoreId == null || post.firestoreId.isEmpty()) {
+            Log.w(TAG, "Cannot delete post: no firestoreId");
+            result.setValue(false);
+            return result;
+        }
+        firestore.collection(COLLECTION_POSTS)
+                .document(post.firestoreId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    // Mirror the delete into Room on a background thread.
+                    executorService.execute(() -> {
+                        try {
+                            postDao.deletePostById(post.postId);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to delete post from Room", e);
+                        }
+                    });
+                    result.postValue(true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to delete post from Firestore", e);
+                    result.postValue(false);
+                });
+        return result;
+    }
+
+    /**
+     * Updates an existing post document in Firestore.
+     * The Room cache will be updated via the existing Firestore listener.
+     *
+     * @param post the post with updated fields. Must have a non-null {@code firestoreId}.
+     * @return a {@link LiveData} that emits the updated post on success, {@code null} on failure.
+     */
+    public LiveData<PostEntity> updatePostInFirestore(@NonNull PostEntity post) {
+        MutableLiveData<PostEntity> result = new MutableLiveData<>();
+        if (post.firestoreId == null || post.firestoreId.isEmpty()) {
+            Log.w(TAG, "Cannot update post: no firestoreId");
+            result.setValue(null);
+            return result;
+        }
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("caption", post.caption);
+        updates.put("locationId", post.locationId);
+        updates.put("locationName", post.locationName);
+        updates.put("locationLatitude", post.locationLatitude);
+        updates.put("locationLongitude", post.locationLongitude);
+        updates.put("locationAddress", post.locationAddress);
+        updates.put("locationPlaceId", post.locationPlaceId);
+        updates.put("locationFirestoreId", post.locationFirestoreId);
+        updates.put("taggedUserUids", post.taggedUserUids != null ? post.taggedUserUids : new ArrayList<>());
+        if (post.imageUrl != null) {
+            updates.put("imageUrl", post.imageUrl);
+        }
+
+        firestore.collection(COLLECTION_POSTS)
+                .document(post.firestoreId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Post updated in Firestore: " + post.firestoreId);
+                    result.postValue(post);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update post in Firestore", e);
+                    result.postValue(null);
+                });
+        return result;
+    }
+
+    // ---------------------------------------------------------------------
+    // Delete Comment: Firestore subcollection + Room
+    // ---------------------------------------------------------------------
+
+    /**
+     * Deletes a comment from both Firestore and Room.
+     * @param comment the comment to delete. Must have non-null firestoreId.
+     * @param postFirestoreId the Firestore document ID of the parent post.
+     * @return a LiveData that emits true on success, false on failure.
+     */
+    public LiveData<Boolean> deleteComment(@NonNull CommentEntity comment, @NonNull String postFirestoreId) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+        if (comment.firestoreId == null || comment.firestoreId.isEmpty()
+                || postFirestoreId == null || postFirestoreId.isEmpty()) {
+            Log.w(TAG, "Cannot delete comment: missing firestoreId or postFirestoreId");
+            result.setValue(false);
+            return result;
+        }
+
+        // First, delete all child comments (replies) in both Firestore and Room
+        // Get all comments to find children
+        firestore.collection(COLLECTION_POSTS)
+                .document(postFirestoreId)
+                .collection(COLLECTION_COMMENTS)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    // Delete child comments (replies) in parallel
+                    java.util.List<com.google.firebase.firestore.QueryDocumentSnapshot> childrenToDelete = new java.util.ArrayList<>();
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                        Long parentId = doc.getLong("parentCommentId");
+                        if (parentId != null && parentId == comment.commentId) {
+                            childrenToDelete.add(doc);
+                        }
+                    }
+
+                    // Delete children first, then delete parent
+                    if (childrenToDelete.isEmpty()) {
+                        deleteCommentAndParent(comment, postFirestoreId, result);
+                    } else {
+                        final int[] pendingDeletes = {childrenToDelete.size()};
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot childDoc : childrenToDelete) {
+                            final long childCommentId = childDoc.getLong("commentId") != null ? childDoc.getLong("commentId") : 0;
+                            firestore.collection(COLLECTION_POSTS)
+                                    .document(postFirestoreId)
+                                    .collection(COLLECTION_COMMENTS)
+                                    .document(childDoc.getId())
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        executorService.execute(() -> {
+                                            if (childCommentId > 0) {
+                                                try {
+                                                    commentDao.deleteCommentById(childCommentId);
+                                                } catch (Exception e) {
+                                                    Log.w(TAG, "Failed to delete child comment from Room", e);
+                                                }
+                                            }
+                                        });
+                                        pendingDeletes[0]--;
+                                        if (pendingDeletes[0] == 0) {
+                                            deleteCommentAndParent(comment, postFirestoreId, result);
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e(TAG, "Failed to delete child comment from Firestore", e);
+                                        pendingDeletes[0]--;
+                                        if (pendingDeletes[0] == 0) {
+                                            deleteCommentAndParent(comment, postFirestoreId, result);
+                                        }
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // If we can't fetch children, try to delete just the parent
+                    Log.e(TAG, "Failed to fetch comments to find children", e);
+                    deleteCommentAndParent(comment, postFirestoreId, result);
+                });
+
+        return result;
+    }
+
+    private void deleteCommentAndParent(@NonNull CommentEntity comment, @NonNull String postFirestoreId, @NonNull MutableLiveData<Boolean> result) {
+        firestore.collection(COLLECTION_POSTS)
+                .document(postFirestoreId)
+                .collection(COLLECTION_COMMENTS)
+                .document(comment.firestoreId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    executorService.execute(() -> {
+                        try {
+                            // Delete child replies in Room by parentCommentId (handles orphaned children)
+                            commentDao.deleteRepliesByParentId(comment.commentId);
+                            // Delete the parent comment
+                            commentDao.deleteCommentById(comment.commentId);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to delete comment from Room", e);
+                        }
+                    });
+                    result.postValue(true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to delete comment from Firestore", e);
+                    result.postValue(false);
+                });
+    }
 }
