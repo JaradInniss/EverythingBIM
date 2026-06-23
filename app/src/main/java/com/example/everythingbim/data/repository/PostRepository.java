@@ -1164,6 +1164,70 @@ public class PostRepository {
             result.setValue(false);
             return result;
         }
+
+        // First, delete all child comments (replies) in both Firestore and Room
+        // Get all comments to find children
+        firestore.collection(COLLECTION_POSTS)
+                .document(postFirestoreId)
+                .collection(COLLECTION_COMMENTS)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    // Delete child comments (replies) in parallel
+                    java.util.List<com.google.firebase.firestore.QueryDocumentSnapshot> childrenToDelete = new java.util.ArrayList<>();
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                        Long parentId = doc.getLong("parentCommentId");
+                        if (parentId != null && parentId == comment.commentId) {
+                            childrenToDelete.add(doc);
+                        }
+                    }
+
+                    // Delete children first, then delete parent
+                    if (childrenToDelete.isEmpty()) {
+                        deleteCommentAndParent(comment, postFirestoreId, result);
+                    } else {
+                        final int[] pendingDeletes = {childrenToDelete.size()};
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot childDoc : childrenToDelete) {
+                            final long childCommentId = childDoc.getLong("commentId") != null ? childDoc.getLong("commentId") : 0;
+                            firestore.collection(COLLECTION_POSTS)
+                                    .document(postFirestoreId)
+                                    .collection(COLLECTION_COMMENTS)
+                                    .document(childDoc.getId())
+                                    .delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        executorService.execute(() -> {
+                                            if (childCommentId > 0) {
+                                                try {
+                                                    commentDao.deleteCommentById(childCommentId);
+                                                } catch (Exception e) {
+                                                    Log.w(TAG, "Failed to delete child comment from Room", e);
+                                                }
+                                            }
+                                        });
+                                        pendingDeletes[0]--;
+                                        if (pendingDeletes[0] == 0) {
+                                            deleteCommentAndParent(comment, postFirestoreId, result);
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e(TAG, "Failed to delete child comment from Firestore", e);
+                                        pendingDeletes[0]--;
+                                        if (pendingDeletes[0] == 0) {
+                                            deleteCommentAndParent(comment, postFirestoreId, result);
+                                        }
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // If we can't fetch children, try to delete just the parent
+                    Log.e(TAG, "Failed to fetch comments to find children", e);
+                    deleteCommentAndParent(comment, postFirestoreId, result);
+                });
+
+        return result;
+    }
+
+    private void deleteCommentAndParent(@NonNull CommentEntity comment, @NonNull String postFirestoreId, @NonNull MutableLiveData<Boolean> result) {
         firestore.collection(COLLECTION_POSTS)
                 .document(postFirestoreId)
                 .collection(COLLECTION_COMMENTS)
@@ -1172,6 +1236,9 @@ public class PostRepository {
                 .addOnSuccessListener(aVoid -> {
                     executorService.execute(() -> {
                         try {
+                            // Delete child replies in Room by parentCommentId (handles orphaned children)
+                            commentDao.deleteRepliesByParentId(comment.commentId);
+                            // Delete the parent comment
                             commentDao.deleteCommentById(comment.commentId);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to delete comment from Room", e);
@@ -1183,6 +1250,5 @@ public class PostRepository {
                     Log.e(TAG, "Failed to delete comment from Firestore", e);
                     result.postValue(false);
                 });
-        return result;
     }
 }
