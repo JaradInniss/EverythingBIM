@@ -84,6 +84,7 @@
 
                 <!-- Create Post Heading -->
                 <TextView
+                    android:id="@+id/create_post_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"

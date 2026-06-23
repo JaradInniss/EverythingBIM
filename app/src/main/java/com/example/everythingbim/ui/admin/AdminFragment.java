@@ -170,6 +170,8 @@ public class AdminFragment extends Fragment {
             } else if (id == R.id.admin_navbar_reports) {
                 reportsFragment = new AdminReportsFragment();
                 fragment = reportsFragment;
+            } else if (id == R.id.admin_navbar_moderate) {
+                fragment = new AdminModeratePostsFragment();
             }
 
             if (fragment != null) {

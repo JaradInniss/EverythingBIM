@@ -37,6 +37,7 @@ import com.example.everythingbim.data.models.UserType;
 import com.example.everythingbim.databinding.FragmentUserBinding;
 import com.example.everythingbim.ui.login.Login;
 import com.example.everythingbim.ui.main.MainActivity;
+import com.example.everythingbim.ui.posts.CreatePostActivity;
 import com.example.everythingbim.ui.posts.MyPostsActivity;
 import com.example.everythingbim.ui.posts.PostAdapter;
 import com.example.everythingbim.ui.posts.PostViewModel;
@@ -647,10 +648,28 @@ public class UserFragment extends Fragment {
         recyclerView.setNestedScrollingEnabled(false);
         recyclerView.setAdapter(adapter);
 
+        // Set current user UID for options visibility
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            adapter.setCurrentUserUid(currentUser.getUid());
+        }
+
         adapter.setOnPostClickListener(post -> {
             Intent intent = new Intent(getActivity(), ViewPost.class);
             intent.putExtra("POST_ID", post.postId);
             startActivity(intent);
+        });
+
+        adapter.setOnPostOptionsClickListener(new PostAdapter.OnPostOptionsClickListener() {
+            @Override
+            public void onEditPost(PostEntity post) {
+                openEditPostActivity(post);
+            }
+
+            @Override
+            public void onDeletePost(PostEntity post) {
+                confirmDeletePost(post);
+            }
         });
 
         if (general) {
@@ -658,6 +677,45 @@ public class UserFragment extends Fragment {
         } else {
             businessPostsAdapter = adapter;
         }
+    }
+
+    private void openEditPostActivity(PostEntity post) {
+        Intent intent = new Intent(requireContext(), CreatePostActivity.class);
+        intent.putExtra("EDIT_POST_ID", post.postId);
+        intent.putExtra("EDIT_POST_FIRESTORE_ID", post.firestoreId);
+        intent.putExtra("EDIT_POST_LOCATION_ID", post.locationId);
+        intent.putExtra("EDIT_POST_LOCATION_NAME", post.locationName);
+        intent.putExtra("EDIT_POST_CAPTION", post.caption);
+        intent.putExtra("EDIT_POST_IMAGE_URL", post.imageUrl);
+        if (post.taggedUserUids != null) {
+            intent.putStringArrayListExtra("EDIT_POST_TAGGED_USERS", new java.util.ArrayList<>(post.taggedUserUids));
+        }
+        startActivity(intent);
+    }
+
+    private void confirmDeletePost(PostEntity post) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Delete Post")
+                .setMessage("Are you sure you want to delete this post? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deletePost(post))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deletePost(PostEntity post) {
+        com.example.everythingbim.data.repository.PostRepository repo = new com.example.everythingbim.data.repository.PostRepository(requireContext());
+        repo.deletePost(post).observe(getViewLifecycleOwner(), success -> {
+            if (success) {
+                Toast.makeText(requireContext(), "Post deleted", Toast.LENGTH_SHORT).show();
+                // Refresh posts
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (currentUser != null) {
+                    postViewModel.setAuthorUidFilter(currentUser.getUid());
+                }
+            } else {
+                Toast.makeText(requireContext(), "Failed to delete post", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void renderUserPosts(@Nullable List<PostEntity> posts) {

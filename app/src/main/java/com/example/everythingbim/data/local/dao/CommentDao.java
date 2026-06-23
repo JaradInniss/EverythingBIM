@@ -58,5 +58,11 @@ public interface CommentDao {
      */
     @Query("DELETE FROM comments WHERE postId = :postId")
     void deleteCommentsForPost(long postId);
+
+    /**
+     * Deletes a single comment by its ID.
+     */
+    @Query("DELETE FROM comments WHERE commentId = :commentId")
+    void deleteCommentById(long commentId);
 }
 
