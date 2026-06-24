@@ -57,10 +57,12 @@ public class PostFragment extends Fragment {
     private ListView searchResultsList;
     private TextView filterAccount;
     private TextView filterLocation;
+    private TextView sortDate;
     private ArrayAdapter<String> searchResultsAdapter;
     private final List<String> activeSearchResults = new ArrayList<>();
     private final List<PostEntity> allPosts = new ArrayList<>();
     private final List<LocationEntity> allLocations = new ArrayList<>();
+    private boolean sortNewestFirst = true; // true = newest first, false = oldest first
 
     public PostFragment() {
     }
@@ -86,6 +88,7 @@ public class PostFragment extends Fragment {
         searchResultsList = view.findViewById(R.id.posts_search_results_list);
         filterAccount = view.findViewById(R.id.posts_search_filter_account);
         filterLocation = view.findViewById(R.id.posts_search_filter_location);
+        sortDate = view.findViewById(R.id.posts_sort_date);
 
         searchResultsAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, activeSearchResults);
         searchResultsList.setAdapter(searchResultsAdapter);
@@ -195,6 +198,8 @@ public class PostFragment extends Fragment {
         filterAccount.setOnClickListener(v -> viewModel.setFilterType("account"));
         filterLocation.setOnClickListener(v -> viewModel.setFilterType("location"));
 
+        sortDate.setOnClickListener(v -> toggleDateSort());
+
         searchButton.setOnClickListener(v -> {
             applySearchAndSuggestions();
             searchResultsCard.setVisibility(View.GONE);
@@ -226,12 +231,27 @@ public class PostFragment extends Fragment {
         }
     }
 
+    private void toggleDateSort() {
+        sortNewestFirst = !sortNewestFirst;
+        if (sortNewestFirst) {
+            sortDate.setText("Newest");
+            sortDate.setBackgroundResource(R.drawable.bg_search_filter_active);
+            sortDate.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+        } else {
+            sortDate.setText("Oldest");
+            sortDate.setBackgroundResource(R.drawable.bg_search_filter_inactive);
+            sortDate.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+        }
+        applySearchAndSuggestions();
+    }
+
     private void applySearchAndSuggestions() {
         String query = searchEditText.getText() == null
                 ? ""
                 : searchEditText.getText().toString().trim();
         boolean accountMode = "account".equals(viewModel.getFilterType().getValue());
 
+        adapter.setSortNewestFirst(sortNewestFirst);
         adapter.setPosts(filterPosts(query, accountMode));
         updateSuggestions(query, accountMode);
     }

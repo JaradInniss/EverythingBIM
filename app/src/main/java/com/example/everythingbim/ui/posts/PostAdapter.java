@@ -37,6 +37,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private OnPostOptionsClickListener optionsListener;
     private String currentUserUid;
     private boolean isAdminMode = false;
+    private boolean sortNewestFirst = true;
 
      // Interface for handling click events on individual posts.
     public interface OnPostClickListener {
@@ -69,10 +70,15 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.isAdminMode = adminMode;
     }
 
+    // Sets sort order for posts
+    public void setSortNewestFirst(boolean newestFirst) {
+        this.sortNewestFirst = newestFirst;
+    }
+
      // Updates the data set and refreshes the RecyclerView.
      public void setPosts(List<PostEntity> posts) {
         items.clear();
-        items.addAll(buildGroupedItems(posts));
+        items.addAll(buildGroupedItems(posts, sortNewestFirst));
         notifyDataSetChanged();
     }
 
@@ -152,14 +158,22 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 && items.get(position).isHeader();
     }
 
-    private List<PostListItem> buildGroupedItems(List<PostEntity> posts) {
+    private List<PostListItem> buildGroupedItems(List<PostEntity> posts, boolean sortNewestFirst) {
         List<PostListItem> groupedItems = new ArrayList<>();
         if (posts == null || posts.isEmpty()) {
             return groupedItems;
         }
 
+        // Sort posts by createdAt before grouping
+        List<PostEntity> sortedPosts = new ArrayList<>(posts);
+        if (sortNewestFirst) {
+            sortedPosts.sort((a, b) -> Long.compare(b.createdAt, a.createdAt));
+        } else {
+            sortedPosts.sort((a, b) -> Long.compare(a.createdAt, b.createdAt));
+        }
+
         LinkedHashMap<String, List<PostEntity>> grouped = new LinkedHashMap<>();
-        for (PostEntity post : posts) {
+        for (PostEntity post : sortedPosts) {
             String label = formatGroupLabel(post.createdAt);
             grouped.computeIfAbsent(label, ignored -> new ArrayList<>()).add(post);
         }
