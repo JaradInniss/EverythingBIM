@@ -102,6 +102,22 @@
                         android:layout_height="16dp"
                         android:layout_marginRight="10dp"
                         android:src="@drawable/ic_magnifying_glass"/>
+
+                    <!-- Date Sort Button -->
+                    <TextView
+                        android:id="@+id/posts_sort_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="4dp"
+                        android:paddingHorizontal="8dp"
+                        android:layout_marginRight="4dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="@drawable/bg_search_filter_active"
+                        android:text="Newest"
+                        android:textSize="11sp"
+                        android:textColor="@color/white"
+                        style="@style/black_small_txt_style"/>
                 </LinearLayout>
 
                 <!-- Search Results View -->
